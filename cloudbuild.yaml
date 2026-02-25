@@ -1,0 +1,61 @@
+# Proje kökünden: backend + frontend (ve isteğe bağlı worker) tek seferde build + push
+# Kullanım: gcloud builds submit --config=cloudbuild.yaml .
+# Substitutions (opsiyonel): _REGION, _REPO, _TAG
+
+substitutions:
+  _REGION: europe-west1
+  _REPO: benimmasalim
+  _TAG: latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+steps:
+  # 1) Backend image
+  - name: gcr.io/cloud-builders/docker
+    id: build-backend
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/backend:${_TAG}
+      - -f
+      - backend/Dockerfile
+      - backend
+    waitFor: ['-']
+
+  # 2) Frontend image (production runner stage)
+  - name: gcr.io/cloud-builders/docker
+    id: build-frontend
+    args:
+      - build
+      - --target
+      - runner
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/frontend:${_TAG}
+      - -f
+      - frontend/Dockerfile
+      - frontend
+    waitFor: ['-']
+
+  # 3) Push backend
+  - name: gcr.io/cloud-builders/docker
+    id: push-backend
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/backend:${_TAG}
+    waitFor: ['build-backend']
+
+  # 4) Push frontend
+  - name: gcr.io/cloud-builders/docker
+    id: push-frontend
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/frontend:${_TAG}
+    waitFor: ['build-frontend']
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/backend:${_TAG}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/frontend:${_TAG}
+
+timeout: 2400s

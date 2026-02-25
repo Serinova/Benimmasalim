@@ -1,0 +1,89 @@
+---
+description: PostgreSQL veritabanı kuralları - şema standartları, UUID, migrations
+globs: backend/app/models/**/*.py, backend/alembic/**/*.py
+alwaysApply: false
+---
+
+# Veritabanı Kuralları (PostgreSQL)
+
+## UUID Primary Key (Zorunlu)
+
+```python
+# ❌ YANLIŞ - Integer ID
+id = Column(Integer, primary_key=True, autoincrement=True)
+
+# ✅ DOĞRU - UUID
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
+
+id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+```
+
+## Timestamp Alanları (Her Tabloda)
+
+```python
+from sqlalchemy import func
+
+created_at = Column(DateTime(timezone=True), server_default=func.now())
+updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+```
+
+## Index Kuralları
+
+```python
+# Status bazlı sorgular için
+__table_args__ = (
+    Index('idx_orders_status', 'status'),
+    Index('idx_orders_user', 'user_id'),
+    Index('idx_kvkk_cleanup', 'photo_deletion_scheduled_at', 
+          postgresql_where=text("photo_deletion_scheduled_at IS NOT NULL")),
+)
+```
+
+## Enum Kullanımı
+
+```python
+# ❌ YANLIŞ - String literal
+status = Column(String(50))
+
+# ✅ DOĞRU - Python Enum
+class OrderStatus(str, Enum):
+    DRAFT = "DRAFT"
+    TEXT_APPROVED = "TEXT_APPROVED"
+    COVER_APPROVED = "COVER_APPROVED"
+    # ...
+
+status = Column(SQLEnum(OrderStatus), default=OrderStatus.DRAFT)
+```
+
+## Foreign Key İlişkileri
+
+```python
+# Cascade delete dikkatli kullan
+user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='SET NULL'))
+product_id = Column(UUID(as_uuid=True), ForeignKey('products.id'), nullable=False)
+```
+
+## Migration Kuralları
+
+```bash
+# Yeni migration oluştur
+alembic revision --autogenerate -m "add_products_table"
+
+# Migration uygula
+alembic upgrade head
+
+# Rollback
+alembic downgrade -1
+```
+
+## ASLA Hard-Code Boyut Kullanma
+
+```python
+# ❌ YANLIŞ
+width_px = 2480  # Sabit değer
+
+# ✅ DOĞRU - products tablosundan al
+product = await get_product(order.product_id)
+width_px = mm_to_px(product.width_mm, product.bleed_mm)
+```

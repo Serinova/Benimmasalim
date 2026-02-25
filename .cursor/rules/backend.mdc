@@ -1,0 +1,72 @@
+---
+description: FastAPI backend kuralları - async SQLAlchemy, Pydantic v2, tip güvenliği
+globs: backend/**/*.py
+alwaysApply: false
+---
+
+# Backend Kuralları (FastAPI + SQLAlchemy)
+
+## Tip Güvenliği (Zorunlu)
+
+```python
+# ❌ YANLIŞ
+def get_user(id):
+    return db.query(User).get(id)
+
+# ✅ DOĞRU
+async def get_user(id: UUID, db: AsyncSession) -> User | None:
+    result = await db.execute(select(User).where(User.id == id))
+    return result.scalar_one_or_none()
+```
+
+## Async SQLAlchemy Kullanımı
+
+```python
+# ❌ YANLIŞ - sync kullanma
+db.query(Order).filter_by(status="PAID").all()
+
+# ✅ DOĞRU - async select kullan
+result = await db.execute(
+    select(Order).where(Order.status == OrderStatus.PAID)
+)
+orders = result.scalars().all()
+```
+
+## Pydantic v2 Modelleri
+
+```python
+from pydantic import BaseModel, ConfigDict
+
+class OrderResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: UUID
+    status: OrderStatus
+    child_name: str
+```
+
+## API Route Yapısı
+
+- Tüm route'lar `/api/v1/` prefix'i ile
+- Response model zorunlu: `response_model=OrderResponse`
+- HTTPException ile hata döndür
+- Dependency injection kullan
+
+## Hata Yönetimi
+
+```python
+# ❌ YANLIŞ
+raise Exception("User not found")
+
+# ✅ DOĞRU
+raise HTTPException(
+    status_code=status.HTTP_404_NOT_FOUND,
+    detail="Kullanıcı bulunamadı"
+)
+```
+
+## Service Layer Pattern
+
+- Route → Service → Repository
+- Business logic service katmanında
+- DB işlemleri repository'de

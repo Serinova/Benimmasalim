@@ -1,0 +1,82 @@
+---
+alwaysApply: true
+---
+
+# RULE: High-Consistency Image Generation @ Scale (10k+ users)
+
+Bu sistem on binlerce kullanıcıya görsel üretiyor. Görseller; **stil, karakter, kıyafet, yüz benzerliği, sahne dili ve çocuk güvenliği** açısından her senaryoda **tutarlı** olmalıdır. Prompt, pipeline ve kalite kontrolleri bu hedefe göre tasarlanacaktır.
+
+## 1) Karakter Tutarlılığı (Character Lock)
+- Her kitap/iş için bir **Character Profile** oluştur ve tüm sayfalarda referans al:
+  - yüz: saç rengi/stili, ten tonu, göz şekli, yüz oranları (doğal, chibi değil)
+  - kıyafet: üst/alt/ayakkabı + aksesuarlar (sabit; sahne gerektirmedikçe değişmez)
+  - yaş: çocuğun yaşıyla uyumlu yüz/beden oranı
+- Her sayfa prompt’u **Character Profile** özetini içermelidir.
+- Çocuk her sayfada “hikayenin parçası” olmalı: kadrajda görünmeli, etkileşim yapmalı.
+  - wide shotlarda: çocuk ~%20–40 kadraj (mekân öne çıksın, ama çocuk kaybolmasın)
+  - kapalı alanlarda: kısmi kadraj kabul ama çocuk mutlaka görünür.
+
+## 2) Yüklenen Fotoğrafa Benzerlik (Stylized Likeness, Not Copy)
+- Hedef: “fotoğrafı kopyalamak değil”, **stilize benzerlik**.
+- Prompt’ta şu ifade zorunlu:
+  - “stylized likeness: keep key facial features, do not copy the exact photo; same hairstyle, same skin tone”
+- Negative prompt’ta şu kilitler zorunlu:
+  - “photorealistic, pasted face, collage, deepfake, face swap, real-person photo, skin pores”
+
+## 3) Stil Tutarlılığı (Style Lock)
+- Her kitap için tek bir **Style Pack** seçilir (örn: pastel storybook / watercolor / 2D hand-painted).
+- Style Pack; lineart, shading, palette, texture, lighting tanımı içerir ve her sayfada kullanılır.
+- Stil “aynı kalmalı”; sadece sahne içeriği değişir.
+- Yasak: aynı kitap içinde sayfalar arası stil sıçraması (3D/realism/cartoon karışımı).
+
+## 4) Senaryo / Sahne Tutarlılığı (Scene Lock)
+- Sayfa prompt’u şu sırayla kurulmalı:
+  1) mekan + zaman (gündüz/gece)
+  2) çocuk aksiyonu (ne yapıyor)
+  3) kompozisyon (wide/medium/close)
+  4) style pack
+  5) character profile (kıyafet/saç/yüz)
+  6) kalite etiketleri (sharp focus, detailed background)
+- Her sayfa “aynı karakter + aynı kıyafet + aynı saç” ilkesine uyar.
+- Değişiklik gerekiyorsa (örn: yağmurluk takma) bu **hikaye gereği** olmalı ve bir kez tanımlandıktan sonra tutarlı devam etmeli.
+
+## 5) Kalite Standartları (Quality Gates)
+- Üretimden önce ve sonra otomatik kontroller:
+  - çocuk kadrajda mı?
+  - kıyafet/saç rengi tutarlı mı?
+  - ekstra uzuv/bozuk anatomi var mı?
+  - yazı/watermark/signature var mı?
+  - bulanıklık/lowres var mı?
+- Başarısız sayfa: aynı seed/ayar ile tekrar deneme veya prompt güçlendirme.
+
+## 6) Negatif Prompt Standart Seti (Her zaman ekle)
+- “text, watermark, signature, logo, blurry, lowres, worst quality, bad anatomy, extra limbs, deformed hands, duplicate face”
+- “photorealistic, 3d render, CGI, pixar, face swap, pasted face, collage, real-person photo”
+
+## 7) Çocuk Güvenliği (Child-Safe Content Policy)
+- Hikaye ve görsel **yaşa uygun** olmalı:
+  - korku/şiddet/gore yok, cinsel içerik yok, madde kullanımı yok, ağır travma yok
+  - tehlikeli davranışları teşvik eden sahneler yok (yüksekten atlama, bıçak/silah vb.)
+- Eğer senaryoda “riskli” bir unsur kültürel olarak geçiyorsa (ör. mitolojik figür):
+  - “korkutmadan, yumuşak ve eğitici dille” işlenir.
+- Uygunsuz içerik ihtimali varsa sistem otomatik olarak:
+  - sahneyi güvenli alternatife çevirir veya üretimi reddeder (fail-safe).
+
+## 8) Çok Kullanıcılı Üretimde Karışmayı Önleme (Isolation)
+- Her sipariş için benzersiz:
+  - job_id, user_id, book_id, character_profile_id, style_pack_id
+- Prompt/asset karışmasını önlemek için:
+  - tüm üretim adımları bu kimliklerle namespace’lenir (cache/storage path dahil).
+
+## 9) Prompt Şablon Zorunluluğu
+- Her görsel prompt’u şu blokları içerir:
+  - [STYLE_PACK]
+  - [CHARACTER_PROFILE]
+  - [SCENE_DESCRIPTION]
+  - [COMPOSITION]
+  - [NEGATIVE_PROMPT_STANDARD]
+- Bu bloklar olmadan prod’da render başlatma.
+
+## 10) Çıktı Tutarlılığı Hedefi
+- Aynı kitapta: “same face, same hair, same outfit, same style, consistent proportions”
+- Hedef saparsa: prompt güçlendirme + negatif prompt sıkılaştırma + kalite gate fail.

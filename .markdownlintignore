@@ -1,0 +1,8 @@
+# Cursor plan dosyalarını markdownlint kontrolünden hariç tut
+.cursor/plans/
+
+# Agent transcripts
+.cursor/agent-transcripts/
+
+# Node modules
+node_modules/

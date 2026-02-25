@@ -1,0 +1,146 @@
+[
+  {
+    "script": "create_abusimbel_scenario.py",
+    "name": "Abu Simbel TapÄ±naklarÄ± MacerasÄ±",
+    "theme_key": "abusimbel",
+    "cover_len": 1927,
+    "page_len": 1272,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "create_catalhoyuk_scenario.py",
+    "name": "Ã‡atalhÃ¶yÃ¼k Neolitik Kenti MacerasÄ±",
+    "theme_key": "catalhoyuk",
+    "cover_len": 1856,
+    "page_len": 1416,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "create_efes_scenario.py",
+    "name": "Efes Antik Kent MacerasÄ±",
+    "theme_key": "ephesus",
+    "cover_len": 1726,
+    "page_len": 2655,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "create_galata_scenario.py",
+    "name": "Galata Kulesi MacerasÄ±",
+    "theme_key": "galata",
+    "cover_len": 1944,
+    "page_len": 2189,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "create_gobeklitepe_scenario.py",
+    "name": "GÃ¶beklitepe MacerasÄ±",
+    "theme_key": "gobeklitepe",
+    "cover_len": 1595,
+    "page_len": 2159,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "create_kudus_scenario.py",
+    "name": "KudÃ¼s Eski Åehir MacerasÄ±",
+    "theme_key": "kudus",
+    "cover_len": 1854,
+    "page_len": 3904,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "create_sultanahmet_scenario.py",
+    "name": "Sultanahmet Camii MacerasÄ±",
+    "theme_key": "sultanahmet",
+    "cover_len": 1865,
+    "page_len": 2407,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "create_sumela_scenario.py",
+    "name": "SÃ¼mela ManastÄ±rÄ± MacerasÄ±",
+    "theme_key": "sumela",
+    "cover_len": 2116,
+    "page_len": 3350,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "create_tacmahal_scenario.py",
+    "name": "Tac Mahal MacerasÄ±",
+    "theme_key": "tacmahal",
+    "cover_len": 1900,
+    "page_len": 1089,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "update_all_styles_and_scenarios.py",
+    "name": "update all styles and scenarios",
+    "theme_key": "?",
+    "cover_len": 163,
+    "page_len": 168,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "update_amazon_scenario.py",
+    "name": "Amazon Ormanları Keşfediyorum",
+    "theme_key": "amazon_rainforest",
+    "cover_len": 1749,
+    "page_len": 2816,
+    "has_outfits": true,
+    "has_marketing": false
+  },
+  {
+    "script": "update_dinosaur_scenario.py",
+    "name": "Dinozorlar Macerası: Zaman Yolculuğu",
+    "theme_key": "dinosaur_time_travel",
+    "cover_len": 1175,
+    "page_len": 6779,
+    "has_outfits": true,
+    "has_marketing": false
+  },
+  {
+    "script": "update_kapadokya_scenario.py",
+    "name": "update kapadokya scenario",
+    "theme_key": "cappadocia",
+    "cover_len": 1426,
+    "page_len": 1772,
+    "has_outfits": false,
+    "has_marketing": false
+  },
+  {
+    "script": "update_ocean_adventure_scenario.py",
+    "name": "Okyanus Derinlikleri: Mavi Dev ile Macera",
+    "theme_key": "ocean_depths",
+    "cover_len": 976,
+    "page_len": 1565,
+    "has_outfits": true,
+    "has_marketing": true
+  },
+  {
+    "script": "update_space_adventure_scenario.py",
+    "name": "Güneş Sistemi Macerası: Gezegen Kaşifleri",
+    "theme_key": "solar_system_space",
+    "cover_len": 2869,
+    "page_len": 3096,
+    "has_outfits": true,
+    "has_marketing": true
+  },
+  {
+    "script": "update_umre_scenario.py",
+    "name": "Umre Yolculuğu: Kutsal Topraklarda",
+    "theme_key": "umre_pilgrimage",
+    "cover_len": 2154,
+    "page_len": 4149,
+    "has_outfits": true,
+    "has_marketing": true
+  }
+]

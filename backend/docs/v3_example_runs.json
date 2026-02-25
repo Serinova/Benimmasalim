@@ -1,0 +1,226 @@
+{
+  "description": "V3 Pipeline — 3 Senaryo Örnek Koşum Çıktısı",
+  "note": "İlk 3 sayfa tam (text_tr + image_prompt_en), kalan sayfalar blueprint özeti",
+
+  "run_1_kapadokya": {
+    "meta": {
+      "book_title": "Uras'ın Kapadokya Macerası",
+      "child_name": "Uras",
+      "child_age": 5,
+      "location_key": "cappadocia",
+      "scenario_title": "Kapadokya — Peri Bacaları ve Yeraltı Şehri",
+      "visual_style": "watercolor",
+      "page_count": 22,
+      "magic_items": ["sihirli fener"]
+    },
+    "blueprint": {
+      "theme": ["cesaret", "merak", "keşif"],
+      "cultural_facts_plan": [
+        "Peri bacaları: rüzgar ve yağmurun binlerce yıl boyunca şekillendirdiği kaya oluşumları",
+        "Yeraltı şehirleri: insanlar tehlikelerden korunmak için kayaların altına şehirler kazmış",
+        "Kaya kiliseleri: kayaların içine oyulmuş, duvarları renkli fresklarla süslü",
+        "Avanos'ta çömlekçilik geleneği, Kızılırmak'ın kırmızı kili ile yapılır",
+        "Volkanik tüf kayası yumuşak olduğu için kolayca oyulabilir",
+        "Güvercin vadisi: binlerce güvercin yuvası oyulmuş kayalıklar",
+        "Kapadokya adının 'güzel atlar ülkesi' anlamına geldiği söylenir"
+      ],
+      "side_character": {"name": "Güvercin Bulut", "type": "güvercin rehber", "intro_page": 2},
+      "pages_summary": [
+        {"page": 1, "role": "dedication", "scene_goal": "Uras'a özel ithaf"},
+        {"page": 2, "role": "arrival", "scene_goal": "Kapadokya'ya varış, Güvercin Bulut ile tanışma"},
+        {"page": 3, "role": "arrival", "scene_goal": "Eski bir harita bulunması, görev tanımı"},
+        {"page": 4, "role": "obstacle", "scene_goal": "Rüzgarlı peri bacaları arasında yol bulma"},
+        {"page": 5, "role": "obstacle", "scene_goal": "Kaygan patika, tüf kayasının yumuşaklığı"},
+        {"page": 6, "role": "puzzle", "scene_goal": "Fresk tamamlama bulmacası"},
+        {"page": 7, "role": "small_victory", "scene_goal": "Freski tamamlayınca gizli geçit açılır"},
+        {"page": 8, "role": "obstacle", "scene_goal": "Yeraltı şehrinde karanlık tünel"},
+        {"page": 9, "role": "surprise_discovery", "scene_goal": "Çömlekçi atölyesi keşfi"},
+        {"page": 10, "role": "obstacle", "scene_goal": "Sihirli fener ışık verir ama sönmeye başlar"},
+        {"page": 11, "role": "puzzle", "scene_goal": "Renk eşleştirme — balonların sırası"},
+        {"page": 12, "role": "small_victory", "scene_goal": "Balon festivali izlenir"},
+        {"page": 13, "role": "obstacle", "scene_goal": "Güvercin vadisinde kayıp mesaj"},
+        {"page": 14, "role": "surprise_discovery", "scene_goal": "Güvercin yuvasında eski mektup"},
+        {"page": 15, "role": "obstacle", "scene_goal": "Zamanında dönme yarışı"},
+        {"page": 16, "role": "puzzle", "scene_goal": "Harita okuma — son ipucu"},
+        {"page": 17, "role": "small_victory", "scene_goal": "Haritanın gösterdiği noktaya ulaşma"},
+        {"page": 18, "role": "obstacle", "scene_goal": "Kaya kilisesinde labirent"},
+        {"page": 19, "role": "surprise_discovery", "scene_goal": "Kilisedeki gizli fresk"},
+        {"page": 20, "role": "main_discovery", "scene_goal": "Hazine: cesaret madalyonu ve dostluk mesajı"},
+        {"page": 21, "role": "closure", "scene_goal": "Balona binip vedalaşma"},
+        {"page": 22, "role": "closure", "scene_goal": "Eve dönüş, kapanış mesajı"}
+      ]
+    },
+    "pages_full_first_3": [
+      {
+        "page": 1,
+        "text_tr": "Bu kitap, gözleri yıldız gibi parlayan, merakı sonsuz bir kaşif olan Uras'a özeldir. Uras, dünyanın en ilginç köşelerini keşfetmeye hazır mıydı? Bu macera tam ona göre. Çünkü gerçek kaşifler, cesaretle ilk adımı atanlardır.",
+        "image_prompt_en": "Dedication page, a warm golden vignette frame around the name 'Uras', surrounded by floating fairy chimneys and colorful hot air balloons, soft morning light, watercolor texture, paper grain, soft washes, visible brush strokes, wet-on-wet bleeding edges, pigment granulation, transparent color layers, dreamy pastel palette, no text, no watermark, no logo",
+        "negative_prompt_en": "text, watermark, logo, signature, low quality, blurry, extra limbs, deformed hands, scary horror, gore, violence, big eyes, chibi, oversized head"
+      },
+      {
+        "page": 2,
+        "text_tr": "Uras tepelerin arasına saklanmış bir vadiye geldiğinde gözlerine inanamadı. Devasa kayalar, dev mantarlar gibi gökyüzüne uzanıyordu! Bir güvercin süzülerek yanına kondu ve boynu parlak bir tüyle parlıyordu. \"Ben Bulut,\" dedi güvercin, \"seni çok bekliyordum!\"",
+        "image_prompt_en": "A 5-year-old curly-haired boy named Uras arriving at Cappadocia fairy chimneys valley, looking up with wonder at mushroom-shaped rock formations, a white dove with a shiny feather landing on his shoulder, wide shot, child 25% of frame, golden hour warm lighting, soft amber and pink tones, watercolor texture, paper grain, soft washes, visible brush strokes, wet-on-wet bleeding edges, dreamy pastel palette, no text, no watermark, no logo",
+        "negative_prompt_en": "text, watermark, logo, signature, low quality, blurry, extra limbs, deformed hands, scary horror, gore, violence, big eyes, chibi, oversized head"
+      },
+      {
+        "page": 3,
+        "text_tr": "Bulut, Uras'ı bir kayanın oyuğuna götürdü. İçeride tozlu, eski bir harita duruyordu. Haritanın üzerinde üç yıldız işareti vardı. \"Bu harita seni kayanın kalbine götürecek,\" dedi Bulut gururla. \"Ama önce üç ipucunu bulman gerek.\" Uras haritayı cebine koydu, gözleri heyecanla parladı.",
+        "image_prompt_en": "A 5-year-old curly-haired boy inside a carved rock alcove examining an ancient dusty map with three star marks, a white dove perched nearby watching, medium shot, child 40% of frame, dim warm interior light with a shaft of sunlight through rock opening, earthy brown and gold tones, watercolor texture, paper grain, soft washes, transparent color layers, dreamy pastel palette, no text, no watermark, no logo",
+        "negative_prompt_en": "text, watermark, logo, signature, low quality, blurry, extra limbs, deformed hands, scary horror, gore, violence, big eyes, chibi, oversized head"
+      }
+    ],
+    "visual_style_alt": {
+      "same_text_different_style": "soft_pastel",
+      "page_2_image_prompt_alt": "A 5-year-old curly-haired boy named Uras arriving at Cappadocia fairy chimneys valley, looking up with wonder at mushroom-shaped rock formations, a white dove with a shiny feather landing on his shoulder, wide shot, child 25% of frame, golden hour warm lighting, soft pastel colors, gentle outlines, dreamy atmosphere, muted warm tones, thin brown/gray outlines, cosy mood, subtle watercolor texture, no text, no watermark, no logo"
+    }
+  },
+
+  "run_2_gobeklitepe": {
+    "meta": {
+      "book_title": "Elif'in Göbeklitepe Gizemi",
+      "child_name": "Elif",
+      "child_age": 4,
+      "location_key": "gobeklitepe",
+      "scenario_title": "Göbeklitepe — Dikilitaşların Sırrı",
+      "visual_style": "soft_pastel",
+      "page_count": 22,
+      "magic_items": []
+    },
+    "blueprint": {
+      "theme": ["gizem", "merak", "sabır"],
+      "cultural_facts_plan": [
+        "T-şekilli devasa dikilitaşlar, insan boyundan çok daha yüksek",
+        "Dikilitaşlardaki hayvan kabartmaları: tilki, yılan, akrep, turna",
+        "Dünyanın bilinen en eski anıtsal yapılarından biri",
+        "Arkeologların yıllarca süren dikkatli kazıları",
+        "Dikilitaşlardaki gizemli semboller",
+        "Dairesel planlı yapılar",
+        "Taş işçiliği o döneme göre inanılmaz gelişmiş"
+      ],
+      "side_character": {"name": "Tilki Zeki", "type": "yaşlı tilki", "intro_page": 2},
+      "pages_summary": [
+        {"page": 1, "role": "dedication"},
+        {"page": 2, "role": "arrival", "scene_goal": "Tepeye varış, Tilki Zeki ile tanışma"},
+        {"page": 3, "role": "arrival", "scene_goal": "Dikilitaşların arasında gizli sembol keşfi"},
+        {"page": 4, "role": "obstacle", "scene_goal": "Rüzgarla uçan harita parçacıkları"},
+        {"page": 5, "role": "obstacle", "scene_goal": "Doğru dikilitaşı bulma zorluğu"},
+        {"page": 6, "role": "puzzle", "scene_goal": "Sembol eşleştirme bulmacası"},
+        {"page": 7, "role": "small_victory", "scene_goal": "İlk sembol çözüldü"},
+        {"page": 8, "role": "obstacle"},
+        {"page": 9, "role": "surprise_discovery"},
+        {"page": 10, "role": "obstacle"},
+        {"page": 11, "role": "puzzle", "scene_goal": "Gölge bulmacası"},
+        {"page": 12, "role": "small_victory"},
+        {"page": 13, "role": "obstacle"},
+        {"page": 14, "role": "surprise_discovery"},
+        {"page": 15, "role": "obstacle"},
+        {"page": 16, "role": "puzzle"},
+        {"page": 17, "role": "small_victory"},
+        {"page": 18, "role": "obstacle"},
+        {"page": 19, "role": "surprise_discovery"},
+        {"page": 20, "role": "main_discovery", "scene_goal": "Dikilitaşların sırrı: topluluk gücü mesajı"},
+        {"page": 21, "role": "closure"},
+        {"page": 22, "role": "closure"}
+      ]
+    },
+    "pages_full_first_3": [
+      {
+        "page": 1,
+        "text_tr": "Bu kitap, her şeyi merak eden, gözleri ışıl ışıl parıldayan küçük kaşif Elif'e özeldir. Elif, binlerce yıllık bir gizemle tanışmaya hazır mıydı? Bu macera, merak dolu yüreklerin macerası.",
+        "image_prompt_en": "Dedication page, a gentle vignette with the name 'Elif' centered, framed by T-shaped megalithic pillars and carved animal reliefs, sunset glow, soft pastel colors, gentle outlines, dreamy atmosphere, muted warm tones, cosy mood, no text, no watermark, no logo",
+        "negative_prompt_en": "text, watermark, logo, signature, low quality, blurry, extra limbs, deformed hands, scary horror, gore, violence, big eyes, chibi, oversized head"
+      },
+      {
+        "page": 2,
+        "text_tr": "Elif bir tepenin üzerine çıktığında durdu ve hayretle etrafına baktı. Devasa taş sütunlar, insan boyundan çok daha yüksek, gökyüzüne uzanıyordu. Bir yaşlı tilki sessizce yanına yaklaştı. \"Ben Zeki,\" dedi tilki, kuyruğunu sallayarak. \"Dikilitaşların sırlarını sana göstereceğim.\"",
+        "image_prompt_en": "A 4-year-old blonde girl named Elif standing on a hilltop overlooking Gobekli Tepe archaeological site with massive T-shaped stone pillars, an old wise fox with amber eyes sitting beside her, wide shot, child 20% of frame, warm golden sunset lighting, soft pastel colors, gentle outlines, dreamy atmosphere, muted warm tones, cosy mood, no text, no watermark, no logo",
+        "negative_prompt_en": "text, watermark, logo, signature, low quality, blurry, extra limbs, deformed hands, scary horror, gore, violence, big eyes, chibi, oversized head"
+      },
+      {
+        "page": 3,
+        "text_tr": "Zeki, Elif'i en büyük dikilitaşın yanına götürdü. Taşın yüzeyinde bir tilki, bir yılan ve bir turna kuşu kabartması vardı. \"Bu hayvanlar bir şey anlatıyor,\" dedi Zeki gözlerini kısarak. Elif parmağıyla kabartmalara dokundu, taşın altında yumuşak bir titreşim hissetti.",
+        "image_prompt_en": "A 4-year-old blonde girl touching carved animal reliefs (fox, snake, crane) on a massive T-shaped stone pillar at Gobekli Tepe, an old fox watching nearby, medium close-up, child 50% of frame, warm afternoon light casting soft shadows on stone carvings, soft pastel colors, gentle outlines, muted warm earthy tones, cosy mood, no text, no watermark, no logo",
+        "negative_prompt_en": "text, watermark, logo, signature, low quality, blurry, extra limbs, deformed hands, scary horror, gore, violence, big eyes, chibi, oversized head"
+      }
+    ],
+    "visual_style_alt": {
+      "same_text_different_style": "anime",
+      "page_2_image_prompt_alt": "A 4-year-old blonde girl named Elif standing on a hilltop overlooking Gobekli Tepe archaeological site with massive T-shaped stone pillars, an old wise fox with amber eyes sitting beside her, wide shot, child 20% of frame, warm golden sunset lighting, anime illustration, clean lineart, cel-shading, flat color fills with gradients, bold ink outlines, vibrant saturated colors, rich scenic background, no text, no watermark, no logo"
+    }
+  },
+
+  "run_3_yerebatan": {
+    "meta": {
+      "book_title": "Ada'nın Yerebatan Sarnıcı Macerası",
+      "child_name": "Ada",
+      "child_age": 6,
+      "location_key": "yerebatan",
+      "scenario_title": "Yerebatan Sarnıcı — Sütunların Gizemi",
+      "visual_style": "pixar",
+      "page_count": 22,
+      "magic_items": ["büyülü pusula"]
+    },
+    "blueprint": {
+      "theme": ["cesaret", "gizem", "dostluk"],
+      "cultural_facts_plan": [
+        "Yerin altında devasa bir su deposu, yüzlerce sütunla ayakta",
+        "Medusa başlı sütun kaideleri: biri yana, biri ters çevrilmiş",
+        "336 sütun düzgün sıralarla dizilmiş, orman gibi",
+        "Roma döneminde inşa edilmiş",
+        "Damlayan su sesleri mekanda tatlı bir melodi oluşturuyor",
+        "Balıklar sığ suyun içinde sessizce yüzüyor",
+        "Bizans İmparatoru Justinianus döneminde genişletilmiş"
+      ],
+      "side_character": {"name": "Balık Yıldız", "type": "konuşan balık", "intro_page": 2},
+      "pages_summary": [
+        {"page": 1, "role": "dedication"},
+        {"page": 2, "role": "arrival", "scene_goal": "Sarnıca iniş, Balık Yıldız ile tanışma"},
+        {"page": 3, "role": "arrival", "scene_goal": "Pusulanın ilk ışığı, görev verilmesi"},
+        {"page": 4, "role": "obstacle"},
+        {"page": 5, "role": "obstacle"},
+        {"page": 6, "role": "puzzle", "scene_goal": "Sütun sırası takip bulmacası"},
+        {"page": 7, "role": "small_victory"},
+        {"page": 8, "role": "obstacle"},
+        {"page": 9, "role": "surprise_discovery", "scene_goal": "Medusa başı keşfi"},
+        {"page": 10, "role": "obstacle"},
+        {"page": 11, "role": "puzzle", "scene_goal": "Yansıma bulmacası"},
+        {"page": 12, "role": "small_victory"},
+        {"page": 13, "role": "obstacle"},
+        {"page": 14, "role": "surprise_discovery"},
+        {"page": 15, "role": "obstacle"},
+        {"page": 16, "role": "puzzle"},
+        {"page": 17, "role": "small_victory"},
+        {"page": 18, "role": "obstacle"},
+        {"page": 19, "role": "surprise_discovery"},
+        {"page": 20, "role": "main_discovery", "scene_goal": "Sarnıcın kalbindeki ışık mesajı"},
+        {"page": 21, "role": "closure"},
+        {"page": 22, "role": "closure"}
+      ]
+    },
+    "pages_full_first_3": [
+      {
+        "page": 1,
+        "text_tr": "Bu kitap, her adımı yeni bir maceraya dönüştüren, cesur ve meraklı Ada'ya armağandır. Ada, yerin altında saklanan bir gizemi çözmeye hazır mıydı? Bu hikaye, karanlıkta bile parlamayı başaranların hikayesi.",
+        "image_prompt_en": "Dedication page, a magical luminous frame with 'Ada' name centered, surrounded by glowing ancient columns reflected in still water, mysterious blue-green underwater glow, Pixar-quality 3D CGI, smooth rounded 3D forms, soft subsurface scattering, volumetric lighting, rim lighting, warm cinematic color grading, no text, no watermark, no logo",
+        "negative_prompt_en": "text, watermark, logo, signature, low quality, blurry, extra limbs, deformed hands, scary horror, gore, violence, big eyes, chibi, oversized head"
+      },
+      {
+        "page": 2,
+        "text_tr": "Ada, eski taş merdivenleri tek tek indi. Her adımda hava biraz daha serindi, biraz daha sessizdi. Aşağıda yüzlerce sütun sıra sıra dizilmişti, orman gibi! Suyun içinden küçük bir balık zıplayarak selam verdi. \"Ben Yıldız,\" dedi balık ışıl ışıl parıldarken, \"seni bekliyordum.\"",
+        "image_prompt_en": "A 6-year-old long-haired girl named Ada descending ancient stone stairs into the Basilica Cistern, hundreds of columns in rows reflected in shallow water below, a small glowing fish jumping from the water, wide shot, child 25% of frame, dramatic blue-green ambient lighting with light shafts from ceiling, Pixar-quality 3D CGI, smooth rounded 3D forms, soft subsurface scattering, volumetric lighting, rim lighting, warm cinematic color grading, no text, no watermark, no logo",
+        "negative_prompt_en": "text, watermark, logo, signature, low quality, blurry, extra limbs, deformed hands, scary horror, gore, violence, big eyes, chibi, oversized head"
+      },
+      {
+        "page": 3,
+        "text_tr": "Yıldız, Ada'nın cebindeki pusulayı fark etti. \"O pusula sıradan değil,\" dedi heyecanla. \"Doğru sütunun yanına geldiğinde ışık verecek.\" Ada pusulayı çıkardı, pusula hafif bir ışıltıyla titredi. \"Sarnıcın kalbine giden yolu bulmak için üç ipucu toplaman lazım,\" dedi Yıldız su altından göz kırparak.",
+        "image_prompt_en": "A 6-year-old long-haired girl holding a glowing magical compass in the Basilica Cistern, the compass emitting a soft golden light, a small luminous fish in shallow water looking up at her, medium shot, child 40% of frame, mysterious amber glow from compass contrasting with blue-green cistern lighting, Pixar-quality 3D CGI, smooth rounded 3D forms, volumetric lighting, rim lighting, cinematic color grading, no text, no watermark, no logo",
+        "negative_prompt_en": "text, watermark, logo, signature, low quality, blurry, extra limbs, deformed hands, scary horror, gore, violence, big eyes, chibi, oversized head"
+      }
+    ],
+    "visual_style_alt": {
+      "same_text_different_style": "watercolor",
+      "page_2_image_prompt_alt": "A 6-year-old long-haired girl named Ada descending ancient stone stairs into the Basilica Cistern, hundreds of columns reflected in shallow water, a small glowing fish jumping, wide shot, child 25% of frame, dramatic blue-green ambient lighting, watercolor texture, paper grain, soft washes, visible brush strokes, wet-on-wet bleeding edges, pigment granulation, transparent color layers, dreamy pastel palette, no text, no watermark, no logo"
+    }
+  }
+}

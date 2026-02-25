@@ -1,0 +1,135 @@
+---
+description: ARQ worker ve background task kuralları - job state machine, retry, queue
+globs: backend/app/workers/**/*.py, backend/app/tasks/**/*.py
+alwaysApply: false
+---
+
+# Worker / Background Task Kuralları (ARQ)
+
+## Job State Machine
+
+```
+QUEUED → PROCESSING → COMPOSING → UPLOADING → DONE
+                                             ↘ FAILED
+```
+
+- State geçişleri `order_state_machine.transition_order()` üzerinden yapılır.
+- Worker içinde direkt `order.status = ...` ataması YASAK.
+
+## Queue Adı (Sabit)
+
+```python
+default_queue_name = "benimmasalim:image_gen"
+```
+
+Başka queue adı kullanma; consumer ve producer aynı ismi bekler.
+
+## Job Enqueue (Doğru Yol)
+
+```python
+# ❌ YANLIŞ - API katmanında direkt task çağırma
+await generate_preview_images(preview_id=..., ...)
+
+# ✅ DOĞRU - enqueue helper kullan, BackgroundTasks fallback ile
+from app.workers.enqueue import enqueue_preview_generation
+
+job_id = await enqueue_preview_generation(
+    preview_id=preview_id,
+    story_id=story_id,
+    confirmation_token=token,
+    request_data=data,
+)
+if job_id is None:
+    # ARQ bağlantısı yok → fallback
+    background_tasks.add_task(generate_preview_images_sync, ...)
+```
+
+## Yeni ARQ Task Tanımı
+
+```python
+async def my_new_task(
+    ctx: dict[str, Any],   # ARQ context (zorunlu ilk parametre)
+    order_id: str,
+    book_id: str,
+    # ... diğer parametreler
+) -> dict[str, Any]:
+    """Task doc string: ne yaptığını açıkla."""
+    logger.info("ARQ_TASK_START: my_new_task", order_id=order_id)
+    try:
+        # ... iş mantığı
+        return {"status": "done", "order_id": order_id}
+    except Exception as exc:
+        logger.error("ARQ_TASK_FAILED", order_id=order_id, error=str(exc))
+        raise  # ARQ retry mekanizması için yeniden fırlat
+```
+
+## WorkerSettings'e Task Ekleme
+
+```python
+# image_worker.py → WorkerSettings sınıfına functions listesine ekle
+class WorkerSettings:
+    functions = [
+        generate_preview_images,
+        generate_remaining_pages,
+        my_new_task,  # ← yeni task buraya
+    ]
+    queue_name = "benimmasalim:image_gen"
+    max_jobs = 5
+    job_timeout = 600  # saniye
+```
+
+## generate_full_book Orchestration Akışı
+
+```
+generate_full_book(order_id)
+    ├── BookContext.build(...)        ← kitap başında BİR KEZ
+    ├── PromptComposer(ctx)           ← tek composer, tüm sayfalar
+    ├── for page in pages:
+    │       composer.build_page(page) → prompt + negative
+    │       get_image_provider_for_generation() → provider seç
+    │       image_provider.generate()           → bytes
+    │       storage.upload()                    → GCS URL
+    ├── PDFService.create_pdf()
+    └── transition_order(READY_FOR_PRINT)
+```
+
+## Timeout ve Retry Standartları
+
+```python
+# Tek sayfa görsel üretimi: max 120s
+# Tüm kitap (16 sayfa): max 600s (WorkerSettings.job_timeout)
+# Gemini story: max 30s per call (tenacity ile 3 retry)
+
+# HTTP çağrıları için:
+async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
+    ...
+```
+
+## Redis Bağlantısı
+
+```python
+# ❌ YANLIŞ - Direkt RedisSettings oluşturma
+settings = RedisSettings(host="localhost", port=6379)
+
+# ✅ DOĞRU - get_redis_settings() kullan (TLS, auth, Upstash uyumlu)
+from app.workers.image_worker import get_redis_settings
+redis_settings = get_redis_settings()  # REDIS_URL env'den parse eder
+```
+
+## Hata Yönetimi
+
+```python
+# Worker task'larda:
+# 1. Kritik hata: order.status = FAILED + audit log
+# 2. Geçici hata: raise → ARQ otomatik retry yapar
+# 3. Her durumda: structlog ile log (job_id, order_id, error)
+try:
+    await do_work()
+except (httpx.TimeoutException, httpx.ConnectError) as exc:
+    # Geçici → retry
+    raise
+except ValueError as exc:
+    # Kalıcı → fail state
+    await transition_order(order, OrderStatus.FAILED, db)
+    return {"status": "failed", "error": str(exc)}
+```

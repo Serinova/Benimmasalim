@@ -1,0 +1,10 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/backend:latest'
+      - '.'
+images:
+  - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/backend:latest'
+timeout: '1200s'

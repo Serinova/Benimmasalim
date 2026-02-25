@@ -1,0 +1,58 @@
+# Core
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+gunicorn>=21.2.0
+pydantic[email]>=2.6.0
+pydantic-settings>=2.2.0
+email-validator>=2.0.0
+
+# Database
+sqlalchemy[asyncio]>=2.0.27
+asyncpg>=0.29.0
+alembic>=1.13.0
+pgvector>=0.2.5
+
+# Authentication
+PyJWT>=2.8.0
+bcrypt>=4.0.0
+python-multipart>=0.0.9
+
+# HTTP Client
+httpx>=0.27.0
+aiofiles>=23.2.0
+
+# Task Queue (arq brings its own redis<6 dependency)
+arq>=0.26.0
+
+# Image Processing
+pillow>=10.0.0
+opencv-python-headless>=4.9.0
+numpy>=1.26.0
+insightface>=0.7.3
+onnxruntime>=1.16.0
+
+# PDF Generation
+reportlab>=4.1.0
+qrcode[pil]>=7.4.0
+
+# Google Cloud
+google-cloud-storage>=2.14.0
+google-cloud-tasks>=2.16.0
+
+# Fal.ai Client
+fal-client>=0.5.0
+
+# Payment (Iyzico)
+iyzipay>=1.0.0
+
+# Redis (rate limiting, caching, token blacklist). arq requires redis<6
+redis>=5.0.0,<6
+
+# Utilities
+tenacity>=8.2.0
+python-dateutil>=2.8.0
+structlog>=24.1.0
+orjson>=3.9.0
+
+# Monitoring
+sentry-sdk[fastapi]>=1.40.0
