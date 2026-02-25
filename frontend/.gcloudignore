@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+coverage/
+.turbo/
+.git/
+.env
+.env.*
+!.env.example
+*.md
+.vscode/
+*.log
