@@ -1,0 +1,91 @@
+---
+description: Next.js 14 frontend kuralları - App Router, shadcn/ui, TypeScript strict
+globs: frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend Kuralları (Next.js 14 + shadcn/ui)
+
+## App Router Kullanımı
+
+```tsx
+// ❌ YANLIŞ - pages router
+// pages/orders/[id].tsx
+
+// ✅ DOĞRU - app router
+// app/orders/[id]/page.tsx
+export default async function OrderPage({ params }: { params: { id: string } }) {
+  const order = await getOrder(params.id);
+  return <OrderDetail order={order} />;
+}
+```
+
+## Server vs Client Components
+
+```tsx
+// Server Component (default) - veri çekme
+async function ProductList() {
+  const products = await fetchProducts(); // Server-side
+  return <div>{products.map(p => <ProductCard key={p.id} product={p} />)}</div>;
+}
+
+// Client Component - interaktivite gerekiyorsa
+"use client";
+function PhotoUploader() {
+  const [file, setFile] = useState<File | null>(null);
+  // ...
+}
+```
+
+## TypeScript Strict Mode
+
+```tsx
+// ❌ YANLIŞ - any kullanma
+const handleSubmit = (data: any) => { ... }
+
+// ✅ DOĞRU - tip tanımla
+interface OrderFormData {
+  childName: string;
+  childAge: number;
+  scenarioId: string;
+}
+const handleSubmit = (data: OrderFormData) => { ... }
+```
+
+## shadcn/ui Kullanımı
+
+```tsx
+// Hazır component'leri kullan
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
+// Form için react-hook-form + zod
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+```
+
+## API Çağrıları (TanStack Query)
+
+```tsx
+// ❌ YANLIŞ - useEffect içinde fetch
+useEffect(() => { fetch('/api/orders')... }, []);
+
+// ✅ DOĞRU - TanStack Query
+const { data: orders, isLoading } = useQuery({
+  queryKey: ['orders'],
+  queryFn: () => api.get('/orders')
+});
+```
+
+## State Management (Zustand)
+
+```tsx
+// Sipariş wizard state'i için
+import { create } from 'zustand';
+
+interface OrderStore {
+  productId: string | null;
+  scenarioId: string | null;
+  setProduct: (id: string) => void;
+}
+```

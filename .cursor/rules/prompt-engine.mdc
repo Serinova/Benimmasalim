@@ -1,0 +1,117 @@
+---
+description: Prompt engine kuralları - iki katman mimarisi, BookContext/PromptComposer V3 pipeline
+globs: backend/app/prompt_engine/**/*.py, backend/app/prompt/**/*.py
+alwaysApply: false
+---
+
+# Prompt Engine Kuralları
+
+## İki Katman Mimarisi (KRİTİK!)
+
+Projede iki prompt modülü vardır. Yeni kod yazarken hangisini kullanacağını bil:
+
+```
+app/prompt/          ← AKTİF V3 PIPELINE (bunu kullan)
+  book_context.py    ← BookContext: kitap başında BİR KEZ oluşturulur
+  composer.py        ← PromptComposer: tüm prompt üretimi buradan
+  cover_builder.py   ← Kapak prompt'u
+  page_builder.py    ← İç sayfa prompt'u
+  negative_builder.py← Negatif prompt (BASE_NEGATIVE burada)
+  style_config.py    ← StyleConfig: stil çözümleme
+  sanitizer.py       ← Truncation (MAX_PROMPT_CHARS)
+  templates.py       ← DEFAULT_COVER_TEMPLATE, DEFAULT_INNER_TEMPLATE
+
+app/prompt_engine/   ← LEGACY KÖPRÜ (sadece backward-compat için)
+  visual_prompt_builder.py   ← V3'e köprü, direkt kullanma
+  visual_prompt_composer.py  ← BOŞ SHIM, kullanma
+  negative_prompt_builder.py ← BOŞ SHIM → BASE_NEGATIVE'i app.prompt.negative_builder'dan al
+```
+
+## BookContext Kullanımı (Zorunlu)
+
+```python
+# ❌ YANLIŞ - Her sayfa için ayrı context oluşturma
+for page in pages:
+    ctx = BookContext.build(child_name=..., style_modifier=...)
+    prompt = PromptComposer(ctx).build_page(page)
+
+# ✅ DOĞRU - Kitap başında BİR KEZ oluştur, tüm sayfalara geçir
+ctx = BookContext.build(
+    child_name=order.child_name,
+    child_age=order.child_age,
+    child_gender=order.child_gender,
+    style_modifier=visual_style.prompt_modifier,
+    character_description=order.character_description,
+    clothing_description=order.clothing_description,
+    hair_description=order.hair_description,
+    location_name=scenario.location_name,
+    location_elements=scenario.location_elements,
+    face_reference_url=order.child_photo_url,
+)
+composer = PromptComposer(ctx)
+
+for page in pages:
+    result = composer.build_page(page)  # aynı ctx, tutarlı output
+```
+
+## PromptResult Yapısı
+
+```python
+from app.prompt.composer import PromptComposer, PromptResult
+
+result: PromptResult = composer.build_page(page_data)
+# result.prompt         → pozitif prompt
+# result.negative_prompt→ negatif prompt (BookContext'ten hesaplanmış)
+# result.metadata       → debug bilgisi (uzunluk, style, vb.)
+```
+
+## Negatif Prompt Standartları
+
+```python
+from app.prompt.negative_builder import BASE_NEGATIVE, ANTI_PHOTO_FACE
+
+# ❌ YANLIŞ - Elle negatif prompt yazmak
+negative = "blurry, bad quality, watermark"
+
+# ✅ DOĞRU - BASE_NEGATIVE kullan, gerekirse genişlet
+# BASE_NEGATIVE şunları içerir:
+# - big eyes / chibi / oversized head (stil bozuklukları)
+# - close-up / portrait (kompozisyon kısıtları)
+# - deformed hands / extra fingers / bad anatomy
+# - scary / horror / violence (çocuk güvenliği)
+# - text / watermark / signature
+```
+
+## Stil Çözümleme
+
+```python
+from app.prompt.style_config import resolve_style
+
+# ❌ YANLIŞ - String hard-code
+style_prompt = "pastel watercolor style"
+
+# ✅ DOĞRU - StyleConfig üzerinden
+style = resolve_style(visual_style.style_key)
+ctx = BookContext.build(..., style=style)
+```
+
+## MAX_PROMPT_CHARS Sınırı
+
+```python
+from app.prompt.sanitizer import MAX_PROMPT_CHARS, truncate_safe
+
+# Prompt 2000 karakteri geçerse fal.ai/imagen keser → truncate_safe kullan
+safe_prompt = truncate_safe(prompt, MAX_PROMPT_CHARS)
+```
+
+## prompt_engine/ Modüllerine DOKUNMA
+
+```python
+# ❌ YANLIŞ - Legacy modülleri doğrudan çağırma
+from app.prompt_engine.visual_prompt_builder import build_cover_prompt
+from app.prompt_engine.negative_prompt_builder import build_enhanced_negative
+
+# ✅ DOĞRU - Aktif V3 modülleri kullan
+from app.prompt.composer import PromptComposer
+from app.prompt.negative_builder import BASE_NEGATIVE
+```
