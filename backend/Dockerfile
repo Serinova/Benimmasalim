@@ -137,6 +137,9 @@ RUN pip install --no-cache /wheels/*
 # Copy application
 COPY --chown=appuser:appgroup . .
 
+# Make start script executable (before switching user)
+RUN chmod +x /app/start.sh
+
 # Switch to non-root user
 USER appuser
 
@@ -147,14 +150,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import httpx; httpx.get('http://localhost:8000/health')" || exit 1
 
-# gunicorn + uvicorn workers — production-grade ASGI server
-# Arq worker runs in a separate Cloud Run service (benimmasalim-worker)
-# WEB_CONCURRENCY env var overrides --workers at runtime (Cloud Run sets it).
-CMD ["python", "-m", "gunicorn", "app.main:app", \
-     "--bind", "0.0.0.0:8000", \
-     "--workers", "4", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--timeout", "120", \
-     "--graceful-timeout", "30", \
-     "--max-requests", "1000", \
-     "--max-requests-jitter", "50"]
+# Start with migration + gunicorn
+CMD ["/bin/bash", "./start.sh"]

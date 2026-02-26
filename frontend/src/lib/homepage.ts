@@ -58,21 +58,44 @@ export interface ProductForPricing {
   review_count: number;
   social_proof_text: string | null;
   thumbnail_url: string | null;
+  product_type?: string; // story_book, coloring_book, audio_addon
+}
+
+export interface CategorizedProducts {
+  storyBooks: ProductForPricing[];
+  coloringBooks: ProductForPricing[];
+  audioAddons: ProductForPricing[];
+  all: ProductForPricing[];
 }
 
 /**
  * Fetch active products from API for the pricing section.
- * Returns empty array on failure.
+ * Returns categorized products by type.
  */
-export async function getProducts(): Promise<ProductForPricing[]> {
+export async function getProducts(): Promise<CategorizedProducts> {
   try {
     const res = await fetch(`${BACKEND_URL}/api/v1/products`, {
       next: { revalidate: 60 },
     });
-    if (!res.ok) return [];
-    return (await res.json()) as ProductForPricing[];
+    if (!res.ok) {
+      return { storyBooks: [], coloringBooks: [], audioAddons: [], all: [] };
+    }
+    
+    const products = (await res.json()) as ProductForPricing[];
+    
+    // Categorize products by type
+    const storyBooks = products.filter(p => p.product_type === 'story_book' || !p.product_type);
+    const coloringBooks = products.filter(p => p.product_type === 'coloring_book');
+    const audioAddons = products.filter(p => p.product_type === 'audio_addon');
+    
+    return {
+      storyBooks,
+      coloringBooks,
+      audioAddons,
+      all: products,
+    };
   } catch {
-    return [];
+    return { storyBooks: [], coloringBooks: [], audioAddons: [], all: [] };
   }
 }
 

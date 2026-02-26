@@ -2,10 +2,16 @@
 
 Products are PHYSICAL ITEMS being sold (e.g., "A4 Hardcover", "A5 Softcover").
 This is where marketing, pricing, urgency, and social proof belong.
+
+PRODUCT TYPES:
+- story_book: Traditional story books with scenarios
+- coloring_book: Coloring books generated from story images
+- audio_addon: Audio book feature addon (system or cloned voice)
 """
 
 from datetime import datetime
 from decimal import Decimal
+from enum import Enum
 from uuid import UUID as PyUUID
 
 from sqlalchemy import (
@@ -26,6 +32,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
+class ProductType(str, Enum):
+    """Product type enum for different product categories."""
+
+    STORY_BOOK = "story_book"
+    COLORING_BOOK = "coloring_book"
+    AUDIO_ADDON = "audio_addon"
+
+
 class Product(Base, UUIDMixin, TimestampMixin):
     """
     Dynamic product model for different book formats.
@@ -43,6 +57,21 @@ class Product(Base, UUIDMixin, TimestampMixin):
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     short_description: Mapped[str | None] = mapped_column(String(500))
+
+    # Product type: story_book, coloring_book, audio_addon
+    product_type: Mapped[str] = mapped_column(
+        String(50),
+        default=ProductType.STORY_BOOK.value,
+        nullable=False,
+        comment="Product type: story_book, coloring_book, audio_addon",
+    )
+
+    # Type-specific metadata (JSONB for flexibility)
+    # For coloring_book: {"line_art_method": "canny", "edge_threshold_low": 50, ...}
+    # For audio_addon: {"audio_type": "system" | "cloned", ...}
+    type_specific_data: Mapped[dict | None] = mapped_column(
+        JSONB, nullable=True, comment="Type-specific product data"
+    )
 
     # ============ PAGE TEMPLATE REFERENCES ============
     cover_template_id: Mapped[PyUUID | None] = mapped_column(
@@ -149,6 +178,7 @@ class Product(Base, UUIDMixin, TimestampMixin):
         Index("idx_products_featured", "is_featured", postgresql_where="is_featured = true"),
         Index("idx_products_slug", "slug"),
         Index("idx_products_promo_active", "promo_end_date", "is_active"),
+        Index("idx_products_type", "product_type"),
     )
 
     def __repr__(self) -> str:

@@ -2,6 +2,11 @@
 
 Products are PHYSICAL ITEMS being sold. This is where marketing,
 pricing, urgency, and social proof belong.
+
+Supports multiple product types:
+- story_book: Traditional story books with scenarios
+- coloring_book: Coloring books with line-art conversion
+- audio_addon: Audio book feature addons
 """
 
 import re
@@ -9,7 +14,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -17,7 +22,7 @@ from sqlalchemy.orm import selectinload
 from app.api.v1.deps import DbSession, SuperAdminUser
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.book_template import AIGenerationConfig, PageTemplate
-from app.models.product import Product
+from app.models.product import Product, ProductType
 
 router = APIRouter()
 
@@ -35,6 +40,10 @@ class ProductCreate(BaseModel):
     slug: str | None = None  # Auto-generated if not provided
     description: str | None = None
     short_description: str | None = None
+    
+    # ===== PRODUCT TYPE =====
+    product_type: str = Field(default=ProductType.STORY_BOOK.value, description="story_book, coloring_book, or audio_addon")
+    type_specific_data: dict | None = Field(None, description="Type-specific metadata (JSONB)")
 
     # ===== TEMPLATE REFERENCES =====
     cover_template_id: UUID | None = None
@@ -116,6 +125,10 @@ class ProductUpdate(BaseModel):
     slug: str | None = None
     description: str | None = None
     short_description: str | None = None
+    
+    # ===== PRODUCT TYPE =====
+    product_type: str | None = None
+    type_specific_data: dict | None = None
 
     # ===== TEMPLATE REFERENCES =====
     cover_template_id: UUID | None = None
@@ -206,8 +219,9 @@ async def list_products(
     db: DbSession,
     admin: SuperAdminUser,
     include_inactive: bool = False,
+    product_type: str | None = Query(None, description="Filter by product type: story_book, coloring_book, audio_addon"),
 ) -> list[dict]:
-    """List all products with template info."""
+    """List all products with template info. Optionally filter by product_type."""
     query = (
         select(Product)
         .options(
@@ -221,6 +235,9 @@ async def list_products(
 
     if not include_inactive:
         query = query.where(Product.is_active == True)
+    
+    if product_type:
+        query = query.where(Product.product_type == product_type)
 
     result = await db.execute(query)
     products = result.scalars().all()
@@ -232,6 +249,9 @@ async def list_products(
             "slug": p.slug,
             "description": p.description,
             "short_description": p.short_description,
+            # Product Type
+            "product_type": p.product_type,
+            "type_specific_data": p.type_specific_data,
             # Templates
             "cover_template": {
                 "id": str(p.cover_template.id),
@@ -335,6 +355,9 @@ async def get_product(
         "slug": product.slug,
         "description": product.description,
         "short_description": product.short_description,
+        # Product Type
+        "product_type": product.product_type,
+        "type_specific_data": product.type_specific_data,
         # Template IDs
         "cover_template_id": str(product.cover_template_id) if product.cover_template_id else None,
         "inner_template_id": str(product.inner_template_id) if product.inner_template_id else None,
@@ -523,6 +546,9 @@ async def duplicate_product(
         slug=new_slug,
         description=original.description,
         short_description=original.short_description,
+        # Product Type
+        product_type=original.product_type,
+        type_specific_data=original.type_specific_data.copy() if original.type_specific_data else None,
         # Templates
         cover_template_id=original.cover_template_id,
         inner_template_id=original.inner_template_id,

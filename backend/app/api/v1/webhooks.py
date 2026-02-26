@@ -149,27 +149,40 @@ async def payment_webhook(
 
         # Enqueue AFTER commit so that the worker sees PAID status
         try:
-            from app.workers.enqueue import enqueue_full_book_generation
-
-            _book_job = await enqueue_full_book_generation(str(order.id))
-            if _book_job:
+            # Check if this is a coloring book order
+            if order.is_coloring_book:
+                # Trigger coloring book generation task
+                from app.tasks.generate_coloring_book import generate_coloring_book
+                import asyncio
+                asyncio.create_task(generate_coloring_book(order.id, db))
                 logger.info(
-                    "WEBHOOK_BOOK_GENERATION_ENQUEUED",
+                    "WEBHOOK_COLORING_BOOK_GENERATION_TRIGGERED",
                     order_id=str(order.id),
-                    arq_job_id=_book_job,
+                    payment_id=payment_id,
                 )
             else:
-                logger.critical(
-                    "WEBHOOK_BOOK_GENERATION_ENQUEUE_RETURNED_NONE — "
-                    "Arq kuyrugu is olusturamadi, admin panelden tetiklenmeli!",
-                    order_id=str(order.id),
-                )
+                # Regular story book generation
+                from app.workers.enqueue import enqueue_full_book_generation
+                _book_job = await enqueue_full_book_generation(str(order.id))
+                if _book_job:
+                    logger.info(
+                        "WEBHOOK_BOOK_GENERATION_ENQUEUED",
+                        order_id=str(order.id),
+                        arq_job_id=_book_job,
+                    )
+                else:
+                    logger.critical(
+                        "WEBHOOK_BOOK_GENERATION_ENQUEUE_RETURNED_NONE — "
+                        "Arq kuyrugu is olusturamadi, admin panelden tetiklenmeli!",
+                        order_id=str(order.id),
+                    )
         except Exception as _enq_err:
             logger.critical(
-                "WEBHOOK_BOOK_GENERATION_ENQUEUE_FAILED — "
-                "Kalan sayfalar uretilemeyecek! Admin panelden tetiklenmeli.",
+                "WEBHOOK_GENERATION_ENQUEUE_FAILED — "
+                "Admin panelden tetiklenmeli.",
                 order_id=str(order.id),
                 error=str(_enq_err),
+                is_coloring=order.is_coloring_book,
             )
 
     elif payment_status == "FAILURE":

@@ -144,6 +144,14 @@ class Order(Base, UUIDMixin, TimestampMixin):
     # Dedication page note (custom message from parent)
     dedication_note: Mapped[str | None] = mapped_column(Text)
 
+    # Coloring book relationship
+    coloring_book_order_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("orders.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    is_coloring_book: Mapped[bool] = mapped_column(Boolean, default=False)
+
     # V3: Magic items selected by user (e.g. ["sihirli pusula", "parlayan taş"])
     magic_items: Mapped[list | None] = mapped_column(
         JSONB, nullable=True, default=None, comment="V3: User-selected magic items"
@@ -160,6 +168,12 @@ class Order(Base, UUIDMixin, TimestampMixin):
     # Relationships
     user = relationship("User", back_populates="orders")
     pages = relationship("OrderPage", back_populates="order", cascade="all, delete-orphan")
+    coloring_book_order = relationship(
+        "Order",
+        foreign_keys=[coloring_book_order_id],
+        remote_side="Order.id",
+        uselist=False,
+    )
 
     __table_args__ = (
         CheckConstraint(

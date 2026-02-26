@@ -39,10 +39,11 @@ interface CheckoutStepProps {
   audioType: "system" | "cloned";
   productName: string;
   initialShipping?: { fullName: string; email: string; phone: string };
-  onComplete: (shippingInfo: ShippingInfo, paymentInfo: PaymentInfo, promoCode?: string | null) => void;
+  onComplete: (shippingInfo: ShippingInfo, paymentInfo: PaymentInfo, promoCode?: string | null, hasColoringBook?: boolean) => void;
   onBack: () => void;
   isProcessing?: boolean;
   orderId?: string; // Order ID for promo code apply
+  coloringBookPrice?: number; // Boyama kitabı fiyatı
 }
 
 interface ShippingInfo {
@@ -295,6 +296,9 @@ export default function CheckoutStep({
   const [stage, setStage] = useState<CheckoutStage>("shipping");
   const [cartTimer, setCartTimer] = useState(15 * 60);
 
+  // Boyama kitabı state
+  const [hasColoringBook, setHasColoringBook] = useState(false);
+
   // Shipping form state — pre-fill from contactInfo if available
   const [shipping, setShipping] = useState<ShippingInfo>({
     fullName: initialShipping?.fullName || "",
@@ -339,9 +343,10 @@ export default function CheckoutStep({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Calculate totals (with promo)
+  // Calculate totals (with promo and coloring book)
   const shippingCost = 0;
-  const rawTotal = basePrice + (hasAudioBook ? audioPrice : 0) + shippingCost;
+  const coloringBookCost = hasColoringBook ? (coloringBookPrice || 0) : 0;
+  const rawTotal = basePrice + (hasAudioBook ? audioPrice : 0) + coloringBookCost + shippingCost;
   const discountAmount = appliedPromo?.valid ? (appliedPromo.discount_amount ?? 0) : 0;
   const totalPrice = Math.max(rawTotal - discountAmount, 0);
   const isFreeOrder = totalPrice === 0 && appliedPromo?.valid;
@@ -375,7 +380,7 @@ export default function CheckoutStep({
   // Handle form submission — card data is collected on iyzico side (PCI compliant)
   const handleSubmit = () => {
     const promoCodeToSend = appliedPromo?.valid ? appliedPromo.promo_summary?.code ?? null : null;
-    onComplete(shipping, payment, promoCodeToSend);
+    onComplete(shipping, payment, promoCodeToSend, hasColoringBook);
   };
 
   // ─── Promo Code API ───────────────────────────────────────────
@@ -544,6 +549,55 @@ export default function CheckoutStep({
                       </p>
                     </div>
                   </div>
+
+                  {/* Coloring Book Checkbox */}
+                  {coloringBookPrice && coloringBookPrice > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl border-2 border-purple-200 bg-purple-50/50 p-6"
+                    >
+                      <div className="flex items-start gap-4">
+                        <input
+                          type="checkbox"
+                          id="coloringBook"
+                          checked={hasColoringBook}
+                          onChange={(e) => setHasColoringBook(e.target.checked)}
+                          className="mt-1 h-5 w-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <label htmlFor="coloringBook" className="cursor-pointer">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <span className="text-lg font-semibold text-gray-900">
+                                🎨 Boyama Kitabı Ekle
+                              </span>
+                              <span className="rounded-full bg-purple-600 px-3 py-1 text-sm font-bold text-white">
+                                +{coloringBookPrice} TL
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3">
+                              Hikayenizdeki görsellerin boyama kitabı versiyonunu da sipariş edin! 
+                              Metin içermez, sadece boyama için optimize edilmiş çizgiler.
+                            </p>
+                            <ul className="space-y-1 text-sm text-gray-500">
+                              <li className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                                Aynı karakterler, aynı sahneler
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                                Profesyonel line-art çizimler
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                                Ayrı fiziksel kitap olarak gelir
+                              </li>
+                            </ul>
+                          </label>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
 
                   {/* Shipping Form */}
                   <div className="rounded-xl bg-white p-4 shadow-sm">
@@ -921,6 +975,13 @@ export default function CheckoutStep({
                         Sesli Kitap ({audioType === "cloned" ? "Klonlanmış Ses" : "Profesyonel Ses"})
                       </span>
                       <span className="font-medium">{audioPrice} TL</span>
+                    </div>
+                  )}
+
+                  {hasColoringBook && coloringBookPrice && coloringBookPrice > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">🎨 Boyama Kitabı</span>
+                      <span className="font-medium">{coloringBookPrice} TL</span>
                     </div>
                   )}
 

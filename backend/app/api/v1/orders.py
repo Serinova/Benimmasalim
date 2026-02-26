@@ -3003,3 +3003,125 @@ async def get_order_progress(
         error=order.generation_error,
         is_stuck=is_stuck,
     )
+
+
+# ============== Coloring Book Order ==============
+
+class AddColoringBookRequest(BaseModel):
+    """Request to add coloring book to existing order."""
+    pass
+
+
+class AddColoringBookResponse(BaseModel):
+    """Response with coloring book order details."""
+    coloring_order_id: str
+    payment_url: str
+    amount: float
+
+
+@router.post("/{order_id}/add-coloring-book")
+async def add_coloring_book_to_order(
+    order_id: UUID,
+    request: AddColoringBookRequest,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> AddColoringBookResponse:
+    """
+    Add coloring book to existing story order.
+    
+    Creates a new order with is_coloring_book=true and links it to the original order.
+    Returns payment URL for the coloring book purchase.
+    
+    Requirements:
+    - Original order must be READY_FOR_PRINT (completed story)
+    - User must own the original order
+    - Coloring book product must be active
+    """
+    from uuid import uuid4
+    from app.models.product import Product
+    
+    # 1. Verify original order
+    result = await db.execute(
+        select(Order).where(Order.id == order_id)
+    )
+    original_order = result.scalar_one_or_none()
+    
+    if not original_order:
+        raise NotFoundError("Sipariş", order_id)
+    
+    if original_order.user_id != current_user.id:
+        raise ForbiddenError("Bu siparişe erişim izniniz yok")
+    
+    if original_order.status != OrderStatus.READY_FOR_PRINT:
+        raise ValidationError(
+            "Boyama kitabı sadece tamamlanmış hikaye siparişlerine eklenebilir"
+        )
+    
+    if original_order.is_coloring_book:
+        raise ValidationError("Bu zaten bir boyama kitabı siparişidir")
+    
+    # Check if coloring book already added
+    if original_order.coloring_book_order_id:
+        raise ValidationError("Bu siparişe zaten boyama kitabı eklenmiş")
+    
+    # 2. Find active coloring book product
+    product_result = await db.execute(
+        select(Product).where(
+            Product.product_type == "coloring_book",
+            Product.is_active == True
+        ).limit(1)
+    )
+    coloring_product = product_result.scalar_one_or_none()
+    
+    if not coloring_product:
+        raise ValidationError("Boyama kitabı ürünü şu anda aktif değil")
+    
+    # 3. Create coloring book order
+    coloring_order_id = uuid4()
+    coloring_order = Order(
+        id=coloring_order_id,
+        user_id=current_user.id,
+        product_id=coloring_product.id,
+        status=OrderStatus.PAYMENT_PENDING,
+        is_coloring_book=True,
+        # Copy child info from original order
+        child_name=original_order.child_name,
+        child_age=original_order.child_age,
+        child_gender=original_order.child_gender,
+        # Use original order's page count
+        total_pages=original_order.total_pages,
+        # Pricing
+        subtotal=coloring_product.base_price,
+        total_amount=coloring_product.base_price,
+    )
+    
+    db.add(coloring_order)
+    
+    # 4. Link to original order
+    original_order.coloring_book_order_id = coloring_order_id
+    
+    await db.commit()
+    await db.refresh(coloring_order)
+    
+    _logger.info(
+        "coloring_book_order_created",
+        coloring_order_id=str(coloring_order_id),
+        original_order_id=str(order_id),
+        user_id=str(current_user.id),
+        price=float(coloring_product.base_price),
+    )
+    
+    # 5. Generate payment URL (Iyzico integration)
+    from app.api.v1.payments import create_payment_checkout
+    
+    payment_url = await create_payment_checkout(
+        order_id=coloring_order_id,
+        db=db,
+        current_user=current_user
+    )
+    
+    return AddColoringBookResponse(
+        coloring_order_id=str(coloring_order_id),
+        payment_url=payment_url,
+        amount=float(coloring_product.base_price),
+    )

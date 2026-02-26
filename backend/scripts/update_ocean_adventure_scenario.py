@@ -435,6 +435,28 @@ async def update_ocean_adventure_scenario():
             "Denizalti + dalgic deneyimi",
             "Okyanus bilimi ve cevre bilinci",
         ]
+        scenario.marketing_gallery = [
+            {
+                "url": "/gallery/ocean/coral_reef.jpg",
+                "caption": "Renkli mercan bahçeleri",
+                "alt_text": "Çocuk renkli mercanlar arasında yüzüyor"
+            },
+            {
+                "url": "/gallery/ocean/blue_whale.jpg", 
+                "caption": "30 metrelik mavi balina ile tanışma",
+                "alt_text": "Dev mavi balina ve küçük çocuk"
+            },
+            {
+                "url": "/gallery/ocean/bioluminescent.jpg",
+                "caption": "Fosforlu denizanaları",
+                "alt_text": "Karanlıkta parlayan denizanaları"
+            },
+            {
+                "url": "/gallery/ocean/dolphin_play.jpg",
+                "caption": "Yunus arkadaşla oyun",
+                "alt_text": "Çocuk yunusla birlikte yüzüyor"
+            }
+        ]
         scenario.estimated_duration = "20-25 dakika okuma"
         scenario.marketing_price_label = "299 TL'den başlayan fiyatlarla"
         scenario.rating = 5.0

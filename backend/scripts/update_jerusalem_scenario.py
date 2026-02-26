@@ -325,6 +325,7 @@ async def update_jerusalem_scenario():
             "Altin Kubbe, Mescid-i Aksa, Aglama Duvari, Kutsal Kabir. "
             "Hosgoru, baris ve kulturel zenginlik dolu bir deneyim."
         )
+        scenario.thumbnail_url = "/scenarios/jerusalem_old_city.jpg"
         scenario.cover_prompt_template = JERUSALEM_COVER_PROMPT
         scenario.page_prompt_template = JERUSALEM_PAGE_PROMPT
         scenario.story_prompt_tr = JERUSALEM_STORY_PROMPT_TR

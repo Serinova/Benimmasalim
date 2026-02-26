@@ -108,6 +108,7 @@ class ProductResponse(BaseModel):
 async def list_products(
     db: DbSession,
     featured: bool | None = Query(None, description="Filter by featured status"),
+    product_type: str | None = Query(None, description="Filter by product type: story_book, coloring_book, audio_addon"),
 ) -> list[ProductResponse]:
     """
     List all active products for storefront.
@@ -124,6 +125,9 @@ async def list_products(
 
     if featured is not None:
         query = query.where(Product.is_featured == featured)
+    
+    if product_type is not None:
+        query = query.where(Product.product_type == product_type)
 
     query = query.order_by(Product.display_order, Product.name)
 

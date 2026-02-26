@@ -34,6 +34,8 @@ import {
   TrendingUp,
   MessageSquare,
   ListChecks,
+  Palette,
+  Headphones,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -82,6 +84,9 @@ interface Product {
   slug: string;
   description: string | null;
   short_description: string | null;
+  // Product Type
+  product_type?: string; // "story_book" | "coloring_book" | "audio_addon"
+  type_specific_data?: Record<string, unknown> | null;
   // Template objects (from list endpoint)
   cover_template: Template | null;
   inner_template: Template | null;
@@ -142,6 +147,8 @@ const productSchema = z.object({
   slug: z.string().optional(),
   description: z.string().optional(),
   short_description: z.string().optional(),
+  // Product Type
+  product_type: z.string().default("story_book"),
   // Template references
   cover_template_id: z.string().optional().nullable(),
   inner_template_id: z.string().optional().nullable(),
@@ -812,6 +819,7 @@ function ImageUploader({
 
 // ============ MAIN PAGE COMPONENT ============
 export default function AdminProductsPage() {
+  const [activeProductType, setActiveProductType] = useState<string>("story_book");
   const [products, setProducts] = useState<Product[]>([]);
   const [options, setOptions] = useState<TemplateOptions>({
     cover_templates: [],
@@ -841,6 +849,7 @@ export default function AdminProductsPage() {
       slug: "",
       description: "",
       short_description: "",
+      product_type: "story_book",
       cover_template_id: null,
       inner_template_id: null,
       back_template_id: null,
@@ -881,6 +890,12 @@ export default function AdminProductsPage() {
     checkAuth();
     fetchData();
   }, []);
+  
+  useEffect(() => {
+    if (!loading) {
+      fetchData();
+    }
+  }, [activeProductType]);
 
   const checkAuth = () => {
     const user = localStorage.getItem("user");
@@ -904,8 +919,9 @@ export default function AdminProductsPage() {
 
   const fetchData = async () => {
     try {
+      const productTypeParam = activeProductType ? `&product_type=${activeProductType}` : "";
       const [productsRes, optionsRes, scenariosRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/admin/products?include_inactive=true`, {
+        fetch(`${API_BASE_URL}/admin/products?include_inactive=true${productTypeParam}`, {
           headers: getAuthHeaders(),
         }),
         fetch(`${API_BASE_URL}/admin/products/options/templates`, {
@@ -947,6 +963,7 @@ export default function AdminProductsPage() {
         slug: product.slug,
         description: product.description || "",
         short_description: product.short_description || "",
+        product_type: product.product_type || "story_book",
         // Template IDs - use direct IDs or extract from template objects
         cover_template_id: product.cover_template?.id || null,
         inner_template_id: product.inner_template?.id || null,
@@ -994,6 +1011,7 @@ export default function AdminProductsPage() {
         slug: "",
         description: "",
         short_description: "",
+        product_type: activeProductType,
         cover_template_id: null,
         inner_template_id: null,
         back_template_id: null,
@@ -1244,6 +1262,43 @@ export default function AdminProductsPage() {
       </header>
 
       <main className="mx-auto max-w-[1600px] px-6 py-8">
+        {/* Product Type Tabs */}
+        <div className="mb-6 flex gap-2 rounded-lg bg-white p-2 shadow-sm">
+          <button
+            onClick={() => setActiveProductType("story_book")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-medium transition-all ${
+              activeProductType === "story_book"
+                ? "bg-purple-600 text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Book className="h-5 w-5" />
+            Hikaye Kitabı
+          </button>
+          <button
+            onClick={() => setActiveProductType("coloring_book")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-medium transition-all ${
+              activeProductType === "coloring_book"
+                ? "bg-purple-600 text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Palette className="h-5 w-5" />
+            Boyama Kitabı
+          </button>
+          <button
+            onClick={() => setActiveProductType("audio_addon")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-medium transition-all ${
+              activeProductType === "audio_addon"
+                ? "bg-purple-600 text-white shadow-md"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Headphones className="h-5 w-5" />
+            Sesli Kitap Eklentisi
+          </button>
+        </div>
+
         {/* Stats Row */}
         <div className="mb-8 grid grid-cols-4 gap-4">
           {[
@@ -1612,15 +1667,18 @@ export default function AdminProductsPage() {
 
                 <Separator />
 
-                {/* Section: Template References */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <LayoutGrid className="h-4 w-4 text-purple-600" />
-                    Şablon Atamaları
-                  </div>
-                  <p className="-mt-2 text-xs text-gray-500">
-                    Kitap Yapılandırması&apos;nda oluşturulan şablonları bu ürüne atayın
-                  </p>
+                {/* CONDITIONAL: Story Book specific fields */}
+                {form.watch("product_type") === "story_book" && (
+                  <>
+                    {/* Section: Template References */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <LayoutGrid className="h-4 w-4 text-purple-600" />
+                        Şablon Atamaları
+                      </div>
+                      <p className="-mt-2 text-xs text-gray-500">
+                        Kitap Yapılandırması&apos;nda oluşturulan şablonları bu ürüne atayın
+                      </p>
 
                   <div className="grid grid-cols-1 gap-4">
                     {/* Cover Template */}
@@ -1747,8 +1805,105 @@ export default function AdminProductsPage() {
                 </div>
 
                 <Separator />
+                </>
+                )}
 
-                {/* Section: Physical Specs */}
+                {/* CONDITIONAL: Coloring Book specific fields */}
+                {form.watch("product_type") === "coloring_book" && (
+                  <>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <Palette className="h-4 w-4 text-purple-600" />
+                        Boyama Kitabı Ayarları
+                      </div>
+                      <p className="-mt-2 text-xs text-gray-500">
+                        Line-art conversion ayarları
+                      </p>
+
+                      <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-4">
+                        <Label>Line Art Metodu</Label>
+                        <Select defaultValue="canny">
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="canny">Canny (Önerilen)</SelectItem>
+                            <SelectItem value="opencv">OpenCV</SelectItem>
+                            <SelectItem value="sketch">Sketch</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Görsellerden çizgi çıkarma algoritması
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Düşük Eşik (Edge Threshold Low)</Label>
+                          <Input type="number" defaultValue={80} min={0} max={255} className="mt-1" />
+                          <p className="mt-1 text-xs text-gray-500">Daha az detay (0-255)</p>
+                        </div>
+                        <div>
+                          <Label>Yüksek Eşik (Edge Threshold High)</Label>
+                          <Input type="number" defaultValue={200} min={0} max={255} className="mt-1" />
+                          <p className="mt-1 text-xs text-gray-500">Daha basit şekiller (0-255)</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+                  </>
+                )}
+
+                {/* CONDITIONAL: Audio Addon specific fields */}
+                {form.watch("product_type") === "audio_addon" && (
+                  <>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <Headphones className="h-4 w-4 text-purple-600" />
+                        Sesli Kitap Eklentisi Ayarları
+                      </div>
+                      <p className="-mt-2 text-xs text-gray-500">
+                        Ses tipi ve özellikleri
+                      </p>
+
+                      <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4">
+                        <Label>Ses Tipi</Label>
+                        <Select defaultValue="system">
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="system">Sistem Sesi</SelectItem>
+                            <SelectItem value="cloned">Klonlanmış Ses</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Sistem sesi: Hazır profesyonel seslendirme<br/>
+                          Klonlanmış ses: Kişiye özel ses klonlama
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border border-amber-100 bg-amber-50 p-4">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="mt-0.5 h-4 w-4 text-amber-600" />
+                          <div>
+                            <p className="text-sm font-medium text-amber-800">Not:</p>
+                            <p className="mt-1 text-xs text-amber-700">
+                              Audio addon ürünleri hikaye kitabına eklenti olarak satılır. 
+                              Base price buradan yönetilir ve checkout sırasında otomatik eklenir.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+                  </>
+                )}
+
+                {/* Section: Physical Specs - Only for story_book and coloring_book */}
+                {(form.watch("product_type") === "story_book" || form.watch("product_type") === "coloring_book") && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <Ruler className="h-4 w-4 text-purple-600" />
@@ -1925,6 +2080,7 @@ export default function AdminProductsPage() {
                 </div>
 
                 <Separator />
+                )}
 
                 {/* Section: Pricing */}
                 <div className="space-y-4">
@@ -2441,7 +2597,7 @@ export default function AdminProductsPage() {
                 <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
                   <p className="text-xs text-blue-700">
                     <strong>Arka Plan Şablon Ayarları:</strong> Bu ürünün kapak, iç sayfa ve arka kapak şablonları
-                    "Teknik & Baskı" sekmesinden yönetilir. Bu şablonlar tüm senaryolarda ortak kullanılır.
+                    &quot;Teknik &amp; Baskı&quot; sekmesinden yönetilir. Bu şablonlar tüm senaryolarda ortak kullanılır.
                   </p>
                 </div>
               </div>

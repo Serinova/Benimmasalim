@@ -14,6 +14,10 @@ interface OrderSummaryPanelProps {
   audioPrice?: number;
   /** Audio type label */
   audioType?: "system" | "cloned";
+  /** Whether coloring book is selected */
+  hasColoringBook?: boolean;
+  /** Coloring book price */
+  coloringBookPrice?: number;
   /** Child name */
   childName?: string;
   /** Story title (shown after generation) */
@@ -34,6 +38,8 @@ export default function OrderSummaryPanel({
   hasAudioBook,
   audioPrice = 0,
   audioType,
+  hasColoringBook,
+  coloringBookPrice = 0,
   childName,
   storyTitle,
   coverImageUrl,
@@ -44,7 +50,11 @@ export default function OrderSummaryPanel({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const shippingCost = 0;
-  const rawTotal = (basePrice ?? 0) + (hasAudioBook ? audioPrice : 0) + shippingCost;
+  const rawTotal = 
+    (basePrice ?? 0) + 
+    (hasAudioBook ? audioPrice : 0) + 
+    (hasColoringBook ? coloringBookPrice : 0) + 
+    shippingCost;
   const totalPrice = Math.max(rawTotal - discountAmount, 0);
 
   // Don't show summary until we have at least a product selected
@@ -117,6 +127,14 @@ export default function OrderSummaryPanel({
                     {audioType === "cloned" ? "(Klonlanmış)" : "(Profesyonel)"}
                   </span>
                   <span className="font-medium">{audioPrice} TL</span>
+                </div>
+              )}
+              {hasColoringBook && (
+                <div className="flex justify-between">
+                  <span className="flex items-center gap-1 text-gray-600">
+                    🎨 Boyama Kitabı
+                  </span>
+                  <span className="font-medium">{coloringBookPrice} TL</span>
                 </div>
               )}
               <div className="flex justify-between text-green-600">
@@ -224,6 +242,12 @@ export default function OrderSummaryPanel({
                   <div className="flex justify-between text-gray-600">
                     <span>Sesli Kitap</span>
                     <span>{audioPrice} TL</span>
+                  </div>
+                )}
+                {hasColoringBook && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>🎨 Boyama Kitabı</span>
+                    <span>{coloringBookPrice} TL</span>
                   </div>
                 )}
                 <div className="flex justify-between text-green-600">

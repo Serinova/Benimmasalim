@@ -2,6 +2,7 @@
 
 from app.models.audit_log import AuditLog
 from app.models.book_template import AIGenerationConfig, BookTemplate, PageTemplate
+from app.models.coloring_book import ColoringBookProduct
 from app.models.consent import ConsentRecord
 from app.models.homepage import HomepageSection, SectionType
 from app.models.learning_outcome import LearningOutcome
@@ -37,4 +38,5 @@ __all__ = [
     "DiscountType",
     "HomepageSection",
     "SectionType",
+    "ColoringBookProduct",
 ]

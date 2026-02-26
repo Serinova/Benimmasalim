@@ -11,12 +11,16 @@ import structlog
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import DbSession
 from app.config import get_settings
 from app.core.url_validator import validate_image_url
 from app.models.story_preview import PreviewStatus, StoryPreview
 from app.models.visual_style import VisualStyle
+from app.models.product import Product
+from app.models.scenario import Scenario
+from app.models.order import Order
 from app.services.trial_service import get_trial_service
 
 logger = structlog.get_logger()
@@ -149,6 +153,7 @@ class TrialResponse(BaseModel):
     preview_url: str | None = None
     trial_token: str | None = None
     used_page_count: int | None = None
+    order_id: str | None = None  # Main story order ID (if created)
 
 
 class PreviewResponse(BaseModel):
@@ -180,6 +185,7 @@ class CompleteTrialRequest(BaseModel):
     audio_type: str | None = None
     audio_voice_id: str | None = None
     voice_sample_url: str | None = None
+    has_coloring_book: bool = False  # Boyama kitabı flag
 
 
 # ============ PHASE 1: Create Trial & Generate Preview ============
@@ -2096,6 +2102,7 @@ async def complete_trial(
         trial.audio_type = request.audio_type
         trial.audio_voice_id = request.audio_voice_id
         trial.voice_sample_url = request.voice_sample_url
+        trial.has_coloring_book = request.has_coloring_book  # Boyama kitabı flag
 
         # Promo code snapshot
         if promo:
@@ -2195,11 +2202,42 @@ async def complete_trial(
                 trial_id=request.trial_id,
             )
 
+        # ── Create Coloring Book Order (if requested) ──
+        coloring_order_id = None
+        if request.has_coloring_book:
+            try:
+                coloring_order = await _create_coloring_book_order_from_trial(
+                    trial=trial,
+                    db=db,
+                )
+                if coloring_order:
+                    coloring_order_id = str(coloring_order.id)
+                    logger.info(
+                        "Coloring book order created",
+                        trial_id=request.trial_id,
+                        coloring_order_id=coloring_order_id,
+                    )
+                    
+                    # Enqueue coloring book generation (background task)
+                    from app.tasks.generate_coloring_book import generate_coloring_book
+                    import asyncio
+                    
+                    # Create task in background (non-blocking)
+                    asyncio.create_task(generate_coloring_book(coloring_order.id, db))
+            except Exception as coloring_err:
+                logger.error(
+                    "Failed to create coloring book order",
+                    trial_id=request.trial_id,
+                    error=str(coloring_err),
+                )
+                # Don't fail main order if coloring book creation fails
+
         return TrialResponse(
             success=True,
             trial_id=request.trial_id,
             status=trial.status,
             message="Ödeme alındı! Kitabınız hazırlanıyor...",
+            order_id=coloring_order_id,  # Coloring book order ID (if created)
         )
 
     except HTTPException:
@@ -3300,6 +3338,27 @@ async def create_trial_payment(
         )
 
     final_amount = Decimal(str(trial.product_price or 0))
+    
+    # Add coloring book price if requested
+    coloring_book_price = Decimal("0")
+    if getattr(trial, "has_coloring_book", False):
+        from app.models.coloring_book import ColoringBookProduct
+        
+        # Get active coloring book config
+        coloring_config_result = await db.execute(
+            select(ColoringBookProduct).where(ColoringBookProduct.active == True).limit(1)
+        )
+        coloring_config = coloring_config_result.scalar_one_or_none()
+        
+        if coloring_config:
+            coloring_book_price = coloring_config.discounted_price or coloring_config.base_price
+            final_amount += coloring_book_price
+            logger.info(
+                "Coloring book added to payment",
+                trial_id=trial_id,
+                coloring_book_price=str(coloring_book_price),
+            )
+    
     if final_amount <= Decimal("0"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -3362,10 +3421,21 @@ async def create_trial_payment(
                 "category1": "Kitap",
                 "category2": "Çocuk Kitabı",
                 "itemType": "VIRTUAL",
-                "price": str(final_amount),
+                "price": str(Decimal(str(trial.product_price or 0))),
             }
         ],
     }
+    
+    # Add coloring book as separate basket item if requested
+    if coloring_book_price > Decimal("0"):
+        iyzico_request["basketItems"].append({
+            "id": f"{str(trial.id)[:12]}_clr",
+            "name": "Boyama Kitabı",
+            "category1": "Kitap",
+            "category2": "Çocuk Kitabı",
+            "itemType": "VIRTUAL",
+            "price": str(coloring_book_price),
+        })
 
     try:
         checkout_form = iyzipay.CheckoutFormInitialize().create(iyzico_request, options)
@@ -3474,3 +3544,127 @@ async def verify_trial_payment(
     logger.info("TRIAL_IYZICO_VERIFY_OK", trial_id=trial_id)
 
     return {"success": True, "trial_id": trial_id, "payment_reference": f"iyzico_paid:{request.token}"}
+
+
+async def _create_coloring_book_order_from_trial(
+    trial: StoryPreview,
+    db: AsyncSession,
+) -> Order | None:
+    """
+    Create separate coloring book order from trial.
+
+    Args:
+        trial: Story preview/trial
+        db: Database session
+
+    Returns:
+        Coloring book Order or None if failed
+    """
+    from decimal import Decimal
+    from app.models.coloring_book import ColoringBookProduct
+
+    try:
+        # Get active coloring book config
+        config_result = await db.execute(
+            select(ColoringBookProduct).where(ColoringBookProduct.active == True).limit(1)
+        )
+        coloring_config = config_result.scalar_one_or_none()
+
+        if not coloring_config:
+            logger.error("No active coloring book product configuration")
+            return None
+
+        # Get product, scenario, visual_style from trial
+        product_result = await db.execute(
+            select(Product).where(Product.id == uuid.UUID(trial.product_id))
+        )
+        product = product_result.scalar_one_or_none()
+
+        if not product:
+            logger.error("Product not found for trial", trial_id=str(trial.id))
+            return None
+
+        scenario_result = await db.execute(
+            select(Scenario).where(Scenario.name == trial.scenario_name)
+        )
+        scenario = scenario_result.scalar_one_or_none()
+
+        if not scenario:
+            logger.error("Scenario not found", scenario_name=trial.scenario_name)
+            return None
+
+        visual_style_result = await db.execute(
+            select(VisualStyle).where(VisualStyle.name == trial.visual_style_name)
+        )
+        visual_style = visual_style_result.scalar_one_or_none()
+
+        if not visual_style:
+            logger.error("Visual style not found", visual_style_name=trial.visual_style_name)
+            return None
+
+        # Find main order for this trial (if exists) to link coloring book to it
+        # Main order might not exist yet (created later by generate_remaining_images_background)
+        # So we'll link it later when main order is created
+        main_order_result = await db.execute(
+            select(Order)
+            .where(Order.user_id == trial.lead_user_id)
+            .where(Order.child_name == trial.child_name)
+            .where(Order.status.in_([OrderStatus.PAID, OrderStatus.PROCESSING, OrderStatus.READY_FOR_PRINT]))
+            .where(Order.is_coloring_book == False)
+            .where(Order.payment_reference == trial.payment_reference)
+            .order_by(Order.created_at.desc())
+            .limit(1)
+        )
+        main_order = main_order_result.scalar_one_or_none()
+
+        # Create coloring book order
+        coloring_order = Order(
+            user_id=trial.lead_user_id,
+            product_id=product.id,
+            scenario_id=scenario.id,
+            visual_style_id=visual_style.id,
+            child_name=trial.child_name,
+            child_age=trial.child_age,
+            child_gender=trial.child_gender,
+            selected_outcomes=trial.learning_outcomes or [],
+            status=OrderStatus.PAID,  # Payment already done via main order
+            payment_amount=coloring_config.discounted_price or coloring_config.base_price,
+            payment_provider="iyzico",
+            payment_reference=trial.payment_reference,  # Same payment as main order
+            is_coloring_book=True,  # CRITICAL FLAG
+            shipping_address={
+                "fullName": trial.parent_name,
+                "email": trial.parent_email,
+                "phone": trial.parent_phone or "",
+            },
+            child_photo_url=trial.child_photo_url,
+            face_embedding=trial.face_embedding,
+        )
+
+        db.add(coloring_order)
+        await db.commit()
+        await db.refresh(coloring_order)
+
+        # Link main order to coloring book (if main order exists)
+        if main_order:
+            main_order.coloring_book_order_id = coloring_order.id
+            await db.commit()
+            logger.info(
+                "Linked main order to coloring book",
+                main_order_id=str(main_order.id),
+                coloring_order_id=str(coloring_order.id),
+            )
+
+        logger.info(
+            "Coloring book order created",
+            coloring_order_id=str(coloring_order.id),
+            trial_id=str(trial.id),
+            price=str(coloring_order.payment_amount),
+            linked_to_main=main_order is not None,
+        )
+
+        return coloring_order
+
+    except Exception as e:
+        logger.error("Failed to create coloring book order", error=str(e), trial_id=str(trial.id))
+        return None

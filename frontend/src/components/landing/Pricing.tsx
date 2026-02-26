@@ -10,6 +10,7 @@ import {
   Sparkles,
   Volume2,
   Truck,
+  Palette,
 } from "lucide-react";
 
 /* ─── Types ─────────────────────────────────────────────────── */
@@ -29,12 +30,20 @@ interface ProductData {
   review_count: number;
   social_proof_text: string | null;
   thumbnail_url: string | null;
+  product_type?: string;
+}
+
+interface CategorizedProducts {
+  storyBooks: ProductData[];
+  coloringBooks: ProductData[];
+  audioAddons: ProductData[];
+  all: ProductData[];
 }
 
 interface PricingProps {
   title?: string;
   subtitle?: string;
-  products?: ProductData[];
+  products?: CategorizedProducts | ProductData[]; // Support both old and new formats
   data?: {
     package_name?: string;
     package_description?: string;
@@ -85,13 +94,22 @@ const AUDIO_ADDONS = [
   },
 ];
 
-const DEFAULT_FEATURES = [
+const DEFAULT_FEATURES_STORY = [
   "Kişiye özel AI hikaye oluşturma",
   "Çocuğunuzun fotoğrafıyla illüstrasyonlar",
   "Profesyonel kalite baskı",
   "Eğitici değerler içeriği",
   "Sipariş öncesi hikaye önizleme",
   "KVKK uyumlu veri güvenliği",
+];
+
+const DEFAULT_FEATURES_COLORING = [
+  "Hikayenizdeki karakterler ve sahneler",
+  "Profesyonel line-art çizimler",
+  "Ayrı fiziksel kitap",
+  "Metin yok, sadece boyama",
+  "Yaratıcılığı geliştiren aktivite",
+  "Hikaye kitabıyla uyumlu",
 ];
 
 /* ─── Helpers ───────────────────────────────────────────────── */
@@ -111,24 +129,151 @@ function discountPercentage(base: number, discounted: number): number {
 
 /* ─── Component ─────────────────────────────────────────────── */
 
+// Helper: Product Card Component
+function ProductCard({ 
+  product, 
+  badge, 
+  icon: Icon, 
+  parentInfo,
+  defaultFeatures,
+}: { 
+  product: ProductData; 
+  badge?: string;
+  icon: any;
+  parentInfo?: string;
+  defaultFeatures: string[];
+}) {
+  const displayPrice = product.discounted_price ?? product.base_price;
+  const originalPrice = product.discounted_price ? product.base_price : null;
+  const features = product.feature_list.length > 0 ? product.feature_list : defaultFeatures;
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border-2 border-primary/20 bg-card shadow-xl">
+      {/* Badge */}
+      <div className="bg-primary px-4 py-2 text-center text-sm font-semibold text-primary-foreground">
+        {badge || product.promo_badge || "Özel Ürün"}
+      </div>
+
+      <div className="p-8">
+        <div className="mb-6">
+          {/* Icon & Title */}
+          <div className="mb-2 flex items-center gap-2">
+            <Icon className="h-5 w-5 text-primary" />
+            <h3 className="text-2xl font-bold">{product.name}</h3>
+          </div>
+          
+          {/* Parent Info (for coloring book) */}
+          {parentInfo && (
+            <p className="mb-2 text-sm text-purple-600 font-medium">{parentInfo}</p>
+          )}
+          
+          <p className="text-sm text-muted-foreground">
+            {product.default_page_count} Sayfa • {product.cover_type} • {product.paper_type}
+          </p>
+
+          {/* Rating */}
+          {(product.rating ?? 0) > 0 && (
+            <div className="mt-3 flex items-center gap-2">
+              <div className="flex items-center gap-0.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-4 w-4 ${
+                      i < Math.round(product.rating ?? 0)
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-slate-200"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-medium text-slate-600">
+                {product.rating?.toFixed(1)}
+              </span>
+              {product.review_count > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  ({product.review_count} değerlendirme)
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Social proof */}
+          {product.social_proof_text && (
+            <p className="mt-2 text-sm font-medium text-emerald-600">
+              {product.social_proof_text}
+            </p>
+          )}
+        </div>
+
+        {/* Price */}
+        <div className="mb-6">
+          {originalPrice && (
+            <div className="mb-1">
+              <span className="text-lg text-muted-foreground line-through">
+                {formatPrice(originalPrice)}
+              </span>
+              <span className="ml-2 inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600">
+                %{discountPercentage(originalPrice, displayPrice)} İndirim
+              </span>
+            </div>
+          )}
+          <div className="text-4xl font-bold tracking-tight text-primary">
+            {formatPrice(displayPrice)}
+          </div>
+          {product.extra_page_price > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ek sayfa: +{formatPrice(product.extra_page_price)} / sayfa
+            </p>
+          )}
+        </div>
+
+        {/* Features */}
+        <div className="mb-6 space-y-2">
+          {features.map((item) => (
+            <div key={item} className="flex items-start gap-2.5 text-sm">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+              <span>{item}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Free shipping */}
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700">
+          <Truck className="h-4 w-4" />
+          Ücretsiz kargo ile kapınıza kadar teslimat
+        </div>
+
+        {/* CTA */}
+        <Link href="/create">
+          <Button size="lg" className="magic-button w-full gap-2 text-base">
+            Hemen Sipariş Ver
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function Pricing({ title, subtitle, products, data }: PricingProps) {
   const heading = title ?? "Fiyatlandırma";
   const sub =
     subtitle ??
     "Şeffaf fiyatlandırma, gizli maliyet yok. Çocuğunuza özel bir hikaye kitabı oluşturun.";
 
-  const product = products?.[0];
-  const hasProduct = !!product;
+  // Handle both old (array) and new (categorized) product formats
+  const categorized: CategorizedProducts = Array.isArray(products)
+    ? {
+        storyBooks: products.filter(p => p.product_type === 'story_book' || !p.product_type),
+        coloringBooks: products.filter(p => p.product_type === 'coloring_book'),
+        audioAddons: products.filter(p => p.product_type === 'audio_addon'),
+        all: products,
+      }
+    : (products ?? { storyBooks: [], coloringBooks: [], audioAddons: [], all: [] });
 
-  const displayPrice = hasProduct
-    ? product.discounted_price ?? product.base_price
-    : null;
-  const originalPrice =
-    hasProduct && product.discounted_price ? product.base_price : null;
-
-  const features = hasProduct && product.feature_list.length > 0
-    ? product.feature_list
-    : data?.included ?? DEFAULT_FEATURES;
+  const storyBook = categorized.storyBooks[0];
+  const coloringBook = categorized.coloringBooks[0];
+  const hasProducts = storyBook || coloringBook;
 
   return (
     <section id="fiyat" className="scroll-mt-20 bg-gradient-to-b from-slate-50/50 to-white py-20">
@@ -139,121 +284,76 @@ export default function Pricing({ title, subtitle, products, data }: PricingProp
           <p className="mt-4 text-lg text-muted-foreground">{sub}</p>
         </div>
 
-        {/* ── Main Product Card ────────────────────────────────── */}
-        <div className="mx-auto mb-16 max-w-2xl">
-          <div className="relative overflow-hidden rounded-2xl border-2 border-primary/20 bg-card shadow-xl">
-            {/* Badge */}
-            <div className="bg-primary px-4 py-2 text-center text-sm font-semibold text-primary-foreground">
-              {product?.promo_badge || data?.badge_text || "En Popüler Seçim"}
+        {/* ── Main Products Grid (Story + Coloring) ──────────────── */}
+        {hasProducts ? (
+          <div className="mx-auto mb-16 max-w-6xl">
+            <div className="grid gap-8 lg:grid-cols-2">
+              {/* Story Book Card */}
+              {storyBook && (
+                <ProductCard
+                  product={storyBook}
+                  badge="En Popüler"
+                  icon={BookOpen}
+                  defaultFeatures={DEFAULT_FEATURES_STORY}
+                />
+              )}
+
+              {/* Coloring Book Card */}
+              {coloringBook && (
+                <ProductCard
+                  product={coloringBook}
+                  badge="Yeni!"
+                  icon={Palette}
+                  parentInfo="✨ Hikaye kitabından türetilir"
+                  defaultFeatures={DEFAULT_FEATURES_COLORING}
+                />
+              )}
             </div>
-
-            <div className="p-8 sm:p-10">
-              <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
-                {/* Left: Product info */}
-                <div className="flex-1">
-                  <div className="mb-2 flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-primary" />
-                    <h3 className="text-2xl font-bold">
-                      {hasProduct ? product.name : data?.package_name ?? "Kişiye Özel Masal Kitabı"}
-                    </h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {hasProduct
-                      ? `${product.default_page_count} Sayfa • ${product.cover_type} • ${product.paper_type}`
-                      : data?.package_description ?? "Çocuğunuzun kahramanı olduğu benzersiz hikaye kitabı"}
-                  </p>
-
-                  {/* Rating */}
-                  {hasProduct && (product.rating ?? 0) > 0 && (
-                    <div className="mt-3 flex items-center gap-2">
-                      <div className="flex items-center gap-0.5">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-4 w-4 ${
-                              i < Math.round(product.rating ?? 0)
-                                ? "fill-amber-400 text-amber-400"
-                                : "text-slate-200"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm font-medium text-slate-600">
-                        {product.rating?.toFixed(1)}
-                      </span>
-                      {product.review_count > 0 && (
-                        <span className="text-sm text-muted-foreground">
-                          ({product.review_count} değerlendirme)
-                        </span>
-                      )}
+          </div>
+        ) : (
+          /* Fallback: Old single product card */
+          <div className="mx-auto mb-16 max-w-2xl">
+            <div className="relative overflow-hidden rounded-2xl border-2 border-primary/20 bg-card shadow-xl">
+              <div className="bg-primary px-4 py-2 text-center text-sm font-semibold text-primary-foreground">
+                {data?.badge_text || "En Popüler Seçim"}
+              </div>
+              <div className="p-8 sm:p-10">
+                <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex-1">
+                    <div className="mb-2 flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      <h3 className="text-2xl font-bold">
+                        {data?.package_name ?? "Kişiye Özel Masal Kitabı"}
+                      </h3>
                     </div>
-                  )}
-
-                  {/* Social proof */}
-                  {hasProduct && product.social_proof_text && (
-                    <p className="mt-2 text-sm font-medium text-emerald-600">
-                      {product.social_proof_text}
+                    <p className="text-sm text-muted-foreground">
+                      {data?.package_description ?? "Çocuğunuzun kahramanı olduğu benzersiz hikaye kitabı"}
                     </p>
-                  )}
-                </div>
-
-                {/* Right: Price */}
-                <div className="text-right">
-                  {displayPrice !== null ? (
-                    <>
-                      {originalPrice && (
-                        <div className="mb-1">
-                          <span className="text-lg text-muted-foreground line-through">
-                            {formatPrice(originalPrice)}
-                          </span>
-                          <span className="ml-2 inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600">
-                            %{discountPercentage(originalPrice, displayPrice)} İndirim
-                          </span>
-                        </div>
-                      )}
-                      <div className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">
-                        {formatPrice(displayPrice)}
-                      </div>
-                      {hasProduct && product.extra_page_price > 0 && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Ek sayfa: +{formatPrice(product.extra_page_price)} / sayfa
-                        </p>
-                      )}
-                    </>
-                  ) : (
+                  </div>
+                  <div className="text-right">
                     <div className="text-3xl font-bold tracking-tight">
                       {data?.price_text ?? "Uygun fiyatlarla"}
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Features */}
-              <div className="mt-8 grid gap-2 sm:grid-cols-2">
-                {features.map((item) => (
-                  <div key={item} className="flex items-start gap-2.5 text-sm">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    <span>{item}</span>
                   </div>
-                ))}
+                </div>
+                <div className="mt-8 grid gap-2 sm:grid-cols-2">
+                  {(data?.included ?? DEFAULT_FEATURES_STORY).map((item) => (
+                    <div key={item} className="flex items-start gap-2.5 text-sm">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link href={data?.cta_url ?? "/create"} className="mt-6 block">
+                  <Button size="lg" className="magic-button w-full gap-2 text-base">
+                    {data?.cta_text ?? "Hemen Sipariş Ver"}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
-
-              {/* Free shipping */}
-              <div className="mt-6 flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700">
-                <Truck className="h-4 w-4" />
-                Ücretsiz kargo ile kapınıza kadar teslimat
-              </div>
-
-              {/* CTA */}
-              <Link href={data?.cta_url ?? "/create"} className="mt-6 block">
-                <Button size="lg" className="magic-button w-full gap-2 text-base">
-                  {data?.cta_text ?? "Hemen Sipariş Ver"}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
             </div>
           </div>
-        </div>
+        )}
 
         {/* ── Audio Addon Section ──────────────────────────────── */}
         <div className="mx-auto max-w-4xl">
@@ -261,13 +361,14 @@ export default function Pricing({ title, subtitle, products, data }: PricingProp
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
               <Sparkles className="h-6 w-6 text-purple-600" />
             </div>
-            <h3 className="text-2xl font-bold">Sesli Kitap Seçenekleri</h3>
+            <h3 className="text-2xl font-bold">Ek Seçenekler</h3>
             <p className="mt-2 text-muted-foreground">
-              Kitabınıza sesli anlatım ekleyerek deneyimi bir üst seviyeye taşıyın
+              Kitabınıza ekstra özellikler ekleyerek deneyimi zenginleştirin
             </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+            {/* Audio Addons */}
             {AUDIO_ADDONS.map((addon) => {
               const Icon = addon.icon;
               return (
@@ -314,7 +415,7 @@ export default function Pricing({ title, subtitle, products, data }: PricingProp
           </div>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            Sesli kitap eklentisi sipariş sırasında seçilebilir. İsteğe bağlıdır.
+            Tüm eklentiler sipariş sırasında seçilebilir. İsteğe bağlıdır.
           </p>
         </div>
 

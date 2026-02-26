@@ -600,6 +600,7 @@ export interface CompleteTrialRequest {
   audio_type?: string | null;
   audio_voice_id?: string | null;
   voice_sample_url?: string | null;
+  has_coloring_book?: boolean;
 }
 
 export interface CompleteTrialResponse {
@@ -607,6 +608,7 @@ export interface CompleteTrialResponse {
   trial_id: string;
   status: string;
   message: string;
+  order_id?: string | null; // Main story order or coloring order (if created)
 }
 
 /**
@@ -671,6 +673,27 @@ export async function verifyTrialPayment(
     method: "POST",
     headers,
     body: JSON.stringify({ token }),
+  });
+}
+
+// ─── Coloring Book Order ────────────────────────────────────────
+
+export interface AddColoringBookResponse {
+  coloring_order_id: string;
+  payment_url: string;
+  amount: number;
+}
+
+/**
+ * Add coloring book to an existing completed story order.
+ * Creates a new order and returns payment URL for checkout.
+ */
+export async function addColoringBookToOrder(
+  orderId: string,
+): Promise<AddColoringBookResponse> {
+  return fetchAPI(`/orders/${orderId}/add-coloring-book`, {
+    method: "POST",
+    body: JSON.stringify({}),
   });
 }
 
