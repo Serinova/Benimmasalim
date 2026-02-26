@@ -20,7 +20,7 @@ from app.models.story_preview import PreviewStatus, StoryPreview
 from app.models.visual_style import VisualStyle
 from app.models.product import Product
 from app.models.scenario import Scenario
-from app.models.order import Order
+from app.models.order import Order, OrderStatus
 from app.services.trial_service import get_trial_service
 
 logger = structlog.get_logger()
@@ -3575,7 +3575,6 @@ async def _create_coloring_book_order_from_trial(
     Returns:
         Coloring book Order or None if failed
     """
-    from decimal import Decimal
     from app.models.coloring_book import ColoringBookProduct
 
     try:

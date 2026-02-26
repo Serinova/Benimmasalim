@@ -151,11 +151,44 @@ async def generate_full_book(order_id: str) -> dict:
         # ============================================================
         # PuLID extracts face identity from the photo.
         # We detect CLOTHING + HAIR for cross-page consistency.
+        #
+        # OUTFIT PRIORITY:
+        # 1. Scenario outfit (outfit_girl/outfit_boy) — per-scenario themed clothing
+        # 2. Order's stored clothing_description — from trial/preview phase
+        # 3. Photo detection — AI detects from child photo
+        # 4. Gender default — generic fallback
+
+        # ── Resolve scenario outfit (gender-specific) ──
+        _scenario_outfit = ""
+        if _scenario:
+            _scenario_outfit_girl = (getattr(_scenario, "outfit_girl", None) or "").strip()
+            _scenario_outfit_boy = (getattr(_scenario, "outfit_boy", None) or "").strip()
+            _child_gender_norm = (order.child_gender or "").lower().strip()
+            if _child_gender_norm in ("kiz", "kız", "girl", "female"):
+                _scenario_outfit = _scenario_outfit_girl or _scenario_outfit_boy
+            else:
+                _scenario_outfit = _scenario_outfit_boy or _scenario_outfit_girl
+            if _scenario_outfit:
+                logger.info(
+                    "Scenario outfit resolved for book generation",
+                    order_id=order_id,
+                    scenario_name=_scenario.name,
+                    gender=_child_gender_norm,
+                    outfit=_scenario_outfit[:80],
+                )
 
         clothing_description = (getattr(order, "clothing_description", None) or "").strip()
         hair_description = (getattr(order, "hair_description", None) or "").strip()
 
-        if clothing_description:
+        # Scenario outfit takes highest priority
+        if _scenario_outfit:
+            clothing_description = _scenario_outfit
+            logger.info(
+                "Using scenario-specific outfit (highest priority)",
+                order_id=order_id,
+                clothing=clothing_description[:100],
+            )
+        elif clothing_description:
             logger.info(
                 "Using stored clothing_description from order",
                 order_id=order_id,

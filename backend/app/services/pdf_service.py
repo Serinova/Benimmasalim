@@ -250,7 +250,6 @@ class PDFService:
         page_images = data.get("page_images", {})
         cover_image_url = data.get("cover_image_url")
         back_cover_config = data.get("back_cover_config")
-        back_cover_image_url = data.get("back_cover_image_url")
         audio_qr_url = data.get("audio_qr_url")
         template_config = data.get("template_config", {})
 

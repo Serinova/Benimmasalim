@@ -822,13 +822,17 @@ async def _process_preview_background_inner(
             visual_style = request_data.get("visual_style", "children's book illustration")
             id_weight = request_data.get("id_weight")  # None = auto-detect from style
             
+            # Resolve child_gender FIRST (needed for clothing resolution below)
+            child_gender = (
+                request_data.get("child_gender") or getattr(preview, "child_gender", None) or ""
+            ).strip()
+
             # Resolve clothing from scenario (gender-specific, priority over request_data)
             clothing_desc = ""
             _scenario_id = getattr(preview, "scenario_id", None) or request_data.get("scenario_id")
             if _scenario_id:
                 try:
                     from app.models.scenario import Scenario
-                    from uuid import UUID
                     
                     _sc_res = await db.execute(select(Scenario).where(Scenario.id == UUID(str(_scenario_id))))
                     _sc = _sc_res.scalar_one_or_none()
@@ -848,10 +852,6 @@ async def _process_preview_background_inner(
                 clothing_desc = (request_data.get("clothing_description") or "").strip()
                 if clothing_desc:
                     logger.info("front_cover: using request_data clothing_description (fallback)", outfit=clothing_desc[:60])
-            
-            child_gender = (
-                request_data.get("child_gender") or getattr(preview, "child_gender", None) or ""
-            ).strip()
             visual_style = personalize_style_prompt(
                 visual_style,
                 child_name=getattr(preview, "child_name", None)
@@ -1734,17 +1734,17 @@ async def _process_remaining_pages_inner(preview_id: str) -> None:
                                     raw_bytes = r.content
 
                                 # Upscale for print quality (Real-ESRGAN if configured)
-                                if _up_params and _up_params.get("needs_upscale") and _up_params.get("upscale_factor", 1) > 1:
+                                if _rem_upscale_params and _rem_upscale_params.get("needs_upscale") and _rem_upscale_params.get("upscale_factor", 1) > 1:
                                     try:
                                         from app.services.upscale_service import upscale_image_bytes_safe
                                         raw_bytes = await upscale_image_bytes_safe(
                                             raw_bytes,
-                                            upscale_factor=_up_params["upscale_factor"],
+                                            upscale_factor=_rem_upscale_params["upscale_factor"],
                                         )
                                         logger.info(
                                             "PREVIEW_UPSCALE_APPLIED",
                                             page_num=page_num,
-                                            factor=_up_params["upscale_factor"],
+                                            factor=_rem_upscale_params["upscale_factor"],
                                         )
                                     except Exception as up_err:
                                         logger.warning(
@@ -1754,13 +1754,13 @@ async def _process_remaining_pages_inner(preview_id: str) -> None:
                                         )
 
                                 # Resize to exact print target if params available
-                                if _up_params:
+                                if _rem_upscale_params:
                                     try:
                                         raw_bytes = await asyncio.to_thread(
                                             resize_image_bytes_to_target,
                                             raw_bytes,
-                                            _up_params["target_width"],
-                                            _up_params["target_height"],
+                                            _rem_upscale_params["target_width"],
+                                            _rem_upscale_params["target_height"],
                                         )
                                     except Exception as rsz_err:
                                         logger.warning(

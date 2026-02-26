@@ -31,7 +31,7 @@ export default function StyleSelectorStep({
   onIdWeightChange,
   onContinue,
   onBack,
-  hideNavButtons,
+  hideNavButtons: _hideNavButtons,
 }: StyleSelectorStepProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);

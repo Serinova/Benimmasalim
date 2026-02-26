@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { Card } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -318,7 +318,8 @@ function CreatePageInner() {
       toast({ title: "Ödeme Başarısız", description: "Lütfen tekrar deneyin.", variant: "destructive" });
       goToSubStep("checkout");
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast]);
 
   // ─── Data fetchers ────────────────────────────────────────────
   const fetchProducts = async () => {
@@ -362,8 +363,29 @@ function CreatePageInner() {
   }, [products, scenarios, _selectedProduct, selectedScenario, hasAudioBook, audioType, hasColoringBook, coloringBookPrice]);
 
   const handleAnalyzePhoto = async () => {
-    // Photo analysis is handled inline in PhotoUploaderStep via its own onAnalyze prop
-    // This stub is kept for prop compatibility
+    if (!childPhoto) return;
+    _setUploadingPhoto(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(childPhoto);
+      });
+      const uploadResult = await uploadTempImage(base64.split(",")[1]);
+      if (uploadResult.success && uploadResult.url) {
+        setFaceDetected(true);
+        toast({ title: "✅ Yüz Tespit Edildi", description: "Fotoğraf başarıyla analiz edildi." });
+      } else {
+        setFaceDetected(false);
+        toast({ title: "⚠️ Yüz Tespit Edilemedi", description: "Lütfen daha net, yüzün göründüğü bir fotoğraf deneyin.", variant: "destructive" });
+      }
+    } catch {
+      setFaceDetected(false);
+      toast({ title: "Hata", description: "Fotoğraf yüklenirken bir sorun oluştu.", variant: "destructive" });
+    } finally {
+      _setUploadingPhoto(false);
+    }
   };
 
   const handleMagicWand = async () => {
@@ -418,8 +440,8 @@ function CreatePageInner() {
         visual_style: selectedStyleObj?.prompt_modifier,
         id_weight: customIdWeight ?? selectedStyleObj?.id_weight,
         clothing_description: childInfo.clothingDescription || null,
-        parent_name: "",
-        parent_email: "",
+        parent_name: childInfo.name ? `${childInfo.name}'ın Velisi` : "Misafir Kullanıcı",
+        parent_email: "trial@benimmasalim.com",
       });
       if (previewData.trial_id) {
         setTrialId(previewData.trial_id);
@@ -553,7 +575,7 @@ function CreatePageInner() {
                   <ChildInfoForm
                     childInfo={childInfo}
                     onUpdate={setChildInfo}
-                    onContinue={() => goToSubStep("adventure")}
+                    onContinue={() => goToSubStep(preselectedScenarioId ? "visuals" : "adventure")}
                     onBack={() => window.history.back()}
                     hideNavButtons
                     hideClothing
@@ -569,7 +591,7 @@ function CreatePageInner() {
                       <Button
                         size="lg"
                         className="h-12 flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 font-bold shadow-lg shadow-purple-200"
-                        onClick={() => goToSubStep("adventure")}
+                        onClick={() => goToSubStep(preselectedScenarioId ? "visuals" : "adventure")}
                         disabled={!childInfo.name || !childInfo.age || !childInfo.gender}
                       >
                         {childInfo.name ? `${childInfo.name}'ın Macerasını Seç ✨` : "Macerayı Başlat ✨"}
@@ -593,7 +615,7 @@ function CreatePageInner() {
                     const sel = scenarios.find(s => s.id === selectedScenario);
                     if (sel?.custom_inputs_schema?.length) return (
                       <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                        <CustomInputsForm fields={sel.custom_inputs_schema as any} values={customVariables} onChange={setCustomVariables} />
+                        <CustomInputsForm fields={sel.custom_inputs_schema as unknown as Array<{ key: string; label: string; type: "text" | "number" | "select" | "textarea"; required?: boolean; options?: string[] }>} values={customVariables} onChange={setCustomVariables} />
                       </div>
                     );
                   })()}
@@ -628,30 +650,96 @@ function CreatePageInner() {
               )}
 
               {subStep === "reveal" && (
-                <motion.div key="sub-reveal" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
+                <motion.div key="sub-reveal" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="pb-28">
+                  {/* Image Preview */}
                   <ImagePreviewStep
                     childName={childInfo.name} previewImages={previewImages} backCoverImageUrl={previewImages["backcover"]}
                     onApprove={() => goToSubStep("checkout")} onBack={() => goToSubStep("visuals")}
                     isLoading={previewLoading} generationProgress={generationProgress}
                   />
-                  <Card className="border-0 bg-purple-50/70 p-6 rounded-3xl">
-                    <AudioSelectionStep
-                      childName={childInfo.name} basePrice={calculateTotalPrice()} selectedOption={hasAudioBook ? audioType : "none"}
-                      systemVoice={systemVoice} clonedVoiceId={clonedVoiceId} isCloningVoice={isCloningVoice}
-                      onOptionChange={(o) => { if (o === "none") setHasAudioBook(false); else { setHasAudioBook(true); setAudioType(o); } }}
-                      onSystemVoiceChange={setSystemVoice} onVoiceRecorded={handleVoiceSampleRecorded}
-                      onContinue={() => { }} onBack={() => { }} isTestMode={false} isSubmitting={false} hideNavButtons
-                    />
-                    <div className="mt-6 flex items-center justify-between p-4 bg-white/80 rounded-2xl border border-pink-100">
-                      <div><h4 className="font-bold">Boyama Kitabı</h4><p className="text-xs text-gray-500">Bu macerayı çocukların boyaması için hazırla.</p></div>
-                      <Button variant={hasColoringBook ? "destructive" : "outline"} onClick={() => setHasColoringBook(!hasColoringBook)}>
-                        {hasColoringBook ? "Çıkar" : `${coloringBookPrice} TL Ekle`}
-                      </Button>
+
+                  {/* ── Ek Seçenekler: Ses + Boyama ── */}
+                  <div className="mt-6 space-y-4">
+                    {/* Ses Tercihi */}
+                    <div className="rounded-3xl overflow-hidden border border-purple-100 shadow-lg bg-gradient-to-br from-purple-50 via-white to-pink-50">
+                      <AudioSelectionStep
+                        childName={childInfo.name} basePrice={calculateTotalPrice()} selectedOption={hasAudioBook ? audioType : "none"}
+                        systemVoice={systemVoice} clonedVoiceId={clonedVoiceId} isCloningVoice={isCloningVoice}
+                        onOptionChange={(o) => { if (o === "none") setHasAudioBook(false); else { setHasAudioBook(true); setAudioType(o); } }}
+                        onSystemVoiceChange={setSystemVoice} onVoiceRecorded={handleVoiceSampleRecorded}
+                        onContinue={() => { }} onBack={() => { }} isTestMode={false} isSubmitting={false} hideNavButtons
+                      />
                     </div>
-                  </Card>
-                  <Button size="lg" className="w-full h-16 rounded-2xl bg-green-500 font-bold text-xl" onClick={() => goToSubStep("checkout")}>Ödemeye Geç ➔</Button>
+
+                    {/* Boyama Kitabı Kartı */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                      className="rounded-3xl overflow-hidden border border-emerald-200 shadow-lg bg-gradient-to-br from-emerald-50 via-white to-teal-50"
+                    >
+                      <div className="p-5">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-md">
+                            <span className="text-xl">🎨</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-bold text-gray-800">Boyama Kitabı</h3>
+                            <p className="text-xs text-gray-500">Bu hikayedeki sahneleri boyasın!</p>
+                          </div>
+                          {coloringBookPrice > 0 && (
+                            <div className="text-right">
+                              <span className="text-lg font-bold text-emerald-600">+{coloringBookPrice} ₺</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="flex-1 grid grid-cols-2 gap-2 text-xs text-gray-500">
+                            <span className="flex items-center gap-1">✅ Hikayeden türetilir</span>
+                            <span className="flex items-center gap-1">✅ Line-art çizimler</span>
+                            <span className="flex items-center gap-1">✅ Ayrı fiziksel kitap</span>
+                            <span className="flex items-center gap-1">✅ Yaratıcılık aktivitesi</span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setHasColoringBook(!hasColoringBook)}
+                          className={`w-full py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${hasColoringBook
+                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200"
+                            : "bg-white border-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                            }`}
+                        >
+                          {hasColoringBook ? "✓ Boyama Kitabı Eklendi" : `Boyama Kitabı Ekle · ${coloringBookPrice} ₺`}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {/* ── Sticky Bottom: Ödemeye Geç ── */}
+                  <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 py-3">
+                    <div className="mx-auto flex max-w-lg gap-3">
+                      <button
+                        type="button"
+                        onClick={() => goToSubStep("visuals")}
+                        className="h-12 px-5 rounded-2xl border-2 border-gray-200 text-gray-600 font-semibold text-sm"
+                      >
+                        ← Geri
+                      </button>
+                      <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => goToSubStep("checkout")}
+                        className="h-12 flex-1 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-base shadow-lg shadow-green-200 flex items-center justify-center gap-2"
+                      >
+                        Ödemeye Geç ➔
+                      </motion.button>
+                    </div>
+                  </div>
                 </motion.div>
               )}
+
 
               {subStep === "checkout" && (
                 <div className="w-full max-w-4xl">
