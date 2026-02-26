@@ -248,11 +248,10 @@ function ImageLightbox({
             <button
               key={k}
               onClick={() => onNavigate(i)}
-              className={`relative h-12 w-16 flex-shrink-0 overflow-hidden rounded transition ${
-                i === currentIndex
+              className={`relative h-12 w-16 flex-shrink-0 overflow-hidden rounded transition ${i === currentIndex
                   ? "ring-2 ring-purple-400"
                   : "opacity-50 hover:opacity-80"
-              }`}
+                }`}
             >
               {thumbUrl ? (
                 <Image
@@ -446,7 +445,7 @@ export default function ConfirmPage() {
               Bu onay linkinin süresi dolmuş. Lütfen bizimle iletişime geçin
               veya yeni bir sipariş oluşturun.
             </p>
-            <Button onClick={() => router.push("/create")}>Yeni Hikaye Oluştur</Button>
+            <Button onClick={() => router.push("/create-v2")}>Yeni Hikaye Oluştur</Button>
           </CardContent>
         </Card>
       </div>
@@ -477,7 +476,7 @@ export default function ConfirmPage() {
               </Button>
               <Button
                 className="flex-1 bg-green-600 hover:bg-green-700"
-                onClick={() => router.push("/create")}
+                onClick={() => router.push("/create-v2")}
               >
                 Yeni Hikaye
               </Button>

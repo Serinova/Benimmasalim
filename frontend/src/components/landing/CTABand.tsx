@@ -12,7 +12,7 @@ export default function CTABand({ title, subtitle, data }: CTABandProps) {
   const heading = title ?? "Çocuğunuza Özel Bir Masal Başlatıyor musunuz?";
   const sub = subtitle ?? "Sadece birkaç dakikada çocuğunuza özel, unutulmaz bir hediye çocuk kitabı oluşturun.";
   const ctaText = data?.cta_text ?? "Şimdi Oluştur";
-  const ctaUrl = data?.cta_url ?? "/create";
+  const ctaUrl = data?.cta_url ?? "/create-v2";
 
   return (
     <section className="relative overflow-hidden py-20">

@@ -26,7 +26,7 @@ const DEFAULTS = {
     "Yapay zeka ile çocuğunuzun fotoğrafı ve adını kullanarak tamamen özgün, eğitici değerler içeren profesyonel basılı hikaye kitapları oluşturun. Hediye çocuk kitabı için en özel seçim.",
   badge: "Yapay Zeka Destekli",
   primary_cta_text: "Masalını Oluştur",
-  primary_cta_url: "/create",
+  primary_cta_url: "/create-v2",
   secondary_cta_text: "Nasıl Çalışır?",
   secondary_cta_url: "#nasil-calisir",
   micro_trust: "Kredi kartı gerekmez \u2022 2-3 iş günü teslimat \u2022 KVKK uyumlu",

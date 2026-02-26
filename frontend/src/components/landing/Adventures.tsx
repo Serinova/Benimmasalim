@@ -19,9 +19,8 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             key={i}
-            className={`h-3.5 w-3.5 ${
-              i < Math.round(rating) ? "fill-amber-400 text-amber-400" : "text-slate-200"
-            }`}
+            className={`h-3.5 w-3.5 ${i < Math.round(rating) ? "fill-amber-400 text-amber-400" : "text-slate-200"
+              }`}
           />
         ))}
       </div>
@@ -34,7 +33,7 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
 }
 
 function ScenarioCard({ scenario }: { scenario: ScenarioForHomepage }) {
-  const href = `/create?scenario=${scenario.id}`;
+  const href = `/create-v2?scenario=${scenario.id}`;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
@@ -173,7 +172,7 @@ export default function Adventures({ title, subtitle, scenarios }: AdventuresPro
           <p className="mb-4 text-sm text-muted-foreground">
             Hangi maceradan başlayacağınıza karar veremediniz mi?
           </p>
-          <Link href="/create">
+          <Link href="/create-v2">
             <Button variant="outline" size="lg" className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50">
               <BookOpen className="h-5 w-5" />
               Tüm Seçenekleri Gör

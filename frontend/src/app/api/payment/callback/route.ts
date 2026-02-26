@@ -16,7 +16,7 @@ const MAX_TOKEN_LEN = 500;
  */
 export async function POST(request: NextRequest) {
   const errorUrl = (reason: string) =>
-    new URL(`/create?payment=error&reason=${reason}`, request.url);
+    new URL(`/create-v2?payment=error&reason=${reason}`, request.url);
 
   try {
     const formData = await request.formData();
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       }
       const encodedToken = encodeURIComponent(token);
       return NextResponse.redirect(
-        new URL(`/create?payment=success&trialId=${trialId}&token=${encodedToken}`, request.url),
+        new URL(`/create-v2?payment=success&trialId=${trialId}&token=${encodedToken}`, request.url),
       );
     }
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         const data = await verifyRes.json();
         if (data.status === "success") {
           return NextResponse.redirect(
-            new URL(`/create?payment=success&orderId=${orderId}`, request.url),
+            new URL(`/create-v2?payment=success&orderId=${orderId}`, request.url),
           );
         }
       }
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.redirect(
-      new URL(`/create?payment=failed&orderId=${orderId}`, request.url),
+      new URL(`/create-v2?payment=failed&orderId=${orderId}`, request.url),
     );
   } catch {
     return NextResponse.redirect(errorUrl("server_error"));

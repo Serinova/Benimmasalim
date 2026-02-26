@@ -130,14 +130,14 @@ function discountPercentage(base: number, discounted: number): number {
 /* ─── Component ─────────────────────────────────────────────── */
 
 // Helper: Product Card Component
-function ProductCard({ 
-  product, 
-  badge, 
-  icon: Icon, 
+function ProductCard({
+  product,
+  badge,
+  icon: Icon,
   parentInfo,
   defaultFeatures,
-}: { 
-  product: ProductData; 
+}: {
+  product: ProductData;
   badge?: string;
   icon: any;
   parentInfo?: string;
@@ -161,12 +161,12 @@ function ProductCard({
             <Icon className="h-5 w-5 text-primary" />
             <h3 className="text-2xl font-bold">{product.name}</h3>
           </div>
-          
+
           {/* Parent Info (for coloring book) */}
           {parentInfo && (
             <p className="mb-2 text-sm text-purple-600 font-medium">{parentInfo}</p>
           )}
-          
+
           <p className="text-sm text-muted-foreground">
             {product.default_page_count} Sayfa • {product.cover_type} • {product.paper_type}
           </p>
@@ -178,11 +178,10 @@ function ProductCard({
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star
                     key={i}
-                    className={`h-4 w-4 ${
-                      i < Math.round(product.rating ?? 0)
+                    className={`h-4 w-4 ${i < Math.round(product.rating ?? 0)
                         ? "fill-amber-400 text-amber-400"
                         : "text-slate-200"
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
@@ -244,7 +243,7 @@ function ProductCard({
         </div>
 
         {/* CTA */}
-        <Link href="/create">
+        <Link href="/create-v2">
           <Button size="lg" className="magic-button w-full gap-2 text-base">
             Hemen Sipariş Ver
             <ArrowRight className="h-4 w-4" />
@@ -264,11 +263,11 @@ export default function Pricing({ title, subtitle, products, data }: PricingProp
   // Handle both old (array) and new (categorized) product formats
   const categorized: CategorizedProducts = Array.isArray(products)
     ? {
-        storyBooks: products.filter(p => p.product_type === 'story_book' || !p.product_type),
-        coloringBooks: products.filter(p => p.product_type === 'coloring_book'),
-        audioAddons: products.filter(p => p.product_type === 'audio_addon'),
-        all: products,
-      }
+      storyBooks: products.filter(p => p.product_type === 'story_book' || !p.product_type),
+      coloringBooks: products.filter(p => p.product_type === 'coloring_book'),
+      audioAddons: products.filter(p => p.product_type === 'audio_addon'),
+      all: products,
+    }
     : (products ?? { storyBooks: [], coloringBooks: [], audioAddons: [], all: [] });
 
   const storyBook = categorized.storyBooks[0];

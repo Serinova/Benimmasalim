@@ -92,14 +92,14 @@ export default function Header() {
               </Button>
             </Link>
           )}
-          <Link href="/create">
+          <Link href="/create-v2">
             <Button size="sm">Kitap Oluştur</Button>
           </Link>
         </nav>
 
         {/* Mobile Nav */}
         <div className="flex items-center gap-2 md:hidden">
-          <Link href="/create">
+          <Link href="/create-v2">
             <Button size="sm">Kitap Oluştur</Button>
           </Link>
           <Sheet>
