@@ -6,6 +6,7 @@ from app.api.v1 import (
     ai,
     audio,
     auth,
+    coloring_books,
     consent,
     data_request,
     homepage,
@@ -29,6 +30,7 @@ api_router.include_router(leads.router, prefix="/leads", tags=["Lead Capture"])
 api_router.include_router(trials.router, prefix="/trials", tags=["Try Before You Buy"])
 api_router.include_router(products.router, prefix="/products", tags=["Products"])
 api_router.include_router(scenarios.router, prefix="/scenarios", tags=["Scenarios"])
+api_router.include_router(coloring_books.router, tags=["Coloring Books"])
 api_router.include_router(orders.router, prefix="/orders", tags=["Orders"])
 api_router.include_router(ai.router, prefix="/ai", tags=["AI Services"])
 api_router.include_router(payments.router, prefix="/payments", tags=["Payments"])

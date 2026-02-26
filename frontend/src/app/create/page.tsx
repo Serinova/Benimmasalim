@@ -197,6 +197,10 @@ function CreatePageInner() {
   const [selectedStyle, setSelectedStyle] = useState<string>("");
   const [customIdWeight, setCustomIdWeight] = useState<number | null>(null);
   const [, setExpandedCategories] = useState<string[]>([]);
+  
+  // Boyama kitabı state
+  const [coloringBookPrice, setColoringBookPrice] = useState<number>(0);
+  const [hasColoringBook, setHasColoringBook] = useState(false);
 
   // ─── Child info ───────────────────────────────────────────────
   const [childInfo, setChildInfo] = useState({
@@ -264,6 +268,8 @@ function CreatePageInner() {
   const [dedicationNote, setDedicationNote] = useState<string>("");
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [, setOrderComplete] = useState(false);
+  const [completedOrderId, setCompletedOrderId] = useState<string | null>(null);
+  const [addingColoringBook, setAddingColoringBook] = useState(false);
 
   // ─── Lead / Contact ────────────────────────────────────────────
   const [leadUserId, setLeadUserId] = useState<string | null>(null);
@@ -274,6 +280,22 @@ function CreatePageInner() {
   const _paymentCallbackHandled = useRef(false);
 
   // ─── Init ─────────────────────────────────────────────────────
+
+  // Fetch coloring book price
+  useEffect(() => {
+    const fetchColoringBookPrice = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/coloring-books/active`);
+        if (response.ok) {
+          const data = await response.json();
+          setColoringBookPrice(data.discounted_price || data.base_price);
+        }
+      } catch (error) {
+        console.error("Failed to fetch coloring book price", error);
+      }
+    };
+    fetchColoringBookPrice();
+  }, []);
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -310,6 +332,7 @@ function CreatePageInner() {
       const storedHasAudio = sessionStorage.getItem("pending_has_audio") === "true";
       const storedAudioType = (sessionStorage.getItem("pending_audio_type") || "system") as "system" | "cloned";
       const storedVoiceId = sessionStorage.getItem("pending_audio_voice_id") || "";
+      const storedHasColoringBook = sessionStorage.getItem("pending_has_coloring_book") === "true";
 
       setSubmittingOrder(true);
 
@@ -329,6 +352,7 @@ function CreatePageInner() {
               has_audio_book: storedHasAudio,
               audio_type: storedHasAudio ? storedAudioType : null,
               audio_voice_id: storedHasAudio && storedAudioType === "cloned" ? storedVoiceId : null,
+              has_coloring_book: storedHasColoringBook,
             },
             storedTrialToken,
           );
@@ -342,6 +366,8 @@ function CreatePageInner() {
             sessionStorage.removeItem("pending_has_audio");
             sessionStorage.removeItem("pending_audio_type");
             sessionStorage.removeItem("pending_audio_voice_id");
+            sessionStorage.removeItem("pending_has_coloring_book");
+            setCompletedOrderId(data.order_id || null); // Save order ID for post-purchase upsell
             setOrderComplete(true);
             goToMainStep(5, "success");
           } else {
@@ -828,7 +854,8 @@ function CreatePageInner() {
   const handleSubmitOrder = async (
     testParentInfo?: { fullName: string; email: string; phone: string },
     overrideDedicationNote?: string,
-    promoCode?: string
+    promoCode?: string,
+    hasColoringBookParam?: boolean
   ) => {
     const orderParentInfo = testParentInfo || parentInfo;
 
@@ -886,6 +913,7 @@ function CreatePageInner() {
         sessionStorage.setItem("pending_has_audio", String(hasAudioBook));
         sessionStorage.setItem("pending_audio_type", hasAudioBook ? (audioType ?? "") : "");
         sessionStorage.setItem("pending_audio_voice_id", hasAudioBook && audioType === "cloned" ? (clonedVoiceId ?? "") : "");
+        sessionStorage.setItem("pending_has_coloring_book", String(hasColoringBookParam || false));
         window.location.href = paymentData.payment_url;
         return;
       }
@@ -903,6 +931,7 @@ function CreatePageInner() {
           audio_type: hasAudioBook ? audioType : null,
           audio_voice_id: hasAudioBook && audioType === "cloned" ? clonedVoiceId : null,
           voice_sample_url: hasAudioBook && audioType === "cloned" ? voiceSampleUrl : null,
+          has_coloring_book: hasColoringBookParam || false,
         },
         _trialToken ?? undefined,
       );
@@ -1363,6 +1392,7 @@ function CreatePageInner() {
                 hasAudioBook={hasAudioBook}
                 audioType={audioType}
                 productName={selectedProductObj?.name || "Kişisel Hikaye Kitabı"}
+                coloringBookPrice={coloringBookPrice}
                 initialShipping={
                   contactInfo
                     ? {
@@ -1372,7 +1402,7 @@ function CreatePageInner() {
                       }
                     : undefined
                 }
-                onComplete={(shippingInfo, _paymentInfo, promoCode) => {
+                onComplete={(shippingInfo, _paymentInfo, promoCode, hasColoringBookParam) => {
                   const pi = {
                     fullName: shippingInfo.fullName,
                     email: shippingInfo.email,
@@ -1380,7 +1410,8 @@ function CreatePageInner() {
                   };
                   setParentInfo(pi);
                   setDedicationNote(shippingInfo.dedicationNote || "");
-                  handleSubmitOrder(pi, shippingInfo.dedicationNote || "", promoCode ?? undefined);
+                  setHasColoringBook(hasColoringBookParam || false);
+                  handleSubmitOrder(pi, shippingInfo.dedicationNote || "", promoCode ?? undefined, hasColoringBookParam);
                 }}
                 onBack={() => goToMainStep(3, "audio")}
                 isProcessing={submittingOrder}

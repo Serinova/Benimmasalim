@@ -5,6 +5,7 @@ import {
   Headphones,
   Camera,
   Fingerprint,
+  PaintBucket,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +28,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Headphones,
   Camera,
   Fingerprint,
+  PaintBucket,
 };
 
 const DEFAULT_ITEMS: FeatureItem[] = [
@@ -35,7 +37,7 @@ const DEFAULT_ITEMS: FeatureItem[] = [
   { icon: "Palette", title: "Profesyonel Baskı", description: "Yüksek kalite kağıt ve canlı renklerle baskı. Gerçek bir kitap deneyimi sunar." },
   { icon: "Headphones", title: "Sesli Kitap Seçeneği", description: "Hikayenizi sesli kitap olarak da dinleyin. Kendi sesinizle veya profesyonel seslendirme ile." },
   { icon: "Camera", title: "Çocuğunuzun Fotoğrafıyla", description: "Fotoğraf yükleyin, yapay zeka çocuğunuzu hikayenin kahramanı yapsın. Tam kişiselleştirilmiş masal." },
-  { icon: "Fingerprint", title: "%100 Özgün Hikaye", description: "Hazır şablonlar değil, tamamen sıfırdan yazılan çocuğun adıyla masal. Her kitap tek ve benzersiz." },
+  { icon: "PaintBucket", title: "Boyama Kitabı Seçeneği", description: "Hikayenizdeki aynı karakterler ve sahneler boyama kitabına dönüşsün! Profesyonel line-art çizimler, yaratıcılığı geliştiren aktivite." },
 ];
 
 export default function Features({ title, subtitle, data }: FeaturesProps) {

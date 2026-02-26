@@ -13,7 +13,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.orm import sessionmaker
-from backend.app.models import Scenario
+from app.models import Scenario
 import os
 
 # ============================================================================

@@ -60,15 +60,40 @@ class PaymentStatusResponse(BaseModel):
 async def _calculate_subtotal(
     order: Order, db, has_audio_book: bool, audio_type: str | None
 ) -> tuple[Decimal, dict]:
-    """Calculate subtotal from product price + audio addon."""
+    """Calculate subtotal from product price + audio addon.
+    
+    Audio addon pricing is now fetched from products table (product_type='audio_addon')
+    instead of being hardcoded.
+    """
     result = await db.execute(select(Product).where(Product.id == order.product_id))
     product = result.scalar_one_or_none()
 
     base_price = product.calculate_price(order.total_pages) if product else Decimal("450.00")
 
     audio_price = Decimal("0.00")
-    if has_audio_book:
-        audio_price = Decimal("300.00") if audio_type == "cloned" else Decimal("150.00")
+    if has_audio_book and audio_type:
+        # Fetch audio addon product from database
+        audio_slug = "audio-addon-cloned-voice" if audio_type == "cloned" else "audio-addon-system-voice"
+        audio_result = await db.execute(
+            select(Product).where(
+                Product.product_type == "audio_addon",
+                Product.slug == audio_slug,
+                Product.is_active == True
+            )
+        )
+        audio_product = audio_result.scalar_one_or_none()
+        
+        if audio_product:
+            audio_price = audio_product.base_price
+        else:
+            # Fallback to hardcoded prices if product not found (backward compatibility)
+            logger.warning(
+                "audio_addon_product_not_found",
+                audio_type=audio_type,
+                slug=audio_slug,
+                using_fallback=True
+            )
+            audio_price = Decimal("300.00") if audio_type == "cloned" else Decimal("150.00")
 
     subtotal = base_price + audio_price
     breakdown = {
@@ -464,6 +489,18 @@ async def create_checkout(
             promo_code=promo.code if promo else None,
         )
 
+        # Trigger generation task for free orders
+        try:
+            if order.is_coloring_book:
+                from app.tasks.generate_coloring_book import generate_coloring_book
+                import asyncio
+                asyncio.create_task(generate_coloring_book(order.id, db))
+            else:
+                from app.workers.enqueue import enqueue_full_book_generation
+                await enqueue_full_book_generation(str(order.id))
+        except Exception as exc:
+            logger.critical("FREE_ORDER_ENQUEUE_FAILED", order_id=str(order.id), error=str(exc))
+
         return CheckoutResponse(
             payment_url=None,
             payment_id=None,
@@ -604,8 +641,21 @@ async def verify_iyzico_payment(
 
         # Enqueue AFTER commit so that the worker sees PAID status
         try:
-            from app.workers.enqueue import enqueue_full_book_generation
-            await enqueue_full_book_generation(str(order.id))
+            # Check if this is a coloring book order
+            if order.is_coloring_book:
+                # Trigger coloring book generation task
+                from app.tasks.generate_coloring_book import generate_coloring_book
+                import asyncio
+                asyncio.create_task(generate_coloring_book(order.id, db))
+                logger.info(
+                    "coloring_book_generation_triggered",
+                    order_id=str(order.id),
+                    payment_id=payment_id,
+                )
+            else:
+                # Regular story book generation
+                from app.workers.enqueue import enqueue_full_book_generation
+                await enqueue_full_book_generation(str(order.id))
         except Exception as exc:
             logger.critical("IYZICO_VERIFY_ENQUEUE_FAILED", order_id=str(order.id), error=str(exc))
 

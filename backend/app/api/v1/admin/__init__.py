@@ -6,6 +6,7 @@ from app.api.v1.admin import (
     abandoned_trials,
     back_cover,
     book_config,
+    coloring_books,
     homepage,
     kvkk,
     learning_outcomes,
@@ -15,6 +16,7 @@ from app.api.v1.admin import (
     prompts,
     rate_limit,
     scenarios,
+    seed_coloring,
     users,
     visual_styles,
 )
@@ -28,6 +30,7 @@ router.include_router(book_config.router, prefix="/book-config", tags=["Admin - 
 router.include_router(scenarios.router, prefix="/scenarios", tags=["Admin - Scenarios"])
 router.include_router(back_cover.router, prefix="/back-cover", tags=["Admin - Back Cover"])
 router.include_router(visual_styles.router, prefix="/visual-styles", tags=["Admin - Visual Styles"])
+router.include_router(coloring_books.router, tags=["Admin - Coloring Books"])
 router.include_router(
     learning_outcomes.router, prefix="/learning-outcomes", tags=["Admin - Learning Outcomes"]
 )
@@ -39,3 +42,4 @@ router.include_router(
 )
 router.include_router(homepage.router, prefix="/homepage", tags=["Admin - Homepage"])
 router.include_router(rate_limit.router, prefix="/rate-limit", tags=["Admin - Rate Limit"])
+router.include_router(seed_coloring.router, tags=["Admin - Seed"])

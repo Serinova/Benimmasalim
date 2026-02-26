@@ -32,6 +32,16 @@ fi
 echo -e "${GREEN}✅ DATABASE_URL found${NC}"
 echo ""
 
+# Önce coloring book product'ı güncelle
+echo -e "${BLUE}🎨 Coloring book product güncellemesi...${NC}"
+python -m scripts.update_coloring_book_product
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Coloring book product güncellendi${NC}"
+else
+    echo -e "${YELLOW}⚠️  Coloring book product hatası, devam ediliyor...${NC}"
+fi
+echo ""
+
 # Migration scriptlerini çalıştır
 SCENARIOS=(
     "ocean_adventure"

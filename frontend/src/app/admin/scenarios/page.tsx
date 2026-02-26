@@ -1865,7 +1865,7 @@ export default function AdminScenariosPage() {
                       Özellik Listesi
                     </div>
                     <p className="text-xs text-gray-500">
-                      Senaryo detay panelinde "Kitabın İçinde" bölümünde gösterilir.
+                      Senaryo detay panelinde &quot;Kitabın İçinde&quot; bölümünde gösterilir.
                     </p>
 
                     {marketingFeatures.length > 0 && (
@@ -1930,7 +1930,7 @@ export default function AdminScenariosPage() {
                       Pazarlama Galerisi
                     </div>
                     <p className="text-xs text-gray-500">
-                      Senaryo detay panelinde "Kitaptan Kareler" bölümünde gösterilir. İçerik galerisinden ayrıdır.
+                      Senaryo detay panelinde &quot;Kitaptan Kareler&quot; bölümünde gösterilir. İçerik galerisinden ayrıdır.
                     </p>
                     <GalleryImageUploader
                       images={marketingGallery}

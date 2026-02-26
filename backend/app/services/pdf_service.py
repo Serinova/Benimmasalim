@@ -76,6 +76,7 @@ class PDFService:
         dedication_image_base64: str | None = None,
         intro_image_base64: str | None = None,
         back_cover_image_url: str | None = None,
+        skip_text: bool = False,  # NEW: Skip text rendering (for coloring books)
     ) -> bytes:
         """
         Generate a print-ready PDF book.
@@ -97,6 +98,7 @@ class PDFService:
             dedication_image_base64: Optional dedication page image (karşılama 1)
             intro_image_base64: Optional scenario intro page image (karşılama 2)
             back_cover_image_url: Optional AI-generated visual back cover URL
+            skip_text: If True, skip text rendering (for coloring books)
 
         Returns:
             PDF file as bytes
@@ -736,6 +738,7 @@ class PDFService:
         page_width: float,
         page_height: float,
         is_cover: bool,
+        skip_text: bool = False,  # NEW: Skip text rendering flag
     ):
         """Render a single page with image and text."""
         image_url = page_data.get("image_url")
@@ -779,13 +782,14 @@ class PDFService:
         # Add text using template settings
         # Respect text_enabled from template (defaults to True for backward compatibility)
         # If template has text_enabled=False, skip text rendering for this page type
+        # ALSO: Skip text if skip_text flag is True (for coloring books)
         text_enabled = getattr(template, "text_enabled", True) if template else not is_cover
 
-        if text and text_enabled:
+        if text and text_enabled and not skip_text:
             self._add_text(c, text, page_width, page_height, template)
             logger.debug("Text added to page", page_num=page_num, text_enabled=text_enabled)
         elif text:
-            logger.debug("Text skipped (text_enabled=False)", page_num=page_num, is_cover=is_cover)
+            logger.debug("Text skipped", page_num=page_num, skip_text=skip_text, text_enabled=text_enabled, is_cover=is_cover)
 
     def _add_text(
         self,

@@ -13,7 +13,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.orm import sessionmaker
-from backend.app.models import Scenario
+from app.models import Scenario
 import os
 
 # ============================================================================
@@ -367,7 +367,41 @@ async def update_space_scenario():
                 description="8 gezegen macerası! Modüler uzay istasyonundan başlayarak Merkür'den Neptün'e kadar tüm gezegenleri keşfet. AI robot arkadaşınla birlikte Jüpiter'in ihtişamını, Satürn'ün halkalarını ve Mars'taki yaşam izlerini öğren!",
                 marketing_badge="YENİ! Uzay Macerası",
                 age_range="7-10",
-                tagline="8 gezegen, sonsuz keşif!"
+                tagline="8 gezegen, sonsuz keşif!",
+                marketing_features=[
+                    "8 gezegen keşfi: Merkür'den Neptün'e",
+                    "AI robot arkadaş rehberliği",
+                    "Jüpiter'in ihtişamı (1300 Dünya!)",
+                    "Satürn'ün büyülü halkaları",
+                    "Mars'ta yaşam izi araştırması",
+                    "NASA tarzı astronot kıyafeti",
+                    "Bilimsel bilgi + Epic macera"
+                ],
+                marketing_gallery=[
+                    {
+                        "url": "/gallery/space/jupiter.jpg",
+                        "caption": "Jüpiter'in ihtişamı - 1300 Dünya sığar!",
+                        "alt_text": "Dev Jüpiter gezegeni ve küçük astronot"
+                    },
+                    {
+                        "url": "/gallery/space/saturn_rings.jpg",
+                        "caption": "Satürn'ün büyülü halkaları",
+                        "alt_text": "Satürn'ün buzdan halkaları"
+                    },
+                    {
+                        "url": "/gallery/space/mars.jpg",
+                        "caption": "Mars'ta yaşam izi keşfi",
+                        "alt_text": "Kırmızı Mars gezegeni ve rover"
+                    },
+                    {
+                        "url": "/gallery/space/space_station.jpg",
+                        "caption": "Modüler uzay istasyonu",
+                        "alt_text": "Uzay istasyonunda AI robot ile"
+                    }
+                ],
+                estimated_duration="20-25 dakika okuma",
+                marketing_price_label="299 TL'den başlayan fiyatlarla",
+                rating=5.0
             )
         )
         
