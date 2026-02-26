@@ -117,7 +117,17 @@ gcloud run deploy benimmasalim-backend \
   --set-cloudsql-instances $SQL_INSTANCE \
   --set-env-vars "APP_ENV=production,STORAGE_DRIVER=gcs"
 
-echo -e "${GREEN}✅ Cloud Run deploy tamamlandı!${NC}"
+echo -e "${GREEN}✅ Cloud Run backend deploy tamamlandı!${NC}"
+echo ""
+
+echo -e "${BLUE}🚀 CLOUD RUN WORKER DEPLOY BAŞLIYOR...${NC}"
+
+gcloud run deploy benimmasalim-worker \
+  --image gcr.io/$PROJECT_ID/benimmasalim-backend:latest \
+  --region $REGION \
+  --platform managed
+
+echo -e "${GREEN}✅ Cloud Run worker deploy tamamlandı!${NC}"
 echo ""
 
 # 5. Health Check

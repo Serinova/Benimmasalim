@@ -56,7 +56,7 @@ def upgrade() -> None:
         }
     )
     
-    print("✓ Ocean scenario updated with modular prompts")
+    print("OK: Ocean scenario updated with modular prompts")
     print("  - Cover: 326 char (pipeline will use)")
     print("  - Page: 464 char (pipeline will use)")
     print("  - Story: Enhanced with blueprint structure")

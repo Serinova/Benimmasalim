@@ -20,7 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Add Güneş Sistemi Macerası: Gezegen Kaşifleri scenario."""
-    from scripts.update_space_adventure_scenario import (
+    from scripts.update_space_scenario import (
         SPACE_COVER_PROMPT,
         SPACE_PAGE_PROMPT,
         SPACE_STORY_PROMPT_TR,
@@ -102,7 +102,7 @@ def upgrade() -> None:
                 "rating": 5.0,
             }
         )
-        print("✓ Güneş Sistemi Macerası senaryosu güncellendi")
+        print("OK: Gunes Sistemi Macerasi senaryosu guncellendi")
     else:
         # Create new
         product_result = conn.execute(
@@ -158,7 +158,7 @@ def upgrade() -> None:
                 "rating": 5.0,
             }
         )
-        print("✓ Güneş Sistemi Macerası senaryosu oluşturuldu")
+        print("OK: Gunes Sistemi Macerasi senaryosu olusturuldu")
 
 
 def downgrade() -> None:

@@ -74,7 +74,7 @@ def upgrade() -> None:
                 "page_count": 22,
             }
         )
-        print("✓ Dinozorlar Macerası senaryosu güncellendi")
+        print("OK: Dinozorlar Macerasi senaryosu guncellendi")
     else:
         # Create new
         # First, get linked_product_id (A4 YATAY 32 sayfa)
@@ -119,7 +119,7 @@ def upgrade() -> None:
                 "linked_product_id": linked_product_id,
             }
         )
-        print("✓ Dinozorlar Macerası senaryosu oluşturuldu")
+        print("OK: Dinozorlar Macerasi senaryosu olusturuldu")
 
 
 def downgrade() -> None:

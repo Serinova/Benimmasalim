@@ -31,7 +31,7 @@ def upgrade() -> None:
             WHERE name ILIKE '%Dinozor%'
         """)
     )
-    print("✓ Dinozorlar Macerası senaryosu aktifleştirildi")
+    print("OK: Dinozorlar Macerasi senaryosu aktiflestirildi")
 
 
 def downgrade() -> None:

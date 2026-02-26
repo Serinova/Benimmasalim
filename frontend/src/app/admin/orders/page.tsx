@@ -1102,10 +1102,51 @@ export default function AdminOrdersPage() {
                               }
                             }}
                           >
-                            🖍️ Boyama PDF'i {detailData.coloring_pdf_url ? "İndir" : "Üret"}
+                            🖍️ Boyama PDF&apos;i {detailData.coloring_pdf_url ? "İndir" : "Üret"}
                           </Button>
                         )}
                       </>
+                    )}
+
+                    {/* Show coloring book button even if status is not CONFIRMED, as long as it has the flag */}
+                    {detailData.has_coloring_book && detailData.status !== "CONFIRMED" && detailData.status !== "PENDING" && (
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-pink-600 hover:bg-pink-700 mt-2"
+                        onClick={async () => {
+                          if (detailData.coloring_pdf_url) {
+                            window.open(detailData.coloring_pdf_url, "_blank");
+                            toast({ title: "Açılıyor", description: "Boyama Kitabı PDF'i yeni sekmede açılıyor." });
+                          } else {
+                            // Trigger coloring book generation via admin API
+                            const token = localStorage.getItem("token");
+                            if (!token) { router.push("/auth/login"); return; }
+                            toast({ title: "Başlatılıyor...", description: "Boyama kitabı üretimi arka planda tetikleniyor." });
+                            try {
+                              const res = await fetch(
+                                `${API_BASE_URL}/admin/orders/previews/${detailData.id}/generate-coloring-book`,
+                                { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+                              );
+                              const data = await res.json();
+                              if (res.ok && data.success) {
+                                if (data.coloring_pdf_url) {
+                                  window.open(data.coloring_pdf_url, "_blank");
+                                  setDetailData((prev) => prev ? { ...prev, coloring_pdf_url: data.coloring_pdf_url } : prev);
+                                  toast({ title: "Boyama Kitabı Hazır!", description: "PDF yeni sekmede açılıyor." });
+                                } else {
+                                  toast({ title: "Başlatıldı ✅", description: data.message || "Arka planda üretiliyor, birkaç dakika bekleyin." });
+                                }
+                              } else {
+                                toast({ title: "Hata", description: data.detail || "İşlem başarısız", variant: "destructive" });
+                              }
+                            } catch {
+                              toast({ title: "Hata", description: "Sunucuya bağlanılamadı", variant: "destructive" });
+                            }
+                          }
+                        }}
+                      >
+                        🖍️ Boyama PDF&apos;i {detailData.coloring_pdf_url ? "İndir" : "Üret"}
+                      </Button>
                     )}
                   </div>
 

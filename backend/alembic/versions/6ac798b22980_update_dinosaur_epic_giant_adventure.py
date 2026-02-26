@@ -44,7 +44,7 @@ def upgrade() -> None:
             "description": "Zaman makinesi ile 65 milyon yıl öncesine git! DEVASA dinozorlarla dostluk kur: T-Rex'e bin, Pteranodon ile uç, Brachiosaurus'un sırtında yolculuk yap. Epik macera!",
         }
     )
-    print("✓ Dinozor senaryosu EPİK DEVASA maceraya güncellendi!")
+    print("OK: Dinozor senaryosu EPIK DEVASA maceraya guncellendi!")
 
 
 def downgrade() -> None:

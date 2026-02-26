@@ -69,7 +69,7 @@ class ImageProcessingService:
     async def convert_to_line_art_ai(
         self,
         image_bytes: bytes,
-        prompt: str = "Generate a clean black and white line art coloring book version of this exact image. No shading, simple outlines, white background. KEEP EXACT COMPOSITION.",
+        prompt: str = "Generate a very simple, clean, minimalist black and white line art coloring book page for a young child based on this image. Use thick, bold, clean and continuous outlines. REMOVE all intricate details, tiny fragments, textures, shadows, and background clutter. Keep only the main subjects with large open spaces that are very easy to color. The final image should be unshaded and mostly white. VERY IMPORTANT: keep the EXACT same composition and aspect ratio as the original image (do NOT crop or make it square if it is horizontal).",
     ) -> bytes:
         """
         Convert image to native line-art using Gemini Flash image-to-image.

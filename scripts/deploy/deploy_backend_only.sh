@@ -92,12 +92,29 @@ gcloud run deploy benimmasalim-backend \
   --set-cloudsql-instances=$PROJECT_ID:$REGION:benimmasalim-db
 
 if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Deploy başarısız!${NC}"
+    echo -e "${RED}❌ Backend deploy başarısız!${NC}"
     exit 1
 fi
 
 echo ""
-echo -e "${GREEN}✅ Deploy tamamlandı${NC}"
+echo -e "${GREEN}✅ Backend deploy tamamlandı${NC}"
+echo ""
+
+echo -e "${BLUE}🚀 Worker Cloud Run'a deploy ediliyor...${NC}"
+echo ""
+
+gcloud run deploy benimmasalim-worker \
+  --image=$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/backend:latest \
+  --region=$REGION \
+  --platform=managed
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Worker deploy başarısız!${NC}"
+    exit 1
+fi
+
+echo ""
+echo -e "${GREEN}✅ Worker deploy tamamlandı${NC}"
 echo ""
 
 # Health check

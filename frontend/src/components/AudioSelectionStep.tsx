@@ -23,6 +23,7 @@ type AudioOption = "none" | "system" | "cloned";
 type SystemVoiceType = "female" | "male";
 
 interface AudioSelectionStepProps {
+  hideNavButtons?: boolean;
   childName: string;
   basePrice: number;
   selectedOption: AudioOption;
