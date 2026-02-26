@@ -355,11 +355,13 @@ async def generate_coloring_book_for_trial(
         from uuid import UUID
         from app.core.database import async_session_factory
         
+        trial_uuid = trial_id if isinstance(trial_id, UUID) else UUID(trial_id)
+
         async with async_session_factory() as db:
-            await _gen_trial_cb(trial_id=UUID(trial_id), db=db)
+            await _gen_trial_cb(trial_id=trial_uuid, db=db)
             
-        logger.info("ARQ_TASK_DONE: generate_coloring_book_for_trial", trial_id=trial_id)
-        return {"status": "done", "trial_id": trial_id}
+        logger.info("ARQ_TASK_DONE: generate_coloring_book_for_trial", trial_id=str(trial_id))
+        return {"status": "done", "trial_id": str(trial_id)}
     except Exception as e:
         logger.error(
             "ARQ_TASK_FAILED: generate_coloring_book_for_trial",
