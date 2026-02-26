@@ -3020,7 +3020,7 @@ async def _generate_remaining_images_inner(
                     try:
                         from app.workers.enqueue import enqueue_job
                         logger.info("Enqueuing trial coloring book generation", trial_id=trial_id)
-                        await enqueue_job("generate_coloring_book_for_trial", trial_id=uuid.UUID(trial_id))
+                        await enqueue_job("generate_coloring_book_for_trial", trial_id=str(trial_id))
                     except Exception as _cb_err:
                         logger.error(
                             "Failed to enqueue trial coloring book generation",

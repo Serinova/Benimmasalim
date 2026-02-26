@@ -96,7 +96,7 @@ def upgrade() -> None:
                 "rating": 5.0,
             }
         )
-        print("✓ Umre Yolculuğu senaryosu güncellendi")
+        print("OK: Umre Yolculugu senaryosu guncellendi")
     else:
         # Create new
         # First, get linked_product_id (A4 YATAY 32 sayfa)
@@ -161,7 +161,7 @@ def upgrade() -> None:
                 "rating": 5.0,
             }
         )
-        print("✓ Umre Yolculuğu senaryosu oluşturuldu")
+        print("OK: Umre Yolculugu senaryosu olusturuldu")
 
 
 def downgrade() -> None:

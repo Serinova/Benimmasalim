@@ -55,7 +55,7 @@ def upgrade() -> None:
             "rating": 5.0,
         }
     )
-    print("✓ Umre Yolculuğu senaryosu marketing alanları güncellendi")
+    print("OK: Umre Yolculugu senaryosu marketing alanlari guncellendi")
 
 
 def downgrade() -> None:

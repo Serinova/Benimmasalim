@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 interface PhotoUploaderStepProps {
+  hideNavButtons?: boolean;
   childName: string;
   photoPreview: string;
   // Multi-photo support for better face analysis

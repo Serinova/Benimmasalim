@@ -1,420 +1,270 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Check,
-  Sparkles,
-  Palette,
-  Wand2,
-  ChevronRight,
-  Trophy,
-  Sliders,
-  User,
-  Image,
-} from "lucide-react";
-// NOT: styleExtensions ve defaultStyles kaldırıldı — stiller artık sadece API/DB'den gelir.
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-
-// Types
-interface VisualStyle {
-  id: string;
-  name: string;
-  /** Kullanıcıya gösterilen isim (boşsa name kullanılır). */
-  display_name?: string | null;
-  thumbnail_url: string;
-  prompt_modifier: string;
-  id_weight?: number; // PuLID face weight (0.2-0.7)
-  // Extended fields
-  description?: string;
-  badge?: string;
-  badgeIcon?: string;
-  bestFor?: string;
-  colorAccent?: string;
-}
+import { ChevronLeft, ChevronRight, CheckCircle2, Settings2 } from "lucide-react";
+import type { VisualStyle } from "@/lib/api";
 
 interface StyleSelectorStepProps {
-  visualStyles: VisualStyle[];
+  // New API
+  styles?: VisualStyle[];
+  // Old API (backward compat)
+  visualStyles?: VisualStyle[];
   selectedStyle: string;
-  onSelect: (styleId: string) => void;
-  onContinue: () => void;
-  onBack: () => void;
+  onSelect: (id: string) => void;
+  customIdWeight: number | null;
+  onIdWeightChange: (v: number | null) => void;
+  onContinue?: () => void;
+  onBack?: () => void;
+  // Old API extras (ignored gracefully)
   childName?: string;
-  customIdWeight?: number | null; // Custom PuLID weight override
-  onIdWeightChange?: (weight: number | null) => void; // Callback for weight change
-  isLoading?: boolean; // Hikaye üretilirken butonu devre dışı bırak
-}
-
-// Varsayılan renk gradyanı — DB stili thumbnail yoksa kullanılır.
-const DEFAULT_COLOR_ACCENT = "from-purple-400 to-pink-500";
-
-// Style Card Component — larger images, mobile-friendly
-function StyleCard({
-  style,
-  isSelected,
-  onSelect,
-}: {
-  style: VisualStyle;
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  const [imageError, setImageError] = useState(false);
-
-  const displayLabel = style.display_name ?? style.name;
-  const colorAccent = style.colorAccent || DEFAULT_COLOR_ACCENT;
-  const showFallback = !style.thumbnail_url || imageError;
-
-  return (
-    <motion.div
-      layoutId={`style-card-${style.id}`}
-      onClick={onSelect}
-      whileTap={{ scale: 0.97 }}
-      className={`relative cursor-pointer overflow-hidden rounded-2xl border-2 transition-all duration-200 ${
-        isSelected
-          ? "border-purple-500 shadow-xl shadow-purple-200/50 ring-2 ring-purple-400 ring-offset-2"
-          : "border-transparent shadow-md hover:shadow-lg hover:border-gray-200"
-      }`}
-    >
-      {/* Image Container — taller aspect ratio for better visuals */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-        {style.thumbnail_url && !imageError ? (
-          <img
-            src={style.thumbnail_url}
-            alt={displayLabel}
-            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-            onError={() => setImageError(true)}
-            loading="lazy"
-          />
-        ) : showFallback ? (
-          <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${colorAccent}`}>
-            <Palette className="h-12 w-12 text-white/40" />
-          </div>
-        ) : null}
-
-        {/* Bottom gradient for text readability */}
-        {!showFallback && (
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        )}
-
-        {/* Selected checkmark */}
-        <AnimatePresence>
-          {isSelected && (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 shadow-lg sm:h-9 sm:w-9"
-            >
-              <Check className="h-4 w-4 text-white sm:h-5 sm:w-5" strokeWidth={3} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Badge */}
-        {style.badge && (
-          <div className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-1 text-[10px] font-bold text-gray-800 shadow backdrop-blur-sm sm:text-xs">
-            {style.badge}
-          </div>
-        )}
-
-        {/* Name overlay on image */}
-        {!showFallback && (
-          <div className="absolute inset-x-0 bottom-0 p-2.5 sm:p-3">
-            <h3 className="text-sm font-bold leading-tight text-white drop-shadow-md sm:text-base">
-              {displayLabel}
-            </h3>
-          </div>
-        )}
-      </div>
-
-      {/* Fallback text below (only when no image) */}
-      {showFallback && (
-        <div className={`p-2.5 sm:p-3 ${isSelected ? `bg-gradient-to-r ${colorAccent} text-white` : "bg-white"}`}>
-          <h3 className={`text-sm font-bold sm:text-base ${isSelected ? "text-white" : "text-gray-800"}`}>
-            {displayLabel}
-          </h3>
-        </div>
-      )}
-    </motion.div>
-  );
+  isLoading?: boolean;
+  hideNavButtons?: boolean;
 }
 
 export default function StyleSelectorStep({
+  styles: stylesProp,
   visualStyles,
   selectedStyle,
   onSelect,
-  onContinue,
-  onBack,
-  childName,
   customIdWeight,
   onIdWeightChange,
-  isLoading = false,
+  onContinue,
+  onBack,
+  hideNavButtons,
 }: StyleSelectorStepProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Stiller API'den gelir
-  const styles = visualStyles;
+  // Support both old and new prop names
+  const styles = stylesProp ?? visualStyles ?? [];
 
-  // Seçili stil bilgisi
-  const selectedExtended = selectedStyle
-    ? styles.find((s) => s.id === selectedStyle) ?? null
-    : null;
+  const selectedObj = styles.find((s) => s.id === selectedStyle);
 
-  // Get effective id_weight (custom > style default > 0.40)
-  const selectedStyleData = styles.find((s) => s.id === selectedStyle);
-  const effectiveIdWeight = customIdWeight ?? selectedStyleData?.id_weight ?? 0.4;
+  const scroll = (dir: "left" | "right") => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollBy({ left: dir === "left" ? -220 : 220, behavior: "smooth" });
+  };
 
   return (
-    <div className="space-y-4 pb-20 text-base touch-manipulation min-h-0">
-      {/* Header — 16px base on mobile to prevent iOS zoom on focus */}
-      <div className="text-center">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-100 via-pink-100 to-orange-100 px-4 py-2 text-sm sm:text-base"
-        >
-          <Palette className="h-4 w-4 text-purple-600" />
-          <span className="font-medium text-purple-700">Sanat Stüdyosu</span>
-        </motion.div>
+    <div className="space-y-5 px-1 pt-2 pb-4">
 
-        <motion.h1
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-xl font-bold text-gray-800 sm:text-2xl md:text-3xl"
-        >
-          Hikayeniz Hangi Dünyada Geçsin?
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="mx-auto mt-3 max-w-lg text-sm text-gray-600 sm:text-base"
-        >
-          {childName ? (
-            <>
-              <span className="font-medium text-purple-600">{childName}</span>&apos;ın fotoğrafını
-              yapay zeka ile bu sanat stillerinden birine dönüştüreceğiz.
-            </>
-          ) : (
-            "Çocuğunuzun fotoğrafını yapay zeka ile bu sanat stillerinden birine dönüştüreceğiz."
-          )}
-        </motion.p>
+      {/* ── Header ── */}
+      <div>
+        <p className="text-xs font-semibold text-purple-500 uppercase tracking-wider mb-1">🎨 Görsel Stil</p>
+        <h2 className="text-xl font-bold text-gray-800 leading-tight">Kitabın Tarzını Seç</h2>
+        <p className="text-sm text-gray-400 mt-0.5">Her kitap bu stilde çizilecek</p>
       </div>
 
-      {/* Selected Style Preview */}
+      {/* ── Selected style banner ── */}
       <AnimatePresence>
-        {selectedExtended && (
+        {selectedObj && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="space-y-3 overflow-hidden"
+            className="overflow-hidden"
           >
-            <div
-              className={`bg-gradient-to-r ${selectedExtended.colorAccent || DEFAULT_COLOR_ACCENT} rounded-2xl p-4 text-white`}
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
-                  <Wand2 className="h-6 w-6" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-white/80">Seçilen Stil</p>
-                  <p className="text-lg font-bold">{selectedExtended?.display_name ?? selectedExtended?.name ?? ""}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-base transition-colors hover:bg-white/30"
-                >
-                  <Sliders className="h-4 w-4" />
-                  Gelişmiş
-                </button>
-              </div>
-            </div>
-
-            {/* Advanced Settings - ID Weight Slider */}
-            <AnimatePresence>
-              {showAdvanced && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Sliders className="h-5 w-5" />
-                      <span className="font-semibold">Yüz Benzerliği Ayarı</span>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          {/* eslint-disable-next-line jsx-a11y/alt-text -- Lucide icon, decorative */}
-                          <Image className="h-4 w-4 text-purple-500" aria-hidden />
-                          <span className="text-gray-600">Daha Stilize</span>
-                        </div>
-                        <span className="rounded bg-gray-200 px-2 py-1 font-mono text-sm">
-                          {(effectiveIdWeight * 100).toFixed(0)}%
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-600">Daha Gerçekçi</span>
-                          <User className="h-4 w-4 text-blue-500" />
-                        </div>
-                      </div>
-
-                      <Slider
-                        value={[effectiveIdWeight]}
-                        min={0.15}
-                        max={0.7}
-                        step={0.05}
-                        onValueChange={(value) => onIdWeightChange?.(value[0])}
-                        className="w-full"
-                      />
-
-                      <div className="flex justify-between text-xs text-gray-500">
-                        <span>15% - Anime/Sanatsal</span>
-                        <span>40% - Dengeli</span>
-                        <span>70% - Fotoğraf Gibi</span>
-                      </div>
-
-                      {customIdWeight !== null &&
-                        customIdWeight !== selectedStyleData?.id_weight && (
-                          <button
-                            onClick={() => onIdWeightChange?.(null)}
-                            className="text-xs text-purple-600 underline hover:text-purple-800"
-                          >
-                            Varsayılana Sıfırla (
-                            {((selectedStyleData?.id_weight ?? 0.4) * 100).toFixed(0)}%)
-                          </button>
-                        )}
-                    </div>
-
-                    <p className="text-xs text-gray-500">
-                      💡 <strong>İpucu:</strong> Anime/sulu boya gibi stilize tarzlar için düşük
-                      değer (20-30%), gerçekçi stiller için yüksek değer (50-70%) önerilir.
-                    </p>
-                  </div>
-                </motion.div>
+            <div className="rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100 px-4 py-3 flex items-center gap-3">
+              {selectedObj.thumbnail_url ? (
+                <img
+                  src={selectedObj.thumbnail_url}
+                  alt={selectedObj.display_name || selectedObj.name}
+                  className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-300 to-pink-400 flex-shrink-0" />
               )}
-            </AnimatePresence>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-purple-500 font-semibold">Seçilen Stil</p>
+                <p className="text-sm font-bold text-gray-800 truncate">
+                  {selectedObj.display_name || selectedObj.name}
+                </p>
+              </div>
+              <CheckCircle2 className="h-5 w-5 text-purple-500 flex-shrink-0" />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Style Grid — 2 cols mobile, 3 tablet, 4 desktop for larger images */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4"
-      >
-        {styles.map((style, index) => (
-          <motion.div
-            key={style.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 * index + 0.3 }}
-          >
-            <StyleCard
-              style={style}
-              isSelected={selectedStyle === style.id}
-              onSelect={() => onSelect(style.id)}
-            />
-          </motion.div>
-        ))}
-      </motion.div>
+      {/* ── Horizontal Carousel ── */}
+      <div className="relative">
+        {/* Desktop scroll arrows */}
+        <button
+          onClick={() => scroll("left")}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white shadow-md border border-gray-100 items-center justify-center hidden md:flex"
+        >
+          <ChevronLeft className="h-4 w-4 text-gray-600" />
+        </button>
 
-      {/* Recommendation Note */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="flex items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2"
-      >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100">
-          <Trophy className="h-4 w-4 text-amber-600" />
+        <div
+          ref={scrollRef}
+          className="flex gap-3 overflow-x-auto scroll-snap-x-mandatory scrollbar-none px-1 pb-2"
+          style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}
+        >
+          {styles.map((style, i) => {
+            const isSelected = selectedStyle === style.id;
+            const displayName = style.display_name || style.name;
+
+            return (
+              <motion.button
+                key={style.id}
+                type="button"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => onSelect(style.id)}
+                className={`
+                  flex-shrink-0 rounded-2xl overflow-hidden text-left transition-all duration-200
+                  ${isSelected
+                    ? "ring-3 ring-purple-500 shadow-xl shadow-purple-200 scale-[1.02]"
+                    : "shadow-sm hover:shadow-md"
+                  }
+                `}
+                style={{
+                  width: "160px",
+                  scrollSnapAlign: "start",
+                }}
+              >
+                {/* Style image */}
+                <div className="relative h-40 bg-gradient-to-br from-purple-200 to-pink-200">
+                  {style.thumbnail_url ? (
+                    <img
+                      src={style.thumbnail_url}
+                      alt={displayName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-4xl">🎨</div>
+                  )}
+                  {isSelected && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="absolute inset-0 bg-purple-600/20 flex items-center justify-center"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center shadow-lg">
+                        <CheckCircle2 className="h-5 w-5 text-white" />
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Card body */}
+                <div className={`p-3 ${isSelected ? "bg-purple-50" : "bg-white"}`}>
+                  <p className={`text-sm font-bold leading-tight ${isSelected ? "text-purple-700" : "text-gray-800"}`}>
+                    {displayName}
+                  </p>
+                  {isSelected && (
+                    <p className="text-xs text-purple-500 mt-0.5 font-medium">✓ Seçili</p>
+                  )}
+                </div>
+              </motion.button>
+            );
+          })}
         </div>
-        <div>
-          <p className="text-sm text-amber-800">
-            <span className="font-bold">Öneri:</span> &quot;Sihirli Animasyon&quot; stilimiz
-            ailelerin %78&apos;i tarafından tercih ediliyor!
-          </p>
-        </div>
-      </motion.div>
 
-      {/* Sticky Bottom Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 px-4 py-2.5 backdrop-blur-md"
-      >
-        <div className="mx-auto flex max-w-4xl flex-col items-center gap-3 md:flex-row">
-          {/* Selection Status */}
-          <div className="flex flex-1 items-center gap-3">
-            {selectedStyle ? (
-              <>
-                <div
-                  className={`h-10 w-10 rounded-xl bg-gradient-to-r ${selectedExtended?.colorAccent || DEFAULT_COLOR_ACCENT} flex items-center justify-center`}
-                >
-                  <Check className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Seçili Stil</p>
-                  <p className="font-bold text-gray-800">{selectedExtended?.display_name ?? selectedExtended?.name ?? ""}</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100">
-                  <Palette className="h-5 w-5 text-gray-400" />
-                </div>
-                <div>
-                  <p className="text-gray-500">Henüz seçim yapılmadı</p>
-                </div>
-              </>
-            )}
-          </div>
+        <button
+          onClick={() => scroll("right")}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white shadow-md border border-gray-100 items-center justify-center hidden md:flex"
+        >
+          <ChevronRight className="h-4 w-4 text-gray-600" />
+        </button>
+      </div>
 
-          {/* Action Buttons */}
-          <div className="flex w-full gap-3 md:w-auto">
-            <Button variant="outline" onClick={onBack} className="flex-1 md:flex-none">
-              Geri
-            </Button>
-            <Button
-              onClick={onContinue}
-              disabled={!selectedStyle || isLoading}
-              className={`flex-1 px-6 py-3 text-sm font-bold transition-all md:flex-none ${
-                selectedStyle && !isLoading
-                  ? "bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 shadow-lg shadow-purple-200 hover:from-purple-700 hover:via-pink-600 hover:to-orange-500"
-                  : "cursor-not-allowed bg-gray-200 text-gray-500"
-              }`}
+      {/* Scroll hint */}
+      <p className="text-center text-xs text-gray-400">← Kaydırarak daha fazla stil gör →</p>
+
+      {/* ── Advanced Settings (collapsible) ── */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center gap-2 text-sm text-gray-500 font-medium hover:text-purple-600 transition-colors"
+        >
+          <Settings2 className="h-4 w-4" />
+          Gelişmiş Ayarlar
+          <span className={`transition-transform ${showAdvanced ? "rotate-180" : ""}`}>▾</span>
+        </button>
+
+        <AnimatePresence>
+          {showAdvanced && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
             >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Hikaye Oluşturuluyor...
-                </span>
-              ) : selectedStyle ? (
-                <span className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5" />
-                  Hikayeyi Oluştur
-                  <ChevronRight className="h-5 w-5" />
-                </span>
-              ) : (
-                "Bir Stil Seçin"
-              )}
-            </Button>
-          </div>
+              <div className="mt-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-sm font-semibold text-gray-700">
+                      🪪 Yüz Benzerliği
+                    </label>
+                    <span className="text-sm font-bold text-purple-600">
+                      {customIdWeight !== null
+                        ? `${Math.round(customIdWeight * 100)}%`
+                        : "Varsayılan"
+                      }
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={customIdWeight ?? (selectedObj?.id_weight ?? 0.7)}
+                    onChange={(e) => onIdWeightChange(parseFloat(e.target.value))}
+                    className="w-full accent-purple-600"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>Daha Çizgisel</span>
+                    <span>Daha Gerçekçi</span>
+                  </div>
+                </div>
+                {customIdWeight !== null && (
+                  <button
+                    type="button"
+                    onClick={() => onIdWeightChange(null)}
+                    className="text-xs text-purple-600 font-medium hover:underline"
+                  >
+                    Varsayılana sıfırla
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── Sticky Bottom CTA ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 pt-3 pb-safe-4">
+        <div className="mx-auto flex max-w-lg gap-3 pb-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="h-14 px-5 rounded-2xl border-2 border-gray-200 text-gray-600 font-semibold text-sm"
+          >
+            ← Geri
+          </button>
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => selectedStyle && onContinue?.()}
+            disabled={!selectedStyle}
+            className={`
+              h-14 flex-1 rounded-2xl font-bold text-base transition-all duration-200
+              ${selectedStyle
+                ? "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-lg shadow-purple-200"
+                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              }
+            `}
+          >
+            {selectedStyle ? "Kitabı Oluştur 🪄" : "Bir Stil Seç"}
+          </motion.button>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

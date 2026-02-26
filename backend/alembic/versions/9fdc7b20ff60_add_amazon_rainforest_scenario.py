@@ -74,7 +74,7 @@ def upgrade() -> None:
                 "page_count": 22,
             }
         )
-        print("✓ Amazon Ormanları senaryosu güncellendi")
+        print("OK: Amazon Ormanlari senaryosu guncellendi")
     else:
         # Create new
         # First, get linked_product_id (A4 YATAY 32 sayfa)
@@ -119,7 +119,7 @@ def upgrade() -> None:
                 "linked_product_id": linked_product_id,
             }
         )
-        print("✓ Amazon Ormanları senaryosu oluşturuldu")
+        print("OK: Amazon Ormanlari senaryosu olusturuldu")
 
 
 def downgrade() -> None:

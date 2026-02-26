@@ -1,0 +1,461 @@
+﻿venv\Scripts\python.exe : INFO  [
+alembic.runtime.migration] Contex
+t impl PostgresqlImpl.
+At line:1 char:90
++ ... mmasalim" ; venv\Scripts\py
+thon.exe -m alembic upgrade head 
+> alembic ...
++                 ~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~
+    + CategoryInfo          : No 
+   tSpecified: (INFO  [alembic.  
+  ...PostgresqlImpl.:String) [   
+ ], RemoteException
+    + FullyQualifiedErrorId : Na 
+   tiveCommandError
+ 
+INFO  [alembic.runtime.migration]
+ Will assume transactional DDL.
+INFO  [alembic.runtime.migration]
+ Running upgrade 050_force_order_
+page_pipeline_v3 -> 051_product_p
+age_count_constraint, Add check_p
+age_count_range constraint to pro
+ducts table.
+INFO  [alembic.runtime.migration]
+ Running upgrade 051_product_page
+_count_constraint -> 052_page_reg
+enerate_count, Add page_regenerat
+e_count to story_previews.
+INFO  [alembic.runtime.migration]
+ Running upgrade 052_page_regener
+ate_count -> 053_face_crop_fields
+, Add face_crop_url and face_embe
+dding to story_previews.
+INFO  [alembic.runtime.migration]
+ Running upgrade 053_face_crop_fi
+elds -> 054_rebuild_prompt_templa
+tes, Rebuild prompt_templates tab
+le (clean slate).
+INFO  [alembic.runtime.migration]
+ Running upgrade 054_rebuild_prom
+pt_templates -> 055_fix_yerebatan
+_description, Fix Yerebatan Sarni
+ci null description.
+INFO  [alembic.runtime.migration]
+ Running upgrade 055_fix_yerebata
+n_description -> 056_switch_defau
+lt_provider_to_fal, Switch defaul
+t AI config image provider from g
+emini to fal.
+INFO  [alembic.runtime.migration]
+ Running upgrade 056_switch_defau
+lt_provider_to_fal -> 057_switch_
+all_configs_to_fal, Switch ALL AI
+ generation configs to use fal pr
+ovider.
+INFO  [alembic.runtime.migration]
+ Running upgrade 057_switch_all_c
+onfigs_to_fal -> 058_lower_advent
+ure_digital_id_weight, Lower Adve
+nture Digital id_weight from 1.0 
+to 0.9.
+INFO  [alembic.runtime.migration]
+ Running upgrade 058_lower_advent
+ure_digital_id_weight -> 059_lowe
+r_2d_storybook_id_weight, Lower 2
+D Children's Book (default) style
+ id_weight from 1.3 to 1.17.
+INFO  [alembic.runtime.migration]
+ Running upgrade 059_lower_2d_sto
+rybook_id_weight -> 060_fix_pixar
+_style_composition, Fix Pixar sty
+le: add composition guards and lo
+wer id_weight.
+INFO  [alembic.runtime.migration]
+ Running upgrade 060_fix_pixar_st
+yle_composition -> 061_normalize_
+all_style_id_weights, Normalize i
+d_weight and true_cfg across all 
+visual styles.
+INFO  [alembic.runtime.migration]
+ Running upgrade 061_normalize_al
+l_style_id_weights -> 062_add_tru
+e_cfg_start_step_to_visual_styles
+, Add true_cfg and start_step col
+umns to visual_styles.
+INFO  [alembic.runtime.migration]
+ Running upgrade 062_add_true_cfg
+_start_step_to_visual_styles -> 0
+63_add_generation_params_to_visua
+l_styles, Add num_inference_steps
+ and guidance_scale to visual_sty
+les.
+INFO  [alembic.runtime.migration]
+ Running upgrade 063_add_generati
+on_params_to_visual_styles -> 064
+_populate_all_scenario_story_prom
+pts, Populate story_prompt_tr for
+ all 11 scenarios from canonical 
+creation scripts.
+INFO  [alembic.runtime.migration]
+ Running upgrade 064_populate_all
+_scenario_story_prompts -> 065_fi
+x_child_safe_scenario_prompts, Re
+move scary/negative content and d
+eity references from scenario pro
+mpts for child safety.
+INFO  [alembic.runtime.migration]
+ Running upgrade 065_fix_child_sa
+fe_scenario_prompts -> 066_fix_so
+ft_pastel_atmosphere, Fix soft_pa
+stel prompt_modifier: replace 'co
+sy domestic atmosphere' with
+'warm magical atmosphere' so the 
+style works correctly with outdoo
+r/historical
+scenarios (Cappadocia, Abu Simbel
+, G÷beklitepe, etc.).
+INFO  [alembic.runtime.migration]
+ Running upgrade 066_fix_soft_pas
+tel_atmosphere -> 067_fix_waterco
+lor_likeness, Fix watercolor and 
+soft pastel likeness and proporti
+on settings.
+INFO  [alembic.runtime.migration]
+ Running upgrade 067_fix_watercol
+or_likeness -> 068_relax_location
+_constraints, Relax location cons
+traints text to prevent overcrowd
+ing in scenes.
+INFO  [alembic.runtime.migration]
+ Running upgrade 068_relax_locati
+on_constraints -> 069_relax_cover
+_prompt_templates, Relax strict r
+equirements in cover prompt templ
+ates to prevent overcrowding.
+INFO  [alembic.runtime.migration]
+ Running upgrade 069_relax_cover_
+prompt_templates -> 070_remove_re
+maining_ghost_references, Remove 
+remaining ghost references from s
+cenario story prompts for child s
+afety.
+INFO  [alembic.runtime.migration]
+ Running upgrade 070_remove_remai
+ning_ghost_references -> 071_fix_
+incompatible_learning_outcomes, F
+ix learning outcomes that conflic
+t with story constraints (Family 
+ban & historical settings).
+INFO  [alembic.runtime.migration]
+ Running upgrade 071_fix_incompat
+ible_learning_outcomes -> 072_fix
+_prompt_templates, Fix prompt_tem
+plates content_en texts to leave 
+empty space for text.
+INFO  [alembic.runtime.migration]
+ Running upgrade 072_fix_prompt_t
+emplates -> 073_add_cover_title_s
+ource_to_page_templates, Add cove
+r_title_source column to page_tem
+plates.
+INFO  [alembic.runtime.migration]
+ Running upgrade 073_add_cover_ti
+tle_source_to_page_templates -> 0
+74_set_cover_title_source_gemini,
+ Set cover_title_source to 'gemin
+i' for all existing page template
+s.
+INFO  [alembic.runtime.migration]
+ Running upgrade 074_set_cover_ti
+tle_source_gemini -> 075_update_c
+over_template_with_title, Update 
+COVER_TEMPLATE in prompt_template
+s to include story_title and remo
+ve text ban.
+INFO  [alembic.runtime.migration]
+ Running upgrade 075_update_cover
+_template_with_title -> 076_fix_c
+over_template_title_design, Fix C
+OVER_TEMPLATE: better title desig
+n instructions, exact text copy, 
+top 12-15% placement.
+INFO  [alembic.runtime.migration]
+ Running upgrade 076_fix_cover_te
+mplate_title_design -> 077_cover_
+title_playful_style, Update COVER
+_TEMPLATE: playful bouncy multico
+lor bubble letter style for title
+.
+INFO  [alembic.runtime.migration]
+ Running upgrade 077_cover_title_
+playful_style -> 078_cover_title_
+gold_star_design, Update COVER_TE
+MPLATE: artistic gold embossed 3D
+ letters with star embellishments
+.
+INFO  [alembic.runtime.migration]
+ Running upgrade 078_cover_title_
+gold_star_design -> 079_cover_tit
+le_centered_glow, Update COVER_TE
+MPLATE: centered title, golden gl
+ow, no overlap with child.
+INFO  [alembic.runtime.migration]
+ Running upgrade 079_cover_title_
+centered_glow -> 080_add_cover_sp
+read_fields_to_orders, Add back_c
+over_image_url and cover_spread_i
+mage_url to orders table.
+INFO  [alembic.runtime.migration]
+ Running upgrade 080_add_cover_sp
+read_fields_to_orders -> 081_add_
+is_back_cover_to_order_pages, Add
+ is_back_cover column to order_pa
+ges table.
+INFO  [alembic.runtime.migration]
+ Running upgrade 081_add_is_back_
+cover_to_order_pages -> 082_add_b
+ack_cover_image_url_to_story_prev
+iews, Add back_cover_image_url to
+ story_previews table.
+INFO  [alembic.runtime.migration]
+ Running upgrade 082_add_back_cov
+er_image_url_to_story_previews ->
+ 083_populate_scenario_descriptio
+ns, Populate description field fo
+r all 11 scenarios (kar■²lama 2 s
+ayfas² iin).
+INFO  [alembic.runtime.migration]
+ Running upgrade 083_populate_sce
+nario_descriptions -> 084_cover_t
+itle_elegant_integrated, Update C
+OVER_TEMPLATE: elegant integrated
+ title, proportional size, artist
+ic.
+INFO  [alembic.runtime.migration]
+ Running upgrade 084_cover_title_
+elegant_integrated -> 085_add_sce
+nario_marketing_fields, Add marke
+ting fields to scenarios table.
+INFO  [alembic.runtime.migration]
+ Running upgrade 085_add_scenario
+_marketing_fields -> 086_add_scen
+ario_product_overrides, Add produ
+ct override fields to scenarios t
+able.
+INFO  [alembic.runtime.migration]
+ Running upgrade 086_add_scenario
+_product_overrides -> 087_add_sce
+nario_product_link, Add linked_pr
+oduct_id and extended override fi
+elds to scenarios.
+INFO  [alembic.runtime.migration]
+ Running upgrade 087_add_scenario
+_product_link -> 088_add_scenario
+_book_structure, Add book structu
+re fields to scenarios for market
+ing display.
+INFO  [alembic.runtime.migration]
+ Running upgrade 088_add_scenario
+_book_structure -> 089_add_scenar
+io_outfit_fields, Add outfit_girl
+ and outfit_boy fields to scenari
+os.
+INFO  [alembic.runtime.migration]
+ Running upgrade 089_add_scenario
+_outfit_fields -> 090_seed_scenar
+io_outfits, Seed scenario-specifi
+c outfits (re-seed in case 089 ra
+n before data was ready).
+INFO  [alembic.runtime.migration]
+ Running upgrade 090_seed_scenari
+o_outfits -> 9fdc7b20ff60, add_am
+azon_rainforest_scenario
+Traceback (most recent call last)
+:
+  File "<frozen runpy>", line 198
+, in _run_module_as_main
+  File "<frozen runpy>", line 88,
+ in _run_code
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\alembic\__main
+__.py", line 4, in <module>
+    main(prog="alembic")
+    ~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\alembic\config
+.py", line 1047, in main
+    CommandLine(prog=prog).main(a
+rgv=argv)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+^^^^^^^^^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\alembic\config
+.py", line 1037, in main
+    self.run_cmd(cfg, options)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\alembic\config
+.py", line 971, in run_cmd
+    fn(
+    ~~^
+        config,
+        ^^^^^^^
+        *[getattr(options, k, Non
+e) for k in positional],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
+        **{k: getattr(options, k,
+ None) for k in kwarg},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\alembic\comman
+d.py", line 483, in upgrade
+    script.run_env()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\alembic\script
+\base.py", line 545, in run_env
+    util.load_python_file(self.di
+r, "env.py")
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+^^^^^^^^^^^^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\alembic\util\p
+yfiles.py", line 116, in load_pyt
+hon_file
+    module = load_module_py(modul
+e_id, path)
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\alembic\util\p
+yfiles.py", line 136, in load_mod
+ule_py
+    spec.loader.exec_module(modul
+e)  # type: ignore
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+^^
+  File "<frozen importlib._bootst
+rap_external>", line 1026, in exe
+c_module
+  File "<frozen importlib._bootst
+rap>", line 488, in _call_with_fr
+ames_removed
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\alem
+bic\env.py", line 88, in <module>
+    run_migrations_online()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\alem
+bic\env.py", line 82, in run_migr
+ations_online
+    asyncio.run(run_async_migrati
+ons())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+^^^^^^
+  File "C:\Users\yusuf\AppData\Lo
+cal\Programs\Python\Python313\Lib
+\asyncio\runners.py", line 195, i
+n run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Users\yusuf\AppData\Lo
+cal\Programs\Python\Python313\Lib
+\asyncio\runners.py", line 118, i
+n run
+    return self._loop.run_until_c
+omplete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~^^^^^^
+  File "C:\Users\yusuf\AppData\Lo
+cal\Programs\Python\Python313\Lib
+\asyncio\base_events.py", line 72
+5, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\alem
+bic\env.py", line 75, in run_asyn
+c_migrations
+    await connection.run_sync(do_
+run_migrations)
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\sqlalchemy\ext
+\asyncio\engine.py", line 888, in
+ run_sync
+    return await greenlet_spawn(
+           ^^^^^^^^^^^^^^^^^^^^^
+        fn, self._proxied, *arg, 
+_require_await=False, **kw
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\sqlalchemy\uti
+l\_concurrency_py3k.py", line 203
+, in greenlet_spawn
+    result = context.switch(value
+)
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\alem
+bic\env.py", line 51, in do_run_m
+igrations
+    context.run_migrations()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "<string>", line 8, in run
+_migrations
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\alembic\runtim
+e\environment.py", line 969, in r
+un_migrations
+    self.get_context().run_migrat
+ions(**kw)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~^^^^^^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\venv
+\Lib\site-packages\alembic\runtim
+e\migration.py", line 626, in run
+_migrations
+    step.migration_fn(**kw)
+    ~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\yusuf\OneDrive\B
+elgeler\BenimMasalim\backend\alem
+bic\versions\9fdc7b20ff60_add_ama
+zon_rainforest_scenario.py", line
+ 122, in upgrade
+    print("\u2713 Amazon Ormanlar
+² senaryosu olu■turuldu")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\yusuf\AppData\Lo
+cal\Programs\Python\Python313\Lib
+\encodings\cp1254.py", line 19, i
+n encode
+    return codecs.charmap_encode(
+input,self.errors,encoding_table)
+[0]
+           ~~~~~~~~~~~~~~~~~~~~~^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' cod
+ec can't encode character '\u2713
+' in position 0: character maps t
+o <undefined>
+[090_seed_scenario_outfits] Updated 2 scenario rows with outfit data.

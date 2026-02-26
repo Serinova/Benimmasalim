@@ -30,7 +30,7 @@ def upgrade() -> None:
             WHERE theme_key = 'ocean_depths'
         """)
     )
-    print("✓ Okyanus scenario Turkish characters fixed")
+    print("OK: Okyanus scenario Turkish characters fixed")
 
 
 def downgrade() -> None:

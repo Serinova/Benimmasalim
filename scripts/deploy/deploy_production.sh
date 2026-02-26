@@ -112,9 +112,24 @@ gcloud run deploy benimmasalim-backend \
   --set-cloudsql-instances $PROJECT_ID:europe-west1:benimmasalim-db
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Cloud Run deploy tamamlandı${NC}"
+    echo -e "${GREEN}✅ Cloud Run backend deploy tamamlandı${NC}"
 else
-    echo -e "${YELLOW}⚠️  Cloud Run deploy hatası!${NC}"
+    echo -e "${YELLOW}⚠️  Cloud Run backend deploy hatası!${NC}"
+    exit 1
+fi
+echo ""
+
+echo -e "${BLUE}🚀 Cloud Run WORKER deploy ediliyor...${NC}"
+
+gcloud run deploy benimmasalim-worker \
+  --image gcr.io/$PROJECT_ID/benimmasalim-backend:latest \
+  --region europe-west1 \
+  --platform managed
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Cloud Run worker deploy tamamlandı${NC}"
+else
+    echo -e "${YELLOW}⚠️  Cloud Run worker deploy hatası!${NC}"
     exit 1
 fi
 echo ""
@@ -145,3 +160,4 @@ echo "Backend URL: $BACKEND_URL"
 echo "13 yeni senaryo production'da! 🎉"
 echo ""
 echo "Test için: $BACKEND_URL/api/scenarios"
+

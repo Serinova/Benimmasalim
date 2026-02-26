@@ -113,7 +113,7 @@ def upgrade() -> None:
             }
         )
         print("[DEBUG] UPDATE executed")
-        print("✓ Okyanus Derinlikleri senaryosu güncellendi")
+        print("OK: Okyanus Derinlikleri senaryosu guncellendi")
     else:
         # Create new
         product_result = conn.execute(
@@ -170,7 +170,7 @@ def upgrade() -> None:
             }
         )
         print("[DEBUG] INSERT executed")
-        print("✓ Okyanus Derinlikleri senaryosu oluşturuldu")
+        print("OK: Okyanus Derinlikleri senaryosu olusturuldu")
 
 
 def downgrade() -> None:

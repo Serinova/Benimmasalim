@@ -37,7 +37,7 @@ def upgrade() -> None:
             "custom_inputs": custom_inputs_json
         }
     )
-    print("✓ Okyanus Derinlikleri custom_inputs_schema güncellendi")
+    print("OK: Okyanus Derinlikleri custom_inputs_schema guncellendi")
 
 
 def downgrade() -> None:
