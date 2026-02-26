@@ -697,6 +697,25 @@ export async function addColoringBookToOrder(
   });
 }
 
+/**
+ * Add coloring book to an existing completed TRIAL.
+ * Creates an Iyzico payment form specifically for the coloring book.
+ * @param trialId - The StoryPreview ID
+ * @param trialToken - X-Trial-Token for ownership verification
+ */
+export async function addColoringBookToTrial(
+  trialId: string,
+  trialToken?: string,
+): Promise<CreateTrialPaymentResponse> {
+  const headers: Record<string, string> = {};
+  if (trialToken) headers["X-Trial-Token"] = trialToken;
+  return fetchAPI(`/trials/${trialId}/add-coloring-book`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({}),
+  });
+}
+
 // ─── Auth ────────────────────────────────────────────────────────
 
 export async function login(email: string, password: string) {

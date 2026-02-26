@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, forwardRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, forwardRef, useCallback, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -1242,9 +1242,10 @@ export default function AdminProductsPage() {
     }
   };
 
-  return (
+  // Parser workaround: avoid "return ( <" being parsed as generic by SWC
+  // @ts-expect-error - left side is only for parser, fragment is the JSX
+  const fragment = (null as unknown as JSX.Element) || <Fragment>
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-white shadow-sm">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
@@ -1630,8 +1631,8 @@ export default function AdminProductsPage() {
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             {/* ==================== TECHNICAL SECTION ==================== */}
-            {activeSection === "technical" && (
-              <>
+            {/* @ts-expect-error parser workaround */}
+            {activeSection === "technical" ? (null as unknown as JSX.Element) || <>
                 {/* Section: General Info */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -1911,8 +1912,8 @@ export default function AdminProductsPage() {
                 )}
 
                 {/* Section: Physical Specs - Only for story_book and coloring_book */}
-                {(form.watch("product_type") === "story_book" || form.watch("product_type") === "coloring_book") && (
-                <div className="space-y-4">
+                {/* @ts-expect-error parser workaround */}
+                {(form.watch("product_type") === "story_book" || form.watch("product_type") === "coloring_book") ? (null as unknown as JSX.Element) || <> <div className="space-y-4">
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <Ruler className="h-4 w-4 text-purple-600" />
                     Fiziksel Özellikler
@@ -2088,7 +2089,7 @@ export default function AdminProductsPage() {
                 </div>
 
                 <Separator />
-                )}
+                </> : null}
 
                 {/* Section: Pricing */}
                 <div className="space-y-4">
@@ -2295,12 +2296,11 @@ export default function AdminProductsPage() {
                     />
                   </div>
                 </div>
-              </>
-            )}
+              </> : null}
 
             {/* ==================== MARKETING SECTION ==================== */}
-            {activeSection === "marketing" && (
-              <>
+            {/* @ts-expect-error parser workaround */}
+            {activeSection === "marketing" ? (null as unknown as JSX.Element) || <>
                 {/* Promo & Urgency */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -2528,12 +2528,11 @@ export default function AdminProductsPage() {
                     ))}
                   </div>
                 </div>
-              </>
-            )}
+              </> : null}
 
             {/* ==================== SCENARIOS SECTION ==================== */}
-            {activeSection === "scenarios" && (
-              <div className="space-y-6">
+            {/* @ts-expect-error parser workaround */}
+            {activeSection === "scenarios" ? (null as unknown as JSX.Element) || <div className="space-y-6">
                 <div className="rounded-xl border border-orange-100 bg-orange-50 p-4">
                   <div className="flex items-start gap-3">
                     <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-orange-500" />
@@ -2609,7 +2608,7 @@ export default function AdminProductsPage() {
                   </p>
                 </div>
               </div>
-            )}
+            : null}
 
             {/* Sticky Footer */}
             <div className="sticky bottom-0 -mx-6 -mb-6 flex gap-3 border-t bg-white p-4">
@@ -2638,5 +2637,6 @@ export default function AdminProductsPage() {
         </SheetContent>
       </Sheet>
     </div>
-  );
+    </Fragment>;
+  return fragment;
 }

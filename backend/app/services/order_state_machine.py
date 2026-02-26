@@ -23,7 +23,7 @@ VALID_TRANSITIONS: dict[OrderStatus, list[OrderStatus]] = {
     OrderStatus.COVER_APPROVED: [OrderStatus.PAYMENT_PENDING, OrderStatus.TEXT_APPROVED],
     OrderStatus.PAYMENT_PENDING: [OrderStatus.PAID, OrderStatus.COVER_APPROVED],
     OrderStatus.PAID: [OrderStatus.PROCESSING],
-    OrderStatus.PROCESSING: [OrderStatus.READY_FOR_PRINT],
+    OrderStatus.PROCESSING: [OrderStatus.READY_FOR_PRINT, OrderStatus.CANCELLED],
     OrderStatus.READY_FOR_PRINT: [OrderStatus.SHIPPED],
     OrderStatus.SHIPPED: [OrderStatus.DELIVERED],
     OrderStatus.DELIVERED: [],  # Terminal state

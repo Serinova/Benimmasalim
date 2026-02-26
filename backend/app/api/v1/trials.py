@@ -3014,6 +3014,21 @@ async def _generate_remaining_images_inner(
                     # Save PDF URL to trial
                     trial.admin_notes = (trial.admin_notes or "") + f"\n\nPDF URL: {pdf_url}"
                     await db.commit()
+                    
+                # [NEW] Trigger coloring book generation if requested
+                if trial.has_coloring_book:
+                    try:
+                        from app.workers.enqueue import enqueue_job
+                        logger.info("Enqueuing trial coloring book generation", trial_id=trial_id)
+                        await enqueue_job("generate_coloring_book_for_trial", trial_id=uuid.UUID(trial_id))
+                    except Exception as _cb_err:
+                        logger.error(
+                            "Failed to enqueue trial coloring book generation",
+                            trial_id=trial_id,
+                            error=str(_cb_err)
+                        )
+                        trial.admin_notes = (trial.admin_notes or "") + f"\n\nBoyama kitabi olusturma siraya alinamadi: {str(_cb_err)}"
+                        await db.commit()
 
                 # Send approval email with confirmation link (mukerrer email onleme)
                 _email_already_sent = (
@@ -3575,8 +3590,9 @@ async def _create_coloring_book_order_from_trial(
             return None
 
         # Get product, scenario, visual_style from trial
+        # NOTE: trial.product_id is already a UUID object from asyncpg — do NOT wrap with uuid.UUID()
         product_result = await db.execute(
-            select(Product).where(Product.id == uuid.UUID(trial.product_id))
+            select(Product).where(Product.id == trial.product_id)
         )
         product = product_result.scalar_one_or_none()
 
@@ -3668,3 +3684,283 @@ async def _create_coloring_book_order_from_trial(
     except Exception as e:
         logger.error("Failed to create coloring book order", error=str(e), trial_id=str(trial.id))
         return None
+
+# ============ ADD COLORING BOOK (UPSELL) ============
+
+@router.post("/{trial_id}/add-coloring-book")
+async def add_coloring_book_to_trial(
+    trial_id: str,
+    request: "Request",
+    db: DbSession,
+    x_trial_token: str | None = Header(None, alias="X-Trial-Token"),
+) -> dict:
+    """
+    Upsell endpoint: Add a coloring book to an already purchased (or completing) trial.
+    Creates an Iyzico payment intent specifically for the coloring book price.
+    """
+    from decimal import Decimal
+    import iyzipay
+    from app.config import settings
+    from app.models.coloring_book import ColoringBookProduct
+
+    try:
+        trial_uuid = uuid.UUID(trial_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Geçersiz trial ID")
+
+    result = await db.execute(select(StoryPreview).where(StoryPreview.id == trial_uuid))
+    trial = result.scalar_one_or_none()
+
+    if not trial:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trial bulunamadı")
+
+    _verify_trial_access(trial, x_trial_token)
+
+    # Allow upsell if it's already generated or confirmed
+    allowed_statuses = [
+        PreviewStatus.COMPLETING.value,
+        PreviewStatus.COMPLETED.value,
+        PreviewStatus.CONFIRMATION_PENDING.value,
+        PreviewStatus.CONFIRMED.value,
+    ]
+    if trial.status not in allowed_statuses and not trial.payment_reference:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bu işlem için ana siparişin ödenmiş olması gerekir.",
+        )
+        
+    if trial.has_coloring_book:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bu siparişte zaten boyama kitabı mevcut.",
+        )
+
+    if not settings.iyzico_api_key or not settings.iyzico_secret_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Ödeme sistemi yapılandırılmamış.",
+        )
+
+    # Get active coloring book config for pricing
+    config_result = await db.execute(
+        select(ColoringBookProduct).where(ColoringBookProduct.active == True).limit(1)
+    )
+    coloring_config = config_result.scalar_one_or_none()
+    
+    if not coloring_config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Boyama ürünü şu anda aktif değil.",
+        )
+        
+    coloring_book_price = coloring_config.discounted_price or coloring_config.base_price
+    
+    if coloring_book_price <= Decimal("0"):
+         raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Geçersiz fiyat yapılandırması.",
+        )
+
+    options = {
+        "api_key": settings.iyzico_api_key,
+        "secret_key": settings.iyzico_secret_key,
+        "base_url": settings.iyzico_base_url,
+    }
+
+    buyer_name = (trial.parent_name or "Misafir Kullanıcı").strip()
+    buyer_email = (trial.parent_email or "misafir@benimmasalim.com").strip()
+    buyer_phone = (trial.parent_phone or "").strip()
+    name_parts = buyer_name.split(" ", 1)
+    first_name = name_parts[0] if name_parts else "Misafir"
+    last_name = name_parts[1] if len(name_parts) > 1 else "."
+
+    client_ip = (
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        or (request.client.host if request.client else "127.0.0.1")
+    )
+
+    buyer = {
+        "id": str(trial.id),
+        "name": first_name,
+        "surname": last_name,
+        "email": buyer_email,
+        "identityNumber": "11111111111",
+        "registrationAddress": "Adres belirtilmedi",
+        "city": "Istanbul",
+        "country": "Turkey",
+        "ip": client_ip,
+    }
+    if buyer_phone:
+        buyer["gsmNumber"] = buyer_phone
+
+    address = {"contactName": buyer_name, "city": "Istanbul", "country": "Turkey", "address": "Adres belirtilmedi"}
+
+    # We use a distinct callback for upsell to process it separately
+    callback_url = f"{settings.frontend_url}/api/payment/callback-upsell?trialId={trial.id}&type=coloring"
+
+    # Distinct group ID for the upsell payment
+    basket_id = f"{str(trial.id)[:12]}_up"
+    
+    iyzico_request = {
+        "locale": "tr",
+        "conversationId": f"{trial.id}_upsell_cb",
+        "price": str(coloring_book_price),
+        "paidPrice": str(coloring_book_price),
+        "currency": "TRY",
+        "basketId": basket_id,
+        "paymentGroup": "PRODUCT",
+        "callbackUrl": callback_url,
+        "enabledInstallments": [1, 2, 3, 6],
+        "buyer": buyer,
+        "shippingAddress": address,
+        "billingAddress": address,
+        "basketItems": [
+            {
+                "id": basket_id,
+                "name": "Ekleme: Boyama Kitabı",
+                "category1": "Kitap",
+                "category2": "Ek Özellik",
+                "itemType": "VIRTUAL",
+                "price": str(coloring_book_price),
+            }
+        ],
+    }
+
+    try:
+        checkout_form = iyzipay.CheckoutFormInitialize().create(iyzico_request, options)
+        import json as _json
+        result_dict = _json.loads(checkout_form.read().decode("utf-8"))
+    except Exception as exc:
+        logger.error("TRIAL_UPSELL_CHECKOUT_ERROR", trial_id=trial_id, error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Ek ürün ödeme sayfası oluşturulamadı.",
+        ) from exc
+
+    if result_dict.get("status") != "success":
+        error_msg = result_dict.get("errorMessage", "Bilinmeyen hata")
+        logger.error("TRIAL_UPSELL_CHECKOUT_FAILED", trial_id=trial_id, error=error_msg)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Ödeme sayfası oluşturulamadı: {error_msg}",
+        )
+
+    # Note: We do NOT overwrite trial.payment_reference here, as that represents the MAIN payment check.
+    # The callback will verify using Iyzico directly and update `has_coloring_book` = True.
+
+    payment_page_url = result_dict.get("paymentPageUrl", "")
+
+    logger.info(
+        "TRIAL_UPSELL_CHECKOUT_CREATED",
+        trial_id=trial_id,
+        upsell_type="coloring_book",
+        price=str(coloring_book_price),
+    )
+
+    return {
+        "success": True,
+        "payment_url": payment_page_url,
+        "trial_id": trial_id,
+    }
+
+
+@router.post("/add-coloring-book-callback")
+async def add_coloring_book_callback(
+    request: "Request",
+    db: DbSession,
+) -> dict:
+    """
+    Callback for the upsell payment. Validates payment with Iyzico,
+    sets has_coloring_book = True on the trial, and queues generation.
+    """
+    import json as _json
+    import iyzipay
+    from app.config import settings
+    from urllib.parse import parse_qs
+    from fastapi.responses import RedirectResponse
+    
+    # trialId might be in query params from callbackUrl
+    query_params = parse_qs(str(request.query_params))
+    trial_id_list = query_params.get("trialId")
+    trial_id_str = trial_id_list[0] if trial_id_list else None
+
+    # Try JSON first (sometimes webhooks are JSON)
+    try:
+        body_bytes = await request.body()
+        body_str = body_bytes.decode()
+        if body_str.startswith("{"):
+             data = _json.loads(body_str)
+             token = data.get("token")
+        else:
+            # Iyzico sends data as form URL encoded
+            form_data = await request.form()
+            token = form_data.get("token")
+    except Exception:
+        token = None
+        
+    if not token or not trial_id_str:
+        logger.error("UPSELL_CALLBACK_MISSING_DATA", token=token, trial_id=trial_id_str)
+        return RedirectResponse(url=f"{settings.frontend_url}/payment-failed?error=Eksik_parametre")
+        
+    try:
+        trial_uuid = uuid.UUID(trial_id_str)
+    except ValueError:
+        return RedirectResponse(url=f"{settings.frontend_url}/payment-failed?error=Gecersiz_ID")
+
+    if not settings.iyzico_api_key or not settings.iyzico_secret_key:
+        return RedirectResponse(url=f"{settings.frontend_url}/payment-failed?error=Sistem_Hatasi")
+
+    options = {
+        "api_key": settings.iyzico_api_key,
+        "secret_key": settings.iyzico_secret_key,
+        "base_url": settings.iyzico_base_url,
+    }
+
+    try:
+        verify_result = iyzipay.CheckoutForm().retrieve(
+            {"locale": "tr", "token": token},
+            options,
+        )
+        result_dict = _json.loads(verify_result.read().decode("utf-8"))
+    except Exception as exc:
+        logger.error("UPSELL_IYZICO_VERIFY_ERROR", trial_id=trial_id_str, error=str(exc))
+        return RedirectResponse(url=f"{settings.frontend_url}/payment-failed?error=Dogrulama_Hatasi")
+
+    iyzico_status = result_dict.get("paymentStatus")
+
+    if iyzico_status != "SUCCESS":
+        error_msg = result_dict.get("errorMessage", "Ödeme başarısız")
+        logger.warning("UPSELL_IYZICO_VERIFY_FAILED", trial_id=trial_id_str, status=iyzico_status, error=error_msg)
+        return RedirectResponse(url=f"{settings.frontend_url}/payment-failed?error=Odeme_Basarisiz")
+
+    # Payment successful. Update trial.
+    result = await db.execute(select(StoryPreview).where(StoryPreview.id == trial_uuid))
+    trial = result.scalar_one_or_none()
+    
+    if not trial:
+        logger.error("UPSELL_CALLBACK_TRIAL_NOT_FOUND", trial_id=trial_id_str)
+        return RedirectResponse(url=f"{settings.frontend_url}/payment-failed?error=Siparis_Bulunamadi")
+        
+    if trial.has_coloring_book:
+        logger.info("UPSELL_ALREADY_PROCESSED", trial_id=trial_id_str)
+    else:
+        trial.has_coloring_book = True
+        trial.admin_notes = (trial.admin_notes or "") + f"\n\nUPSELL_COLORING_BOOK_PAID: {token}"
+        await db.commit()
+        
+        # Enqueue the coloring book generation task
+        try:
+            from app.workers.enqueue import enqueue_job
+            logger.info("Enqueuing trial coloring book generation from upsell", trial_id=trial_id_str)
+            await enqueue_job("generate_coloring_book_for_trial", trial_id=str(trial_uuid))
+        except Exception as _cb_err:
+            logger.error(
+                "Failed to enqueue trial coloring book generation from upsell",
+                trial_id=trial_id_str,
+                error=str(_cb_err)
+            )
+            trial.admin_notes = (trial.admin_notes or "") + f"\n\nBoyama kitabi olusturma siraya alinamadi (upsell): {str(_cb_err)}"
+            await db.commit()
+            
+    # Redirect to a success page
+    return RedirectResponse(url=f"{settings.frontend_url}/payment-success?trialId={trial.id}&upsell=coloring")

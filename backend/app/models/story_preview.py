@@ -159,6 +159,7 @@ class StoryPreview(Base, UUIDMixin, TimestampMixin):
 
     # Coloring book flag
     has_coloring_book: Mapped[bool] = mapped_column(Boolean, default=False)
+    coloring_pdf_url: Mapped[str | None] = mapped_column(Text)  # GCS URL for the generated coloring book PDF
 
     # Admin notes
     admin_notes: Mapped[str | None] = mapped_column(Text)

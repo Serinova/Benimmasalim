@@ -64,17 +64,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 ```
 
-## API Çağrıları (TanStack Query)
+## API Çağrıları
 
 ```tsx
-// ❌ YANLIŞ - useEffect içinde fetch
-useEffect(() => { fetch('/api/orders')... }, []);
-
-// ✅ DOĞRU - TanStack Query
+// Projede fetch + useState yaygın; TanStack Query (useQuery) tercih edilebilir
+// ✅ TanStack Query (cache, retry, loading state)
 const { data: orders, isLoading } = useQuery({
   queryKey: ['orders'],
-  queryFn: () => api.get('/orders')
+  queryFn: () => fetchAPI('/orders')
 });
+
+// ✅ Kabul edilebilir - fetch + useState (mevcut birçok sayfa)
+const [data, setData] = useState(null);
+useEffect(() => { fetchAPI('/orders').then(setData); }, []);
 ```
 
 ## State Management (Zustand)

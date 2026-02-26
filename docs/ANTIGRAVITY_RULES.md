@@ -42,3 +42,9 @@ Google Cloud (Cloud Run) altyapısı "Serverless/Konteyner" mantığıyla çalı
 - **Docker Standardı:** Bilgisayarda halihazırda yüklü olan "Docker Desktop" (WSL 2 arkaucu ile) sistemin varsayılan ve en pürüzsüz çalışma ortamıdır. Ekstra konfigürasyona gerek yoktur.
 - **Yerel Geliştirme:** Tüm geliştirmeler doğrudan Windows ortamında (PowerShell/Cursor) yapılır. Ekstra Linux eklentileri (WSL ext. vb.) yüklenerek sistem karmaşıklaştırılmaz.
 - **Yayınlama (Deployment):** Herhangi bir sunucu erişimine veya manuel script çalıştırmaya gerek yoktur. Kullanıcının chat'e `/deploy` yazmasıyla tüm akış AI tarafından otomatik ve hatasız ("workflow" üzerinden) yönetilir. Canlı DB erişimi için sadece `cloud-sql-proxy` tüneli zorunludur.
+
+## 🛡️ 7. Kod Kalite ve Hata Yakalama Ağları (Halüsinasyon Önleyici)
+Antigravity, kodu yazdıktan sonra veya "İşlem bitti" demeden **ÖNCE** kesinlikle ve istisnasız bir şekilde `./check.sh` kontrolcüsünü çalıştırmak zorundadır. Kullanıcının bir eklenti (GitLens vb.) kurmasına gerek yoktur. 
+- **Frontend Check:** `npm run type-check` ve `npm run lint` komutlarıyla React/Next.js hataları taranır. Eğer terminalde kırmızı bir uyarı çıkarsa AI, kullanıcıya dönmeden hatayı fix eder.
+- **Backend Check:** Python dosyalarındaki en ufak bir "Syntax" (girinti - parantez vb.) hatası terminal yoluyla saptanır ve sunucuya bozuk kod sürülmesi engellenir.
+- Görev tamamlandığında Antigravity, `./check.sh` sonucunu "Tüm kalite testlerinden geçti" şeklinde özetler.

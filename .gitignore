@@ -80,3 +80,7 @@ generated/
 # Temporary analysis and test outputs
 temp_images/
 temp_analysis/
+scenario_analysis_report.json
+
+# Local binaries (use from PATH or scripts)
+cloud-sql-proxy.exe

@@ -64,18 +64,18 @@ Bu sistem on binlerce kullanıcıya görsel üretiyor. Görseller; **stil, karak
 
 ## 8) Çok Kullanıcılı Üretimde Karışmayı Önleme (Isolation)
 - Her sipariş için benzersiz:
-  - job_id, user_id, book_id, character_profile_id, style_pack_id
+  - order_id, user_id, arq job_id; BookContext kitap başına tek (character_profile_id/style_pack_id ayrı tablo değil)
 - Prompt/asset karışmasını önlemek için:
   - tüm üretim adımları bu kimliklerle namespace’lenir (cache/storage path dahil).
 
 ## 9) Prompt Şablon Zorunluluğu
 - Her görsel prompt’u şu blokları içerir:
-  - [STYLE_PACK]
-  - [CHARACTER_PROFILE]
-  - [SCENE_DESCRIPTION]
-  - [COMPOSITION]
-  - [NEGATIVE_PROMPT_STANDARD]
-- Bu bloklar olmadan prod’da render başlatma.
+  - Stil: StyleConfig — resolve_style(style_modifier)
+  - Karakter: character_description, clothing_description, hair_description (BookContext)
+  - Sahne: scene_description (page_builder / cover_builder)
+  - Kompozisyon: COMPOSITION_RULES (templates.py)
+  - Negatif: BASE_NEGATIVE + build_negative(ctx) (negative_builder.py)
+- Gerçek üretim: PromptComposer.compose_cover / compose_page. Bu bloklar olmadan prod’da render başlatma.
 
 ## 10) Çıktı Tutarlılığı Hedefi
 - Aynı kitapta: “same face, same hair, same outfit, same style, consistent proportions”

@@ -1,6 +1,6 @@
 ---
 description: Sipariş state machine kuralları - durum geçişleri, audit log, KVKK
-globs: backend/app/services/order_*.py, backend/app/models/order.py
+globs: backend/app/services/order_*.py, backend/app/models/order.py, backend/app/tasks/*.py
 alwaysApply: true
 ---
 
@@ -23,13 +23,14 @@ VALID_TRANSITIONS: dict[OrderStatus, list[OrderStatus]] = {
     OrderStatus.COVER_APPROVED: [OrderStatus.PAYMENT_PENDING, OrderStatus.TEXT_APPROVED],
     OrderStatus.PAYMENT_PENDING: [OrderStatus.PAID, OrderStatus.COVER_APPROVED],
     OrderStatus.PAID: [OrderStatus.PROCESSING],
-    OrderStatus.PROCESSING: [OrderStatus.READY_FOR_PRINT],
+    OrderStatus.PROCESSING: [OrderStatus.READY_FOR_PRINT, OrderStatus.CANCELLED],
     OrderStatus.READY_FOR_PRINT: [OrderStatus.SHIPPED],
     OrderStatus.SHIPPED: [OrderStatus.DELIVERED],
     OrderStatus.DELIVERED: [],  # Terminal state
     OrderStatus.CANCELLED: [],
     OrderStatus.REFUNDED: [],
 }
+# PROCESSING → CANCELLED: üretim hatası (worker/task) için kullanılır.
 ```
 
 ## Durum Değiştirme (Zorunlu Fonksiyon)
@@ -38,86 +39,50 @@ VALID_TRANSITIONS: dict[OrderStatus, list[OrderStatus]] = {
 # ❌ YANLIŞ - Direkt atama
 order.status = OrderStatus.PAID
 
-# ✅ DOĞRU - State machine fonksiyonu kullan
-async def transition_order(
-    order: Order,
-    new_status: OrderStatus,
-    db: AsyncSession,
-    actor_id: UUID | None = None
-) -> Order:
-    if new_status not in VALID_TRANSITIONS[order.status]:
-        raise InvalidStateTransition(
-            f"{order.status} → {new_status} geçişi geçersiz"
-        )
-    
-    old_status = order.status
-    order.status = new_status
-    
-    # KVKK: DELIVERED olunca 30 gün timer başlat
-    if new_status == OrderStatus.DELIVERED:
-        order.delivered_at = datetime.utcnow()
-        order.photo_deletion_scheduled_at = order.delivered_at + timedelta(days=30)
-    
-    # Audit log kaydet
-    await create_audit_log(
-        db=db,
-        action=f"ORDER_STATUS_{new_status.value}",
-        order_id=order.id,
-        user_id=actor_id,
-        details={"from": old_status.value, "to": new_status.value}
-    )
-    
-    await db.commit()
-    return order
+# ✅ DOĞRU - app.services.order_state_machine.transition_order kullan
+from app.services.order_state_machine import transition_order
+from app.core.exceptions import InvalidStateTransition
+
+# InvalidStateTransition(from_status: str, to_status: str) — iki argüman
+# transition_order(..., auto_commit=True) varsayılan; ödeme akışında auto_commit=False ile çağrılır (çağıran commit eder)
+await transition_order(order, OrderStatus.PAID, db, actor_id=actor_id, ip_address=..., details=...)
+
+# İç davranış:
+# - KVKK: DELIVERED olunca photo_deletion_scheduled_at = delivered_at + settings.kvkk_retention_days (varsayılan 30)
+# - Audit: db.add(AuditLog(action=f"ORDER_STATUS_{new_status.value}", order_id=..., user_id=..., details={"from_status":..., "to_status":...}, ip_address=...))
+# - auto_commit=True ise db.commit() yapar; False ise çağıran atomik işlemde commit eder
 ```
 
 ## KVKK Kuralları
 
 ```python
-# Cron job: Her gece 02:00
-async def kvkk_photo_cleanup():
-    """30 gün geçmiş fotoğrafları sil"""
-    threshold = datetime.utcnow()
-    
-    orders = await db.execute(
-        select(Order).where(
-            Order.status == OrderStatus.DELIVERED,
-            Order.photo_deletion_scheduled_at <= threshold,
-            Order.child_photo_url.isnot(None)
-        )
-    )
-    
-    for order in orders.scalars():
-        # 1. GCS'den sil
-        await delete_from_gcs(order.child_photo_url)
-        # 2. DB'den temizle
-        order.child_photo_url = None
-        order.face_embedding = None
-        # 3. Log
-        await create_audit_log(action="KVKK_PHOTO_DELETED", order_id=order.id)
+# Uygulama: app.tasks.kvkk_cleanup.kvkk_photo_cleanup() — cron (örn. her gece 02:00)
+# photo_deletion_scheduled_at <= now olan DELIVERED siparişlerde:
+# 1. StorageService().delete_file(child_photo_url), delete_order_files(order_id); ses/voice sample varsa onları da sil
+# 2. DB: child_photo_url, face_embedding, face_description = None; cloned audio için audio_file_url = None
+# 3. db.add(AuditLog(action="KVKK_PHOTO_DELETED", order_id=order.id, details={...}))
+# Süre: settings.kvkk_retention_days (varsayılan 30) — order_state_machine DELIVERED geçişinde bu kadar gün sonrası için photo_deletion_scheduled_at atar.
 ```
 
 ## Audit Log Formatı
 
 ```python
-class AuditLog(Base):
-    action: str          # ORDER_CREATED, TEXT_APPROVED, KVKK_PHOTO_DELETED
-    order_id: UUID
-    user_id: UUID | None
-    admin_id: UUID | None
-    details: dict        # JSON - ek bilgiler
-    ip_address: str
-    created_at: datetime
+# app.models.audit_log.AuditLog
+# action: str (ORDER_STATUS_*, KVKK_PHOTO_DELETED, ...)
+# order_id, user_id, admin_id: UUID | None
+# details: dict | None (JSONB; transition_order "from_status"/"to_status" yazar)
+# ip_address: str | None (INET), user_agent: str | None
+# created_at: datetime (server_default)
+# Kayıt: db.add(AuditLog(...)) — create_audit_log fonksiyonu yok
 ```
 
 ## Regenerate Limitleri
 
 ```python
-# Kapak yenileme: Max 3 hak
-async def regenerate_cover(order: Order) -> None:
-    if order.cover_regenerate_count >= order.max_cover_regenerate:
-        raise HTTPException(400, "Kapak yenileme hakkınız doldu (max 3)")
-    
-    order.cover_regenerate_count += 1
-    # ... yeni kapak üret
+# Order: cover_regenerate_count (int, default 0), max_cover_regenerate (int, default 3)
+# Kapak yenilemeden önce kontrol:
+if order.cover_regenerate_count >= order.max_cover_regenerate:
+    raise HTTPException(400, "Kapak yenileme hakkınız doldu (max 3)")
+order.cover_regenerate_count += 1
+# ... yeni kapak üret
 ```

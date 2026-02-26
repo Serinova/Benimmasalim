@@ -40,7 +40,7 @@ ctx = BookContext.build(
     child_name=order.child_name,
     child_age=order.child_age,
     child_gender=order.child_gender,
-    style_modifier=visual_style.prompt_modifier,
+    style_modifier=visual_style.prompt_modifier,  # style_key yok, prompt_modifier kullan
     character_description=order.character_description,
     clothing_description=order.clothing_description,
     hair_description=order.hair_description,
@@ -51,7 +51,9 @@ ctx = BookContext.build(
 composer = PromptComposer(ctx)
 
 for page in pages:
-    result = composer.build_page(page)  # aynı ctx, tutarlı output
+    # compose_page(scene_description, page_number) — build_page değil
+    result = composer.compose_page(page.scene_description_or_action, page.page_number)
+# Kapak: composer.compose_cover(scene_description)
 ```
 
 ## PromptResult Yapısı
@@ -59,10 +61,11 @@ for page in pages:
 ```python
 from app.prompt.composer import PromptComposer, PromptResult
 
-result: PromptResult = composer.build_page(page_data)
+result: PromptResult = composer.compose_page(scene_description, page_number)
+# veya kapak için: result = composer.compose_cover(scene_description)
 # result.prompt         → pozitif prompt
-# result.negative_prompt→ negatif prompt (BookContext'ten hesaplanmış)
-# result.metadata       → debug bilgisi (uzunluk, style, vb.)
+# result.negative_prompt→ negatif prompt (build_negative(ctx) ile hesaplanmış)
+# result.metadata       → style_key, page_number, is_cover, has_face_ref
 ```
 
 ## Negatif Prompt Standartları
@@ -73,7 +76,7 @@ from app.prompt.negative_builder import BASE_NEGATIVE, ANTI_PHOTO_FACE
 # ❌ YANLIŞ - Elle negatif prompt yazmak
 negative = "blurry, bad quality, watermark"
 
-# ✅ DOĞRU - BASE_NEGATIVE kullan, gerekirse genişlet
+# ✅ DOĞRU - build_negative(ctx) Composer içinde kullanılır; BASE_NEGATIVE + stil + cinsiyet
 # BASE_NEGATIVE şunları içerir:
 # - big eyes / chibi / oversized head (stil bozuklukları)
 # - close-up / portrait (kompozisyon kısıtları)
@@ -85,14 +88,15 @@ negative = "blurry, bad quality, watermark"
 ## Stil Çözümleme
 
 ```python
-from app.prompt.style_config import resolve_style
+from app.prompt.style_config import resolve_style, StyleConfig
 
-# ❌ YANLIŞ - String hard-code
+# ❌ YANLIŞ - String hard-code veya style_key (modelde yok)
 style_prompt = "pastel watercolor style"
 
-# ✅ DOĞRU - StyleConfig üzerinden
-style = resolve_style(visual_style.style_key)
-ctx = BookContext.build(..., style=style)
+# ✅ DOĞRU - BookContext.build içinde resolve_style(style_modifier) çağrılır
+# visual_style.prompt_modifier kullan; StyleConfig build içinde çözülür
+ctx = BookContext.build(..., style_modifier=visual_style.prompt_modifier)
+# Ayrı stil gerekirse: style = resolve_style(style_modifier)
 ```
 
 ## MAX_PROMPT_CHARS Sınırı
@@ -100,16 +104,17 @@ ctx = BookContext.build(..., style=style)
 ```python
 from app.prompt.sanitizer import MAX_PROMPT_CHARS, truncate_safe
 
-# Prompt 2000 karakteri geçerse fal.ai/imagen keser → truncate_safe kullan
+# MAX_PROMPT_CHARS = 2048 (sanitizer.py). Composer zaten truncate_safe(prompt, MAX_PROMPT_CHARS) uygular.
+# Elle kesmek gerekirse:
 safe_prompt = truncate_safe(prompt, MAX_PROMPT_CHARS)
 ```
 
 ## prompt_engine/ Modüllerine DOKUNMA
 
 ```python
-# ❌ YANLIŞ - Legacy modülleri doğrudan çağırma
-from app.prompt_engine.visual_prompt_builder import build_cover_prompt
-from app.prompt_engine.negative_prompt_builder import build_enhanced_negative
+# ❌ YANLIŞ - Legacy modülleri doğrudan çağırma (yeni kod için app.prompt kullan)
+# visual_prompt_builder.build_cover_prompt → gemini_service tarafından köprü olarak kullanılır
+# negative_prompt_builder → boş shim, BASE_NEGATIVE app.prompt.negative_builder'dan alınır
 
 # ✅ DOĞRU - Aktif V3 modülleri kullan
 from app.prompt.composer import PromptComposer

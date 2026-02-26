@@ -196,6 +196,7 @@ async def list_story_previews(
             "expires_at": p.expires_at.isoformat() if p.expires_at else None,
             "created_at": p.created_at.isoformat() if p.created_at else None,
             "admin_notes": p.admin_notes,
+            "has_coloring_book": getattr(p, "has_coloring_book", False),
         }
         for p in previews
     ]
@@ -263,6 +264,9 @@ async def get_preview_detail(
         "pipeline_label": _pipeline_version,
         # PDF URL — from manifest or admin_notes fallback
         "pdf_url": _extract_pdf_url(preview),
+        # Coloring book
+        "has_coloring_book": getattr(preview, "has_coloring_book", False),
+        "coloring_pdf_url": getattr(preview, "coloring_pdf_url", None),
         # Cover images
         "back_cover_image_url": getattr(preview, "back_cover_image_url", None),
         # Page count
@@ -1008,6 +1012,53 @@ async def generate_admin_pdf_bg(
         return {"success": True, "message": "PDF oluşturma işlemi arka planda başlatıldı."}
     except Exception as e:
         logger.error("Failed to enqueue PDF task", error=str(e), preview_id=str(preview_id))
+        raise HTTPException(status_code=500, detail=f"İşlem kuyruğa eklenemedi: {e}")
+
+
+@router.post("/previews/{preview_id}/generate-coloring-book")
+async def trigger_coloring_book_generation(
+    preview_id: UUID,
+    db: DbSession,
+    admin: AdminUser,
+) -> dict:
+    """
+    Trigger coloring book PDF generation for a StoryPreview via Arq worker.
+    Used to retry failed coloring book generation from admin panel.
+    """
+    import structlog
+
+    from app.workers.enqueue import enqueue_job
+
+    logger = structlog.get_logger()
+
+    # Verify trial exists and has coloring book flag
+    result = await db.execute(select(StoryPreview).where(StoryPreview.id == preview_id))
+    preview = result.scalar_one_or_none()
+
+    if not preview:
+        raise HTTPException(status_code=404, detail="Önizleme bulunamadı")
+
+    if not getattr(preview, "has_coloring_book", False):
+        raise HTTPException(status_code=400, detail="Bu siparişte boyama kitabı yok")
+
+    # Check if already generated
+    if getattr(preview, "coloring_pdf_url", None):
+        return {
+            "success": True,
+            "message": "Boyama kitabı zaten oluşturulmuş.",
+            "coloring_pdf_url": preview.coloring_pdf_url,
+        }
+
+    logger.info("Enqueuing coloring book generation", preview_id=str(preview_id))
+
+    try:
+        await enqueue_job(
+            "generate_coloring_book_for_trial",
+            trial_id=str(preview_id),
+        )
+        return {"success": True, "message": "Boyama kitabı oluşturma işlemi arka planda başlatıldı."}
+    except Exception as e:
+        logger.error("Failed to enqueue coloring book task", error=str(e), preview_id=str(preview_id))
         raise HTTPException(status_code=500, detail=f"İşlem kuyruğa eklenemedi: {e}")
 
 async def _generate_admin_pdf_inner(preview_id: str) -> str:
