@@ -100,11 +100,13 @@ interface StoryPreview {
   admin_notes?: string | null;
   // Audio book fields
   has_audio_book?: boolean;
+  has_coloring_book?: boolean;
   audio_type?: string | null;
   audio_voice_id?: string | null;
   voice_sample_url?: string | null;
   // Generated URLs
   pdf_url?: string | null;
+  coloring_pdf_url?: string | null;
   back_cover_image_url?: string | null;
   cover_spread_image_url?: string | null;
   // Generation manifest per page (debug)
@@ -577,10 +579,10 @@ export default function AdminOrdersPage() {
             pageKey === "dedication"
               ? `00_karsilama_1.${ext}`
               : pageKey === "intro"
-              ? `01_karsilama_2.${ext}`
-              : pageKey === "back_cover"
-              ? `99_arka_kapak.${ext}`
-              : `${String(parseInt(pageKey) + 2).padStart(2, "0")}_sayfa.${ext}`;
+                ? `01_karsilama_2.${ext}`
+                : pageKey === "back_cover"
+                  ? `99_arka_kapak.${ext}`
+                  : `${String(parseInt(pageKey) + 2).padStart(2, "0")}_sayfa.${ext}`;
           zip.file(name, blob);
           downloaded++;
         } catch {
@@ -703,11 +705,10 @@ export default function AdminOrdersPage() {
                 return (
                   <Card
                     key={preview.id}
-                    className={`cursor-pointer transition hover:shadow-md ${
-                      selectedPreview?.id === preview.id
-                        ? "bg-purple-50 ring-2 ring-purple-500"
-                        : ""
-                    }`}
+                    className={`cursor-pointer transition hover:shadow-md ${selectedPreview?.id === preview.id
+                      ? "bg-purple-50 ring-2 ring-purple-500"
+                      : ""
+                      }`}
                     onClick={() => {
                       if (selectedPreview?.id === preview.id) return; // same order, no-op
                       setSelectedPreview(preview);
@@ -772,6 +773,16 @@ export default function AdminOrdersPage() {
                             {preview.visual_style_name && (
                               <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[9px] text-blue-700">
                                 🎨 {preview.visual_style_name}
+                              </span>
+                            )}
+                            {preview.has_audio_book && (
+                              <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[9px] text-indigo-700">
+                                🎧 Sesli
+                              </span>
+                            )}
+                            {preview.has_coloring_book && (
+                              <span className="rounded bg-pink-100 px-1.5 py-0.5 text-[9px] text-pink-700 font-semibold" title="Bu siparişe Boyama Kitabı dahil edilmiştir.">
+                                🖍️ Boyama Kitabı
                               </span>
                             )}
                           </div>
@@ -850,7 +861,14 @@ export default function AdminOrdersPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-xl">{detailData.story_title}</CardTitle>
+                      <div className="flex items-center gap-2 mb-1">
+                        <CardTitle className="text-xl">{detailData.story_title}</CardTitle>
+                        {detailData.has_coloring_book && (
+                          <span className="rounded bg-pink-100 px-2 py-0.5 text-xs font-semibold text-pink-700">
+                            🖍️ Boyama Kitabı
+                          </span>
+                        )}
+                      </div>
                       <CardDescription>
                         {detailData.child_name} için - {detailData.story_pages?.length || 0} sayfa
                       </CardDescription>
@@ -1047,6 +1065,46 @@ export default function AdminOrdersPage() {
                         >
                           🖨️ Yazdır
                         </Button>
+                        {detailData.has_coloring_book && (
+                          <Button
+                            size="sm"
+                            className="flex-1 bg-pink-600 hover:bg-pink-700"
+                            onClick={async () => {
+                              if (detailData.coloring_pdf_url) {
+                                window.open(detailData.coloring_pdf_url, "_blank");
+                                toast({ title: "Açılıyor", description: "Boyama Kitabı PDF'i yeni sekmede açılıyor." });
+                              } else {
+                                // Trigger coloring book generation via admin API
+                                const token = localStorage.getItem("token");
+                                if (!token) { router.push("/auth/login"); return; }
+                                toast({ title: "Başlatılıyor...", description: "Boyama kitabı üretimi arka planda tetikleniyor." });
+                                try {
+                                  const res = await fetch(
+                                    `${API_BASE_URL}/admin/orders/previews/${detailData.id}/generate-coloring-book`,
+                                    { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+                                  );
+                                  const data = await res.json();
+                                  if (res.ok && data.success) {
+                                    if (data.coloring_pdf_url) {
+                                      // Already exists, open it
+                                      window.open(data.coloring_pdf_url, "_blank");
+                                      setDetailData((prev) => prev ? { ...prev, coloring_pdf_url: data.coloring_pdf_url } : prev);
+                                      toast({ title: "Boyama Kitabı Hazır!", description: "PDF yeni sekmede açılıyor." });
+                                    } else {
+                                      toast({ title: "Başlatıldı ✅", description: data.message || "Arka planda üretiliyor, birkaç dakika bekleyin." });
+                                    }
+                                  } else {
+                                    toast({ title: "Hata", description: data.detail || "İşlem başarısız", variant: "destructive" });
+                                  }
+                                } catch {
+                                  toast({ title: "Hata", description: "Sunucuya bağlanılamadı", variant: "destructive" });
+                                }
+                              }
+                            }}
+                          >
+                            🖍️ Boyama PDF'i {detailData.coloring_pdf_url ? "İndir" : "Üret"}
+                          </Button>
+                        )}
                       </>
                     )}
                   </div>
@@ -1159,11 +1217,10 @@ export default function AdminOrdersPage() {
                           </span>
                           📝 Prompts (final_prompt + negative_prompt)
                           {detailData.pipeline_version && (
-                            <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                              detailData.pipeline_version === "v3"
-                                ? "bg-emerald-200 text-emerald-800"
-                                : "bg-orange-200 text-orange-800"
-                            }`}>
+                            <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${detailData.pipeline_version === "v3"
+                              ? "bg-emerald-200 text-emerald-800"
+                              : "bg-orange-200 text-orange-800"
+                              }`}>
                               Pipeline {detailData.pipeline_version}
                             </span>
                           )}
@@ -1202,11 +1259,10 @@ export default function AdminOrdersPage() {
                                           ? `İthaf (Sayfa ${storyNum ?? pageIdx})`
                                           : `Sayfa ${storyNum ?? pageIdx}`}
                                       {(composerVer || pagePipeline) && (
-                                        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
-                                          (composerVer || pagePipeline) === "v3"
-                                            ? "bg-emerald-100 text-emerald-700"
-                                            : "bg-orange-100 text-orange-700"
-                                        }`}>
+                                        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${(composerVer || pagePipeline) === "v3"
+                                          ? "bg-emerald-100 text-emerald-700"
+                                          : "bg-orange-100 text-orange-700"
+                                          }`}>
                                           {composerVer || pagePipeline}
                                         </span>
                                       )}
@@ -1614,18 +1670,18 @@ export default function AdminOrdersPage() {
                             const label = isDedication
                               ? "💝 Karşılama 1"
                               : isIntro
-                              ? "📖 Karşılama 2"
-                              : String(parseInt(pageNum) + 1);
+                                ? "📖 Karşılama 2"
+                                : String(parseInt(pageNum) + 1);
                             const borderClass = isDedication
                               ? "border-2 border-amber-400"
                               : isIntro
-                              ? "border-2 border-teal-400"
-                              : "";
+                                ? "border-2 border-teal-400"
+                                : "";
                             const headerClass = isDedication
                               ? "bg-amber-100"
                               : isIntro
-                              ? "bg-teal-100"
-                              : "bg-gray-100";
+                                ? "bg-teal-100"
+                                : "bg-gray-100";
                             return (
                               <div
                                 key={`${detailData.id}-${pageNum}`}
@@ -1640,8 +1696,8 @@ export default function AdminOrdersPage() {
                                         const ext = isDedication
                                           ? "karsilama_1"
                                           : isIntro
-                                          ? "karsilama_2"
-                                          : `sayfa_${parseInt(pageNum) + 1}`;
+                                            ? "karsilama_2"
+                                            : `sayfa_${parseInt(pageNum) + 1}`;
                                         downloadSingleImage(
                                           fullSrc,
                                           `${detailData.child_name || "kitap"}_${ext}.jpg`
