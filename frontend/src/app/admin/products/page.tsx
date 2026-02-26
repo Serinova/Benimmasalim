@@ -140,6 +140,14 @@ interface TemplateOptions {
   ai_configs: AIConfig[];
 }
 
+interface ScenarioForProduct {
+  id: string;
+  name: string;
+  thumbnail_url: string;
+  tagline?: string | null;
+  marketing_badge?: string | null;
+}
+
 // ============ FORM SCHEMA ============
 const productSchema = z.object({
   // Basic Info
@@ -837,7 +845,7 @@ export default function AdminProductsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [operatingId, setOperatingId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<"technical" | "marketing" | "scenarios">("technical");
-  const [scenariosForProduct, setScenariosForProduct] = useState<Array<{id: string; name: string; thumbnail_url: string; tagline?: string | null; marketing_badge?: string | null}>>([]);
+  const [scenariosForProduct, setScenariosForProduct] = useState<ScenarioForProduct[]>([]);
 
   const router = useRouter();
   const { toast } = useToast();

@@ -15,6 +15,7 @@ import {
   Heart,
   Mail,
   Info,
+  Check,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,6 +52,7 @@ import {
   getTrialPreview,
   createTrialPayment,
   verifyTrialPayment,
+  addColoringBookToOrder,
 } from "@/lib/api";
 import type {
   Scenario,
@@ -983,6 +985,37 @@ function CreatePageInner() {
     }
   };
 
+  // ─── Coloring Book (Post-Purchase) ────────────────────────────
+
+  const handleAddColoringBook = async () => {
+    if (!completedOrderId) {
+      toast({
+        title: "Hata",
+        description: "Sipariş bilgisi bulunamadı. Lütfen destek ile iletişime geçin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAddingColoringBook(true);
+
+    try {
+      const response = await addColoringBookToOrder(completedOrderId);
+      
+      // Redirect to Iyzico payment page
+      window.location.href = response.payment_url;
+    } catch (error) {
+      toast({
+        title: "Bir hata oluştu",
+        description: error instanceof APIError 
+          ? error.message 
+          : "Boyama kitabı eklenemedi. Lütfen tekrar deneyin.",
+        variant: "destructive",
+      });
+      setAddingColoringBook(false);
+    }
+  };
+
   // ─── Derived state ────────────────────────────────────────────
 
   const selectedProductObj = products.find((p) => p.id === selectedProduct);
@@ -1498,6 +1531,67 @@ function CreatePageInner() {
                   </CardContent>
                 </Card>
 
+                {/* Coloring Book Post-Purchase Upsell */}
+                {!hasColoringBook && completedOrderId && (
+                  <Card className="mt-6 border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 shadow-xl">
+                    <CardContent className="p-6">
+                      <div className="text-center space-y-4">
+                        <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                          <Palette className="h-8 w-8 text-purple-600" />
+                        </div>
+
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-800">
+                            Unutmayın: Boyama Kitabı! 🎨
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-2">
+                            {childInfo.name}&apos;ın hikayesini boyama kitabına dönüştürün.
+                            Aynı karakterler, aynı sahneler - boyama keyfine hazır!
+                          </p>
+                        </div>
+
+                        <div className="flex justify-center items-baseline gap-2">
+                          <span className="text-3xl font-bold text-purple-600">
+                            {coloringBookPrice} TL
+                          </span>
+                          <span className="text-sm text-gray-500">tek seferlik</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-white rounded-lg p-3 border border-purple-100">
+                            <Check className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                            <p className="text-xs font-medium text-gray-700">Aynı karakterler</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border border-purple-100">
+                            <Palette className="h-5 w-5 text-purple-500 mx-auto mb-1" />
+                            <p className="text-xs font-medium text-gray-700">Profesyonel çizimler</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border border-purple-100">
+                            <Truck className="h-5 w-5 text-blue-500 mx-auto mb-1" />
+                            <p className="text-xs font-medium text-gray-700">Ücretsiz kargo</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 border border-purple-100">
+                            <Heart className="h-5 w-5 text-pink-500 mx-auto mb-1" />
+                            <p className="text-xs font-medium text-gray-700">Ayrı fiziksel kitap</p>
+                          </div>
+                        </div>
+
+                        <Button
+                          onClick={handleAddColoringBook}
+                          disabled={addingColoringBook}
+                          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-6 text-lg shadow-lg"
+                        >
+                          {addingColoringBook ? "Yönlendiriliyor..." : "Boyama Kitabı Ekle"}
+                        </Button>
+
+                        <p className="text-xs text-gray-500">
+                          Ayrı ödeme • Anında hazırlık başlar • 3-5 iş günü teslimat
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3 text-center text-xs text-blue-700">
                   Bu sayfayı güvenle kapatabilirsiniz. Kitabınız hazır olduğunda
                   e-posta ile bilgilendirileceksiniz.
@@ -1541,6 +1635,8 @@ function CreatePageInner() {
             hasAudioBook={hasAudioBook}
             audioPrice={audioAddonPrice}
             audioType={audioType}
+            hasColoringBook={hasColoringBook}
+            coloringBookPrice={coloringBookPrice}
             childName={childInfo.name || undefined}
             storyTitle={storyStructure?.title}
             coverImageUrl={

@@ -24,7 +24,7 @@ Sıradan bir görevi yerine getirirken her defasında şu yaşam döngüsü izle
 1. **İnceleme:** Problemi anlamak için backend (`app/`) veya frontend (`src/`) klasörlerine `find_by_name` veya `grep_search` atılır. 
 2. **Local Test (Mock):** Eğer AI promptlarında (Promt_engine) bir değişlik yapılacaksa test scripti oluşturulup (`inspect_...py`) DB'ye yazılmadan ekrana bastırılarak validasyon yapılır.
 3. **Gerçekleme:** Değişiklik uygulanır.
-4. **Deploy:** `deploy_production.sh` gibi GCP scriptleri tetiklenerek kod buluta fırlatılır.
+4. **Deploy:** Canlıya alma işlemleri için AI'a doğrudan `/deploy` veya `/yayinla` komutu verilir. Antigravity otonom olarak workflow'u başlatır.
 
 ## 🎨 4. Frontend & Tasarım Felsefesi (Glassmorphism & Dopamin)
 Kullanıcılar (ve ebeveynler) görsel mükemmellik bekler.
@@ -35,5 +35,10 @@ Kullanıcılar (ve ebeveynler) görsel mükemmellik bekler.
 Bu proje **AKTİF SUNUCUDA** müşterilere hizmet vermektedir.
 - Müşterinin (User'ın) kişisel fotoğrafları ve oluşturduğu kitap PDF'leri KVKK (GDPR) yasasına tabidir (`main.py` deki cron job'lara dokunma). GCS Bucket nesneleri izin olmadan silinmez veya fetch edilemez.
 - Backend API (`8000`) kapandığı an sipariş akışı kırılır. Uygulamayı asla tam teste sokmadan deploy etmeyiz!
-
 Bu yönergeler Antigravity tarafından referans alınacak yegane kurallardır. Her sorunda buraya döneriz.
+
+## 🐳 6. Alt Yapı ve Geliştirme Ortamı (Docker & WSL)
+Google Cloud (Cloud Run) altyapısı "Serverless/Konteyner" mantığıyla çalıştığı için, klasik SSH (uzak sunucuya manuel bağlanma) veya WSL üzerinde karmaşık Linux konfigürasyonlarına ihtiyaç YOKTUR.
+- **Docker Standardı:** Bilgisayarda halihazırda yüklü olan "Docker Desktop" (WSL 2 arkaucu ile) sistemin varsayılan ve en pürüzsüz çalışma ortamıdır. Ekstra konfigürasyona gerek yoktur.
+- **Yerel Geliştirme:** Tüm geliştirmeler doğrudan Windows ortamında (PowerShell/Cursor) yapılır. Ekstra Linux eklentileri (WSL ext. vb.) yüklenerek sistem karmaşıklaştırılmaz.
+- **Yayınlama (Deployment):** Herhangi bir sunucu erişimine veya manuel script çalıştırmaya gerek yoktur. Kullanıcının chat'e `/deploy` yazmasıyla tüm akış AI tarafından otomatik ve hatasız ("workflow" üzerinden) yönetilir. Canlı DB erişimi için sadece `cloud-sql-proxy` tüneli zorunludur.
