@@ -292,6 +292,7 @@ export default function CheckoutStep({
   onBack,
   isProcessing = false,
   orderId: _orderId,
+  coloringBookPrice = 0,
 }: CheckoutStepProps) {
   const [stage, setStage] = useState<CheckoutStage>("shipping");
   const [cartTimer, setCartTimer] = useState(15 * 60);

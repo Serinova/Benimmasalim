@@ -341,6 +341,34 @@ async def generate_full_book_task(
 
 
 # ---------------------------------------------------------------------------
+# Task: Generate Trial Coloring Book
+# ---------------------------------------------------------------------------
+
+async def generate_coloring_book_for_trial(
+    ctx: dict[str, Any],
+    trial_id: str,
+) -> dict[str, Any]:
+    """Arq task: Generate coloring book for a trial."""
+    logger.info("ARQ_TASK_START: generate_coloring_book_for_trial", trial_id=trial_id)
+    try:
+        from app.tasks.generate_coloring_book_for_trial import generate_coloring_book_for_trial as _gen_trial_cb
+        from uuid import UUID
+        from app.core.database import async_session_factory
+        
+        async with async_session_factory() as db:
+            await _gen_trial_cb(trial_id=UUID(trial_id), db=db)
+            
+        logger.info("ARQ_TASK_DONE: generate_coloring_book_for_trial", trial_id=trial_id)
+        return {"status": "done", "trial_id": trial_id}
+    except Exception as e:
+        logger.error(
+            "ARQ_TASK_FAILED: generate_coloring_book_for_trial",
+            trial_id=trial_id,
+            error=str(e),
+        )
+        raise
+
+# ---------------------------------------------------------------------------
 # Startup / Shutdown hooks
 # ---------------------------------------------------------------------------
 
@@ -376,6 +404,7 @@ class WorkerSettings:
         generate_trial_remaining,
         generate_trial_composed_preview,
         generate_full_book_task,
+        generate_coloring_book_for_trial,
     ]
 
     # Redis connection

@@ -12,7 +12,7 @@ const cspDirectives = [
   "img-src 'self' data: blob: https://storage.googleapis.com https://*.googleusercontent.com",
   "font-src 'self' https://fonts.gstatic.com",
   "connect-src 'self' " + (backendUrl ? backendUrl.replace(/\/$/, "") + " " : "") + "https://storage.googleapis.com https://*.iyzipay.com https://*.google-analytics.com",
-  "frame-src 'self' https://*.iyzipay.com",
+  "frame-src 'self' https://*.iyzipay.com https://*.youtube.com https://www.youtube.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https://*.iyzipay.com",

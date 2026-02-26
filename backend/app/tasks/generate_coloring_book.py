@@ -11,6 +11,7 @@ from app.models.order import Order, OrderStatus
 from app.models.order_page import OrderPage
 from app.models.product import Product
 from app.services.image_processing import image_processing_service
+from app.services.order_state_machine import transition_order
 from app.services.pdf_service import PDFService
 from app.services.storage_service import storage_service
 
@@ -48,9 +49,7 @@ async def generate_coloring_book(order_id: UUID, db: AsyncSession):
 
     logger.info("Starting coloring book generation", order_id=str(order_id))
 
-    # Update status: PAID → PROCESSING
-    coloring_order.status = OrderStatus.PROCESSING
-    await db.commit()
+    await transition_order(coloring_order, OrderStatus.PROCESSING, db)
 
     try:
         # Find original order (reverse lookup via coloring_book_order_id)
@@ -160,11 +159,9 @@ async def generate_coloring_book(order_id: UUID, db: AsyncSession):
 
         # Update order
         coloring_order.final_pdf_url = pdf_url
-        coloring_order.status = OrderStatus.READY_FOR_PRINT
         coloring_order.total_pages = len(line_art_pages)
         coloring_order.completed_pages = len(line_art_pages)
-
-        await db.commit()
+        await transition_order(coloring_order, OrderStatus.READY_FOR_PRINT, db)
 
         logger.info("Coloring book generation completed", order_id=str(order_id))
 
@@ -175,10 +172,8 @@ async def generate_coloring_book(order_id: UUID, db: AsyncSession):
             error=str(e),
         )
 
-        # Mark as cancelled
-        coloring_order.status = OrderStatus.CANCELLED
         coloring_order.generation_error = str(e)
-        await db.commit()
+        await transition_order(coloring_order, OrderStatus.CANCELLED, db)
 
         raise
 

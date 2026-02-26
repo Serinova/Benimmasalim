@@ -164,6 +164,7 @@ class PDFService:
                 page_width=page_width,
                 page_height=page_height,
                 is_cover=(i == 0),
+                skip_text=skip_text,
             )
             c.showPage()
 

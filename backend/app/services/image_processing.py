@@ -91,16 +91,16 @@ class ImageProcessingService:
         # Canny edge detection
         edges = cv2.Canny(gray, threshold_low, threshold_high)
 
-        # Invert for white background (coloring book style)
-        if invert:
-            edges = cv2.bitwise_not(edges)
-
         # Morphological operations to thicken lines and simplify shapes
         kernel = np.ones((3, 3), np.uint8)
         edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=2)
         
         # Additional dilation to make lines bolder and easier to see
         edges = cv2.dilate(edges, kernel, iterations=1)
+
+        # Invert for white background (coloring book style)
+        if invert:
+            edges = cv2.bitwise_not(edges)
 
         # Convert back to PIL
         return Image.fromarray(edges).convert("RGB")

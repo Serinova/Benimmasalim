@@ -10,31 +10,24 @@ alwaysApply: false
 
 - Her AI çağrısı için timeout zorunlu
 - Retry: `rate_limit_retry` decorator kullan (tenacity tabanlı)
-- Hatalar: `AIServiceError` veya `ContentPolicyError` fırlat, ham exception'ı yukarı taşıma
+- Hatalar: `AIServiceError`, `ContentPolicyError` veya `FaceDetectionError` (yüz) fırlat, ham exception'ı yukarı taşıma
 - Audit log kaydı (önemli adımlarda `logger.info(...)`)
 
 ## Gemini — Hikaye Üretimi (İki Geçiş Stratejisi)
 
 ```python
-# PASS 1 — "Pure Author" (gemini-1.5-pro / settings.gemini_story_model)
-#   Görev: 100% yaratıcı yazarlık, sadece düz metin hikaye
-#   Çıktı: TEXT ONLY — JSON yok, görsel prompt yok
-#
-# PASS 2 — "Technical Director" (gemini-2.5-flash / settings.gemini_technical_model)
-#   Görev: Pass 1 hikayesini sayfalara böl + görsel promptlar üret
-#   Çıktı: Yapılandırılmış JSON (pages + visual_prompts)
+# PASS 1 — "Pure Author" (settings.gemini_story_model, default: gemini-2.5-flash)
+#   Görev: Blueprint + sayfalar, JSON çıktı
+# PASS 2 — "Technical Director" (settings.gemini_technical_model)
+#   Görev: Sayfalara böl + görsel promptlar
+# URL'ler: get_gemini_story_url(), get_gemini_technical_url() — model config'den
 
 from app.core.exceptions import AIServiceError, ContentPolicyError
 from app.core.rate_limit import rate_limit_retry
 import httpx
 
-_DEFAULT_FLASH_MODEL = "gemini-2.5-flash"
-
-def _get_story_model() -> str:
-    return settings.gemini_story_model or _DEFAULT_FLASH_MODEL
-
-def _get_technical_model() -> str:
-    return settings.gemini_technical_model or _DEFAULT_FLASH_MODEL
+# gemini_service.py: URL helper'lar (model config'den)
+from app.services.ai.gemini_service import get_gemini_story_url, get_gemini_technical_url
 
 # Model URL: https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
 # httpx ile direkt çağrı (SDK değil)
@@ -52,16 +45,14 @@ def _get_technical_model() -> str:
 
 ```python
 from app.services.ai.image_generator import get_image_generator, ImageProvider
-from app.services.ai.image_provider_dispatch import get_image_provider_for_generation
 
 # ❌ YANLIŞ - Direkt sınıf örnekle
-generator = Imagen3ImageGenerator()
+generator = GeminiImageGenerator()
 
-# ✅ DOĞRU - Factory fonksiyon kullan
-generator = get_image_generator()            # default provider (config'den)
-# veya belirli provider için:
-provider = get_image_provider_for_generation(order, visual_style)
-generator = get_image_generator(provider)
+# ✅ DOĞRU - Factory kullan (default: GEMINI_FLASH)
+generator = get_image_generator()  # veya get_image_generator(ImageProvider.GEMINI)
+# Tutarlı yüz pipeline için (sayfa görselleri): image_provider_dispatch.get_image_provider_for_generation(provider_name)
+#   → GeminiConsistentImageService döner (get_image_generator'dan farklı)
 ```
 
 ## Imagen 3.0 (Ana Görsel Provider)
@@ -69,10 +60,10 @@ generator = get_image_generator(provider)
 ```python
 # Model: imagen-3.0-generate-002
 # API: https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict
-# Timeout: 120s
-# ImageProvider.GEMINI
+# Timeout: 90s (GeminiImageGenerator.timeout)
+# ImageProvider.GEMINI — sınıf: GeminiImageGenerator
 
-async with httpx.AsyncClient(timeout=120.0) as client:
+async with httpx.AsyncClient(timeout=90.0) as client:
     response = await client.post(
         f"{self.IMAGEN_API_URL}?key={self.api_key}",
         json={
@@ -90,7 +81,7 @@ async with httpx.AsyncClient(timeout=120.0) as client:
 ```python
 # Model: gemini-2.5-flash-image
 # API: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent
-# Timeout: 120s
+# Timeout: 60s (GeminiFlashImageGenerator.timeout)
 # ImageProvider.GEMINI_FLASH — yüksek kota limitlerinde kullanılır
 ```
 
@@ -105,61 +96,56 @@ async with httpx.AsyncClient(timeout=120.0) as client:
 ## InsightFace — Yüz Tespiti
 
 ```python
-# Face score threshold: 0.8
-from app.services.ai.face_service import detect_face
-from app.core.exceptions import AIServiceError
+# Face score threshold: 0.8 (FaceService.SCORE_THRESHOLD)
+from app.services.ai.face_service import FaceService
+from app.core.exceptions import FaceDetectionError
 
-async def detect_face(image_bytes: bytes) -> tuple[float, list[float]]:
-    # InsightFace (CPUExecutionProvider)
-    # faces[0].det_score < 0.8 → AIServiceError fırlat
-    # Döndürür: (det_score, embedding.tolist())
-    ...
+# Kullanım: FaceService().detect_and_extract(image_bytes)
+# Döndürür: tuple[float, list[float], bytes] = (face_score, embedding, cropped_face_bytes)
+# Exception: FaceDetectionError (AIServiceError değil)
 
-# Hata mesajları kullanıcı dostu olmalı:
-if not faces:
-    raise AIServiceError("Yüz tespit edilemedi. Lütfen net bir fotoğraf yükleyin.")
-if face.det_score < 0.8:
-    raise AIServiceError("Yüz kalitesi yetersiz. Daha net bir fotoğraf deneyin.")
+# Hata mesajları kullanıcı dostu (face_service.py içinde):
+# - "Yüz tespit edilemedi. Lütfen yüzün net göründüğü bir fotoğraf yükleyin."
+# - "Yüz kalitesi yetersiz (skor: ...). Daha net bir fotoğraf deneyin."
 ```
 
 ## ElevenLabs — Ses Üretimi
 
 ```python
-async def generate_audio(
-    text: str,
-    voice_type: str,  # "system" veya "cloned"
-    voice_id: str | None = None,
-) -> bytes:
-    if voice_type == "cloned" and not voice_id:
-        raise ValueError("Klonlanmış ses için voice_id zorunlu")
-    # Timeout: 60s
+# ElevenLabsService.text_to_speech (instance method)
+# voice_type: "female" | "male" (sistem sesi); klon için voice_id ver
+# Timeout: 60s (self.timeout = 60.0)
+
+from app.services.ai.elevenlabs_service import ElevenLabsService
+
+service = ElevenLabsService()
+audio_bytes = await service.text_to_speech(text, voice_id=voice_id_or_none, voice_type="female")
 ```
 
 ## Exception Tipleri
 
 ```python
-from app.core.exceptions import AIServiceError, ContentPolicyError
+from app.core.exceptions import AIServiceError, ContentPolicyError, FaceDetectionError
 
-# AIServiceError: API çağrısı başarısız (timeout, HTTP 4xx/5xx, parse hatası)
-raise AIServiceError(f"Gemini yanıt hatası: {response.status_code}")
+# AIServiceError(service: str, detail: str) — iki argüman zorunlu
+raise AIServiceError("Gemini", f"Yanıt hatası: {response.status_code}")
 
-# ContentPolicyError: İçerik politikası ihlali (çocuk güvenliği, uygunsuz içerik)
+# ContentPolicyError(detail: str)
 raise ContentPolicyError("İçerik politikasına aykırı üretim engellendi")
+
+# Yüz tespiti: FaceDetectionError(detail: str)
+raise FaceDetectionError("Yüz tespit edilemedi. Lütfen net bir fotoğraf yükleyin.")
 ```
 
 ## Overlay Uygulama
 
 ```python
+# PDF servisinde: PDFService._apply_overlay(base, overlay, opacity)
+# Product overlay alanları (has_overlay, overlay_url, overlay_opacity) migration ile kaldırılmış olabilir;
+# overlay kullanımı varsa pdf_service içindeki _apply_overlay referans alınır.
+
 from PIL import Image
 
-def apply_overlay(base_image: Image.Image, product: Product) -> Image.Image:
-    if not product.has_overlay:
-        return base_image
-    overlay = Image.open(download_from_gcs(product.overlay_url)).convert("RGBA")
-    overlay = overlay.resize(base_image.size, Image.LANCZOS)
-    if product.overlay_opacity < 1.0:
-        alpha = overlay.split()[3]
-        alpha = alpha.point(lambda p: int(p * product.overlay_opacity))
-        overlay.putalpha(alpha)
-    return Image.alpha_composite(base_image.convert("RGBA"), overlay)
+# pdf_service.py: _apply_overlay(self, base, overlay, opacity) -> Image.Image
+# LANCZOS resize, opacity < 1.0 ise alpha mask, alpha_composite
 ```
