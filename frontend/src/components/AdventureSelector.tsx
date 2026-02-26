@@ -92,8 +92,8 @@ export default function AdventureSelector({
           <button
             onClick={() => setActiveTheme(null)}
             className={`flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${!activeTheme
-                ? "bg-purple-600 text-white shadow-sm"
-                : "bg-gray-100 text-gray-600"
+              ? "bg-purple-600 text-white shadow-sm"
+              : "bg-gray-100 text-gray-600"
               }`}
           >
             Tümü
@@ -103,8 +103,8 @@ export default function AdventureSelector({
               key={theme}
               onClick={() => setActiveTheme(activeTheme === theme ? null : theme)}
               className={`flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${activeTheme === theme
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "bg-gray-100 text-gray-600"
+                ? "bg-purple-600 text-white shadow-sm"
+                : "bg-gray-100 text-gray-600"
                 }`}
             >
               {theme}
@@ -163,8 +163,10 @@ export default function AdventureSelector({
                         }}
                       />
                     ) : null}
-                    {/* Always-visible gradient bg */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient} ${scenario.thumbnail_url ? "opacity-40" : "opacity-100"}`} />
+                    {/* Gradient bg — sadece thumbnail yoksa göster */}
+                    {!scenario.thumbnail_url && (
+                      <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
+                    )}
 
                     {/* Theme badge */}
                     <div className="absolute top-2 left-2">

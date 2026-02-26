@@ -79,8 +79,8 @@ async def generate_coloring_book(order_id: UUID, db: AsyncSession):
             "Found original pages", order_id=str(original_order.id), count=len(original_pages)
         )
 
-        # Get coloring book config
-        coloring_config = await _get_coloring_book_config(db)
+        # Get coloring book config (for future line-art tuning)
+        _coloring_config = await _get_coloring_book_config(db)
 
         # Convert pages to line-art (parallel processing)
         sem = asyncio.Semaphore(3)

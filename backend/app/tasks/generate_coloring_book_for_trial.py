@@ -52,8 +52,8 @@ async def generate_coloring_book_for_trial(trial_id: UUID, db: AsyncSession):
         if not trial.page_images:
             raise ValueError("Trial has no generated pages")
 
-        # Get coloring book config
-        coloring_config = await _get_coloring_book_config(db)
+        # Get coloring book config (for future line-art tuning)
+        _coloring_config = await _get_coloring_book_config(db)
 
         # We need to process pages in order (or pass them correctly to PDFService)
         # Note: trial.page_images is a dict {page_number_str: "url"}

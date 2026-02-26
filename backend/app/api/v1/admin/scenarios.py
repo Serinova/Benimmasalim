@@ -881,8 +881,6 @@ async def run_amazon_scenario_update(
     _admin: SuperAdminUser,
 ) -> dict:
     """Run the Amazon Ormanları Keşfediyorum scenario update script."""
-    import json
-    
     try:
         # Import the constants from the script
         from scripts import update_amazon_scenario as amazon_script

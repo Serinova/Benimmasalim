@@ -59,7 +59,6 @@ def _build_companion_negative(companion_name: str, companion_species: str) -> st
     if not companion_name or not companion_species:
         return ""
     name = companion_name.strip()
-    species = companion_species.strip().lower()
     # Companion'ın insan/çocuk olarak çizilmesini engelle
     return (
         f"human {name}, child {name}, girl {name}, boy {name}, "

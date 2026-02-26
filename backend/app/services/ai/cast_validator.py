@@ -61,7 +61,7 @@ def build_cast_block(
     lines: list[str] = [
         f"CAST ON THIS PAGE: {cast_list}",
         "STRICT CAST RULES:",
-        f"  • Render ONLY the characters listed above — NO bystanders, NO extra children, NO background people.",
+        "  • Render ONLY the characters listed above — NO bystanders, NO extra children, NO background people.",
     ]
 
     if expected_humans == 1:
