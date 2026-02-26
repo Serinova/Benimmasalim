@@ -66,6 +66,55 @@ class ImageProcessingService:
             logger.error("Line-art conversion failed", error=str(e), method=method)
             raise
 
+    async def convert_to_line_art_ai(
+        self,
+        image_bytes: bytes,
+        prompt: str = "Generate a clean black and white line art coloring book version of this exact image. No shading, simple outlines, white background. KEEP EXACT COMPOSITION.",
+    ) -> bytes:
+        """
+        Convert image to native line-art using Gemini Flash image-to-image.
+        """
+        import base64
+        import httpx
+        from app.config import settings
+        
+        try:
+            img_b64 = base64.b64encode(image_bytes).decode('utf-8')
+            
+            api_key = settings.gemini_api_key
+            url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key={api_key}'
+            
+            payload = {
+                'contents': [{'parts': [
+                    {'inlineData': {'mimeType': 'image/png', 'data': img_b64}},
+                    {'text': prompt}
+                ]}],
+                'generationConfig': {
+                    'responseModalities': ['IMAGE']
+                }
+            }
+            
+            async with httpx.AsyncClient(timeout=60) as client:
+                res = await client.post(url, json=payload)
+                res.raise_for_status()
+                data = res.json()
+                
+                for candidate in data.get("candidates", []):
+                    for part in candidate.get("content", {}).get("parts", []):
+                        if "inlineData" in part:
+                            image_data = part["inlineData"]
+                            logger.info(
+                                "AI Line-art conversion successful",
+                                mime_type=image_data.get("mimeType"),
+                            )
+                            return base64.b64decode(image_data["data"])
+                
+                raise ValueError("No image part in Gemini response")
+
+        except Exception as e:
+            logger.error("AI Line-art conversion failed", error=str(e))
+            raise
+
     def _canny_edge_detection(
         self, img_rgb: Image.Image, threshold_low: int, threshold_high: int, invert: bool
     ) -> Image.Image:

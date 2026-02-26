@@ -83,45 +83,48 @@ async def generate_coloring_book(order_id: UUID, db: AsyncSession):
         coloring_config = await _get_coloring_book_config(db)
 
         # Convert pages to line-art (parallel processing)
+        sem = asyncio.Semaphore(3)
         async def convert_page(page: OrderPage) -> dict:
             """Convert single page to line-art."""
-            try:
-                # Download original image
-                image_bytes = await storage_service.download_bytes(page.image_url)
+            async with sem:
+                try:
+                    # Download original image
+                    import httpx
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        resp = await client.get(page.image_url)
+                        resp.raise_for_status()
+                        image_bytes = resp.content
 
-                # Convert to line-art
-                line_art_bytes = await image_processing_service.convert_to_line_art(
-                    image_bytes,
-                    method=coloring_config.get("line_art_method", "canny"),
-                    threshold_low=coloring_config.get("edge_threshold_low", 80),
-                    threshold_high=coloring_config.get("edge_threshold_high", 200),
-                )
+                    # Convert to line-art using Gemini
+                    line_art_bytes = await image_processing_service.convert_to_line_art_ai(
+                        image_bytes
+                    )
 
-                # Upload to GCS
-                filename = f"coloring/{order_id}/page_{page.page_number}.png"
-                line_art_url = await storage_service.upload_bytes(
-                    line_art_bytes, filename, content_type="image/png"
-                )
+                    # Upload to GCS
+                    filename = f"coloring/{order_id}/page_{page.page_number}.png"
+                    line_art_url = storage_service.provider.upload_bytes(
+                        line_art_bytes, filename, content_type="image/png"
+                    )
 
-                logger.info(
-                    "Page converted to line-art",
-                    page_number=page.page_number,
-                    url=line_art_url,
-                )
+                    logger.info(
+                        "Page converted to line-art",
+                        page_number=page.page_number,
+                        url=line_art_url,
+                    )
 
-                return {
-                    "page_number": page.page_number,
-                    "image_url": line_art_url,
-                    "text": None,  # NO TEXT for coloring book
-                }
+                    return {
+                        "page_number": page.page_number,
+                        "image_url": line_art_url,
+                        "text": None,  # NO TEXT for coloring book
+                    }
 
-            except Exception as e:
-                logger.error(
-                    "Failed to convert page",
-                    page_number=page.page_number,
-                    error=str(e),
-                )
-                raise
+                except Exception as e:
+                    logger.error(
+                        "Failed to convert page",
+                        page_number=page.page_number,
+                        error=str(e),
+                    )
+                    raise
 
         # Process all pages in parallel
         line_art_pages = await asyncio.gather(*[convert_page(p) for p in original_pages])
@@ -130,8 +133,11 @@ async def generate_coloring_book(order_id: UUID, db: AsyncSession):
 
         # Get product for PDF generation
         from app.models.product import Product
+        from sqlalchemy.orm import selectinload
         product_result = await db.execute(
-            select(Product).where(Product.id == original_order.product_id)
+            select(Product)
+            .options(selectinload(Product.inner_template), selectinload(Product.cover_template))
+            .where(Product.id == original_order.product_id)
         )
         product = product_result.scalar_one_or_none()
         
@@ -151,7 +157,7 @@ async def generate_coloring_book(order_id: UUID, db: AsyncSession):
 
         # Upload PDF to GCS
         pdf_filename = f"coloring/{order_id}/coloring_book.pdf"
-        pdf_url = await storage_service.upload_bytes(
+        pdf_url = storage_service.provider.upload_bytes(
             pdf_bytes, pdf_filename, content_type="application/pdf"
         )
 

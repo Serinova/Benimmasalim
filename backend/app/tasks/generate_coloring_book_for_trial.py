@@ -76,49 +76,48 @@ async def generate_coloring_book_for_trial(trial_id: UUID, db: AsyncSession):
             "Found trial pages", trial_id=str(trial_id), count=len(page_entries)
         )
 
+        sem = asyncio.Semaphore(3)
         async def convert_page(page_num: int, image_url: str) -> dict:
             """Convert single page to line-art."""
-            try:
-                # Download original image via httpx (storage_service has no download method)
-                import httpx
-                async with httpx.AsyncClient(timeout=60.0) as client:
-                    response = await client.get(image_url)
-                    response.raise_for_status()
-                    image_bytes = response.content
+            async with sem:
+                try:
+                    # Download original image via httpx (storage_service has no download method)
+                    import httpx
+                    async with httpx.AsyncClient(timeout=60.0) as client:
+                        response = await client.get(image_url)
+                        response.raise_for_status()
+                        image_bytes = response.content
 
-                # Convert to line-art
-                line_art_bytes = await image_processing_service.convert_to_line_art(
-                    image_bytes,
-                    method=coloring_config.get("line_art_method", "canny"),
-                    threshold_low=coloring_config.get("edge_threshold_low", 80),
-                    threshold_high=coloring_config.get("edge_threshold_high", 200),
-                )
+                    # Convert to line-art using Gemini
+                    line_art_bytes = await image_processing_service.convert_to_line_art_ai(
+                        image_bytes
+                    )
 
-                # Upload to GCS via provider
-                blob_path = f"coloring/trials/{trial_id}/page_{page_num}.png"
-                line_art_url = storage_service.provider.upload_bytes(
-                    line_art_bytes, blob_path, "image/png"
-                )
+                    # Upload to GCS via provider
+                    blob_path = f"coloring/trials/{trial_id}/page_{page_num}.png"
+                    line_art_url = storage_service.provider.upload_bytes(
+                        line_art_bytes, blob_path, "image/png"
+                    )
 
-                logger.info(
-                    "Trial page converted to line-art",
-                    page_number=page_num,
-                    url=line_art_url,
-                )
+                    logger.info(
+                        "Trial page converted to line-art",
+                        page_number=page_num,
+                        url=line_art_url,
+                    )
 
-                return {
-                    "page_number": page_num,
-                    "image_url": line_art_url,
-                    "text": None,  # NO TEXT for coloring book
-                }
+                    return {
+                        "page_number": page_num,
+                        "image_url": line_art_url,
+                        "text": None,  # NO TEXT for coloring book
+                    }
 
-            except Exception as e:
-                logger.error(
-                    "Failed to convert trial page",
-                    page_number=page_num,
-                    error=str(e),
-                )
-                raise
+                except Exception as e:
+                    logger.error(
+                        "Failed to convert trial page",
+                        page_number=page_num,
+                        error=str(e),
+                    )
+                    raise
                 
         # Process all pages in parallel
         line_art_pages = await asyncio.gather(*[convert_page(p_num, url) for p_num, url in page_entries])
