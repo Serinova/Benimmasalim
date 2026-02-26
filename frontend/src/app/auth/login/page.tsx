@@ -93,7 +93,7 @@ export default function LoginPage() {
       if (user?.role === "admin") {
         router.replace("/admin");
       } else {
-        router.replace("/create");
+        router.replace("/create-v2");
       }
     } catch (error) {
       const isNetworkError =
@@ -131,7 +131,7 @@ export default function LoginPage() {
       if (token) {
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify({ role: "guest" }));
-        router.replace("/create");
+        router.replace("/create-v2");
       } else {
         throw new Error("Sunucu geçersiz yanıt döndü.");
       }

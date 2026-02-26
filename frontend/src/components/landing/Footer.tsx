@@ -25,7 +25,7 @@ const DEFAULT_NAV: FooterNavSection[] = [
   {
     title: "Ürün",
     links: [
-      { label: "Kitap Oluştur", href: "/create" },
+      { label: "Kitap Oluştur", href: "/create-v2" },
       { label: "Nasıl Çalışır?", href: "#nasil-calisir" },
       { label: "Örnek Sayfalar", href: "#ornekler" },
       { label: "Fiyatlandırma", href: "#fiyat" },
