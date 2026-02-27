@@ -444,8 +444,23 @@ class Scenario(Base, UUIDMixin, TimestampMixin):
             "visual_style",
         ]
 
-        # Custom variables from schema
-        custom = [field["key"] for field in (self.custom_inputs_schema or [])]
+        # Custom variables from schema — guard against JSON strings stored in DB
+        custom = []
+        schema = self.custom_inputs_schema or []
+        if isinstance(schema, str):
+            import json
+            try:
+                schema = json.loads(schema)
+            except Exception:
+                schema = []
+        for field in schema:
+            if isinstance(field, dict):
+                key = field.get("key")
+                if key:
+                    custom.append(key)
+            elif isinstance(field, str):
+                # field itself is a raw JSON string element — skip gracefully
+                continue
 
         return standard + custom
 
