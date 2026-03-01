@@ -132,10 +132,10 @@ export default function TransactionLedger({
                     <div className="flex items-center gap-1">
                       <span className="text-slate-700">{txn.product_name}</span>
                       {txn.has_audio && (
-                        <Headphones className="h-3.5 w-3.5 text-blue-500" title="Sesli kitap" />
+                        <span title="Sesli kitap"><Headphones className="h-3.5 w-3.5 text-blue-500" /></span>
                       )}
                       {txn.has_coloring && (
-                        <Palette className="h-3.5 w-3.5 text-orange-400" title="Boyama kitabı" />
+                        <span title="Boyama kitabı"><Palette className="h-3.5 w-3.5 text-orange-400" /></span>
                       )}
                     </div>
                   </td>
