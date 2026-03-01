@@ -56,9 +56,9 @@ async def list_users(
                 "id": str(u.id),
                 "email": u.email,
                 "full_name": u.full_name,
-                "role": u.role.value,
+                "role": u.role.value if hasattr(u.role, "value") else str(u.role),
                 "is_active": u.is_active,
-                "is_guest": u.is_guest,
+                "is_guest": getattr(u, "is_guest", False),
                 "created_at": u.created_at.isoformat(),
             }
             for u in users
@@ -91,9 +91,9 @@ async def get_user_detail(
         "email": user.email,
         "full_name": user.full_name,
         "phone": user.phone,
-        "role": user.role.value,
+        "role": user.role.value if hasattr(user.role, "value") else str(user.role),
         "is_active": user.is_active,
-        "is_guest": user.is_guest,
+        "is_guest": getattr(user, "is_guest", False),
         "google_id": user.google_id,
         "order_count": order_count,
         "created_at": user.created_at.isoformat(),

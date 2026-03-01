@@ -1,8 +1,9 @@
 """User model - supports email, Google OAuth, and guest checkout."""
 
+from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Boolean, Index, String, Text
+from sqlalchemy import Boolean, DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
@@ -41,8 +42,25 @@ class User(Base, UUIDMixin, TimestampMixin):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    # Membership extensions
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deletion_scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # Token invalidation: increment to revoke ALL existing JWTs for this user
+    token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
     # Relationships
     orders = relationship("Order", back_populates="user", lazy="selectin")
+    addresses = relationship(
+        "UserAddress", back_populates="user", cascade="all, delete-orphan", lazy="selectin",
+    )
+    notification_preference = relationship(
+        "NotificationPreference", back_populates="user", uselist=False, cascade="all, delete-orphan",
+    )
+    children = relationship(
+        "ChildProfile", back_populates="user", cascade="all, delete-orphan", lazy="selectin",
+    )
 
     __table_args__ = (
         Index("idx_users_email", "email", postgresql_where="email IS NOT NULL"),

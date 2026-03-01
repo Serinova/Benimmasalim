@@ -46,11 +46,13 @@ export const metadata: Metadata = {
     siteName: "Benim Masalım",
     locale: "tr_TR",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Benim Masalım – Kişiye Özel Çocuk Kitabı" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Kişiye Özel Çocuk Kitabı | Benim Masalım",
     description: "Çocuğunuzun adı ve fotoğrafıyla kişiselleştirilmiş masal kitabı. Yapay zeka destekli, eğitici, profesyonel baskı.",
+    images: ["/og-image.png"],
   },
 };
 

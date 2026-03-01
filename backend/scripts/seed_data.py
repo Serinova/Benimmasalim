@@ -168,45 +168,12 @@ async def seed_page_templates(db: AsyncSession) -> dict:
 
 
 async def seed_products(db: AsyncSession, templates: dict) -> None:
-    """Create default products linked to page templates."""
+    """Create default products linked to page templates.
+    
+    Only A4 Yatay Macera is created as the main story book product.
+    Audio addons and coloring book are seeded separately.
+    """
     products = [
-        Product(
-            name="Kare Masal",
-            slug="kare-masal",
-            description="Cocugunuzun hikayesi kare formatta, 16 sayfa renkli baski",
-            default_page_count=16,
-            base_price=Decimal("450.00"),
-            thumbnail_url="",
-            is_featured=True,
-            display_order=1,
-            cover_template_id=templates["kare_cover"].id,
-            inner_template_id=templates["kare_inner"].id,
-        ),
-        Product(
-            name="A4 Dev Macera",
-            slug="a4-dev-macera",
-            description="Buyuk boy A4 format, 24 sayfa premium baski",
-            default_page_count=24,
-            base_price=Decimal("600.00"),
-            thumbnail_url="",
-            is_featured=True,
-            display_order=2,
-            cover_template_id=templates["a4_cover"].id,
-            inner_template_id=templates["a4_inner"].id,
-        ),
-        Product(
-            name="Cep Boy Hikaye",
-            slug="cep-boy-hikaye",
-            description="Cep boy tasinabilir, 12 sayfa ekonomik",
-            default_page_count=12,
-            min_page_count=12,
-            max_page_count=16,
-            base_price=Decimal("350.00"),
-            thumbnail_url="",
-            display_order=3,
-            cover_template_id=templates["cep_cover"].id,
-            inner_template_id=templates["cep_inner"].id,
-        ),
         Product(
             name="A4 Yatay Macera",
             slug="a4-yatay-macera",
@@ -217,7 +184,7 @@ async def seed_products(db: AsyncSession, templates: dict) -> None:
             base_price=Decimal("550.00"),
             thumbnail_url="",
             is_featured=True,
-            display_order=4,
+            display_order=1,
             cover_template_id=templates["a4_yatay_cover"].id,
             inner_template_id=templates["a4_yatay_inner"].id,
         ),

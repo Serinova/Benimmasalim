@@ -1,6 +1,10 @@
 """Background task: generate complete book after payment (Fal.ai + PuLID V3)."""
 
+from __future__ import annotations
+
 import asyncio
+import time
+from uuid import UUID
 
 import httpx
 import structlog
@@ -20,6 +24,13 @@ from app.services.ai.image_provider_dispatch import (
     get_effective_ai_config,
     get_image_provider_for_generation,
 )
+from app.services.appearance_service import detect_clothing_from_photo, detect_hair_from_photo
+from app.services.book_pipeline_steps import (
+    generate_back_cover_image,
+    pipeline_step_audio,
+    pipeline_step_back_cover_config,
+    pipeline_step_dedication_pages,
+)
 from app.services.order_state_machine import transition_order
 from app.services.pdf_service import PDFService
 from app.services.storage_service import StorageService
@@ -38,7 +49,7 @@ async def generate_full_book(order_id: str) -> dict:
     """
     Generate all pages and PDF for an order.
 
-    This task is triggered after successful payment.
+    Triggered after successful payment.
 
     Steps:
     1. Generate all page images (using existing cover)
@@ -47,16 +58,7 @@ async def generate_full_book(order_id: str) -> dict:
     4. Generate PDF
     5. Generate audio if selected
     6. Update order status to READY_FOR_PRINT
-
-    Args:
-        order_id: UUID of the order
-
-    Returns:
-        Summary of generation
     """
-    import time
-    from uuid import UUID
-
     _start = time.monotonic()
     pdf_service = PDFService()
     storage = StorageService()
@@ -84,19 +86,17 @@ async def generate_full_book(order_id: str) -> dict:
 
         # Get related data
         product = await db.get(Product, order.product_id)
-        _scenario = await db.get(Scenario, order.scenario_id)  # Reserved for template usage
+        _scenario = await db.get(Scenario, order.scenario_id)
         style = await db.get(VisualStyle, order.visual_style_id)
 
         # Get page templates from product
-        cover_template = None
-        inner_template = None
-
+        cover_template: PageTemplate | None = None
+        inner_template: PageTemplate | None = None
         if product.cover_template_id:
             cover_template = await db.get(PageTemplate, product.cover_template_id)
         if product.inner_template_id:
             inner_template = await db.get(PageTemplate, product.inner_template_id)
 
-        # Log template info (efektif parametre: şablon dikeyse yatay A4 kullanılır)
         if inner_template:
             params = get_effective_generation_params(inner_template)
             logger.info(
@@ -121,7 +121,9 @@ async def generate_full_book(order_id: str) -> dict:
 
         # Get existing pages (story text already generated)
         pages_result = await db.execute(
-            select(OrderPage).where(OrderPage.order_id == order.id).order_by(OrderPage.page_number)
+            select(OrderPage)
+            .where(OrderPage.order_id == order.id)
+            .order_by(OrderPage.page_number)
         )
         existing_pages = list(pages_result.scalars().all())
 
@@ -146,41 +148,17 @@ async def generate_full_book(order_id: str) -> dict:
             existing_pages=len(existing_pages),
         )
 
-        # ============================================================
-        # APPEARANCE DETECTION (Face handled by PuLID from image)
-        # ============================================================
-        # PuLID extracts face identity from the photo.
-        # We detect CLOTHING + HAIR for cross-page consistency.
-        #
+        # ── Resolve appearance (clothing + hair) ──────────────────────────────
         # OUTFIT PRIORITY:
-        # 1. Scenario outfit (outfit_girl/outfit_boy) — per-scenario themed clothing
-        # 2. Order's stored clothing_description — from trial/preview phase
-        # 3. Photo detection — AI detects from child photo
-        # 4. Gender default — generic fallback
+        # 1. Scenario outfit (gender-specific) — highest priority
+        # 2. Stored clothing_description from order (trial/preview phase)
+        # 3. AI detection from child photo
+        # 4. Gender default fallback
 
-        # ── Resolve scenario outfit (gender-specific) ──
-        _scenario_outfit = ""
-        if _scenario:
-            _scenario_outfit_girl = (getattr(_scenario, "outfit_girl", None) or "").strip()
-            _scenario_outfit_boy = (getattr(_scenario, "outfit_boy", None) or "").strip()
-            _child_gender_norm = (order.child_gender or "").lower().strip()
-            if _child_gender_norm in ("kiz", "kız", "girl", "female"):
-                _scenario_outfit = _scenario_outfit_girl or _scenario_outfit_boy
-            else:
-                _scenario_outfit = _scenario_outfit_boy or _scenario_outfit_girl
-            if _scenario_outfit:
-                logger.info(
-                    "Scenario outfit resolved for book generation",
-                    order_id=order_id,
-                    scenario_name=_scenario.name,
-                    gender=_child_gender_norm,
-                    outfit=_scenario_outfit[:80],
-                )
-
+        _scenario_outfit = _resolve_scenario_outfit(_scenario, order)
         clothing_description = (getattr(order, "clothing_description", None) or "").strip()
         hair_description = (getattr(order, "hair_description", None) or "").strip()
 
-        # Scenario outfit takes highest priority
         if _scenario_outfit:
             clothing_description = _scenario_outfit
             logger.info(
@@ -197,32 +175,28 @@ async def generate_full_book(order_id: str) -> dict:
         elif order.child_photo_url:
             try:
                 logger.info(
-                    "Detecting appearance from child photo (PuLID will handle face)",
+                    "Detecting appearance from child photo",
                     trace_id=tracer.trace_id,
                     order_id=order_id,
                     child_name=order.child_name,
                     child_photo_hash=mask_photo_url(order.child_photo_url),
                 )
-
-                import asyncio as _asyncio_detect
-                clothing_description, hair_description = await _asyncio_detect.gather(
-                    _detect_clothing_from_photo(
+                clothing_description, hair_description = await asyncio.gather(
+                    detect_clothing_from_photo(
                         photo_url=order.child_photo_url,
                         gender=order.child_gender,
                     ),
-                    _detect_hair_from_photo(
+                    detect_hair_from_photo(
                         photo_url=order.child_photo_url,
                         gender=order.child_gender,
                     ),
                 )
-
                 logger.info(
                     "Appearance detected for character consistency",
                     order_id=order_id,
                     clothing=clothing_description[:100],
                     hair=hair_description[:60],
                 )
-
             except Exception as e:
                 logger.warning(
                     "Appearance detection failed, using defaults",
@@ -230,7 +204,10 @@ async def generate_full_book(order_id: str) -> dict:
                     error=str(e),
                 )
                 from app.prompt.templates import get_default_clothing, get_default_hair
-                clothing_description = get_default_clothing("boy" if order.child_gender == "erkek" else "girl")
+
+                clothing_description = get_default_clothing(
+                    "boy" if order.child_gender == "erkek" else "girl"
+                )
                 hair_description = get_default_hair()
         else:
             logger.warning(
@@ -239,20 +216,24 @@ async def generate_full_book(order_id: str) -> dict:
                 order_id=order_id,
             )
             from app.prompt.templates import get_default_clothing, get_default_hair
-            clothing_description = get_default_clothing("boy" if order.child_gender == "erkek" else "girl")
+
+            clothing_description = get_default_clothing(
+                "boy" if order.child_gender == "erkek" else "girl"
+            )
             hair_description = get_default_hair()
 
         from app.services.ai.face_service import resolve_face_reference
+
         _face_ref_url, _face_embedding = await resolve_face_reference(
             order.child_photo_url or "", storage
         )
 
         # Character description: DB'den oku, yoksa on-the-fly üret
-        # PuLID yüzü fotoğraftan alır; text description saç/ten/göz gibi özellikleri kilitler.
         character_description = (getattr(order, "face_description", None) or "").strip()
         if not character_description and _face_ref_url:
             try:
                 from app.services.ai.face_analyzer_service import get_face_analyzer
+
                 _face_analyzer = get_face_analyzer()
                 character_description = await _face_analyzer.get_enhanced_child_description(
                     image_source=_face_ref_url,
@@ -260,7 +241,6 @@ async def generate_full_book(order_id: str) -> dict:
                     child_age=order.child_age or 7,
                     child_gender=order.child_gender or "",
                 )
-                # Sonraki kullanımlar için DB'ye kaydet
                 order.face_description = character_description
                 await db.commit()
                 logger.info(
@@ -275,7 +255,7 @@ async def generate_full_book(order_id: str) -> dict:
                     error=str(_e),
                 )
 
-        # Personalize style
+        # Personalize style modifier
         style_modifier_raw = style.prompt_modifier if style else ""
         style_modifier = style_modifier_raw
         if order.child_name and "{child_name}" in style_modifier:
@@ -284,7 +264,9 @@ async def generate_full_book(order_id: str) -> dict:
             style_modifier = style_modifier.replace("{child_age}", str(order.child_age or 7))
 
         ai_config = await get_effective_ai_config(db, product_id=order.product_id)
-        provider_name = (ai_config.image_provider or "gemini").strip().lower() if ai_config else "gemini"
+        provider_name = (
+            (ai_config.image_provider or "gemini").strip().lower() if ai_config else "gemini"
+        )
         image_provider = get_image_provider_for_generation(provider_name)
 
         logger.info(
@@ -298,26 +280,22 @@ async def generate_full_book(order_id: str) -> dict:
             source="generate_full_book",
         )
 
-        # BookContext: kitap bazlı tüm parametreleri BİR KEZ çözümle
+        # Build BookContext and PromptComposer once for the entire book
         from app.prompt import DEFAULT_COVER_TEMPLATE, DEFAULT_INNER_TEMPLATE
         from app.prompt.service import PromptService
 
         _prompt_svc = PromptService(db)
         cover_prompt_tpl = await _prompt_svc.get_en("COVER_TEMPLATE", fallback=DEFAULT_COVER_TEMPLATE)
         inner_prompt_tpl = await _prompt_svc.get_en("INNER_TEMPLATE", fallback=DEFAULT_INNER_TEMPLATE)
+
         _story_title = ""
         if _scenario and order.child_name:
             _story_title = f"{order.child_name}'in {_scenario.name}"
         elif order.child_name:
             _story_title = f"{order.child_name}'in Masalı"
 
-        _id_weight_override = float(style.id_weight) if style and style.id_weight is not None else None
-        _true_cfg_override = float(style.true_cfg) if style and getattr(style, "true_cfg", None) is not None else None
-        _start_step_override = int(style.start_step) if style and getattr(style, "start_step", None) is not None else None
-        _num_inference_steps_override = int(style.num_inference_steps) if style and getattr(style, "num_inference_steps", None) is not None else None
-        _guidance_scale_override = float(style.guidance_scale) if style and getattr(style, "guidance_scale", None) is not None else None
+        _style_overrides = _extract_style_overrides(style)
 
-        # Get style overrides from VisualStyle DB (before BookContext so they apply to prompts)
         _book_leading_prefix_override = (
             (style.leading_prefix_override or "").strip() if style else None
         ) or None
@@ -338,7 +316,7 @@ async def generate_full_book(order_id: str) -> dict:
             story_title=_story_title,
             scenario_name=_scenario.name if _scenario else "",
             location_name=getattr(_scenario, "location_en", "") if _scenario else "",
-            id_weight_override=_id_weight_override,
+            id_weight_override=_style_overrides["id_weight"],
             leading_prefix_override=_book_leading_prefix_override,
             style_block_override=_book_style_block_override,
         )
@@ -348,102 +326,21 @@ async def generate_full_book(order_id: str) -> dict:
             inner_template=inner_prompt_tpl,
         )
 
-        # Generate page images
-        generated_pages = []
+        # ── Generate page images ──────────────────────────────────────────────
+        generated_pages: list[dict] = []
+        pages_to_generate: list[OrderPage] = []
 
-        # Separate cover (already generated) from pages needing generation
-        pages_to_generate = []
         for page in existing_pages:
             if page.is_cover and page.image_url:
-                # Front cover needs upscaling for print quality
-                logger.info(
-                    "Processing front cover for upscale",
+                # Front cover: upscale + resize for print quality
+                cover_page_data = await _process_existing_cover(
+                    page=page,
                     order_id=order_id,
-                    cover_url=page.image_url,
+                    story_title=_story_title,
+                    cover_template=cover_template,
+                    storage=storage,
                 )
-                
-                try:
-                    # Download existing cover image
-                    import httpx
-                    async with httpx.AsyncClient(timeout=60.0) as client:
-                        resp = await client.get(page.image_url)
-                        cover_img_bytes = resp.content
-                    
-                    # Get cover template params for target dimensions
-                    if cover_template:
-                        cover_params = get_effective_generation_params(cover_template)
-                    else:
-                        cover_params = calculate_generation_params_from_mm(
-                            A4_LANDSCAPE_WIDTH_MM, A4_LANDSCAPE_HEIGHT_MM
-                        )
-                    
-                    # Upscale if needed (same as inner pages)
-                    _needs_upscale = cover_params.get("needs_upscale", False)
-                    _upscale_factor = cover_params.get("upscale_factor", 1)
-                    if _needs_upscale and _upscale_factor > 1:
-                        from app.services.upscale_service import upscale_image_bytes_safe
-                        _before_upscale_kb = len(cover_img_bytes) // 1024
-                        cover_img_bytes = await upscale_image_bytes_safe(
-                            cover_img_bytes,
-                            upscale_factor=_upscale_factor,
-                        )
-                        logger.info(
-                            "COVER_UPSCALE_APPLIED",
-                            factor=_upscale_factor,
-                            before_kb=_before_upscale_kb,
-                            after_kb=len(cover_img_bytes) // 1024,
-                        )
-                    
-                    # Resize to target print dimensions
-                    try:
-                        _before_resize = len(cover_img_bytes)
-                        cover_img_bytes = resize_image_bytes_to_target(
-                            cover_img_bytes,
-                            cover_params["target_width"],
-                            cover_params["target_height"],
-                            is_cover=True,
-                        )
-                        logger.info(
-                            "Cover resized to print target",
-                            target=f"{cover_params['target_width']}x{cover_params['target_height']}",
-                            before_kb=_before_resize // 1024,
-                            after_kb=len(cover_img_bytes) // 1024,
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            "Cover resize to target failed, using current size",
-                            error=str(e),
-                        )
-                    
-                    # Upload high-res version to GCS
-                    highres_cover_url = await storage.upload_generated_image(
-                        cover_img_bytes,
-                        str(order.id),
-                        page.page_number,
-                    )
-                    
-                    generated_pages.append({
-                        "text": _story_title or page.text_content or "",
-                        "image_url": highres_cover_url,
-                    })
-                    
-                    logger.info(
-                        "Front cover upscaled and ready",
-                        order_id=order_id,
-                        highres_url=highres_cover_url,
-                    )
-                    
-                except Exception as cover_err:
-                    logger.error(
-                        "Front cover upscale failed, using original",
-                        order_id=order_id,
-                        error=str(cover_err),
-                    )
-                    # Fallback: use original cover
-                    generated_pages.append({
-                        "text": _story_title or page.text_content or "",
-                        "image_url": page.image_url,
-                    })
+                generated_pages.append(cover_page_data)
             else:
                 pages_to_generate.append(page)
 
@@ -452,23 +349,17 @@ async def generate_full_book(order_id: str) -> dict:
             page.image_generation_status = "processing"
         await db.commit()
 
-        # Shared HTTP client for image downloads (reuse TCP connections)
         _download_client = httpx.AsyncClient(timeout=60.0)
-
-        # Parallel image generation with concurrency limit
         _page_sem = asyncio.Semaphore(settings.image_concurrency)
 
-        async def _generate_single_page(page: "OrderPage") -> tuple["OrderPage", str | None, str | None]:
-            """Generate image for a single page. Returns (page, final_url, error)."""
+        async def _generate_single_page(
+            page: OrderPage,
+        ) -> tuple[OrderPage, str | None, str | None]:
             async with _page_sem:
                 _img_start = time.monotonic()
                 try:
                     scene_action = page.image_prompt or page.text_content or ""
-
-                    if page.is_cover:
-                        current_template = cover_template or inner_template
-                    else:
-                        current_template = inner_template
+                    current_template = (cover_template or inner_template) if page.is_cover else inner_template
 
                     if current_template:
                         params = get_effective_generation_params(current_template)
@@ -510,8 +401,6 @@ async def generate_full_book(order_id: str) -> dict:
                         _final_prompt_text = _pr.prompt
                         _final_negative_text = _pr.negative_prompt
 
-                    page_id_weight = book_ctx.style.id_weight
-
                     result = await image_provider.generate_consistent_image(
                         prompt=_final_prompt_text,
                         child_face_url=_face_ref_url,
@@ -519,11 +408,11 @@ async def generate_full_book(order_id: str) -> dict:
                         style_modifier=style_modifier,
                         width=width,
                         height=height,
-                        id_weight=page_id_weight,
-                        true_cfg_override=_true_cfg_override,
-                        start_step_override=_start_step_override,
-                        num_inference_steps_override=_num_inference_steps_override,
-                        guidance_scale_override=_guidance_scale_override,
+                        id_weight=book_ctx.style.id_weight,
+                        true_cfg_override=_style_overrides["true_cfg"],
+                        start_step_override=_style_overrides["start_step"],
+                        num_inference_steps_override=_style_overrides["num_inference_steps"],
+                        guidance_scale_override=_style_overrides["guidance_scale"],
                         is_cover=page.is_cover,
                         template_en=None,
                         story_title=book_ctx.story_title if page.is_cover else "",
@@ -542,44 +431,12 @@ async def generate_full_book(order_id: str) -> dict:
                     resp = await _download_client.get(image_url)
                     image_bytes = resp.content
 
-                    # Upscale before resize — AI upscale (Real-ESRGAN) if enabled, else PIL fallback
-                    _needs_upscale = params.get("needs_upscale", False)
-                    _upscale_factor = params.get("upscale_factor", 1)
-                    if _needs_upscale and _upscale_factor > 1:
-                        from app.services.upscale_service import upscale_image_bytes_safe
-                        _before_upscale_kb = len(image_bytes) // 1024
-                        image_bytes = await upscale_image_bytes_safe(
-                            image_bytes,
-                            upscale_factor=_upscale_factor,
-                        )
-                        logger.info(
-                            "UPSCALE_APPLIED",
-                            page=page.page_number,
-                            factor=_upscale_factor,
-                            before_kb=_before_upscale_kb,
-                            after_kb=len(image_bytes) // 1024,
-                        )
-
-                    try:
-                        _before_resize = len(image_bytes)
-                        image_bytes = resize_image_bytes_to_target(
-                            image_bytes,
-                            params["target_width"],
-                            params["target_height"],
-                        )
-                        logger.info(
-                            "Image resized to print target",
-                            page=page.page_number,
-                            target=f"{params['target_width']}x{params['target_height']}",
-                            before_kb=_before_resize // 1024,
-                            after_kb=len(image_bytes) // 1024,
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            "Resize to target failed, using current size",
-                            page=page.page_number,
-                            error=str(e),
-                        )
+                    # Upscale → resize to print target
+                    image_bytes = await _upscale_and_resize(
+                        image_bytes=image_bytes,
+                        params=params,
+                        page_number=page.page_number,
+                    )
 
                     final_url = await storage.upload_generated_image(
                         image_bytes,
@@ -617,110 +474,45 @@ async def generate_full_book(order_id: str) -> dict:
                     )
                     return page, None, str(e)
 
-        # Run all page generations in parallel
-        if pages_to_generate:
-            results = await asyncio.gather(
-                *[_generate_single_page(p) for p in pages_to_generate],
-                return_exceptions=True,
-            )
-
-            # Process results and update DB in batch
-            for res in results:
-                if isinstance(res, Exception):
-                    logger.error("Unexpected page gen error", error=str(res))
-                    continue
-                page, final_url, _error = res
-                if final_url:
-                    page.image_url = final_url
-                    page.image_generation_status = "completed"
-                    generated_pages.append(
-                        {
-                            # Kapak sayfasında başlık kullan; iç sayfalarda text_content
-                            "text": (_story_title if page.is_cover else page.text_content) or "",
-                            "image_url": final_url,
-                        }
-                    )
-                else:
-                    page.image_generation_status = "failed"
-                    page.generation_attempt += 1
-
-            await db.commit()
-
-        await _download_client.aclose()
-
-        # Step 5: Generate audio if selected
-        audio_qr_url = None
-        if order.has_audio_book:
-            try:
-                from app.services.ai.elevenlabs_service import ElevenLabsService
-
-                elevenlabs = ElevenLabsService()
-
-                # Combine all page texts into one story
-                full_story_text = ""
-                for page in generated_pages:
-                    if page.get("text"):
-                        full_story_text += page["text"] + "\n\n"
-
-                if full_story_text.strip():
-                    logger.info(
-                        "Generating audio book",
-                        order_id=order_id,
-                        audio_type=order.audio_type,
-                        text_length=len(full_story_text),
-                    )
-
-                    # Generate audio using ElevenLabs
-                    if order.audio_type == "cloned" and order.audio_voice_id:
-                        # Use cloned voice
-                        audio_bytes = await elevenlabs.text_to_speech(
-                            text=full_story_text,
-                            voice_id=order.audio_voice_id,
+        try:
+            if pages_to_generate:
+                results = await asyncio.gather(
+                    *[_generate_single_page(p) for p in pages_to_generate],
+                    return_exceptions=True,
+                )
+                for res in results:
+                    if isinstance(res, Exception):
+                        logger.error("Unexpected page gen error", error=str(res))
+                        continue
+                    page, final_url, _error = res
+                    if final_url:
+                        page.image_url = final_url
+                        page.image_generation_status = "completed"
+                        generated_pages.append(
+                            {
+                                "text": (_story_title if page.is_cover else page.text_content) or "",
+                                "image_url": final_url,
+                            }
                         )
                     else:
-                        # Use system voice (default female)
-                        voice_type = "female"  # Could be stored in order if needed
-                        audio_bytes = await elevenlabs.text_to_speech(
-                            text=full_story_text,
-                            voice_type=voice_type,
-                        )
+                        page.image_generation_status = "failed"
+                        page.generation_attempt += 1
+                await db.commit()
+        finally:
+            await _download_client.aclose()
 
-                    # Upload audio to GCS
-                    audio_url = storage.upload_audio(
-                        audio_bytes=audio_bytes,
-                        order_id=str(order.id),
-                        filename="audiobook.mp3",
-                    )
+        # ── Pipeline steps 5–8b ───────────────────────────────────────────────
+        audio_qr_url = await pipeline_step_audio(
+            db=db,
+            order=order,
+            generated_pages=generated_pages,
+            storage=storage,
+            order_id=order_id,
+        )
 
-                    order.audio_file_url = audio_url
-                    await db.commit()
-
-                    # Generate signed URL for QR code (valid for 1 year)
-                    audio_qr_url = storage.get_signed_url(
-                        audio_url,
-                        expiration_hours=24 * 365,
-                    )
-
-                    logger.info(
-                        "Audio book generated",
-                        order_id=order_id,
-                        audio_url=audio_url,
-                        audio_size=len(audio_bytes),
-                    )
-
-            except Exception as e:
-                logger.error(
-                    "Audio generation failed",
-                    order_id=order_id,
-                    error=str(e),
-                )
-                # Don't fail the whole book generation if audio fails
-                # Just log and continue
-
-        # Step 6: Generate back cover image
         back_cover_image_url: str | None = None
         try:
-            back_cover_image_url = await _generate_back_cover_image(
+            back_cover_image_url = await generate_back_cover_image(
                 order=order,
                 book_ctx=book_ctx,
                 image_provider=image_provider,
@@ -731,104 +523,38 @@ async def generate_full_book(order_id: str) -> dict:
                 style_modifier=style_modifier,
                 face_ref_url=_face_ref_url,
                 face_embedding=_face_embedding,
-                true_cfg_override=_true_cfg_override,
-                start_step_override=_start_step_override,
-                num_inference_steps_override=_num_inference_steps_override,
-                guidance_scale_override=_guidance_scale_override,
+                true_cfg_override=_style_overrides["true_cfg"],
+                start_step_override=_style_overrides["start_step"],
+                num_inference_steps_override=_style_overrides["num_inference_steps"],
+                guidance_scale_override=_style_overrides["guidance_scale"],
                 leading_prefix_override=_book_leading_prefix_override,
                 style_block_override=_book_style_block_override,
-                provider_name=provider_name,
-                ai_config=ai_config,
             )
             if back_cover_image_url:
                 order.back_cover_image_url = back_cover_image_url
                 await db.commit()
-                logger.info("Back cover image generated", order_id=order_id, url=back_cover_image_url[:80])
+                logger.info(
+                    "Back cover image generated",
+                    order_id=order_id,
+                    url=back_cover_image_url[:80],
+                )
         except Exception as e:
-            logger.warning("Back cover image generation failed — continuing without it", order_id=order_id, error=str(e))
-
-        # Step 7: Get back cover config
-        back_cover_config = None
-        try:
-            from app.models.book_template import BackCoverConfig
-
-            result = await db.execute(
-                select(BackCoverConfig)
-                .where(BackCoverConfig.is_default == True)
-                .where(BackCoverConfig.is_active == True)
+            logger.warning(
+                "Back cover image generation failed — continuing without it",
+                order_id=order_id,
+                error=str(e),
             )
-            back_cover_config = result.scalar_one_or_none()
-            if back_cover_config:
-                logger.info("Using back cover config", config_name=back_cover_config.name)
-        except Exception as e:
-            logger.warning("Failed to get back cover config", error=str(e))
 
-        # Step 8: Compose dedication page (karsilama sayfasi)
-        dedication_image_base64: str | None = None
-        ded_note = getattr(order, "dedication_note", None)
-        if not ded_note:
-            # Try AI-generated dedication text from story_pages
-            for _sp in (getattr(order, "story_pages", None) or []):
-                if isinstance(_sp, dict) and _sp.get("page_type") == "front_matter" and (_sp.get("text") or "").strip():
-                    ded_note = _sp["text"].strip()
-                    break
-        if ded_note:
-            try:
-                from app.services.page_composer import PageComposer, build_template_config
+        back_cover_config = await pipeline_step_back_cover_config(db)
+        dedication_image_base64, intro_image_base64 = await pipeline_step_dedication_pages(
+            db=db,
+            order=order,
+            story_title=_story_title,
+            scenario=_scenario,
+            order_id=order_id,
+        )
 
-                ded_composer = PageComposer()
-
-                # Fetch dedication template
-                ded_tpl_result = await db.execute(
-                    select(PageTemplate)
-                    .where(PageTemplate.page_type == "dedication")
-                    .where(PageTemplate.is_active == True)
-                    .limit(1)
-                )
-                ded_tpl = ded_tpl_result.scalar_one_or_none()
-                ded_cfg = build_template_config(ded_tpl) if ded_tpl else {}
-
-                dedication_image_base64 = ded_composer.compose_dedication_page(
-                    text=ded_note,
-                    template_config=ded_cfg,
-                    dpi=300,
-                )
-                if dedication_image_base64:
-                    logger.info("Dedication page composed for PDF", order_id=order_id)
-            except Exception as e:
-                logger.warning("Dedication compose failed", order_id=order_id, error=str(e))
-
-        # Step 8b: Generate "karşılama 2" — scenario intro text page
-        intro_image_base64: str | None = None
-        try:
-            intro_text = await _generate_scenario_intro_text(
-                scenario=_scenario,
-                child_name=order.child_name,
-                story_title=_story_title,
-            )
-            if intro_text:
-                from app.services.page_composer import PageComposer, build_template_config
-
-                _intro_composer = PageComposer()
-                _intro_ded_tpl_result = await db.execute(
-                    select(PageTemplate)
-                    .where(PageTemplate.page_type == "dedication")
-                    .where(PageTemplate.is_active == True)
-                    .limit(1)
-                )
-                _intro_ded_tpl = _intro_ded_tpl_result.scalar_one_or_none()
-                _intro_cfg = build_template_config(_intro_ded_tpl) if _intro_ded_tpl else {}
-                intro_image_base64 = _intro_composer.compose_dedication_page(
-                    text=intro_text,
-                    template_config=_intro_cfg,
-                    dpi=300,
-                )
-                if intro_image_base64:
-                    logger.info("Scenario intro page (karşılama 2) composed for PDF", order_id=order_id)
-        except Exception as e:
-            logger.warning("Scenario intro page failed", order_id=order_id, error=str(e))
-
-        # Step 9: Generate PDF
+        # ── Step 9: Generate PDF ──────────────────────────────────────────────
         try:
             pdf_bytes = await pdf_service.generate_book_pdf(
                 order=order,
@@ -841,14 +567,12 @@ async def generate_full_book(order_id: str) -> dict:
                 back_cover_image_url=back_cover_image_url,
             )
 
-            # Upload PDF
             pdf_url = storage.upload_pdf(pdf_bytes=pdf_bytes, order_id=str(order.id))
             order.final_pdf_url = pdf_url
 
-            # Transition to READY_FOR_PRINT
             await transition_order(order, OrderStatus.READY_FOR_PRINT, db)
 
-            # Send "your book is ready" email to the customer
+            # Send "your book is ready" email
             try:
                 from app.models.user import User
                 from app.services.email_service import email_service
@@ -865,10 +589,7 @@ async def generate_full_book(order_id: str) -> dict:
                         story_title=f"{order.child_name}'in Masalı",
                         story_pages=[],
                     )
-                    logger.info(
-                        "ORDER_READY_EMAIL_SENT",
-                        order_id=order_id,
-                    )
+                    logger.info("ORDER_READY_EMAIL_SENT", order_id=order_id)
                 else:
                     logger.warning(
                         "ORDER_READY_EMAIL_SKIP_NO_EMAIL",
@@ -882,9 +603,7 @@ async def generate_full_book(order_id: str) -> dict:
                     error=str(_mail_err),
                 )
 
-            tracer.pipeline_complete(
-                page_count=len(generated_pages),
-            )
+            tracer.pipeline_complete(page_count=len(generated_pages))
 
             duration_s = round(time.monotonic() - _start, 2)
             build_report = {
@@ -910,11 +629,7 @@ async def generate_full_book(order_id: str) -> dict:
             }
 
         except Exception as e:
-            tracer.pipeline_fail(
-                error_code="PDF_GENERATION_FAILED",
-                error=str(e),
-            )
-
+            tracer.pipeline_fail(error_code="PDF_GENERATION_FAILED", error=str(e))
             duration_s = round(time.monotonic() - _start, 2)
             build_report = {
                 "used_version": "v3",
@@ -929,308 +644,152 @@ async def generate_full_book(order_id: str) -> dict:
             return {"error": f"PDF generation failed: {str(e)}", "build_report": build_report}
 
 
-async def _generate_back_cover_image(
-    *,
-    order: "Order",
-    book_ctx: "BookContext",
-    image_provider: object,
-    storage: "StorageService",
-    cover_template: "PageTemplate | None",
-    inner_template: "PageTemplate | None",
-    clothing_description: str,
-    style_modifier: str,
-    face_ref_url: str | None,
-    face_embedding: object,
-    true_cfg_override: float | None,
-    start_step_override: int | None,
-    num_inference_steps_override: int | None,
-    guidance_scale_override: float | None,
-    leading_prefix_override: str | None,
-    style_block_override: str | None,
-    provider_name: str,  # noqa: ARG001
-    ai_config: object,  # noqa: ARG001
-) -> str | None:
-    """Generate the back cover image (same atmosphere as front, no title)."""
-    from app.prompt.cover_builder import build_back_cover_prompt
+# ── Private helpers ───────────────────────────────────────────────────────────
 
-    # Use the same scene description as the front cover but from a different angle
-    _scenario_name = book_ctx.scenario_name or "magical adventure"
-    _location = book_ctx.location_name or "enchanted land"
-    back_scene = (
-        f"Wide panoramic view of {_location}. "
-        f"The same young {book_ctx.child_gender or 'child'} seen from behind or side, "
-        f"gazing into the distance of the {_scenario_name} world. "
-        f"Continuation of the front cover atmosphere — same lighting, same environment, same mood."
-    )
 
-    back_prompt = build_back_cover_prompt(ctx=book_ctx, scene_description=back_scene)
-
-    current_template = cover_template or inner_template
-    if current_template:
-        from app.utils.resolution_calc import get_effective_generation_params
-        params = get_effective_generation_params(current_template)
+def _resolve_scenario_outfit(scenario: object | None, order: "Order") -> str:
+    """Return the gender-specific scenario outfit string, or empty string."""
+    if not scenario:
+        return ""
+    outfit_girl = (getattr(scenario, "outfit_girl", None) or "").strip()
+    outfit_boy = (getattr(scenario, "outfit_boy", None) or "").strip()
+    gender_norm = (order.child_gender or "").lower().strip()
+    if gender_norm in ("kiz", "kız", "girl", "female"):
+        outfit = outfit_girl or outfit_boy
     else:
-        from app.utils.resolution_calc import (
-            A4_LANDSCAPE_HEIGHT_MM,
-            A4_LANDSCAPE_WIDTH_MM,
-            calculate_generation_params_from_mm,
+        outfit = outfit_boy or outfit_girl
+    if outfit:
+        logger.info(
+            "Scenario outfit resolved for book generation",
+            scenario_name=getattr(scenario, "name", ""),
+            gender=gender_norm,
+            outfit=outfit[:80],
         )
-        params = calculate_generation_params_from_mm(A4_LANDSCAPE_WIDTH_MM, A4_LANDSCAPE_HEIGHT_MM)
+    return outfit
 
-    width, height = params["generation_width"], params["generation_height"]
 
-    result = await image_provider.generate_consistent_image(
-        prompt=back_prompt,
-        child_face_url=face_ref_url,
-        clothing_prompt=clothing_description,
-        style_modifier=style_modifier,
-        width=width,
-        height=height,
-        id_weight=book_ctx.style.id_weight,
-        true_cfg_override=true_cfg_override,
-        start_step_override=start_step_override,
-        num_inference_steps_override=num_inference_steps_override,
-        guidance_scale_override=guidance_scale_override,
-        is_cover=False,
-        template_en=None,
-        story_title="",
-        child_gender=(order.child_gender or "").strip(),
-        child_age=order.child_age or 7,
-        style_negative_en="",
-        base_negative_en="",
-        leading_prefix_override=leading_prefix_override,
-        style_block_override=style_block_override,
-        skip_compose=False,
-        precomposed_negative="",
-        reference_embedding=face_embedding,
-    )
-    image_url = result[0] if isinstance(result, tuple) else result
+def _extract_style_overrides(style: object | None) -> dict:
+    """Extract nullable numeric overrides from a VisualStyle instance."""
+    return {
+        "id_weight": float(style.id_weight) if style and style.id_weight is not None else None,
+        "true_cfg": (
+            float(style.true_cfg)
+            if style and getattr(style, "true_cfg", None) is not None
+            else None
+        ),
+        "start_step": (
+            int(style.start_step)
+            if style and getattr(style, "start_step", None) is not None
+            else None
+        ),
+        "num_inference_steps": (
+            int(style.num_inference_steps)
+            if style and getattr(style, "num_inference_steps", None) is not None
+            else None
+        ),
+        "guidance_scale": (
+            float(style.guidance_scale)
+            if style and getattr(style, "guidance_scale", None) is not None
+            else None
+        ),
+    }
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        resp = await client.get(image_url)
-        image_bytes = resp.content
 
-    # Upscale back cover image for print quality
+async def _process_existing_cover(
+    *,
+    page: "OrderPage",
+    order_id: str,
+    story_title: str,
+    cover_template: "PageTemplate | None",
+    storage: StorageService,
+) -> dict:
+    """Download, upscale and resize an existing front cover for print quality."""
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.get(page.image_url)
+            cover_img_bytes = resp.content
+
+        if cover_template:
+            cover_params = get_effective_generation_params(cover_template)
+        else:
+            cover_params = calculate_generation_params_from_mm(
+                A4_LANDSCAPE_WIDTH_MM, A4_LANDSCAPE_HEIGHT_MM
+            )
+
+        cover_img_bytes = await _upscale_and_resize(
+            image_bytes=cover_img_bytes,
+            params=cover_params,
+            page_number=page.page_number,
+            is_cover=True,
+        )
+
+        highres_cover_url = await storage.upload_generated_image(
+            cover_img_bytes,
+            str(page.order_id),
+            page.page_number,
+        )
+        logger.info(
+            "Front cover upscaled and ready",
+            order_id=order_id,
+            highres_url=highres_cover_url,
+        )
+        return {"text": story_title or page.text_content or "", "image_url": highres_cover_url}
+
+    except Exception as cover_err:
+        logger.error(
+            "Front cover upscale failed, using original",
+            order_id=order_id,
+            error=str(cover_err),
+        )
+        return {"text": story_title or page.text_content or "", "image_url": page.image_url}
+
+
+async def _upscale_and_resize(
+    *,
+    image_bytes: bytes,
+    params: dict,
+    page_number: int,
+    is_cover: bool = False,
+) -> bytes:
+    """Apply AI upscale (if needed) then resize to print target dimensions."""
     _needs_upscale = params.get("needs_upscale", False)
     _upscale_factor = params.get("upscale_factor", 1)
+
     if _needs_upscale and _upscale_factor > 1:
         from app.services.upscale_service import upscale_image_bytes_safe
-        image_bytes = await upscale_image_bytes_safe(image_bytes, upscale_factor=_upscale_factor)
+
+        _before_kb = len(image_bytes) // 1024
+        image_bytes = await upscale_image_bytes_safe(
+            image_bytes, upscale_factor=_upscale_factor
+        )
+        logger.info(
+            "UPSCALE_APPLIED",
+            page=page_number,
+            factor=_upscale_factor,
+            before_kb=_before_kb,
+            after_kb=len(image_bytes) // 1024,
+        )
 
     try:
-        from app.utils.resolution_calc import resize_image_bytes_to_target
+        _before_resize = len(image_bytes)
         image_bytes = resize_image_bytes_to_target(
             image_bytes,
             params["target_width"],
             params["target_height"],
+            is_cover=is_cover,
         )
-    except Exception:
-        pass
-
-    final_url = await storage.upload_generated_image(
-        image_bytes,
-        str(order.id),
-        page_number=9999,  # sentinel page number for back cover
-    )
-    return final_url
-
-
-async def _detect_clothing_from_photo(photo_url: str, gender: str) -> str:
-    """
-    Detect clothing from child's photo using Gemini Vision.
-
-    This is critical for outfit consistency across all pages.
-    PuLID handles face, but clothing must be described in text.
-
-    Args:
-        photo_url: URL of child's photo
-        gender: "erkek" or "kiz" for fallback
-
-    Returns:
-        Clothing description (e.g., "a red striped t-shirt and blue shorts")
-    """
-    import base64
-
-    try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
-            response = await client.get(photo_url)
-            response.raise_for_status()
-            image_bytes = response.content
-
-        base64_data = base64.b64encode(image_bytes).decode("utf-8")
-
-        api_key = settings.gemini_api_key
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {"inlineData": {"mimeType": "image/jpeg", "data": base64_data}},
-                        {
-                            "text": """Analyze this child's photo and describe ONLY their clothing.
-
-RULES:
-- Describe what the child is WEARING (not face, not background)
-- Be specific about colors and patterns
-- Keep it concise (one phrase)
-
-FORMAT: Respond with ONLY a clothing description that can complete:
-"a child wearing ___"
-
-EXAMPLES:
-- "a bright red striped t-shirt and blue denim shorts"
-- "a pink princess dress with sparkly details"
-- "a yellow hoodie and gray sweatpants"
-
-Just the clothing description, nothing else."""
-                        },
-                    ]
-                }
-            ],
-            "generationConfig": {
-                "temperature": 0.1,
-                "maxOutputTokens": 100,
-            },
-        }
-
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
-            result = response.json()
-
-        clothing = result["candidates"][0]["content"]["parts"][0]["text"].strip()
-
-        clothing = clothing.replace('"', "").replace("'", "")
-        if clothing.lower().startswith("a child wearing "):
-            clothing = clothing[16:]
-        elif clothing.lower().startswith("wearing "):
-            clothing = clothing[8:]
-
-        logger.info("Clothing detected from photo", clothing=clothing[:50])
-        return clothing
-
-    except Exception as e:
-        logger.warning("Clothing detection failed", error=str(e))
-        from app.prompt.templates import get_default_clothing
-        return get_default_clothing("boy" if gender == "erkek" else "girl")
-
-
-async def _detect_hair_from_photo(photo_url: str, gender: str) -> str:  # noqa: ARG001
-    """Detect hair style from child's photo for character consistency.
-
-    Returns a short English phrase like "long curly dark brown hair".
-    """
-    import base64
-
-    try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
-            response = await client.get(photo_url)
-            response.raise_for_status()
-            image_bytes = response.content
-
-        base64_data = base64.b64encode(image_bytes).decode("utf-8")
-
-        api_key = settings.gemini_api_key
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {"inlineData": {"mimeType": "image/jpeg", "data": base64_data}},
-                        {
-                            "text": """Analyze this child's photo and describe ONLY their hair with maximum precision.
-
-RULES:
-- Describe hair LENGTH: very short (above ears), short (ear-length), medium (chin to shoulder), long (below shoulder), very long
-- Describe hair TEXTURE: pin-straight, straight, slightly wavy, wavy, curly, coily
-- Describe hair COLOR with exact shade: jet black, dark brown, medium brown, warm brown, light brown, dark blonde, golden blonde, light blonde, strawberry blonde, auburn, red, etc.
-- Describe bangs/fringe if present: thick straight bangs, side-swept bangs, no bangs
-- Describe parting if visible: center part, side part, no visible part
-- Keep it to ONE descriptive phrase, max 12 words
-
-FORMAT: Respond with ONLY a hair description like:
-"short straight dark brown hair with thick straight bangs"
-"long wavy light brown hair, center part, no bangs"
-"medium curly black hair, no bangs"
-
-Just the hair description, nothing else."""
-                        },
-                    ]
-                }
-            ],
-            "generationConfig": {
-                "temperature": 0.1,
-                "maxOutputTokens": 80,
-            },
-        }
-
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
-            result = response.json()
-
-        hair = result["candidates"][0]["content"]["parts"][0]["text"].strip()
-        hair = hair.replace('"', "").replace("'", "").lower()
-        if not hair.endswith("hair"):
-            hair = hair + " hair"
-
-        logger.info("Hair detected from photo", hair=hair[:50])
-        return hair
-
-    except Exception as e:
-        logger.warning("Hair detection failed, using default", error=str(e))
-        from app.prompt.templates import get_default_hair
-        return get_default_hair()
-
-
-async def _generate_scenario_intro_text(
-    *,
-    scenario: "Scenario | None",
-    child_name: str,
-    story_title: str,
-) -> str | None:
-    """Generate a child-friendly intro paragraph about the scenario location (karşılama 2)."""
-    # 1. Use scenario.description if available and meaningful
-    if scenario and getattr(scenario, "description", None) and len(scenario.description) > 20:
-        return scenario.description[:500]
-
-    # 2. Use scenario_bible cultural_facts
-    if scenario and getattr(scenario, "scenario_bible", None):
-        facts = scenario.scenario_bible.get("cultural_facts", [])
-        if facts:
-            return " ".join(str(f) for f in facts[:2])
-
-    # 3. Gemini fallback — generate a short child-friendly intro
-    if scenario:
-        location = getattr(scenario, "location_en", None) or getattr(scenario, "name", None)
-        if not location:
-            return None
-
-        prompt = (
-            f"'{story_title}' adlı çocuk kitabı için '{location}' hakkında "
-            f"2-3 cümlelik, çocuk dostu, eğitici ve büyülü bir giriş paragrafı yaz. "
-            f"Türkçe yaz. Sadece paragrafı yaz, başlık veya açıklama ekleme."
+        logger.info(
+            "Image resized to print target",
+            page=page_number,
+            target=f"{params['target_width']}x{params['target_height']}",
+            before_kb=_before_resize // 1024,
+            after_kb=len(image_bytes) // 1024,
         )
-        api_key = settings.gemini_api_key
-        if not api_key:
-            return None
+    except Exception as e:
+        logger.warning(
+            "Resize to target failed, using current size",
+            page=page_number,
+            error=str(e),
+        )
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 200},
-        }
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                resp = await client.post(url, json=payload)
-                resp.raise_for_status()
-                result = resp.json()
-            text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
-            return text[:500] if text else None
-        except Exception as e:
-            logger.warning("Gemini scenario intro text failed", error=str(e))
-            return None
-
-    return None
+    return image_bytes

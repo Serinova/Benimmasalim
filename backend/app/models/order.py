@@ -161,18 +161,45 @@ class Order(Base, UUIDMixin, TimestampMixin):
         JSONB, nullable=True, default=None, comment="V3: PASS-0 blueprint for audit"
     )
 
+    # Child profile link (reusable child info)
+    child_profile_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("child_profiles.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Billing / invoice
+    billing_type: Mapped[str | None] = mapped_column(String(20))  # "individual" | "corporate"
+    billing_tax_id: Mapped[str | None] = mapped_column(String(20))
+    billing_company_name: Mapped[str | None] = mapped_column(String(200))
+    billing_tax_office: Mapped[str | None] = mapped_column(String(100))
+    billing_tc_no: Mapped[str | None] = mapped_column(String(11))  # TCKN — bireysel fatura
+    billing_full_name: Mapped[str | None] = mapped_column(String(200))
+    billing_email: Mapped[str | None] = mapped_column(String(200))
+    billing_phone: Mapped[str | None] = mapped_column(String(20))
+    billing_address: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    # Refund tracking
+    refund_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    refund_reason: Mapped[str | None] = mapped_column(Text)
+
     # KVKK (Auto deletion)
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     photo_deletion_scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Relationships
-    user = relationship("User", back_populates="orders")
-    pages = relationship("OrderPage", back_populates="order", cascade="all, delete-orphan")
+    # user + child_profile: single-row FK — selectin is cheap and convenient
+    # pages + coloring_book_order: potentially large / rarely needed in list views
+    #   → lazy="select" (explicit selectinload() where needed to avoid N+1)
+    user = relationship("User", back_populates="orders", lazy="selectin")
+    child_profile = relationship("ChildProfile", foreign_keys=[child_profile_id], lazy="selectin")
+    pages = relationship("OrderPage", back_populates="order", cascade="all, delete-orphan", lazy="select")
     coloring_book_order = relationship(
         "Order",
         foreign_keys=[coloring_book_order_id],
         remote_side="Order.id",
         uselist=False,
+        lazy="select",
     )
 
     __table_args__ = (
@@ -195,6 +222,10 @@ class Order(Base, UUIDMixin, TimestampMixin):
             "photo_deletion_scheduled_at",
             postgresql_where="photo_deletion_scheduled_at IS NOT NULL",
         ),
+        # Performance: list pagination (WHERE user_id = ? ORDER BY created_at DESC)
+        Index("idx_orders_user_created", "user_id", "created_at"),
+        # Performance: filtered list (WHERE user_id = ? AND status IN (...))
+        Index("idx_orders_user_status", "user_id", "status"),
     )
 
     def __repr__(self) -> str:

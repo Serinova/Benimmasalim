@@ -10,10 +10,13 @@ from app.api.v1 import (
     consent,
     data_request,
     homepage,
+    invoice_download,
     leads,
     orders,
     payments,
+    privacy,
     products,
+    profile,
     scenarios,
     trials,
     webhooks,
@@ -24,6 +27,8 @@ api_router = APIRouter()
 
 # Public endpoints
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(profile.router, prefix="/profile", tags=["Profile"])
+api_router.include_router(privacy.router, prefix="/privacy", tags=["Privacy (KVKK)"])
 api_router.include_router(consent.router, prefix="/consent", tags=["Consent (KVKK)"])
 api_router.include_router(data_request.router, prefix="/data-request", tags=["Data Request (KVKK)"])
 api_router.include_router(leads.router, prefix="/leads", tags=["Lead Capture"])
@@ -37,6 +42,7 @@ api_router.include_router(payments.router, prefix="/payments", tags=["Payments"]
 api_router.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
 api_router.include_router(audio.router, prefix="/audio", tags=["Audio"])
 api_router.include_router(homepage.router, prefix="/homepage", tags=["Homepage"])
+api_router.include_router(invoice_download.router, prefix="/invoice", tags=["Invoice Download"])
 
 # Admin endpoints
 api_router.include_router(admin_router, prefix="/admin", tags=["Admin"])

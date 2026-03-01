@@ -326,7 +326,7 @@ class TestRequestPageCountPassthrough:
         assert response["used_page_count"] == 22
 
     def test_trial_response_carries_used_page_count(self) -> None:
-        from app.api.v1.trials import TrialResponse
+        from app.schemas.trials import TrialResponse
 
         resp = TrialResponse(
             success=True,
@@ -338,7 +338,7 @@ class TestRequestPageCountPassthrough:
         assert resp.used_page_count == 22
 
     def test_trial_response_used_page_count_default_none(self) -> None:
-        from app.api.v1.trials import TrialResponse
+        from app.schemas.trials import TrialResponse
 
         resp = TrialResponse(
             success=True,
@@ -350,7 +350,7 @@ class TestRequestPageCountPassthrough:
 
     def test_create_trial_request_page_count_field(self) -> None:
         """CreateTrialRequest accepts optional page_count."""
-        from app.api.v1.trials import CreateTrialRequest
+        from app.schemas.trials import CreateTrialRequest
 
         req = CreateTrialRequest(
             parent_name="Ali",
@@ -364,7 +364,7 @@ class TestRequestPageCountPassthrough:
     def test_create_trial_request_page_count_rejects_low(self) -> None:
         from pydantic import ValidationError
 
-        from app.api.v1.trials import CreateTrialRequest
+        from app.schemas.trials import CreateTrialRequest
 
         with pytest.raises(ValidationError):
             CreateTrialRequest(

@@ -1,211 +1,192 @@
 """
-YENİ SİSTEM: Çatalhöyük Neolitik Kenti Macerası Scenario Update
-===============================================================
-ESKİ sistem TAMAMEN SİLİNDİ - SIFIRDAN yazıldı!
-
-Ocean/Dinosaur/Galata standardına uygun:
-- Modular prompt (500 char limit)
-- Story blueprint (Arkeoloji Keşfi + Tarih Dopamini)
-- Educational focus (9000 yıllık tarih!)
+Çatalhöyük Macerası Scenario — Birleştirilmiş Güncelleme
+=========================================================
+update_ ve create_ script'lerinin en iyi parçaları birleştirildi:
+- Modular prompt (500 char limit) — update_ standardı
+- Hikaye: Macera odaklı (gezi rehberi DEĞİL) — create_ kalitesi
+- Outfit: update_all_outfits.py standardı (EXACTLY lock phrase)
+- custom_inputs_schema: list formatı (frontend uyumlu)
+- theme_key: "catalhoyuk" (sabit)
+- İsim: "Çatalhöyük Macerası" (Neolitik Kenti kaldırıldı)
 """
 
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy import select, update
-from sqlalchemy.orm import sessionmaker
-from app.models import Scenario
 import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.models import Scenario
 
 # ============================================================================
 # MODULAR PROMPT COMPONENTS (500 char limit!)
 # ============================================================================
 
-CATALHOYUK_COVER_PROMPT = """Catalhoyuk Neolithic site scene: {scene_description}.
-Child in foreground, ancient Catalhoyuk archaeological site in background.
-9000-year-old settlement, mud-brick houses with rooftop entrances.
-Archaeological excavation site visible, layers of ancient city.
-Konya plain landscape, Turkish countryside.
-Wide shot: child 30%, ancient site 70%.
-Educational, time-travel atmosphere.
-Historic discovery feeling."""
+CATALHOYUK_COVER_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Ancient 9000-year-old Catalhoyuk settlement in background. "
+    "Mud-brick houses with rooftop ladder entrances, no doors. "
+    "Archaeological excavation layers, Konya plain. "
+    "Wide shot: child 30%, ancient site 70%. "
+    "Educational, time-travel atmosphere."
+)
 
-CATALHOYUK_PAGE_PROMPT = """Catalhoyuk Neolithic scene: {scene_description}.
-Elements: [Houses: mud-brick structures, flat roofs, ladder entrances / Wall art: ancient paintings (bulls, geometric patterns) / Excavation: archaeological dig site, layers / Daily life: pottery, tools, hearths / Settlement: clustered houses, no streets / Landscape: Konya plain, open field].
-Earthy colors: mud brown, ochre, terracotta.
-Ancient, educational, discovery atmosphere.
-UNESCO World Heritage site."""
+CATALHOYUK_PAGE_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Elements: [Houses: mud-brick, flat roofs, ladder entrances from rooftop / "
+    "Wall art: ancient paintings (bulls, geometric) / Excavation: dig site, layers / "
+    "Daily life: pottery, tools, hearths / Settlement: clustered, no streets]. "
+    "Earthy colors: mud brown, ochre, terracotta."
+)
 
 # ============================================================================
-# STORY BLUEPRINT (Arkeoloji Keşfi + Tarih Dopamini)
+# OUTFIT DEFINITIONS (update_all_outfits.py standardı)
+# ============================================================================
+
+OUTFIT_GIRL = (
+    "terracotta rust-colored cotton t-shirt with small geometric pattern on chest, "
+    "dark brown cotton cargo shorts, tan leather ankle boots, "
+    "light brown canvas bucket hat, small leather crossbody satchel. "
+    "EXACTLY the same outfit on every page — same terracotta shirt, same brown shorts, same leather boots."
+)
+
+OUTFIT_BOY = (
+    "ochre yellow cotton t-shirt with small arrowhead emblem, "
+    "dark olive green cotton shorts, tan leather ankle boots, "
+    "brown canvas explorer hat, small leather hip pouch on belt. "
+    "EXACTLY the same outfit on every page — same ochre shirt, same olive shorts, same leather boots."
+)
+
+# ============================================================================
+# STORY BLUEPRINT (Macera odaklı — gezi rehberi DEĞİL)
 # ============================================================================
 
 CATALHOYUK_STORY_PROMPT_TR = """
-# ARKEOLOJİ KEŞFİ DOPAMİN YÖNETİMİ - ÇATALHÖYÜK NEOLİTİK KENTİ MACERASI
+# ÇATALHÖYÜK MACERASI — ARKEOLOJİ KEŞFİ
 
 ## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
 
-Bu arkeoloji ve tarih keşif hikayesi, çocuğa **bilim**, **tarih**, **merak** ve **uygarlık** değerlerini öğretir.
+Bu hikaye bir arkeoloji macerası. {child_name}, Çatalhöyük'te 9000 yıl öncesine
+hayal yolculuğu yaparak insanlığın ilk şehir yaşamını keşfeder.
 
-🏛️ **ÇATALHÖYÜK**: Dünyanın en eski şehirlerinden biri (9000 yıl önce!), UNESCO Dünya Mirası!
-
----
-
-### BÖLÜM 1 - GİRİŞ: ÇATALHÖYÜK ARKEOLOJİK ALANI (1-4)
-- {child_name}, Konya'nın Çumra ilçesinde, Çatalhöyük arkeolojik alanına varıyor
-- Höyük: Eski kentin kalıntıları tepede
-- İlk bakış: "Burası 9000 yıl önce bir şehirmiş!"
-- Heyecan: "İnsanlık tarihinin ilk şehirlerinden biri!"
-- **Değer**: Bilim, tarih, merak
-
-**Sayfa içeriği**:
-- S1: Çatalhöyük'e varış, Konya ovası
-- S2: Höyüğü görme, eski kent tepesi
-- S3: Arkeolojik kazı alanı, bilim insanları
-- S4: "9000 yıl önce!" hayranlığı ✓ **İLK HAYRANLIK**
+⚠️ ÖNEMLİ KURALLAR:
+- Bu bir MACERA hikayesi, gezi rehberi DEĞİL
+- Her bölümde çocuk AKTİF katılımcı olmalı (gözlemci değil)
+- Endişe → Eylem → Başarı döngüsü her bölümde olmalı
+- Yardımcı karakter: Bilge Kedi (arkeolog kedisi, kazı alanında yaşıyor)
+- Çocuk TEK BAŞINA macerada (aile yok)
+- Korku/şiddet/gore YOK, eğitici ve heyecanlı
 
 ---
 
-### BÖLÜM 2 - ZAMAN YOLCULUĞU: 9000 YIL ÖNCESINE (5-9)
-**[HAYAL DÖNGÜSÜ #1]**
-- **Zaman Yolculuğu**: Hayal ile 9000 yıl öncesine
-- **Neolitik Çağ**: MÖ 7100, tarım devrimi başlamış
-- **İlk Yerleşik Yaşam**: Artık mağaralardan çıkıldı!
-- **Topluluk**: Binlerce insan bir arada yaşıyor
-
-**EPİK AN #1**: İnsanlık tarihinin dönüm noktası - ilk şehir yaşamı!
-
-**Sayfa içeriği**:
-- S5: Hayal ile zaman yolculuğu, "9000 yıl önce..."
-- S6: Neolitik Çağ, tarım devrimi
-- S7: İlk yerleşik yaşam, "Artık göçebe değil!" ✓ **ZAMAN ZİRVESİ #1**
-- S8: Topluluk yaşamı, binlerce insan
-- S9: Şehir görünümü, kerpiç evler
+### BÖLÜM 1 — GİRİŞ: GİZEMLİ HÖYÜK (Sayfa 1-4)
+{child_name} Konya ovasında yürürken garip bir tepe görür — bu Çatalhöyük höyüğü!
+Bir kedi (Bilge Kedi) kazı alanından çıkıp ona yaklaşır ve gizem dolu bakışlarla
+höyüğe doğru yürür. Çocuk merakla peşinden gider.
+- S1: Konya ovasında yürüyüş, uzakta garip bir tepe
+- S2: Höyüğe yaklaşma, kazı alanı, "Bu ne?"
+- S3: Bilge Kedi ile tanışma, kedi höyüğe doğru yürüyor
+- S4: Kazı alanına giriş, "9000 yıl önce burada insanlar yaşamış!" ✓ İLK HAYRANLIK
+**Değer**: Merak, keşif cesareti
 
 ---
 
-### BÖLÜM 3 - İLK EVLER: KERPİÇ VE DAMDAN GİRİŞ (10-14)
-**[MİMARİ KEŞİF DÖNGÜSÜ #2]**
-- **Kerpiç Evler**: Topraktan yapılmış, düz damlı
-- **Damdan Giriş**: Kapı yok! Damdan merdiven ile iniş (benzersiz!)
-- **Bitişik Düzen**: Evler yan yana, sokak yok!
-- **İç Mekan**: Ocak, tahıl depolama, duvar resimleri
-
-**EPİK AN #2**: Damdan girilen evler - akıllıca mimari! ✓ **MİMARİ ZİRVESİ #2**
-
-**Sayfa içeriği**:
-- S10: Kerpiç evleri keşfetme
-- S11: Düz damlar, merdiven girişi
-- S12: "Damdan mı giriliyor? Akıllıca!" ✓ **MİMARİ KEŞİF ZİRVESİ**
-- S13: Bitişik evler, sokak yok
-- S14: İç mekan, ocak ve depo
+### BÖLÜM 2 — ZAMAN YOLCULUĞU: 9000 YIL ÖNCESİ (Sayfa 5-8)
+Bilge Kedi eski bir obsidyen aynaya dokunur ve her şey değişir — çocuk kendini
+9000 yıl öncesinde bulur! Etrafta kerpiç evler, insanlar tarım yapıyor,
+çocuklar oynuyor. Neolitik Çağ'ın canlı dünyası!
+- S5: Obsidyen ayna, dokunuş, ışık patlaması
+- S6: 9000 yıl öncesi! Canlı şehir, insanlar, hayvanlar
+- S7: "Artık göçebe değiller, yerleşik yaşam başlamış!" ✓ ZAMAN ZİRVESİ
+- S8: Neolitik insanlarla ilk temas, çocuklar oynuyor
+**Değer**: Tarih bilinci, adaptasyon
 
 ---
 
-### BÖLÜM 4 - DUVAR RESİMLERİ: İLK SANAT (15-18)
-**[SANAT KEŞFİ DÖNGÜSÜ #3]**
-- **Duvar Resimleri**: 9000 yıllık sanat eserleri!
-- **Boğa Resimleri**: Güçlü boğalar, avcılık sahneleri
-- **Geometrik Desenler**: İlk soyut sanat
-- **Renkler**: Doğal boyalar (kırmızı, siyah, beyaz)
-
-**EPİK AN #3**: İnsanlık tarihinin ilk sanat eserleri! ✓ **SANAT ZİRVESİ #3**
-
-**Sayfa içeriği**:
-- S15: Duvar resimlerini keşfetme
-- S16: Boğa resimleri, "9000 yıllık sanat!" ✓ **SANAT KEŞFİ ZİRVESİ**
-- S17: Geometrik desenler, ilk soyut sanat
-- S18: Doğal boyalar, el emeği
+### BÖLÜM 3 — KERPİÇ EVLER: DAMDAN GİRİŞ SIRRI (Sayfa 9-12)
+Bilge Kedi çocuğu bir evin damına çıkarır. Kapı yok! Damdan merdiven ile
+iniliyor — dünyanın en ilginç mimari çözümü! İçeride ocak, tahıl depoları,
+duvar resimleri. Çocuk bir ev inşaatına yardım eder.
+- S9: Evlerin damlarında yürüme, "Kapı nerede?"
+- S10: Damdan merdiven ile iniş, "Akıllıca!"
+- S11: İç mekan keşfi — ocak, tahıl, aletler
+- S12: Kerpiç yapımına yardım, çamur ve saman karıştırma ✓ MİMARİ ZİRVESİ
+**Değer**: Yaratıcılık, problem çözme
 
 ---
 
-### BÖLÜM 5 - NEOLİTİK YAŞAM: İLK UYGARLIK (19-20)
-**[UYGARLIK DÖNGÜSÜ #4]**
-- **Tarım**: Buğday, arpa ekimi - artık toplayıcı değil!
-- **Çanak Çömlek**: El yapımı kaplar, depolama
-- **Aletler**: Obsidyen bıçaklar, taş aletler
-- **Topluluk**: İşbirliği, paylaşım, ilk toplum kuralları
-
-**EPİK AN #4**: İlk uygarlık adımları - her şey buradan başladı!
-
-**Sayfa içeriği**:
-- S19: Tarım ve çanak çömlek
-- S20: İlk uygarlık, "Her şey buradan başladı!" ✓ **UYGARLIK ZİRVESİ #4**
+### BÖLÜM 4 — DUVAR RESİMLERİ: İNSANLIĞIN İLK SANATI (Sayfa 13-16)
+Bir evin duvarında devasa boğa resmi! 9000 yıllık sanat eseri. Çocuk doğal
+boyalarla (kırmızı toprak, kömür karası) kendi resmini yapmaya çalışır.
+Geometrik desenler, el izleri, avcılık sahneleri — insanlığın ilk sanat galerisi!
+- S13: Devasa boğa duvar resmi, "Bu 9000 yıllık!"
+- S14: Doğal boyalar keşfi — kırmızı toprak, kömür
+- S15: Çocuk kendi resmini yapıyor, el izi bırakıyor
+- S16: Geometrik desenler, "İlk soyut sanat!" ✓ SANAT ZİRVESİ
+**Değer**: Sanat, yaratıcılık, kültürel miras
 
 ---
 
-### BÖLÜM 6 - FİNAL: TARİHİN DEĞERİ VE BİLİM (21-22)
-**[BİLİM DORUĞU - FİNAL]**
-- **Arkeoloji**: Geçmişi ortaya çıkarma bilimi
-- **Koruma**: UNESCO Dünya Mirası olarak koruma
-- **Öğrenme**: Geçmişten bugüne dersler
-- **Mesaj**: "Tarih bize kim olduğumuzu söyler!"
+### BÖLÜM 5 — İLK UYGARLIK: TARIM VE İŞBİRLİĞİ (Sayfa 17-19)
+Çocuk tarlada buğday hasadına katılır. Obsidyen bıçaklarla kesim, el yapımı
+çömleklere depolama. Herkes birlikte çalışıyor — ilk toplum kuralları!
+Bir sorun çıkar: Tahıl deposuna su sızıyor. Çocuk çözüm önerir.
+- S17: Buğday hasadı, obsidyen bıçak kullanımı
+- S18: Çömlek yapımı, tahıl depolama
+- S19: Su sızıntısı sorunu, çocuğun çözüm önerisi ✓ UYGARLIK ZİRVESİ
+**Değer**: İşbirliği, sorumluluk, problem çözme
 
-**EPİK AN #5**: Bilimin gücü, tarihin değeri! ✓ **BİLİM DORUĞU**
+---
 
-**Sayfa içeriği**:
-- S21: Arkeolojinin önemi, bilim
-- S22: Tarihin değeri, "Geçmiş geleceğimizdir!"
+### BÖLÜM 6 — BÜYÜK KEŞİF: GİZLİ ODA (Sayfa 20-21)
+Bilge Kedi çocuğu gizli bir odaya götürür. İçeride hiç görülmemiş duvar
+resimleri, özel eşyalar, belki de bir tapınak! Bu keşif arkeolojinin gücünü
+gösterir — geçmişin sırları sabırla ortaya çıkar.
+- S20: Gizli oda keşfi, Bilge Kedi'nin rehberliği
+- S21: Hiç görülmemiş duvar resimleri, "Muhteşem!" ✓ DORUK KEŞİF
+**Değer**: Sabır, bilimsel merak
+
+---
+
+### BÖLÜM 7 — FİNAL: DÖNÜŞ VE GURUR (Sayfa 22)
+Obsidyen ayna tekrar parlar, çocuk bugüne döner. Kazı alanında durup
+9000 yıllık mirasa bakar. "Tarih bize kim olduğumuzu söyler."
+Bilge Kedi yanında, ikisi birlikte gün batımını izler.
+- S22: Bugüne dönüş, gurur ve şükran hissi ✓ TATMIN DORUĞU
+**Değer**: Tarih bilinci, kültürel miras koruma
 
 ---
 
 ## DOPAMIN ZİRVELERİ:
-1. **Sayfa 4**: 9000 yıl önce hayranlığı (İLK HAYRANLIK)
-2. **Sayfa 7**: İlk yerleşik yaşam (ZAMAN ZİRVESİ)
-3. **Sayfa 12**: Damdan giriş keşfi (MİMARİ ZİRVESİ)
-4. **Sayfa 16**: Duvar resimleri (SANAT ZİRVESİ)
-5. **Sayfa 20**: İlk uygarlık (UYGARLIK ZİRVESİ)
-6. **Sayfa 22**: Bilim ve tarih (BİLİM DORUĞU)
-
----
+1. S4: İlk hayranlık — 9000 yıl!
+2. S7: Zaman yolculuğu — canlı Neolitik dünya
+3. S12: Mimari keşif — damdan giriş ve kerpiç yapımı
+4. S16: Sanat zirvesi — ilk duvar resimleri
+5. S19: Uygarlık — işbirliği ve problem çözme
+6. S21: Doruk keşif — gizli oda
+7. S22: Tatmin — gurur ve dönüş
 
 ## DEĞERLER:
-- **BİLİM**: Arkeoloji, tarih araştırması, bilimsel yöntem
-- **TARİH**: 9000 yıllık miras, geçmişe saygı
-- **MERAK**: Soru sorma, keşfetme, öğrenme
-- **UYGARLIK**: İlk yerleşik yaşam, tarım devrimi, toplum kuralları
+- Merak ve keşif cesareti
+- Tarih bilinci ve kültürel miras
+- Yaratıcılık ve problem çözme
+- İşbirliği ve sorumluluk
+- Bilimsel düşünme (arkeoloji)
 
----
-
-## EĞİTİM ODAKLARI:
-- **Neolitik Çağ**: MÖ 7100 - MÖ 5700
-- **Tarım Devrimi**: Göçebelikten yerleşik yaşama
-- **İlk Şehir**: Dünyanın en eski şehirlerinden
-- **UNESCO**: Dünya Mirası koruma
-- **Arkeoloji**: Geçmişi bilimsel yöntemle ortaya çıkarma
-
----
-
-## CUSTOM INPUTS:
-- {favorite_discovery}: Çocuğun en sevdiği keşif (örn: Damdan Giriş, Duvar Resimleri, Tarım, Kerpiç Evler)
-- Bu öğe sayfa 15-17 arasında vurgulanacak
-
----
-
-## NOT:
-Her sayfa {scene_description} ile dinamik olarak hikayeye entegre edilir.
-Çocuk her sayfada TARİH ve BİLİM keşfeder, 9000 yıllık zaman yolculuğu yapar!
-Eğitici, bilimsel, heyecanlı!
+## GÜVENLİK KURALLARI:
+- Korku/şiddet/gore YOK
+- Tehlikeli davranış teşviki YOK
+- Çocuk güvenli ortamda keşif yapıyor
+- Neolitik insanlar dostane ve yardımsever
 """
-
-# ============================================================================
-# OUTFIT DEFINITIONS
-# ============================================================================
-
-OUTFIT_GIRL = """Casual archaeological site visit outfit.
-Comfortable t-shirt or casual top, practical pants or jeans.
-Sun hat or baseball cap for Konya sun protection.
-Comfortable sneakers or walking shoes.
-Small backpack with water bottle and notebook (archaeologist style!).
-Age-appropriate, practical for outdoor historical site exploration.
-Educational, adventurous atmosphere."""
-
-OUTFIT_BOY = """Casual archaeological site visit outfit.
-Comfortable t-shirt, practical pants or cargo pants.
-Sun hat or baseball cap for Konya sun protection.
-Comfortable sneakers or walking shoes.
-Small backpack with water bottle and notebook (archaeologist style!).
-Age-appropriate, practical for outdoor historical site exploration.
-Educational, adventurous atmosphere."""
 
 # ============================================================================
 # CULTURAL ELEMENTS
@@ -213,7 +194,7 @@ Educational, adventurous atmosphere."""
 
 CATALHOYUK_CULTURAL_ELEMENTS = {
     "location": "Konya, Turkey (Çumra district)",
-    "historic_site": "Çatalhöyük Neolithic City, 9000 years old (7100-5700 BC)",
+    "historic_site": "Çatalhöyük, 9000 years old (7100-5700 BC)",
     "unesco": "UNESCO World Heritage Site",
     "period": "Neolithic Age (New Stone Age)",
     "significance": "One of the world's oldest cities, first urban settlement",
@@ -221,131 +202,114 @@ CATALHOYUK_CULTURAL_ELEMENTS = {
         "Mud-brick houses with flat roofs",
         "Rooftop entrances (no doors, ladder access!)",
         "Clustered houses (no streets between)",
-        "Interior hearths and storage areas"
+        "Interior hearths and storage areas",
     ],
     "art_elements": [
         "Wall paintings (9000 years old!)",
         "Bull motifs and hunting scenes",
         "Geometric patterns (first abstract art)",
-        "Natural pigments (red, black, white)"
+        "Natural pigments (red, black, white)",
     ],
     "daily_life": [
         "Agriculture (wheat, barley cultivation)",
         "Pottery making",
         "Obsidian tools and blades",
-        "Community living"
+        "Community living and cooperation",
     ],
-    "atmosphere": "Educational, scientific discovery, time-travel feeling, archaeological wonder",
+    "atmosphere": "Educational, archaeological wonder, time-travel feeling",
     "educational_focus": [
         "Neolithic Age and agricultural revolution",
-        "First settled urban life (transition from nomadic)",
+        "First settled urban life",
         "Early civilization development",
         "Archaeology as a science",
-        "UNESCO World Heritage preservation"
+        "UNESCO World Heritage preservation",
     ],
-    "values": ["Science", "History appreciation", "Curiosity", "Civilization awareness"],
-    "unique_features": [
-        "Rooftop entrances (unique architectural feature!)",
-        "9000 years old (one of oldest cities)",
-        "No streets (houses connected)",
-        "First wall art in human history"
-    ]
+    "values": ["Curiosity", "History appreciation", "Creativity", "Cooperation"],
+    "color_palette": "earthy brown, ochre, terracotta, mud, warm amber",
 }
 
 # ============================================================================
-# CUSTOM INPUTS
+# CUSTOM INPUTS (list formatı — frontend uyumlu)
 # ============================================================================
 
-CATALHOYUK_CUSTOM_INPUTS = {
-    "favorite_discovery": {
+CATALHOYUK_CUSTOM_INPUTS = [
+    {
+        "key": "favorite_discovery",
+        "label": "En Merak Ettiği Keşif",
         "type": "select",
-        "label_tr": "En sevdiğin keşif hangisi?",
-        "label_en": "What's your favorite discovery?",
-        "options": [
-            {"value": "rooftop_entrance", "label_tr": "Damdan Giriş", "label_en": "Rooftop Entrance"},
-            {"value": "wall_paintings", "label_tr": "Duvar Resimleri", "label_en": "Wall Paintings"},
-            {"value": "agriculture", "label_tr": "İlk Tarım", "label_en": "First Agriculture"},
-            {"value": "mud_houses", "label_tr": "Kerpiç Evler", "label_en": "Mud-Brick Houses"},
-            {"value": "first_city", "label_tr": "İlk Şehir", "label_en": "First City"}
-        ],
-        "default": "rooftop_entrance",
-        "usage": "Emphasized in pages 15-17 (discovery peak)"
-    }
-}
+        "options": ["Damdan Giriş Sırrı", "Duvar Resimleri", "İlk Tarım", "Kerpiç Ev Yapımı", "Gizli Oda"],
+        "default": "Damdan Giriş Sırrı",
+        "required": False,
+        "help_text": "Hikayede çocuğun en çok heyecanlanacağı keşif",
+    },
+    {
+        "key": "companion_name",
+        "label": "Bilge Kedi'nin Adı",
+        "type": "select",
+        "options": ["Tarçın", "Höyük", "Kedi Usta", "Obsidyen"],
+        "default": "Tarçın",
+        "required": False,
+        "help_text": "Arkeolog kedisinin adı",
+    },
+    {
+        "key": "special_skill",
+        "label": "Çocuğun Özel Yeteneği",
+        "type": "select",
+        "options": ["Resim Yapma", "Yapı İnşa Etme", "Tarım", "Keşif ve Gözlem"],
+        "default": "Keşif ve Gözlem",
+        "required": False,
+        "help_text": "Hikayede çocuğun öne çıkan yeteneği",
+    },
+]
 
 # ============================================================================
 # DATABASE UPDATE FUNCTION
 # ============================================================================
 
+
 async def update_catalhoyuk_scenario():
-    """ÇATALHÖYÜK senaryosunu YENİ SİSTEM ile günceller."""
-    
-    db_url = os.getenv("DATABASE_URL")
-    if not db_url:
-        raise ValueError("DATABASE_URL environment variable not set")
-    
-    engine = create_async_engine(db_url, echo=True)
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    
-    async with async_session() as session:
-        # Find Catalhoyuk scenario
+    """Çatalhöyük senaryosunu günceller (upsert)."""
+    from app.core.database import async_session_factory
+
+    async with async_session_factory() as session:
         result = await session.execute(
             select(Scenario).where(
-                (Scenario.theme_key == "catalhoyuk_neolithic_city") |
-                (Scenario.name.ilike("%Çatalhöyük%")) |
-                (Scenario.name.ilike("%Catalhoyuk%"))
+                (Scenario.theme_key == "catalhoyuk")
+                | (Scenario.theme_key == "catalhoyuk_neolithic_city")
+                | (Scenario.name.ilike("%Çatalhöyük%"))
+                | (Scenario.name.ilike("%Catalhoyuk%"))
             )
         )
         scenario = result.scalar_one_or_none()
-        
-        if not scenario:
-            print("❌ Çatalhöyük scenario not found!")
-            return
-        
-        print(f"\n✅ Found scenario: {scenario.name} (ID: {scenario.id})")
-        
-        # Verify prompt lengths
-        print(f"\n📏 PROMPT LENGTHS:")
-        print(f"   Cover: {len(CATALHOYUK_COVER_PROMPT)} chars (max 500)")
-        print(f"   Page: {len(CATALHOYUK_PAGE_PROMPT)} chars (max 500)")
-        print(f"   Story: {len(CATALHOYUK_STORY_PROMPT_TR)} chars")
-        
-        if len(CATALHOYUK_COVER_PROMPT) > 500 or len(CATALHOYUK_PAGE_PROMPT) > 500:
-            print("❌ HATA: Prompt 500 karakteri aşıyor!")
-            return
-        
-        # Update scenario
-        await session.execute(
-            update(Scenario)
-            .where(Scenario.id == scenario.id)
-            .values(
-                cover_prompt_template=CATALHOYUK_COVER_PROMPT,
-                page_prompt_template=CATALHOYUK_PAGE_PROMPT,
-                story_prompt_tr=CATALHOYUK_STORY_PROMPT_TR,
-                outfit_girl=OUTFIT_GIRL,
-                outfit_boy=OUTFIT_BOY,
-                cultural_elements=CATALHOYUK_CULTURAL_ELEMENTS,
-                custom_inputs_schema=CATALHOYUK_CUSTOM_INPUTS,
-                description="9000 yıl öncesine yolculuk! Dünyanın en eski şehirlerinden Çatalhöyük'ü keşfet. Damdan girilen kerpiç evler, duvar resimleri ve ilk uygarlık adımlarını öğren. UNESCO Dünya Mirası'nda arkeoloji macerası!",
-                marketing_badge="YENİ! Arkeoloji Macerası",
-                age_range="7-10",
-                tagline="9000 yıllık zaman yolculuğu!"
-            )
-        )
-        
-        await session.commit()
-        
-        print("\n✅ ÇATALHÖYÜK scenario updated successfully!")
-        print("   - Modular prompts: DONE")
-        print("   - Story blueprint: DONE")
-        print("   - Educational focus: DONE")
-        print("   - Outfit (archaeologist style): DONE")
-        print("   - Cultural elements: DONE")
-        print("   - Custom inputs: DONE")
 
-# ============================================================================
-# MAIN
-# ============================================================================
+        if not scenario:
+            print("Çatalhöyük scenario not found — skipping")
+            return
+
+        scenario.name = "Çatalhöyük Macerası"
+        scenario.description = (
+            "9000 yıl öncesine yolculuk! Dünyanın en eski şehirlerinden "
+            "Çatalhöyük'ü keşfet. Damdan girilen kerpiç evler, duvar resimleri "
+            "ve ilk uygarlık adımlarını öğren. UNESCO Dünya Mirası'nda "
+            "arkeoloji macerası!"
+        )
+        scenario.theme_key = "catalhoyuk"
+        scenario.cover_prompt_template = CATALHOYUK_COVER_PROMPT
+        scenario.page_prompt_template = CATALHOYUK_PAGE_PROMPT
+        scenario.story_prompt_tr = CATALHOYUK_STORY_PROMPT_TR
+        scenario.outfit_girl = OUTFIT_GIRL
+        scenario.outfit_boy = OUTFIT_BOY
+        scenario.cultural_elements = CATALHOYUK_CULTURAL_ELEMENTS
+        scenario.custom_inputs_schema = CATALHOYUK_CUSTOM_INPUTS
+        scenario.marketing_badge = "YENİ! Arkeoloji Macerası"
+        scenario.age_range = "7-10"
+        scenario.tagline = "9000 yıllık zaman yolculuğu!"
+        scenario.is_active = True
+        scenario.display_order = 5
+
+        await session.commit()
+        print(f"Çatalhöyük scenario updated: {scenario.id}")
+
 
 if __name__ == "__main__":
     asyncio.run(update_catalhoyuk_scenario())

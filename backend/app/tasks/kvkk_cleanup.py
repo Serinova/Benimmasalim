@@ -34,7 +34,7 @@ async def kvkk_photo_cleanup() -> dict:
     errors = 0
 
     async with async_session_factory() as db:
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         result = await db.execute(
             select(Order).where(
@@ -109,7 +109,7 @@ async def kvkk_photo_cleanup() -> dict:
         "processed": processed,
         "deleted": deleted_files,
         "errors": errors,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
     logger.info("KVKK cleanup completed", **summary)
     return summary
@@ -121,14 +121,25 @@ async def delete_user_data(user_id: str, db: AsyncSession) -> dict:
     Deletes:
       - Child photos, voice samples, cloned audio from GCS
       - Generated book images and PDFs from GCS
+      - Child profile photos from GCS
       - StoryPreview records and their GCS files
+      - Child profiles, addresses, notification preferences, outbox entries
       - Anonymizes order records (personal fields cleared, kept for accounting)
-      - Deletes user account
+      - Anonymizes audit log actor references
+      - Anonymizes consent records
+      - Hard deletes user account
     """
     from uuid import UUID
 
+    from sqlalchemy import update
+
+    from app.models.child_profile import ChildProfile
+    from app.models.consent import ConsentRecord
+    from app.models.notification_outbox import NotificationOutbox
+    from app.models.notification_preference import NotificationPreference
     from app.models.story_preview import StoryPreview
     from app.models.user import User
+    from app.models.user_address import UserAddress
 
     storage = StorageService()
     uid = UUID(user_id)
@@ -142,29 +153,38 @@ async def delete_user_data(user_id: str, db: AsyncSession) -> dict:
     orders = result.scalars().all()
 
     for order in orders:
-        # Delete photo from GCS
         if order.child_photo_url:
-            storage.delete_file(order.child_photo_url)
+            try:
+                storage.delete_file(order.child_photo_url)
+            except Exception:
+                logger.warning("purge: failed to delete order photo", order_id=str(order.id))
             deleted_photos += 1
 
-        # Delete cloned audio
         if order.audio_file_url and order.audio_type == "cloned":
-            storage.delete_file(order.audio_file_url)
+            try:
+                storage.delete_file(order.audio_file_url)
+            except Exception:
+                logger.warning("purge: failed to delete cloned audio", order_id=str(order.id))
             deleted_audio += 1
 
-        # Delete voice sample
         if getattr(order, "voice_sample_url", None):
-            storage.delete_file(order.voice_sample_url)
+            try:
+                storage.delete_file(order.voice_sample_url)
+            except Exception:
+                pass
 
-        # Delete QR code
         if order.qr_code_url:
-            storage.delete_file(order.qr_code_url)
+            try:
+                storage.delete_file(order.qr_code_url)
+            except Exception:
+                pass
 
-        # Delete generated book images + PDF
-        storage.delete_order_files(str(order.id))
+        try:
+            storage.delete_order_files(str(order.id))
+        except Exception:
+            logger.warning("purge: failed to delete order files", order_id=str(order.id))
         deleted_book_files += 1
 
-        # Anonymize order: clear personal data but keep financial record
         order.user_id = None
         order.child_name = _ANONYMIZED
         order.child_photo_url = None
@@ -173,8 +193,25 @@ async def delete_user_data(user_id: str, db: AsyncSession) -> dict:
         order.shipping_address = None
         order.dedication_note = None
         order.qr_code_url = None
+        order.billing_tax_id = None
+        order.billing_company_name = None
+        order.billing_tax_office = None
+        order.billing_full_name = None
+        order.billing_email = None
+        order.billing_phone = None
+        order.billing_address = None
         if order.audio_type == "cloned":
             order.audio_file_url = None
+
+    # ── Child profiles: delete photos + records ───────────────────────
+    cp_result = await db.execute(select(ChildProfile).where(ChildProfile.user_id == uid))
+    for cp in cp_result.scalars().all():
+        if cp.photo_url:
+            try:
+                storage.delete_file(cp.photo_url)
+            except Exception:
+                pass
+            deleted_photos += 1
 
     # ── StoryPreviews: delete files + records ─────────────────────────
     preview_result = await db.execute(
@@ -183,34 +220,62 @@ async def delete_user_data(user_id: str, db: AsyncSession) -> dict:
     previews = preview_result.scalars().all()
 
     for preview in previews:
-        # Delete child photo
         if preview.child_photo_url:
-            storage.delete_file(preview.child_photo_url)
+            try:
+                storage.delete_file(preview.child_photo_url)
+            except Exception:
+                pass
 
-        # Delete voice sample / audio
         if preview.voice_sample_url:
-            storage.delete_file(preview.voice_sample_url)
+            try:
+                storage.delete_file(preview.voice_sample_url)
+            except Exception:
+                pass
         if preview.audio_file_url:
-            storage.delete_file(preview.audio_file_url)
+            try:
+                storage.delete_file(preview.audio_file_url)
+            except Exception:
+                pass
 
-        # Delete preview images from GCS
         _delete_jsonb_urls(storage, preview.preview_images)
         _delete_jsonb_urls(storage, preview.page_images)
 
         await db.delete(preview)
         deleted_previews += 1
 
-    # ── User account: hard delete ─────────────────────────────────────
+    # ── Anonymize audit logs (keep records, clear actor identity) ─────
+    await db.execute(
+        update(AuditLog).where(AuditLog.user_id == uid).values(user_id=None)
+    )
+    await db.execute(
+        update(AuditLog).where(AuditLog.admin_id == uid).values(admin_id=None)
+    )
+
+    # ── Anonymize consent records ─────────────────────────────────────
+    await db.execute(
+        update(ConsentRecord).where(ConsentRecord.user_id == uid).values(
+            user_id=None, email=None,
+        )
+    )
+
+    # ── Delete notification outbox entries ─────────────────────────────
+    outbox_result = await db.execute(
+        select(NotificationOutbox).where(NotificationOutbox.user_id == uid)
+    )
+    for entry in outbox_result.scalars().all():
+        await db.delete(entry)
+
+    # ── User account: hard delete (cascades addresses, prefs, child profiles) ──
     user_result = await db.execute(select(User).where(User.id == uid))
     user = user_result.scalar_one_or_none()
     if user:
         await db.delete(user)
 
-    # ── Audit log ─────────────────────────────────────────────────────
+    # ── Final audit entry ─────────────────────────────────────────────
     audit = AuditLog(
-        action="USER_DATA_DELETED",
-        user_id=uid,
+        action="KVKK_USER_DATA_DELETED",
         details={
+            "purged_user_id": str(uid),
             "orders_anonymized": len(orders),
             "photos_deleted": deleted_photos,
             "audio_deleted": deleted_audio,
@@ -231,6 +296,44 @@ async def delete_user_data(user_id: str, db: AsyncSession) -> dict:
     }
 
 
+async def purge_deleted_accounts() -> dict:
+    """Purge accounts past the 7-day grace period.
+
+    Finds users where deletion_scheduled_at <= now and calls delete_user_data.
+    Should run daily alongside kvkk_photo_cleanup (02:00 UTC).
+    """
+    from app.models.user import User
+
+    processed = 0
+    errors = 0
+
+    async with async_session_factory() as db:
+        now = datetime.now(UTC)
+        result = await db.execute(
+            select(User).where(
+                User.deletion_scheduled_at.isnot(None),
+                User.deletion_scheduled_at <= now,
+                User.is_active.is_(False),
+            )
+        )
+        users_to_purge = result.scalars().all()
+
+        logger.info("purge_deleted_accounts: starting", count=len(users_to_purge))
+
+        for user in users_to_purge:
+            try:
+                await delete_user_data(str(user.id), db)
+                processed += 1
+                logger.info("purge_deleted_accounts: user purged", user_id=str(user.id))
+            except Exception:
+                errors += 1
+                logger.exception("purge_deleted_accounts: error", user_id=str(user.id))
+
+    summary = {"processed": processed, "errors": errors, "timestamp": datetime.now(UTC).isoformat()}
+    logger.info("purge_deleted_accounts: completed", **summary)
+    return summary
+
+
 async def kvkk_abandoned_preview_cleanup() -> dict:
     """Delete abandoned StoryPreview records older than 7 days.
 
@@ -244,7 +347,7 @@ async def kvkk_abandoned_preview_cleanup() -> dict:
     errors = 0
 
     async with async_session_factory() as db:
-        cutoff = datetime.utcnow() - timedelta(days=7)
+        cutoff = datetime.now(UTC) - timedelta(days=7)
 
         result = await db.execute(
             select(StoryPreview).where(
@@ -290,7 +393,7 @@ async def kvkk_abandoned_preview_cleanup() -> dict:
 
         await db.commit()
 
-    summary = {"deleted": deleted, "errors": errors, "timestamp": datetime.utcnow().isoformat()}
+    summary = {"deleted": deleted, "errors": errors, "timestamp": datetime.now(UTC).isoformat()}
     logger.info("KVKK abandoned preview cleanup completed", **summary)
     return summary
 

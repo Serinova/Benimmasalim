@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
+import Script from "next/script";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -10,6 +11,8 @@ export const viewport: Viewport = {
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/toaster";
+
+const GA_ID = "G-M76XHJLF85";
 
 const inter = Inter({ subsets: ["latin"] });
 const playfair = Playfair_Display({
@@ -42,13 +45,13 @@ export const metadata: Metadata = {
     siteName: "Benim Masalım",
     locale: "tr_TR",
     type: "website",
-    // images: [{ url: "/og-image.jpg", width: 1200, height: 630 }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Benim Masalım – Kişiye Özel Çocuk Kitabı" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Benim Masalım – Kişiye Özel Çocuk Kitabı",
     description: "Çocuğunuzun adı ve fotoğrafıyla kişiselleştirilmiş masal kitabı.",
-    // images: ["/og-image.jpg"],
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
@@ -59,6 +62,21 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr" suppressHydrationWarning>
+      <head>
+        {/* Google Analytics 4 */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga4-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_ID}');
+          `}
+        </Script>
+      </head>
       <body className={`${inter.className} ${playfair.variable}`}>
         <Providers>
           {children}
@@ -68,3 +86,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+

@@ -71,6 +71,8 @@ export interface CategorizedProducts {
 /**
  * Fetch active products from API for the pricing section.
  * Returns categorized products by type.
+ * NOTE: Backend currently doesn't return product_type field,
+ * so we infer category from the product name.
  */
 export async function getProducts(): Promise<CategorizedProducts> {
   try {
@@ -80,14 +82,23 @@ export async function getProducts(): Promise<CategorizedProducts> {
     if (!res.ok) {
       return { storyBooks: [], coloringBooks: [], audioAddons: [], all: [] };
     }
-    
+
     const products = (await res.json()) as ProductForPricing[];
-    
-    // Categorize products by type
-    const storyBooks = products.filter(p => p.product_type === 'story_book' || !p.product_type);
-    const coloringBooks = products.filter(p => p.product_type === 'coloring_book');
-    const audioAddons = products.filter(p => p.product_type === 'audio_addon');
-    
+
+    // Helper: infer product type from name (backend doesn't send product_type)
+    const inferType = (p: ProductForPricing): string => {
+      if (p.product_type) return p.product_type;
+      const n = (p.name || '').toLowerCase();
+      if (n.includes('boyama')) return 'coloring_book';
+      if (n.includes('sesli') || n.includes('ses')) return 'audio_addon';
+      return 'story_book';
+    };
+
+    // Categorize products
+    const storyBooks = products.filter(p => inferType(p) === 'story_book');
+    const coloringBooks = products.filter(p => inferType(p) === 'coloring_book');
+    const audioAddons = products.filter(p => inferType(p) === 'audio_addon');
+
     return {
       storyBooks,
       coloringBooks,

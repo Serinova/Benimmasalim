@@ -13,6 +13,7 @@ import { ArrowLeft, Plus, Edit, Trash2, Palette, Sliders } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import Link from "next/link";
 import { API_BASE_URL } from "@/lib/api";
+import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
 
 interface VisualStyle {
   id: string;
@@ -102,13 +103,6 @@ export default function AdminVisualStylesPage() {
     }
   };
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
-  };
 
   const fetchStyles = async () => {
     try {

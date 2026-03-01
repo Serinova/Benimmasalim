@@ -67,6 +67,7 @@ class ProductCreate(BaseModel):
     discounted_price: Decimal | None = Field(None, description="Sale price if promo active")
     extra_page_price: Decimal = Field(default=Decimal("5.0"), ge=0)
     production_cost: Decimal | None = None
+    vat_rate: Decimal = Field(default=Decimal("10.00"), ge=0, le=100, description="KDV oranı (%)")
 
     # ===== VISIBILITY =====
     is_active: bool = True
@@ -152,6 +153,7 @@ class ProductUpdate(BaseModel):
     discounted_price: Decimal | None = None
     extra_page_price: Decimal | None = Field(default=None, ge=0)
     production_cost: Decimal | None = None
+    vat_rate: Decimal | None = Field(default=None, ge=0, le=100, description="KDV oranı (%)")
 
     # ===== VISIBILITY =====
     is_active: bool | None = None
@@ -297,6 +299,7 @@ async def list_products(
             "discounted_price": float(p.discounted_price) if p.discounted_price else None,
             "extra_page_price": float(p.extra_page_price) if p.extra_page_price else 5.0,
             "production_cost": float(p.production_cost) if p.production_cost else None,
+            "vat_rate": float(p.vat_rate) if p.vat_rate is not None else 10.0,
             "discount_percentage": p.discount_percentage,
             # Visibility
             "is_active": p.is_active,
@@ -377,6 +380,7 @@ async def get_product(
         "discounted_price": float(product.discounted_price) if product.discounted_price else None,
         "extra_page_price": float(product.extra_page_price) if product.extra_page_price else 5.0,
         "production_cost": float(product.production_cost) if product.production_cost else None,
+        "vat_rate": float(product.vat_rate) if product.vat_rate is not None else 10.0,
         # Visibility
         "is_active": product.is_active,
         "is_featured": product.is_featured,

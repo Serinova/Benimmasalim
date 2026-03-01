@@ -182,5 +182,11 @@ class StoryPreview(Base, UUIDMixin, TimestampMixin):
     # Page image regeneration counter (max 3 per preview, customer-facing)
     page_regenerate_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
+    # Billing / invoice data (JSONB snapshot from checkout)
+    # Format: {"billing_type": "individual"|"corporate", "billing_full_name": "...", "billing_email": "...",
+    #          "billing_phone": "...", "billing_company_name": "...", "billing_tax_id": "...",
+    #          "billing_tax_office": "...", "billing_address": {...}, "use_shipping_address": true}
+    billing_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     def __repr__(self) -> str:
         return f"<StoryPreview {self.id} - {self.child_name} ({self.status})>"

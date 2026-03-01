@@ -25,25 +25,27 @@ from app.models.scenario import Scenario
 # KAPAK PROMPT TEMPLATE (Modular - Pipeline-Friendly: ~380 char)
 # -----------------------------------------------------------------------------
 
-DINOSAUR_COVER_PROMPT = """Epic prehistoric scene: {scene_description}. 
-MASSIVE T-Rex (12m) in background (majestic, not threatening). 
-Triceratops herd (9m each) grazing. 
-GIANT Brachiosaurus (25m) neck reaching clouds. 
-Pteranodon flock flying (7m wingspan). 
-Child TINY in vast prehistoric world. 
-Giant tree ferns (15m), golden sunlight, volcanic mountains distant. 
-Time portal glowing blue. Epic adventure atmosphere."""
+DINOSAUR_COVER_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "MASSIVE T-Rex (12m) in background (majestic, not threatening). "
+    "Triceratops herd grazing. GIANT Brachiosaurus (25m) reaching clouds. "
+    "Pteranodon flock flying. Child TINY in vast prehistoric world. "
+    "Giant tree ferns, golden sunlight, volcanic mountains. "
+    "Time portal glowing blue."
+)
 
-
-# -----------------------------------------------------------------------------
-# İÇ SAYFA PROMPT TEMPLATE (Modular - Pipeline-Friendly: ~470 char)
-# -----------------------------------------------------------------------------
-
-DINOSAUR_PAGE_PROMPT = """Prehistoric scene: {scene_description}. 
-Dinosaurs: [T-Rex 12m: majestic, head lowering, ground shake / Triceratops 9m: 3 horns, riding between horns / Brachiosaurus 25m: climbing, 20m view / Velociraptor 2m: feathered pack, alliance / Pteranodon 7m wing: flying carrying child]. 
-Giant ferns 15m, cycads, volcanic mountains. 
-Golden sun, misty. 
-Child TINY, dinosaurs GIGANTIC."""
+DINOSAUR_PAGE_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Dinosaurs: [T-Rex 12m: majestic / Triceratops 9m: 3 horns / "
+    "Brachiosaurus 25m: neck reaching clouds / Velociraptor 2m: feathered pack / "
+    "Pteranodon 7m wingspan: flying]. "
+    "Giant ferns, cycads, volcanic mountains. Golden sun, misty. "
+    "Child TINY, dinosaurs GIGANTIC."
+)
 
 
 # -----------------------------------------------------------------------------
@@ -51,6 +53,8 @@ Child TINY, dinosaurs GIGANTIC."""
 # -----------------------------------------------------------------------------
 
 DINOSAUR_STORY_PROMPT_TR = """Sen {child_name} isimli {child_age} yaşında bir çocuğun ZAMAN MAKİNESİ ile 65 milyon yıl öncesine, DİNOZORLAR ÇAĞINA yaptığı EPİK MACERA yazıyorsun.
+
+⚠️ Çocuk TEK BAŞINA macerada (aile yok). Anne-baba-aile karakteri KULLANMA.
 
 🧠 DOPAMİN YÖNETİMİ - HEYECAN MERDİVENİ:
 
@@ -268,9 +272,23 @@ Son 3 sayfa: T-Rex epik sahne + Veda + Dönüş
 # KIYAFET TASARIMLARI (Scenario-Specific)
 # -----------------------------------------------------------------------------
 
-OUTFIT_GIRL = """silver-gray explorer jumpsuit with futuristic blue trim lines, protective knee pads with holographic display, high-tech hiking boots with LED lights on sides, tablet device strapped to left arm showing time readings, transparent time-traveler goggles on forehead, utility belt with glowing time machine remote control, small backpack with antenna"""
+OUTFIT_GIRL = (
+    "silver-gray nylon explorer jumpsuit with glowing blue LED trim lines along arms and legs, "
+    "protective black knee pads with small holographic time display, "
+    "dark gray high-tech hiking boots with blue LED lights on sides, "
+    "transparent time-traveler goggles pushed up on forehead with blue frames, "
+    "black utility belt with glowing blue time crystal remote control. "
+    "EXACTLY the same outfit on every page — same silver jumpsuit with blue trim, same goggles, same gray boots."
+)
 
-OUTFIT_BOY = """dark blue time-traveler jacket with metallic silver shoulder pads, cargo pants with zippered tech pockets and knee guards, sturdy brown boots with ankle support and grip soles, digital compass watch on wrist with holographic display, small gray backpack with glowing blue time crystal visible, explorer cap with built-in camera lens on side"""
+OUTFIT_BOY = (
+    "dark navy blue nylon time-traveler jacket with metallic silver shoulder pads, "
+    "dark gray cargo pants with zippered tech pockets and black knee guards, "
+    "sturdy dark brown ankle-high boots with orange grip soles, "
+    "digital compass watch on left wrist with blue holographic display, "
+    "dark gray canvas backpack with visible glowing blue time crystal inside. "
+    "EXACTLY the same outfit on every page — same navy jacket with silver shoulders, same gray pants, same brown boots."
+)
 
 
 # -----------------------------------------------------------------------------
@@ -360,12 +378,12 @@ DINOSAUR_CUSTOM_INPUTS = [
         "label": "Keşif Amacı",
         "type": "select",
         "options": [
-            "Kayıp Yavruyu Ailesine Ulaştır",
+            "Kayıp Yavruyu Sürüsüne Ulaştır",
             "Dinozor Fotoğrafları Çek",
             "Prehistorik Bitki Örnekleri Topla",
             "Dinozor İzlerini Takip Et"
         ],
-        "default": "Kayıp Yavruyu Ailesine Ulaştır",
+        "default": "Kayıp Yavruyu Sürüsüne Ulaştır",
         "required": False,
         "help_text": "Hikayenin ana macera görevi"
     }
@@ -397,7 +415,7 @@ async def update_dinosaur_scenario():
             print(f"[OK] Senaryo bulundu: {scenario.name} (ID: {scenario.id})")
         
         # Güncelleme yap
-        scenario.description = "Zaman makinesi ile 65 milyon yıl öncesine gidip T-Rex, Triceratops, Brachiosaurus ve daha fazlasıyla tanış! Kayıp yavru dinozorun ailesini bul ve prehistorik dünyanın sırlarını keşfet. Aksiyon dolu bir macera!"
+        scenario.description = "Zaman makinesi ile 65 milyon yıl öncesine gidip T-Rex, Triceratops, Brachiosaurus ve daha fazlasıyla tanış! Kayıp yavru dinozorun sürüsünü bul ve prehistorik dünyanın sırlarını keşfet. Aksiyon dolu bir macera!"
         scenario.cover_prompt_template = DINOSAUR_COVER_PROMPT
         scenario.page_prompt_template = DINOSAUR_PAGE_PROMPT
         scenario.story_prompt_tr = DINOSAUR_STORY_PROMPT_TR

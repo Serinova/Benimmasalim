@@ -1,22 +1,42 @@
 """Order state machine - handles status transitions with validation.
 
-IMPORTANT — ``transition_order`` does NOT commit.  The caller owns the
-transaction boundary so that multiple DB mutations (payment fields, promo
-rollback, audit log, etc.) are committed atomically.
+IMPORTANT — ``transition_order`` does NOT commit when auto_commit=False.
+The caller owns the transaction boundary so that multiple DB mutations
+(payment fields, promo rollback, audit log, outbox, etc.) are committed
+atomically.
+
+Email notifications are written to ``notification_outbox`` in the SAME
+transaction as the audit log.  A background worker picks them up and
+sends them — no fire-and-forget, no lost emails on restart.
 """
 
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+import sqlalchemy as sa
+import structlog
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.core.exceptions import InvalidStateTransition
 from app.models.audit_log import AuditLog
+from app.models.notification_outbox import NotificationOutbox
 from app.models.order import Order, OrderStatus
 
-# Valid state transitions
+logger = structlog.get_logger()
+
+_EMAIL_TRIGGER_STATUSES: set[OrderStatus] = {
+    OrderStatus.PAID,
+    OrderStatus.PROCESSING,
+    OrderStatus.READY_FOR_PRINT,
+    OrderStatus.SHIPPED,
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELLED,
+    OrderStatus.REFUNDED,
+}
+
 VALID_TRANSITIONS: dict[OrderStatus, list[OrderStatus]] = {
     OrderStatus.DRAFT: [OrderStatus.TEXT_APPROVED, OrderStatus.CANCELLED],
     OrderStatus.TEXT_APPROVED: [OrderStatus.COVER_APPROVED, OrderStatus.DRAFT],
@@ -26,9 +46,9 @@ VALID_TRANSITIONS: dict[OrderStatus, list[OrderStatus]] = {
     OrderStatus.PROCESSING: [OrderStatus.READY_FOR_PRINT, OrderStatus.CANCELLED],
     OrderStatus.READY_FOR_PRINT: [OrderStatus.SHIPPED],
     OrderStatus.SHIPPED: [OrderStatus.DELIVERED],
-    OrderStatus.DELIVERED: [],  # Terminal state
-    OrderStatus.CANCELLED: [],  # Terminal state
-    OrderStatus.REFUNDED: [],  # Terminal state
+    OrderStatus.DELIVERED: [],
+    OrderStatus.CANCELLED: [],
+    OrderStatus.REFUNDED: [],
 }
 
 
@@ -57,16 +77,14 @@ async def transition_order(
     *,
     auto_commit: bool = True,
 ) -> Order:
-    """Transition order to a new status with validation and audit logging.
+    """Transition order to a new status with validation, audit logging, and outbox.
 
     CRITICAL: Never directly set ``order.status``! Always use this function.
 
-    Parameters
-    ----------
-    auto_commit : bool
-        When *True* (default — backward compat) the function commits the
-        transaction.  Set to *False* in payment paths where the caller
-        needs to perform additional atomic writes before committing.
+    Guarantees:
+    - Audit log + outbox row are written in the SAME transaction.
+    - Outbox has a unique constraint (order_id, order_status, channel) so
+      duplicate transitions never produce duplicate emails.
     """
     old_status = order.status
 
@@ -75,13 +93,34 @@ async def transition_order(
 
     order.status = new_status
 
+    # Snapshot billing info at PAID so it's immutable
+    if new_status == OrderStatus.PAID:
+        from app.services.order_helpers import snapshot_billing_to_order
+        snapshot_billing_to_order(order)
+        await _create_invoice_if_not_exists(order, db)
+
     if new_status == OrderStatus.DELIVERED:
         order.delivered_at = datetime.now(UTC)
         order.photo_deletion_scheduled_at = order.delivered_at + timedelta(
             days=settings.kvkk_retention_days
         )
 
-    audit_details = {
+    # Cancel invoice + revoke download tokens if order is cancelled/refunded
+    if new_status in (OrderStatus.CANCELLED, OrderStatus.REFUNDED):
+        await _cancel_invoice_if_exists(order.id, db)
+        try:
+            from app.services.invoice_token_service import revoke_tokens_for_order
+            await revoke_tokens_for_order(order.id, db)
+        except Exception as exc:
+            # Non-fatal but log for debugging — tokens will expire naturally
+            logger.warning(
+                "token_revocation_failed",
+                order_id=str(order.id),
+                error=str(exc),
+            )
+
+    # --- Audit log (same transaction) ---
+    audit_details: dict = {
         "from_status": old_status.value,
         "to_status": new_status.value,
     }
@@ -96,11 +135,71 @@ async def transition_order(
         ip_address=ip_address,
     ))
 
+    # --- Notification outbox (same transaction, idempotent via upsert) ---
+    if new_status in _EMAIL_TRIGGER_STATUSES and order.user_id:
+        payload: dict = {
+            "from_status": old_status.value,
+            "to_status": new_status.value,
+            "child_name": order.child_name,
+        }
+        if new_status == OrderStatus.SHIPPED and order.tracking_number:
+            payload["tracking_number"] = order.tracking_number
+
+        stmt = pg_insert(NotificationOutbox).values(
+            order_id=order.id,
+            user_id=order.user_id,
+            channel="email",
+            event_type="ORDER_STATUS_CHANGE",
+            order_status=new_status.value,
+            payload=payload,
+            status="PENDING",
+        ).on_conflict_do_nothing(
+            constraint="uq_outbox_order_status_channel",
+        )
+        await db.execute(stmt)
+
     if auto_commit:
         await db.commit()
         await db.refresh(order)
 
     return order
+
+
+async def _create_invoice_if_not_exists(order: Order, db: AsyncSession) -> None:
+    """Create an invoice record idempotently (ON CONFLICT DO NOTHING).
+
+    Invoice number format: BM-{YYYY}-{SERIAL:06d}
+    Uses a table-based counter with SELECT FOR UPDATE for gap-free serials
+    (PostgreSQL sequences skip numbers on rollback — Turkish tax law violation).
+    """
+    import uuid as _uuid
+
+    from app.models.invoice import Invoice
+    from app.services.invoice_number_service import next_invoice_number
+
+    now = datetime.now(UTC)
+    invoice_number = await next_invoice_number(db)
+
+    stmt = pg_insert(Invoice).values(
+        id=_uuid.uuid4(),
+        order_id=order.id,
+        invoice_number=invoice_number,
+        invoice_status="PENDING",
+        issued_at=now,
+    ).on_conflict_do_nothing(index_elements=["order_id"])
+    await db.execute(stmt)
+
+
+async def _cancel_invoice_if_exists(order_id: UUID, db: AsyncSession) -> None:
+    """Mark the invoice as CANCELLED and set needs_credit_note=True."""
+    from app.models.invoice import Invoice, InvoiceStatus
+
+    result = await db.execute(select(Invoice).where(Invoice.order_id == order_id))
+    invoice = result.scalar_one_or_none()
+    if invoice and invoice.invoice_status != InvoiceStatus.CANCELLED.value:
+        invoice.invoice_status = InvoiceStatus.CANCELLED.value
+        invoice.cancelled_at = datetime.now(UTC)
+        invoice.needs_credit_note = True
 
 
 def can_transition(current_status: OrderStatus, target_status: OrderStatus) -> bool:

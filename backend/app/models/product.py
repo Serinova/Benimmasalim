@@ -111,6 +111,10 @@ class Product(Base, UUIDMixin, TimestampMixin):
     )
     extra_page_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=5.0)
     production_cost: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    vat_rate: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), nullable=False, default=Decimal("10.00"),
+        comment="KDV oranı (%) — fiziksel kitap için varsayılan %10",
+    )
 
     # AI & print settings
     print_specifications: Mapped[dict | None] = mapped_column(JSONB)
@@ -163,10 +167,11 @@ class Product(Base, UUIDMixin, TimestampMixin):
     feature_list: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True, default=list)
 
     # ============ RELATIONSHIPS ============
-    cover_template = relationship("PageTemplate", foreign_keys=[cover_template_id])
-    inner_template = relationship("PageTemplate", foreign_keys=[inner_template_id])
-    back_template = relationship("PageTemplate", foreign_keys=[back_template_id])
-    ai_config = relationship("AIGenerationConfig", foreign_keys=[ai_config_id])
+    # selectin = batch-load in a single query (prevents N+1 on product lists)
+    cover_template = relationship("PageTemplate", foreign_keys=[cover_template_id], lazy="selectin")
+    inner_template = relationship("PageTemplate", foreign_keys=[inner_template_id], lazy="selectin")
+    back_template = relationship("PageTemplate", foreign_keys=[back_template_id], lazy="selectin")
+    ai_config = relationship("AIGenerationConfig", foreign_keys=[ai_config_id], lazy="selectin")
 
     __table_args__ = (
         CheckConstraint("base_price > 0", name="check_positive_price"),

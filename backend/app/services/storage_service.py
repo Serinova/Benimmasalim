@@ -201,6 +201,31 @@ class StorageService:
         ok2 = self._provider.delete_prefix(f"voice_samples/{order_id}/")
         return ok1 and ok2
 
+    def upload_invoice_pdf(self, pdf_bytes: bytes, order_id: str, invoice_number: str) -> str:
+        blob_path = f"invoices/{order_id}/invoice_{invoice_number}.pdf"
+        return _retry_upload(self._provider.upload_bytes, pdf_bytes, blob_path, "application/pdf")
+
+    def download_bytes(self, blob_url: str) -> bytes | None:
+        """Download file bytes from storage. Returns None on failure."""
+        blob_path = self._url_to_blob_path(blob_url)
+        if not blob_path:
+            logger.warning("download_bytes: could not extract blob path", url=blob_url[:120])
+            return None
+        try:
+            if isinstance(self._provider, GCSStorageProvider):
+                bucket = self._provider._get_bucket()
+                blob = bucket.blob(blob_path)
+                return blob.download_as_bytes()
+            else:
+                from pathlib import Path as _Path
+                local_path = _Path(self._provider._root) / blob_path
+                if local_path.exists():
+                    return local_path.read_bytes()
+                return None
+        except Exception as e:
+            logger.error("download_bytes: failed", blob_path=blob_path, error=str(e))
+            return None
+
     def upload_pdf(self, pdf_bytes: bytes, order_id: str) -> str:
         filename = f"book_{order_id}.pdf"
         blob_path = f"books/{order_id}/{filename}"
@@ -233,8 +258,9 @@ class StorageService:
             fmt = img.format or "JPEG"
             clean.save(buf, format=fmt, quality=95)
             return buf.getvalue()
-        except Exception:
+        except Exception as exc:
             # If stripping fails, return original (don't block upload)
+            logger.warning("exif_strip_failed", error=str(exc))
             return image_bytes
 
     def delete_file(self, file_url: str) -> bool:

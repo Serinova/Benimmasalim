@@ -98,9 +98,10 @@ class PageTemplate(Base, UUIDMixin, TimestampMixin):
 
     # Text styling
     text_position: Mapped[str] = mapped_column(String(20), default=TextPosition.BOTTOM.value)
+    text_vertical_align: Mapped[str] = mapped_column(String(20), default="bottom")  # top, center, bottom
     font_family: Mapped[str] = mapped_column(String(100), default="Nunito")
     font_size_pt: Mapped[int] = mapped_column(Integer, default=14)
-    font_color: Mapped[str] = mapped_column(String(20), default="#333333")
+    font_color: Mapped[str] = mapped_column(String(20), default="#2D2D2D")
     font_weight: Mapped[str] = mapped_column(String(20), default="normal")  # normal, bold, light, 100-900
     text_align: Mapped[str] = mapped_column(String(20), default="center")
     line_height: Mapped[float] = mapped_column(Float, default=1.5)
@@ -110,15 +111,20 @@ class PageTemplate(Base, UUIDMixin, TimestampMixin):
 
     # Text Stroke (Outline)
     text_stroke_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    text_stroke_color: Mapped[str] = mapped_column(String(20), default="#000000")
+    text_stroke_color: Mapped[str] = mapped_column(String(20), default="#FFFFFF")
     text_stroke_width: Mapped[float] = mapped_column(Float, default=1.0)
 
-    # Text Background Gradient (metin arkası gölge/gradient)
+    # Text Background — beyaz bulut overlay (okunabilirlik için)
     text_bg_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
-    text_bg_color: Mapped[str] = mapped_column(String(20), default="#000000")
-    text_bg_opacity: Mapped[int] = mapped_column(Integer, default=180)  # 0-255
-    text_bg_shape: Mapped[str] = mapped_column(String(30), default="soft_vignette")  # rectangle, rounded, soft_vignette, wavy, cloud
-    text_bg_blur: Mapped[int] = mapped_column(Integer, default=30)  # 0-80 px blur radius
+    text_bg_color: Mapped[str] = mapped_column(String(20), default="#FFFFFF")
+    text_bg_opacity: Mapped[int] = mapped_column(Integer, default=230)  # 0-255
+    text_bg_shape: Mapped[str] = mapped_column(String(30), default="cloud")  # rectangle, rounded, soft_vignette, wavy, cloud
+    text_bg_blur: Mapped[int] = mapped_column(Integer, default=50)  # 0-200 px blur radius
+    # Cloud genişlik/yükseklik kontrolleri (% cinsinden metin alanına göre ek uzantı)
+    text_bg_extend_top: Mapped[int] = mapped_column(Integer, default=60)    # metin üstüne % uzantı (0-200)
+    text_bg_extend_bottom: Mapped[int] = mapped_column(Integer, default=15) # metin altına % uzantı (0-100)
+    text_bg_extend_sides: Mapped[int] = mapped_column(Integer, default=10)  # yanlara % genişlik uzantısı (0-50)
+    text_bg_intensity: Mapped[int] = mapped_column(Integer, default=100)    # iç alan yoğunluk % (50-100, 100=tam opak plato)
 
     # Cover Title — WordArt tarzı kapak başlığı (sadece cover page_type için)
     # cover_title_source: "gemini" → Gemini native text rendering (varsayılan), "overlay" → PIL WordArt

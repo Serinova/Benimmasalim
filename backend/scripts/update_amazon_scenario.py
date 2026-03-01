@@ -25,28 +25,26 @@ from app.models.scenario import Scenario
 # KAPAK PROMPT TEMPLATE (Style-Agnostic)
 # -----------------------------------------------------------------------------
 
-AMAZON_COVER_PROMPT = """Amazon rainforest scene: {scene_description}. 
-Child on massive tree root at river, gazing into dense jungle. 
-Towering kapok trees with buttress roots, emerald canopy. 
-Scarlet and blue-gold macaws flying, toucans perched. 
-Winding brown river, golden sunlight shafts (god rays). 
-Hanging lianas, vibrant orchids, misty atmosphere. 
-Rich colors: emerald, scarlet, electric blue, amber. 
-Wide shot: child 25%, rainforest 75%. 
-Epic scale, biodiversity."""
+AMAZON_COVER_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Towering kapok trees with buttress roots, emerald canopy. "
+    "Scarlet macaws flying, toucan perched. Winding brown river. "
+    "Golden sunlight shafts (god rays), hanging lianas, orchids. "
+    "Wide shot: child 25%, rainforest 75%. Epic biodiversity."
+)
 
-
-# -----------------------------------------------------------------------------
-# İÇ SAYFA PROMPT TEMPLATE (Style-Agnostic)
-# -----------------------------------------------------------------------------
-
-AMAZON_PAGE_PROMPT = """Amazon rainforest scene: {scene_description}. 
-Elements: [Giant kapok trees with buttress roots, multi-layer canopy (40m+), winding tributary / Birds: scarlet macaws (pairs), blue-gold macaws, toucans, harpy eagles (distant) / River fauna: pink dolphins (boto), capybaras, caimans (small, non-threatening), river turtles / Forest: three-toed sloths, howler monkeys, poison dart frogs (blue/red/yellow), morpho butterflies (iridescent blue), leafcutter ants / Jaguar: distant, majestic, respectful, NOT threatening]. 
-Vegetation: lianas, bromeliads, orchids, moss, ferns, dense undergrowth. 
-Dappled sunlight filtering through canopy, misty humid air. 
-Rich colors: emerald, jade, scarlet, electric blue, golden amber. 
-At least 2-3 species visible per scene. 
-Layered depth: emergent layer, canopy, understory, forest floor."""
+AMAZON_PAGE_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Elements: [Kapok trees 40m+, buttress roots / Birds: scarlet macaws, toucans / "
+    "River: pink dolphins, capybaras / Forest: sloths, howler monkeys, "
+    "poison dart frogs, morpho butterflies / Jaguar: distant, majestic]. "
+    "Lianas, orchids, ferns. Dappled sunlight, misty. "
+    "Emerald, scarlet, electric blue, golden amber."
+)
 
 
 # -----------------------------------------------------------------------------
@@ -54,6 +52,8 @@ Layered depth: emergent layer, canopy, understory, forest floor."""
 # -----------------------------------------------------------------------------
 
 AMAZON_STORY_PROMPT_TR = """Amazon yağmur ormanlarında geçen, {child_name} adlı {child_age} yaşında bir çocuğun keşif macerası hikayesi yaz.
+
+⚠️ Çocuk TEK BAŞINA macerada (aile yok). Anne-baba-aile karakteri KULLANMA.
 
 🌳 KEŞİF DOPAMİNİ - BİYOÇEŞİTLİLİK MERDİVENİ:
 
@@ -64,12 +64,12 @@ AMAZON_STORY_PROMPT_TR = """Amazon yağmur ormanlarında geçen, {child_name} ad
 - Sayfa 3-4: İlk hayvan karşılaşması
   Dopamin ⭐⭐⭐ (başlangıç)
 
-**BÖLÜM 2 - MACAW AİLESİ** (Sayfa 5-8) [role: exploration]:
-- Sayfa 5-6: Scarlet macaw ailesi
+**BÖLÜM 2 - MACAW SÜRÜSÜ** (Sayfa 5-8) [role: exploration]:
+- Sayfa 5-6: Scarlet macaw sürüsü
   → Endişe: "Kayıp yavru macaw!"
 - Sayfa 7-8: Yuva bulma yardımı
   → Epic #2: Renkli macaw uçuşu (sürü halinde)
-  → Başarı: Aile birliği → Dopamin ⭐⭐⭐⭐
+  → Başarı: Sürü birliği → Dopamin ⭐⭐⭐⭐
   → DEĞER: Yardımlaşma
 
 **BÖLÜM 3 - NEHİR KEŞFİ** (Sayfa 9-12) [role: exploration]:
@@ -114,10 +114,10 @@ AMAZON_STORY_PROMPT_TR = """Amazon yağmur ormanlarında geçen, {child_name} ad
 
 ⚡ KEŞİF→ÖĞRENME DÖNGÜLERİ (4 Kritik):
 
-**Döngü 1 - Macaw ailesi** (5-8):
-- Endişe: "Kayıp yavru! Ailesini bulamaz"
+**Döngü 1 - Macaw sürüsü** (5-8):
+- Endişe: "Kayıp yavru! Sürüsünü bulamaz"
 - Eylem: Yuva arama, yardım
-- Başarı: Aile birliği → Dopamin ⭐⭐⭐⭐
+- Başarı: Sürü birliği → Dopamin ⭐⭐⭐⭐
 
 **Döngü 2 - Pembe yunus** (10-12):
 - Endişe: "Nehirde kayboldum"
@@ -137,7 +137,7 @@ AMAZON_STORY_PROMPT_TR = """Amazon yağmur ormanlarında geçen, {child_name} ad
 HİKAYE YAPISI (Biyoçeşitlilik Keşfi):
 
 HAYVANLAR VE ÖĞRETİLER:
-1. **Scarlet macaw ailesi** → Yardımlaşma, aile bağları
+1. **Scarlet macaw sürüsü** → Yardımlaşma, dayanışma
 2. **Pembe nehir yunusu (boto)** → İletişim, rehberlik
 3. **Üç parmaklı tembel** → Sabır, herkesin kendi hızı
 4. **Yaprak kesici karıncalar** → İşbirliği, organize çalışma
@@ -149,7 +149,7 @@ EK HAYVANLAR (sahne zenginliği):
 
 MİNİ BİLGİLER (hikayeye doğal yerleştir):
 - Her hayvan karşılaşmasında 1 kısa bilgi
-- Örnek: "{child_name} nehir yunusunun sıçradığını görünce mutlu oldu. Annesi demişti: Pembe yunuslar dünyanın tek tatlı su yunusuydu!"
+- Örnek: "{child_name} nehir yunusunun sıçradığını görünce mutlu oldu. Pembe yunuslar dünyanın tek tatlı su yunusuydu!"
 
 DEĞERLER:
 - Yardımlaşma ve empati (macaw)
@@ -179,9 +179,19 @@ Vurgulanmak istenen değer: {value_name}. Dopamini yönet, keşif heyecanı yara
 # KIYAFET TASARIMLARI (Scenario-Specific)
 # -----------------------------------------------------------------------------
 
-OUTFIT_GIRL = """khaki explorer vest over light green breathable shirt, cargo shorts with multiple pockets, sturdy brown hiking boots, small binoculars around neck, fabric hat with mosquito net"""
+OUTFIT_GIRL = (
+    "khaki canvas explorer vest with four front pockets over light sage green breathable cotton shirt, "
+    "dark olive cargo shorts with zippered pockets reaching knees, sturdy brown leather hiking boots, "
+    "small silver binoculars around neck, wide-brim khaki fabric hat with mosquito net rolled up. "
+    "EXACTLY the same outfit on every page — same khaki vest, same green shirt, same olive shorts, same brown boots."
+)
 
-OUTFIT_BOY = """olive green explorer shirt with rolled-up sleeves, khaki cargo pants with zippered pockets, brown leather hiking boots, canvas backpack with water bottle, wide-brim explorer hat"""
+OUTFIT_BOY = (
+    "olive green cotton explorer shirt with rolled-up sleeves and chest pocket, "
+    "dark khaki cargo pants with zippered side pockets, sturdy dark brown leather hiking boots, "
+    "tan canvas backpack with water bottle in side pocket, wide-brim brown explorer hat with chin strap. "
+    "EXACTLY the same outfit on every page — same olive shirt, same khaki pants, same brown boots, same explorer hat."
+)
 
 
 # -----------------------------------------------------------------------------
@@ -260,12 +270,12 @@ AMAZON_CUSTOM_INPUTS = [
         "label": "Orman Görevi",
         "type": "select",
         "options": [
-            "Kayıp Yavruyu Ailesine Ulaştır",
+            "Kayıp Yavruyu Sürüsüne Ulaştır",
             "Gizli Su Kaynağını Keşfet",
             "Dev Ağacın Sırrını Çöz",
             "Orman Haritasını Tamamla"
         ],
-        "default": "Kayıp Yavruyu Ailesine Ulaştır",
+        "default": "Kayıp Yavruyu Sürüsüne Ulaştır",
         "required": False,
         "help_text": "Hikayenin ana macera görevi"
     }

@@ -125,17 +125,34 @@ export default function Pricing({ title, subtitle, products, data }: PricingProp
   const heading = title ?? "Fiyatlandırma";
   const sub = subtitle ?? "Tek paket, eksiksiz deneyim. Ek ücret veya gizli maliyet yok.";
 
+  // Infer product type from name when product_type is missing
+  const inferType = (p: ProductData): string => {
+    if (p.product_type) return p.product_type;
+    const n = (p.name || "").toLowerCase();
+    if (n.includes("boyama")) return "coloring_book";
+    if (n.includes("sesli") || n.includes("ses")) return "audio_addon";
+    return "story_book";
+  };
+
   const categorized: CategorizedProducts = Array.isArray(products)
     ? {
-      storyBooks: products.filter(p => p.product_type === "story_book" || !p.product_type),
-      coloringBooks: products.filter(p => p.product_type === "coloring_book"),
-      audioAddons: products.filter(p => p.product_type === "audio_addon"),
+      storyBooks: products.filter(p => inferType(p) === "story_book"),
+      coloringBooks: products.filter(p => inferType(p) === "coloring_book"),
+      audioAddons: products.filter(p => inferType(p) === "audio_addon"),
       all: products,
     }
     : (products ?? { storyBooks: [], coloringBooks: [], audioAddons: [], all: [] });
 
   const storyBook = categorized.storyBooks[0];
   const coloringBook = categorized.coloringBooks[0];
+
+  // Get audio prices from API products, fallback to hook
+  const sysAddon = categorized.audioAddons.find(p => p.name?.toLowerCase().includes("sistem"));
+  const clnAddon = categorized.audioAddons.find(p => p.name?.toLowerCase().includes("klon"));
+  const finalAudioPrices = {
+    systemVoice: sysAddon ? (sysAddon.discounted_price ?? sysAddon.base_price) : audioPrices.systemVoice,
+    clonedVoice: clnAddon ? (clnAddon.discounted_price ?? clnAddon.base_price) : audioPrices.clonedVoice,
+  };
 
   return (
     <section id="fiyat" className="scroll-mt-20 bg-gradient-to-b from-slate-50/50 to-white py-20">
@@ -249,7 +266,7 @@ export default function Pricing({ title, subtitle, products, data }: PricingProp
                       </div>
                     </div>
                     <div className="mb-3">
-                      <span className="text-3xl font-bold text-blue-600">+{fmt(audioPrices.systemVoice)}</span>
+                      <span className="text-3xl font-bold text-blue-600">+{fmt(finalAudioPrices.systemVoice)}</span>
                       <span className="ml-1 text-xs text-muted-foreground">/ kitap</span>
                     </div>
                     <ul className="flex-1 space-y-1.5">
@@ -283,7 +300,7 @@ export default function Pricing({ title, subtitle, products, data }: PricingProp
                       </div>
                     </div>
                     <div className="mb-3">
-                      <span className="text-3xl font-bold text-purple-600">+{fmt(audioPrices.clonedVoice)}</span>
+                      <span className="text-3xl font-bold text-purple-600">+{fmt(finalAudioPrices.clonedVoice)}</span>
                       <span className="ml-1 text-xs text-muted-foreground">/ kitap</span>
                     </div>
                     <ul className="flex-1 space-y-1.5">

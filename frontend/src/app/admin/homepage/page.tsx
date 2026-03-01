@@ -37,7 +37,7 @@ import {
   Loader2,
   ImageIcon,
 } from "lucide-react";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
 
 /* ─── Types ───────────────────────────────────────────────────────── */
 
@@ -111,13 +111,6 @@ const SECTION_META: Record<
   },
 };
 
-function getAuthHeaders(): Record<string, string> {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 function checkAuth(router: ReturnType<typeof useRouter>): boolean {
   const userStr = localStorage.getItem("user");

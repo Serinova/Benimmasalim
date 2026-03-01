@@ -75,9 +75,9 @@ async def generate_preview_images(
 
     try:
         # Import here to avoid circular imports and ensure app context
-        from app.api.v1.orders import _process_preview_background_inner
+        from app.services.preview_generation_service import process_preview_background_inner
 
-        await _process_preview_background_inner(
+        await process_preview_background_inner(
             preview_id=preview_id,
             story_id=story_id,
             confirmation_token=confirmation_token,
@@ -111,9 +111,9 @@ async def generate_remaining_pages(
     logger.info("ARQ_TASK_START: generate_remaining_pages", preview_id=preview_id)
 
     try:
-        from app.api.v1.orders import _process_remaining_pages_inner
+        from app.services.preview_generation_service import process_remaining_pages_inner
 
-        await _process_remaining_pages_inner(preview_id=preview_id)
+        await process_remaining_pages_inner(preview_id=preview_id)
 
         logger.info("ARQ_TASK_DONE: generate_remaining_pages", preview_id=preview_id)
         return {"status": "done", "preview_id": preview_id}
@@ -141,9 +141,9 @@ async def generate_admin_pdf_task(
     """
     logger.info("ARQ_TASK_START: generate_admin_pdf", preview_id=preview_id)
     try:
-        from app.api.v1.admin.orders import _generate_admin_pdf_inner
-        
-        pdf_url = await _generate_admin_pdf_inner(preview_id)
+        from app.services.admin_pdf_service import generate_admin_pdf_inner
+
+        pdf_url = await generate_admin_pdf_inner(preview_id)
         
         logger.info("ARQ_TASK_DONE: generate_admin_pdf", preview_id=preview_id, pdf_url=pdf_url)
         return {"status": "done", "preview_id": preview_id, "pdf_url": pdf_url}
@@ -171,9 +171,9 @@ async def generate_trial_story(
     """
     logger.info("ARQ_TASK_START: generate_trial_story", trial_id=trial_id)
     try:
-        from app.api.v1.trials import _generate_trial_story_inner
+        from app.services.trial_generation_service import generate_trial_story_inner
 
-        await _generate_trial_story_inner(trial_id=trial_id, request_data=request_data)
+        await generate_trial_story_inner(trial_id=trial_id, request_data=request_data)
 
         logger.info("ARQ_TASK_DONE: generate_trial_story", trial_id=trial_id)
         return {"status": "done", "trial_id": trial_id}
@@ -204,9 +204,9 @@ async def generate_trial_preview(
     """Arq task: Generate 3 preview images for a trial."""
     logger.info("ARQ_TASK_START: generate_trial_preview", trial_id=trial_id)
     try:
-        from app.api.v1.trials import _generate_preview_images_inner
+        from app.services.trial_generation_service import generate_preview_images_inner
 
-        await _generate_preview_images_inner(
+        await generate_preview_images_inner(
             trial_id=trial_id,
             prompts=prompts,
             child_photo_url=child_photo_url,
@@ -243,9 +243,9 @@ async def generate_trial_remaining(
     """Arq task: Generate remaining ~13 images for a completed trial."""
     logger.info("ARQ_TASK_START: generate_trial_remaining", trial_id=trial_id)
     try:
-        from app.api.v1.trials import _generate_remaining_images_inner
+        from app.services.trial_generation_service import generate_remaining_images_inner
 
-        await _generate_remaining_images_inner(
+        await generate_remaining_images_inner(
             trial_id=trial_id,
             prompts=prompts,
             product_name=product_name,
@@ -287,9 +287,9 @@ async def generate_trial_composed_preview(
     """Arq task: Generate 3 composed preview images (with text overlay)."""
     logger.info("ARQ_TASK_START: generate_trial_composed_preview", trial_id=trial_id)
     try:
-        from app.api.v1.trials import _generate_composed_preview_inner
+        from app.services.trial_generation_service import generate_composed_preview_inner
 
-        await _generate_composed_preview_inner(
+        await generate_composed_preview_inner(
             trial_id=trial_id,
             prompts=prompts,
             child_photo_url=child_photo_url,
@@ -391,9 +391,15 @@ async def shutdown(ctx: dict[str, Any]) -> None:
 class WorkerSettings:
     """Arq worker configuration.
 
-    Separate worker instances (benimmasalim-worker Cloud Run service) each run
-    up to max_jobs parallel tasks.  With min 2 / max 5 instances and max_jobs=5,
-    the system can handle 10-25 concurrent generation jobs.
+    Production Scaling (Cloud Run):
+        Each worker instance runs up to max_jobs parallel tasks.
+        With min 2 / max 5 instances and max_jobs=8, the system handles
+        16-40 concurrent generation jobs.
+
+        Scale up with:
+            gcloud run services update benimmasalim-worker \
+              --min-instances=2 --max-instances=5 \
+              --region=europe-west1 --project=gen-lang-client-0784096400
     """
 
     # Task functions

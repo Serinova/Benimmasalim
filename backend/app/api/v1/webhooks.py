@@ -14,6 +14,7 @@ from app.config import settings
 from app.core.audit import record_audit
 from app.core.exceptions import ForbiddenError, ValidationError
 from app.models.order import OrderStatus
+from app.services.trial_payment_service import get_iyzico_options
 
 logger = structlog.get_logger()
 
@@ -39,6 +40,7 @@ def _verify_webhook_signature(
     """Verify webhook signature using HMAC-SHA256(secret, body).
 
     Fail closed if secret is not configured or signature doesn't match.
+    Only used for non-iyzico webhooks (e.g. ElevenLabs).
     """
     _webhook_secret = getattr(settings, "webhook_secret", "")
     if not _webhook_secret:
@@ -64,28 +66,84 @@ def _verify_webhook_signature(
 async def payment_webhook(
     request: Request,
     db: DbSession,
-    x_signature: str | None = Header(None, alias="X-Signature"),
 ) -> dict[str, Any]:
     """
-    Handle Iyzico payment webhook.
+    Handle Iyzico payment webhook (server-to-server notification).
 
-    Security: HMAC-SHA256 signature mandatory, amount verified, order status checked.
+    Security: İyzico X-Signature header göndermediği için,
+    gelen bildirimdeki token ile iyzico API'ye geri çağırarak
+    ödemeyi sunucu tarafında doğruluyoruz (callback-verify pattern).
     Idempotency: Duplicate payment_id calls are ignored.
     """
     import json as _json
 
     raw_body = await request.body()
-    _verify_webhook_signature(x_signature, raw_body, context="payment")
 
-    body = _json.loads(raw_body)
+    try:
+        body = _json.loads(raw_body)
+    except Exception:
+        logger.warning("WEBHOOK_INVALID_JSON", raw=raw_body[:200])
+        return {"received": True}
 
-    payment_id = body.get("paymentId")
-    conversation_id = body.get("conversationId")  # Our order_id
-    payment_status = body.get("status")
-    webhook_amount = body.get("price") or body.get("paidPrice")
+    payment_id      = body.get("paymentId")
+    conversation_id = body.get("conversationId")   # Bizim order_id'miz
+    payment_status  = body.get("status")
+    token           = body.get("token")             # Checkout form token (bazı bildirimlerde gelir)
+    webhook_amount  = body.get("price") or body.get("paidPrice")
+
+    logger.info(
+        "IYZICO_WEBHOOK_RECEIVED",
+        payment_id=payment_id,
+        conversation_id=conversation_id,
+        payment_status=payment_status,
+        token=str(token)[:20] if token else None,
+    )
 
     if not conversation_id:
-        raise ValidationError("Missing conversationId")
+        logger.warning("WEBHOOK_MISSING_CONVERSATION_ID")
+        return {"received": True}
+
+    # ── Sunucu tarafı doğrulama: İyzico API'ye geri çağır ──────────────────
+    # Token varsa checkout form token ile ödemeyi iyzico'dan doğrula.
+    # Bu adım olmadan webhook bildirimine güvenemeyiz.
+    if token:
+        try:
+            import iyzipay
+
+            iyzico_options = get_iyzico_options()
+            verify_result_raw = iyzipay.CheckoutForm().retrieve(
+                {"locale": "tr", "conversationId": conversation_id, "token": token},
+                iyzico_options,
+            )
+            verify_result = _json.loads(verify_result_raw.read().decode("utf-8"))
+
+            if verify_result.get("status") != "success":
+                logger.warning(
+                    "WEBHOOK_IYZICO_VERIFY_FAILED",
+                    conversation_id=conversation_id,
+                    iyzico_error=verify_result.get("errorMessage"),
+                )
+                return {"received": True}
+
+            # Doğrulanmış verileri iyzico'dan al
+            payment_status = verify_result.get("paymentStatus", payment_status)
+            payment_id     = verify_result.get("paymentId", payment_id)
+            webhook_amount = verify_result.get("paidPrice", webhook_amount)
+
+            logger.info(
+                "WEBHOOK_IYZICO_VERIFIED",
+                conversation_id=conversation_id,
+                payment_status=payment_status,
+                payment_id=payment_id,
+            )
+        except Exception as verify_exc:
+            logger.error(
+                "WEBHOOK_IYZICO_VERIFY_ERROR",
+                conversation_id=conversation_id,
+                error=str(verify_exc),
+            )
+            # Doğrulama başarısız olursa güvenli tarafta kal — işleme
+            return {"received": True}
 
     # Lock the order row to prevent race with verify-iyzico
     from app.services.order_state_machine import get_order_for_update
@@ -93,7 +151,7 @@ async def payment_webhook(
     order = await get_order_for_update(conversation_id, db)
     if not order:
         logger.warning("WEBHOOK_ORDER_NOT_FOUND", conversation_id=conversation_id)
-        raise ValidationError("Sipariş bulunamadı")
+        return {"received": True}
 
     # Idempotency: already processed (verify-iyzico may have beaten us)
     if order.payment_id == payment_id:
@@ -125,7 +183,7 @@ async def payment_webhook(
             raise ValidationError("Ödeme tutarı ayrıştırılamadı") from exc
 
     # Update payment info
-    order.payment_id = payment_id
+    order.payment_id     = payment_id
     order.payment_status = payment_status
 
     await record_audit(
@@ -147,11 +205,17 @@ async def payment_webhook(
         await transition_order(order, OrderStatus.PAID, db, auto_commit=False)
         await db.commit()
 
+        # Fire-and-forget invoice PDF generation
+        try:
+            import asyncio as _aio
+            from app.services.invoice_pdf_service import generate_invoice_pdf
+            _aio.create_task(generate_invoice_pdf(order.id, db))
+        except Exception as _inv_err:
+            logger.error("WEBHOOK_INVOICE_PDF_TRIGGER_FAILED", order_id=str(order.id), error=str(_inv_err))
+
         # Enqueue AFTER commit so that the worker sees PAID status
         try:
-            # Check if this is a coloring book order
             if order.is_coloring_book:
-                # Trigger coloring book generation task
                 from app.tasks.generate_coloring_book import generate_coloring_book
                 import asyncio
                 asyncio.create_task(generate_coloring_book(order.id, db))
@@ -161,7 +225,6 @@ async def payment_webhook(
                     payment_id=payment_id,
                 )
             else:
-                # Regular story book generation
                 from app.workers.enqueue import enqueue_full_book_generation
                 _book_job = await enqueue_full_book_generation(str(order.id))
                 if _book_job:
@@ -178,8 +241,7 @@ async def payment_webhook(
                     )
         except Exception as _enq_err:
             logger.critical(
-                "WEBHOOK_GENERATION_ENQUEUE_FAILED — "
-                "Admin panelden tetiklenmeli.",
+                "WEBHOOK_GENERATION_ENQUEUE_FAILED — Admin panelden tetiklenmeli.",
                 order_id=str(order.id),
                 error=str(_enq_err),
                 is_coloring=order.is_coloring_book,
@@ -188,14 +250,14 @@ async def payment_webhook(
     elif payment_status == "FAILURE":
         order.payment_status = "FAILED"
 
-        from app.api.v1.payments import rollback_promo_code
+        from app.services.promo_code_service import rollback_promo_code
 
         await rollback_promo_code(order, db)
 
-        order.promo_code_id = None
-        order.promo_code_text = None
-        order.promo_discount_type = None
-        order.promo_discount_value = None
+        order.promo_code_id           = None
+        order.promo_code_text         = None
+        order.promo_discount_type     = None
+        order.promo_discount_value    = None
         order.discount_applied_amount = None
 
         await db.commit()

@@ -6,7 +6,29 @@
  * plus child meta and clothing_description.
  */
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+// Runtime detection: production uses backend Cloud Run URL directly,
+// localhost uses Next.js proxy rewrite (/api/v1 → backend).
+function resolveApiBaseUrl(): string {
+  // Build-time env var (if set during docker build)
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+
+  // Client-side runtime detection
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (
+      host.includes("benimmasalim") ||
+      host.includes("run.app") ||
+      host.includes("vercel.app")
+    ) {
+      return "https://benimmasalim-backend-pl5vhpeiya-ew.a.run.app/api/v1";
+    }
+  }
+
+  // Local dev fallback (proxied via next.config.js rewrites)
+  return "/api/v1";
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 // ─── Error handling ──────────────────────────────────────────────
 
@@ -117,6 +139,18 @@ async function fetchAPI<T>(endpoint: string, options: FetchOptions = {}): Promis
         throw new APIError(retryResponse.status, retryResponse.statusText, retryData);
       }
       return retryData as T;
+    }
+
+    // Refresh failed — clear stale tokens and redirect to login
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      window.dispatchEvent(new Event("auth-change"));
+      const currentPath = window.location.pathname;
+      if (currentPath.startsWith("/account")) {
+        window.location.href = `/auth/login?returnUrl=${encodeURIComponent(currentPath)}`;
+      }
     }
   }
 
@@ -588,6 +622,19 @@ export async function getTrialPreview(trialId: string, trialToken?: string): Pro
 
 // ─── Trial Complete (after payment) ──────────────────────────────
 
+export interface BillingDataPayload {
+  billing_type: "individual" | "corporate";
+  billing_tc_no?: string | null;
+  billing_full_name?: string | null;
+  billing_email?: string | null;
+  billing_phone?: string | null;
+  billing_company_name?: string | null;
+  billing_tax_id?: string | null;
+  billing_tax_office?: string | null;
+  billing_address?: Record<string, string> | null;
+  use_shipping_address?: boolean;
+}
+
 export interface CompleteTrialRequest {
   trial_id: string;
   payment_reference: string;
@@ -601,6 +648,7 @@ export interface CompleteTrialRequest {
   audio_voice_id?: string | null;
   voice_sample_url?: string | null;
   has_coloring_book?: boolean;
+  billing?: BillingDataPayload | null;
 }
 
 export interface CompleteTrialResponse {
@@ -650,12 +698,18 @@ export interface VerifyTrialPaymentResponse {
 export async function createTrialPayment(
   trialId: string,
   trialToken?: string,
+  promoCode?: string | null,
+  billing?: BillingDataPayload | null,
 ): Promise<CreateTrialPaymentResponse> {
   const headers: Record<string, string> = {};
   if (trialToken) headers["X-Trial-Token"] = trialToken;
   return fetchAPI(`/trials/${trialId}/create-payment`, {
     method: "POST",
     headers,
+    body: JSON.stringify({
+      promo_code: promoCode || null,
+      billing: billing || null,
+    }),
   });
 }
 
@@ -730,6 +784,345 @@ export async function register(email: string, password: string, fullName: string
     method: "POST",
     body: JSON.stringify({ email, password, full_name: fullName }),
   });
+}
+
+// ─── User Account ────────────────────────────────────────────────
+
+export interface UserOrder {
+  id: string;
+  status: string;
+  child_name: string;
+  created_at: string;
+  payment_amount: number | null;
+  tracking_number: string | null;
+  carrier: string | null;
+  has_audio_book: boolean;
+  total_pages: number;
+  completed_pages: number;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+  role: string;
+  is_guest: boolean;
+}
+
+/**
+ * Fetch authenticated user's orders (returns paginated response, extracts items for backward compat).
+ */
+export async function getUserOrders(): Promise<UserOrder[]> {
+  const res = await fetchAPI<PaginatedOrders | UserOrder[]>("/orders");
+  if (Array.isArray(res)) return res;
+  return (res as PaginatedOrders).items ?? [];
+}
+
+/**
+ * Fetch authenticated user's profile.
+ */
+export async function getUserProfile(): Promise<UserProfile> {
+  return fetchAPI("/auth/me");
+}
+
+// ─── Order Detail & Account Management ───────────────────────────
+
+export interface OrderPageStatus {
+  page_number: number;
+  status: string;
+  is_cover?: boolean;
+  preview_image_url?: string | null;
+  image_url?: string | null;
+}
+
+export interface TimelineEvent {
+  action: string;
+  status: string;
+  timestamp: string;
+}
+
+export interface OrderDetail {
+  id: string;
+  status: string;
+  status_description: string;
+  status_hint: string | null;
+  child_name: string;
+  child_age: number;
+  child_gender: string | null;
+  created_at: string;
+  updated_at: string | null;
+  payment_amount: number | null;
+  payment_status: string | null;
+  shipping_address: {
+    full_name?: string;
+    phone?: string;
+    address_line1?: string;
+    address_line2?: string;
+    city?: string;
+    district?: string;
+    postal_code?: string;
+  } | null;
+  tracking_number: string | null;
+  carrier: string | null;
+  final_pdf_url: string | null;
+  has_audio_book: boolean;
+  audio_type: string | null;
+  audio_file_url: string | null;
+  qr_code_url: string | null;
+  total_pages: number;
+  completed_pages: number;
+  cover_regenerate_count: number;
+  max_cover_regenerate: number;
+  delivered_at: string | null;
+  is_guest_order: boolean;
+  billing: BillingSummary | null;
+  invoice: InvoiceSummary | null;
+  pages: OrderPageStatus[];
+  timeline_events: TimelineEvent[];
+}
+
+export interface InvoiceSummary {
+  invoice_number: string;
+  invoice_status: string;
+  pdf_ready: boolean;
+  issued_at: string | null;
+  needs_credit_note: boolean;
+  email_sent: boolean;
+  email_status: string | null;
+  // Admin-only fields (present in admin detail response)
+  email_sent_at?: string | null;
+  email_error?: string | null;
+  email_retry_count?: number;
+  email_resent_count?: number;
+  email_last_resent_at?: string | null;
+}
+
+export interface BillingSummary {
+  billing_type: string | null;
+  billing_tc_no?: string | null;
+  billing_full_name: string | null;
+  billing_email: string | null;
+  billing_phone: string | null;
+  billing_company_name: string | null;
+  billing_tax_id: string | null;
+  billing_tax_office: string | null;
+  billing_address: Record<string, string> | null;
+}
+
+export interface UserTrial {
+  id: string;
+  status: string;
+  child_name: string;
+  story_title: string;
+  created_at: string;
+  product_name: string | null;
+  product_price: number | null;
+  has_audio_book: boolean;
+  has_coloring_book: boolean;
+  preview_images: Record<string, string> | null;
+  confirmation_token: string;
+}
+
+/**
+ * Fetch a single order's details.
+ * @param include - comma-separated sections to include: "pages", "timeline"
+ */
+export async function getOrderDetail(
+  orderId: string,
+  include?: string,
+): Promise<OrderDetail> {
+  const qs = include ? `?include=${encodeURIComponent(include)}` : "";
+  return fetchAPI(`/orders/${orderId}${qs}`);
+}
+
+export interface BillingUpdatePayload {
+  billing_type: "individual" | "corporate";
+  billing_tc_no?: string | null;
+  billing_full_name?: string | null;
+  billing_email?: string | null;
+  billing_phone?: string | null;
+  billing_company_name?: string | null;
+  billing_tax_id?: string | null;
+  billing_tax_office?: string | null;
+  billing_address?: Record<string, string> | null;
+  use_shipping_address?: boolean;
+}
+
+export async function updateOrderBilling(
+  orderId: string,
+  billing: BillingUpdatePayload,
+): Promise<{ ok: boolean; billing: BillingSummary }> {
+  return fetchAPI(`/orders/${orderId}/billing`, {
+    method: "PATCH",
+    body: JSON.stringify(billing),
+  });
+}
+
+/**
+ * Fetch user's active trials (in-progress story previews).
+ */
+export async function getUserTrials(): Promise<UserTrial[]> {
+  return fetchAPI("/trials/me");
+}
+
+/**
+ * Fetch user's paid/completed trials (shown as "Siparişlerim").
+ */
+export async function getUserPaidTrials(): Promise<UserTrial[]> {
+  return fetchAPI("/trials/me?include_paid=true");
+}
+
+/**
+ * Update user profile (name, phone).
+ */
+export async function updateProfile(data: { full_name?: string; phone?: string }): Promise<UserProfile> {
+  return fetchAPI("/auth/me", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+// ─── Auth Extensions ─────────────────────────────────────────────
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  return fetchAPI("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(token: string, email: string, newPassword: string): Promise<{ message: string }> {
+  return fetchAPI("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, email, new_password: newPassword }),
+  });
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+  return fetchAPI("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+}
+
+export async function convertGuest(email: string, password: string, fullName: string) {
+  return fetchAPI<{ access_token: string; refresh_token: string; user: { id: string; email: string; full_name: string; role: string } }>(
+    "/auth/convert-guest",
+    { method: "POST", body: JSON.stringify({ email, password, full_name: fullName }) },
+  );
+}
+
+// ─── Profile: Addresses ──────────────────────────────────────────
+
+export interface UserAddress {
+  id: string;
+  label: string;
+  full_name: string;
+  phone: string | null;
+  address_line: string;
+  city: string;
+  district: string | null;
+  postal_code: string | null;
+  is_default: boolean;
+}
+
+export async function getAddresses(): Promise<UserAddress[]> {
+  return fetchAPI("/profile/addresses");
+}
+
+export async function createAddress(data: Omit<UserAddress, "id">): Promise<UserAddress> {
+  return fetchAPI("/profile/addresses", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function updateAddress(id: string, data: Partial<UserAddress>): Promise<UserAddress> {
+  return fetchAPI(`/profile/addresses/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export async function deleteAddress(id: string): Promise<void> {
+  return fetchAPI(`/profile/addresses/${id}`, { method: "DELETE" });
+}
+
+export async function setDefaultAddress(id: string): Promise<UserAddress> {
+  return fetchAPI(`/profile/addresses/${id}/set-default`, { method: "PATCH" });
+}
+
+// ─── Profile: Notification Preferences ───────────────────────────
+
+export interface NotificationPrefs {
+  email_order_updates: boolean;
+  email_marketing: boolean;
+  sms_order_updates: boolean;
+}
+
+export async function getNotificationPrefs(): Promise<NotificationPrefs> {
+  return fetchAPI("/profile/notification-preferences");
+}
+
+export async function updateNotificationPrefs(data: Partial<NotificationPrefs>): Promise<NotificationPrefs> {
+  return fetchAPI("/profile/notification-preferences", { method: "PATCH", body: JSON.stringify(data) });
+}
+
+// ─── Profile: Children ───────────────────────────────────────────
+
+export interface ChildProfile {
+  id: string;
+  name: string;
+  age: number;
+  gender: string | null;
+  photo_url: string | null;
+  order_count: number;
+}
+
+export async function getChildren(): Promise<ChildProfile[]> {
+  return fetchAPI("/profile/children");
+}
+
+export async function createChild(data: { name: string; age: number; gender?: string }): Promise<ChildProfile> {
+  return fetchAPI("/profile/children", { method: "POST", body: JSON.stringify(data) });
+}
+
+export async function deleteChild(id: string): Promise<void> {
+  return fetchAPI(`/profile/children/${id}`, { method: "DELETE" });
+}
+
+// ─── Privacy / KVKK ─────────────────────────────────────────────
+
+export async function deletePhotoNow(orderId: string): Promise<{ message: string }> {
+  return fetchAPI("/privacy/delete-photo-now", { method: "POST", body: JSON.stringify({ order_id: orderId }) });
+}
+
+export async function deleteAccount(password: string, reason?: string): Promise<{ message: string }> {
+  return fetchAPI("/privacy/account", { method: "DELETE", body: JSON.stringify({ password, reason }) });
+}
+
+export async function exportData(): Promise<Record<string, unknown>> {
+  return fetchAPI("/privacy/export-data");
+}
+
+// ─── Enhanced Orders (paginated) ─────────────────────────────────
+
+export interface PaginatedOrders {
+  items: UserOrder[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+export async function getUserOrdersPaginated(params?: {
+  status_filter?: string;
+  search?: string;
+  page?: number;
+  per_page?: number;
+}): Promise<PaginatedOrders> {
+  const qs = new URLSearchParams();
+  if (params?.status_filter) qs.set("status_filter", params.status_filter);
+  if (params?.search) qs.set("search", params.search);
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.per_page) qs.set("per_page", String(params.per_page));
+  const query = qs.toString();
+  return fetchAPI(`/orders${query ? `?${query}` : ""}`);
 }
 
 // ─── V2 Payload builder (testable) ──────────────────────────────

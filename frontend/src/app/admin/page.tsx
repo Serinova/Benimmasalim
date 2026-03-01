@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
+import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
 
 interface StoryPreview {
   id: string;
@@ -93,13 +94,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
-  };
 
   const fetchOrders = async () => {
     try {

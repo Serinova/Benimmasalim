@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
+import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
 
 // Türkçe ş/ğ/Ş/Ğ/İ render EDEMEYEN fontlar (mask_size test ile doğrulanmış)
 const FONTS_NO_TURKISH = new Set([
@@ -101,6 +102,7 @@ interface PageTemplate {
   text_x_percent: number;
   text_y_percent: number;
   text_position: string;
+  text_vertical_align: string;
   // Typography
   font_family: string;
   font_size_pt: number;
@@ -118,6 +120,10 @@ interface PageTemplate {
   text_bg_opacity: number;
   text_bg_shape: string;
   text_bg_blur: number;
+  text_bg_extend_top: number;
+  text_bg_extend_bottom: number;
+  text_bg_extend_sides: number;
+  text_bg_intensity: number;
   // Cover Title — WordArt kapak başlığı
   cover_title_enabled: boolean;
   cover_title_font_family: string;
@@ -626,6 +632,23 @@ const PageTemplateForm = ({
               <option value="overlay">Gorsel Uzerinde</option>
             </select>
           </div>
+          <div className="space-y-2">
+            <Label>Dikey Hizalama</Label>
+            <select
+              className="w-full rounded-md border p-2"
+              value={template.text_vertical_align}
+              onChange={(e) =>
+                setTemplate({ ...template, text_vertical_align: e.target.value })
+              }
+            >
+              <option value="top">Yukarı (kutu üstüne hizala)</option>
+              <option value="center">Ortala</option>
+              <option value="bottom">Aşağı (kutu altına hizala)</option>
+            </select>
+            <p className="text-[10px] text-gray-500">
+              &quot;Aşağı&quot; seçilirse kısa metin kutunun altına yapışır, uzun metin yukarı doğru büyür.
+            </p>
+          </div>
           <p className="col-span-2 text-xs text-amber-700 md:col-span-5">
             Metin konumu ve font boyutu kaydettikten sonra yeni oluşturulan (veya tamamlanan)
             kitaplarda uygulanır; mevcut önizleme sayfaları otomatik güncellenmez.
@@ -882,10 +905,10 @@ const PageTemplateForm = ({
           <div className="mb-4 flex items-center justify-between">
             <div>
               <Label className="text-base font-semibold text-indigo-800">
-                Metin Arkaplan Gölgesi (Gradient)
+                Metin Arkaplan Gölgesi (Bulut Overlay)
               </Label>
               <p className="text-xs text-indigo-600">
-                Metnin arkasına yarı saydam gradient ekleyerek okunabilirliği artırır
+                Metnin arkasına yarı saydam bulut/gradient ekleyerek okunabilirliği artırır. Genişlik, yükseklik ve yoğunluk ayarlanabilir.
               </p>
             </div>
             <Switch
@@ -907,7 +930,7 @@ const PageTemplateForm = ({
                     { value: "rounded", label: "Yuvarlatılmış", icon: "▢", desc: "Yumuşak köşeler" },
                     { value: "soft_vignette", label: "Yumuşak Geçiş", icon: "◎", desc: "Vignette efekti" },
                     { value: "wavy", label: "Dalgalı", icon: "〰", desc: "Organik dalgalar" },
-                    { value: "cloud", label: "Bulutsu", icon: "☁", desc: "Doğal kenarlar" },
+                    { value: "cloud", label: "Bulutsu", icon: "☁", desc: "Tam kaplama bulut" },
                   ].map((shape) => (
                     <button
                       key={shape.value}
@@ -927,10 +950,10 @@ const PageTemplateForm = ({
                 </div>
               </div>
 
-              {/* Renk, Opaklık, Bulanıklık */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* Renk + Opaklık */}
+              <div className="mb-4 grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Gölge Rengi</Label>
+                  <Label>Arkaplan Rengi</Label>
                   <div className="flex gap-2">
                     <Input
                       type="color"
@@ -951,103 +974,213 @@ const PageTemplateForm = ({
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Opaklık (0-255)</Label>
-                  <Input
-                    type="number"
+                  <Label>Saydamlık: {template.text_bg_opacity}/255</Label>
+                  <input
+                    type="range"
                     min={0}
                     max={255}
                     step={5}
                     value={template.text_bg_opacity}
                     onChange={(e) =>
-                      setTemplate({
-                        ...template,
-                        text_bg_opacity: Math.min(255, Math.max(0, parseInt(e.target.value) || 0)),
-                      })
+                      setTemplate({ ...template, text_bg_opacity: parseInt(e.target.value) || 0 })
                     }
+                    className="w-full accent-indigo-600"
                   />
-                  <p className="text-xs text-gray-500">
-                    0 = saydam, 255 = opak. Önerilen: 120-200
-                  </p>
+                  <div className="flex justify-between text-[10px] text-gray-400">
+                    <span>Saydam</span>
+                    <span>Opak (resmi kapatır)</span>
+                  </div>
                 </div>
+              </div>
+
+              {/* Kenar Yumuşaklığı + İç Yoğunluk */}
+              <div className="mb-4 grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Kenar Yumuşaklığı (0-80)</Label>
-                  <Input
-                    type="number"
+                  <Label>Kenar Yumuşaklığı (Blur): {template.text_bg_blur}px</Label>
+                  <input
+                    type="range"
                     min={0}
-                    max={80}
+                    max={200}
                     step={5}
                     value={template.text_bg_blur}
                     onChange={(e) =>
-                      setTemplate({
-                        ...template,
-                        text_bg_blur: Math.min(80, Math.max(0, parseInt(e.target.value) || 0)),
-                      })
+                      setTemplate({ ...template, text_bg_blur: parseInt(e.target.value) || 0 })
                     }
+                    className="w-full accent-indigo-600"
                   />
-                  <p className="text-xs text-gray-500">
-                    Kenarların ne kadar yumuşak geçeceğini belirler
-                  </p>
+                  <div className="flex justify-between text-[10px] text-gray-400">
+                    <span>Keskin</span>
+                    <span>Çok yumuşak</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>İç Alan Yoğunluğu: %{template.text_bg_intensity}</Label>
+                  <input
+                    type="range"
+                    min={50}
+                    max={100}
+                    step={5}
+                    value={template.text_bg_intensity}
+                    onChange={(e) =>
+                      setTemplate({ ...template, text_bg_intensity: parseInt(e.target.value) || 100 })
+                    }
+                    className="w-full accent-indigo-600"
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-400">
+                    <span>%50 yarı saydam</span>
+                    <span>%100 tam opak</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Gölge Boyut Kontrolleri — TÜM şekiller için */}
+              <div className="mb-4 rounded-lg border border-indigo-200 bg-white p-4">
+                <Label className="mb-3 block text-sm font-semibold text-indigo-700">
+                  Gölge Boyut ve Kapsama Ayarları
+                </Label>
+                <p className="mb-3 text-[11px] text-gray-500">
+                  Gölgenin metin alanının ne kadar üstüne/altına/yanlarına taşacağını ayarlayın. Yan Genişlik metin kutusunun her iki yanına % uzantı ekler. Resmi tamamen kapatmak için değerleri yükseltin.
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Üste Uzantı: %{template.text_bg_extend_top}</Label>
+                      <input
+                        type="range"
+                        min={0}
+                        max={200}
+                        step={5}
+                      value={template.text_bg_extend_top}
+                      onChange={(e) =>
+                        setTemplate({ ...template, text_bg_extend_top: parseInt(e.target.value) || 0 })
+                      }
+                      className="w-full accent-indigo-600"
+                    />
+                    <div className="flex justify-between text-[10px] text-gray-400">
+                      <span>Metin hizası</span>
+                      <span>Çok yukarı</span>
+                    </div>
+                  </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Alta Uzantı: %{template.text_bg_extend_bottom}</Label>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={5}
+                      value={template.text_bg_extend_bottom}
+                      onChange={(e) =>
+                        setTemplate({ ...template, text_bg_extend_bottom: parseInt(e.target.value) || 0 })
+                      }
+                      className="w-full accent-indigo-600"
+                    />
+                    <div className="flex justify-between text-[10px] text-gray-400">
+                      <span>Metin hizası</span>
+                      <span>Aşağı taşır</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Yan Genişlik (sayfa %): %{template.text_bg_extend_sides}</Label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={50}
+                      step={2}
+                      value={template.text_bg_extend_sides}
+                      onChange={(e) =>
+                        setTemplate({ ...template, text_bg_extend_sides: parseInt(e.target.value) || 0 })
+                      }
+                      className="w-full accent-indigo-600"
+                    />
+                    <div className="flex justify-between text-[10px] text-gray-400">
+                      <span>Metin kutusu kadar</span>
+                      <span>+sayfa %50 her yana</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </>
           )}
 
           {/* Gradient Önizleme */}
-          {template.text_bg_enabled && (
-            <div
-              className="relative mt-4 overflow-hidden rounded-lg"
-              style={{ height: 120 }}
-            >
-              {/* Arkaplan: resim simülasyonu */}
+          {template.text_bg_enabled && (() => {
+            const hexAlpha = Math.round(template.text_bg_opacity * (template.text_bg_intensity / 100)).toString(16).padStart(2, "0");
+            const bgHex = `${template.text_bg_color}${hexAlpha}`;
+            const extTop = template.text_bg_extend_top;
+            const extBot = template.text_bg_extend_bottom;
+            const extSide = template.text_bg_extend_sides;
+            const topPct = Math.max(0, 100 - 30 - extTop * 0.3);
+            const botPct = Math.min(100, 70 + extBot * 0.3);
+            const vAlign = template.text_vertical_align || "bottom";
+
+            const gradientBg = (() => {
+              switch (template.text_bg_shape) {
+                case "rectangle": return bgHex;
+                case "rounded": return bgHex;
+                case "cloud": return `radial-gradient(ellipse ${100 - extSide * 2}% ${extTop + extBot + 60}% at 50% ${50 + (extTop - extBot) * 0.2}%, ${bgHex} 50%, transparent 85%)`;
+                case "wavy": return `radial-gradient(ellipse ${100 - extSide * 2}% ${extTop + extBot + 60}% at 50% 60%, ${bgHex} 40%, transparent 75%)`;
+                case "soft_vignette": return `radial-gradient(ellipse ${100 - extSide * 2}% ${extTop + extBot + 50}% at 50% 55%, ${bgHex} 35%, transparent 70%)`;
+                default: return bgHex;
+              }
+            })();
+
+            const borderRadius = (() => {
+              switch (template.text_bg_shape) {
+                case "rounded": return "16px";
+                case "cloud": return "50%";
+                case "wavy": return "40% 40% 0 0 / 20% 20% 0 0";
+                case "soft_vignette": return "50%";
+                default: return "0";
+              }
+            })();
+
+            const textStyle = {
+              fontFamily: template.font_family,
+              color: template.font_color,
+              ...(template.text_stroke_enabled && {
+                WebkitTextStroke: `${template.text_stroke_width}px ${template.text_stroke_color}` as string,
+                paintOrder: "stroke fill" as string,
+              }),
+            };
+
+            return (
               <div
-                className="absolute inset-0"
-                style={{
-                  background: "linear-gradient(135deg, #8BC6EC 0%, #9599E2 50%, #c3a7e0 100%)",
-                }}
-              />
-              {/* Gradient overlay */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    template.text_bg_shape === "rectangle"
-                      ? `linear-gradient(to bottom, transparent 20%, ${template.text_bg_color}${Math.round(template.text_bg_opacity).toString(16).padStart(2, "0")} 100%)`
-                      : template.text_bg_shape === "rounded"
-                        ? `linear-gradient(to bottom, transparent 20%, ${template.text_bg_color}${Math.round(template.text_bg_opacity).toString(16).padStart(2, "0")} 100%)`
-                        : template.text_bg_shape === "wavy"
-                          ? `radial-gradient(ellipse 120% 100% at 50% 120%, ${template.text_bg_color}${Math.round(template.text_bg_opacity).toString(16).padStart(2, "0")} 40%, transparent 70%)`
-                          : `radial-gradient(ellipse 90% 80% at 50% 100%, ${template.text_bg_color}${Math.round(template.text_bg_opacity).toString(16).padStart(2, "0")} 30%, transparent 65%)`,
-                  borderRadius:
-                    template.text_bg_shape === "rounded"
-                      ? "16px"
-                      : template.text_bg_shape === "cloud" || template.text_bg_shape === "wavy"
-                        ? "50% 50% 0 0 / 30% 30% 0 0"
-                        : "0",
-                  ...(template.text_bg_shape !== "rectangle" && {
-                    filter: `blur(${Math.max(template.text_bg_blur / 4, 2)}px)`,
-                  }),
-                }}
-              />
-              {/* Metin */}
-              <p
-                className="absolute bottom-4 left-0 right-0 text-center text-xl"
-                style={{
-                  fontFamily: template.font_family,
-                  color: template.font_color,
-                  ...(template.text_stroke_enabled && {
-                    WebkitTextStroke: `${template.text_stroke_width}px ${template.text_stroke_color}`,
-                    paintOrder: "stroke fill",
-                  }),
-                }}
+                className="relative mt-4 overflow-hidden rounded-lg"
+                style={{ height: 200 }}
               >
-                Önizleme: Bir varmış bir yokmuş...
-              </p>
-              {/* Shape label */}
-              <span className="absolute right-2 top-2 rounded bg-black/40 px-2 py-1 text-xs text-white">
-                {template.text_bg_shape}
-              </span>
-            </div>
-          )}
+                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #8BC6EC 0%, #9599E2 50%, #c3a7e0 100%)" }} />
+                <div
+                  className="absolute"
+                  style={{
+                    top: `${topPct}%`,
+                    bottom: `${100 - botPct}%`,
+                    left: `${extSide}%`,
+                    right: `${extSide}%`,
+                    background: gradientBg,
+                    borderRadius,
+                    filter: `blur(${Math.max(template.text_bg_blur / 4, 2)}px)`,
+                  }}
+                />
+                <div
+                  className="absolute left-4 right-4 flex flex-col gap-1"
+                  style={{
+                    top: vAlign === "top" ? "8%" : vAlign === "center" ? "50%" : undefined,
+                    bottom: vAlign === "bottom" ? "6%" : undefined,
+                    transform: vAlign === "center" ? "translateY(-50%)" : undefined,
+                  }}
+                >
+                  <p className="text-center text-base leading-relaxed" style={textStyle}>
+                    Bir varmış bir yokmuş, uzak diyarlarda
+                  </p>
+                  <p className="text-center text-base leading-relaxed" style={textStyle}>
+                    küçük bir kahraman büyük bir maceraya atılmış...
+                  </p>
+                </div>
+                <span className="absolute right-2 top-2 rounded bg-black/40 px-2 py-1 text-xs text-white">
+                  {template.text_bg_shape} | hiza: {vAlign} | üst:{extTop}% alt:{extBot}% yan:{extSide}%
+                </span>
+              </div>
+            );
+          })()}
         </div>
       </CardContent>
     </Card>
@@ -1557,6 +1690,7 @@ const defaultCoverTemplate: PageTemplate = {
   text_x_percent: 10,
   text_y_percent: 75,
   text_position: "overlay",
+  text_vertical_align: "center",
   font_family: "Nunito",
   font_size_pt: 32,
   font_color: "#FFFFFF",
@@ -1569,10 +1703,14 @@ const defaultCoverTemplate: PageTemplate = {
   text_stroke_width: 2,
   // Text background gradient
   text_bg_enabled: true,
-  text_bg_color: "#000000",
-  text_bg_opacity: 180,
-  text_bg_shape: "soft_vignette",
-  text_bg_blur: 30,
+  text_bg_color: "#FFFFFF",
+  text_bg_opacity: 230,
+  text_bg_shape: "cloud",
+  text_bg_blur: 50,
+  text_bg_extend_top: 60,
+  text_bg_extend_bottom: 15,
+  text_bg_extend_sides: 10,
+  text_bg_intensity: 100,
   // Cover Title — WordArt
   cover_title_enabled: true,
   cover_title_font_family: "Lobster",
@@ -1612,6 +1750,7 @@ const defaultBackCoverTemplate: PageTemplate = {
   text_x_percent: 10,
   text_y_percent: 55,
   text_position: "bottom",
+  text_vertical_align: "center",
   font_family: "Nunito",
   font_size_pt: 12,
   font_color: "#333333",
@@ -1628,6 +1767,10 @@ const defaultBackCoverTemplate: PageTemplate = {
   text_bg_opacity: 120,
   text_bg_shape: "soft_vignette",
   text_bg_blur: 30,
+  text_bg_extend_top: 30,
+  text_bg_extend_bottom: 10,
+  text_bg_extend_sides: 10,
+  text_bg_intensity: 100,
   // Cover title (arka kapakta kullanılmaz ama interface gerektirir)
   cover_title_enabled: false,
   cover_title_font_family: "Lobster",
@@ -1667,6 +1810,7 @@ const defaultInnerTemplate: PageTemplate = {
   text_x_percent: 5,
   text_y_percent: 65,
   text_position: "bottom",
+  text_vertical_align: "bottom",
   font_family: "Nunito",
   font_size_pt: 16,
   font_color: "#333333",
@@ -1679,10 +1823,14 @@ const defaultInnerTemplate: PageTemplate = {
   text_stroke_width: 1,
   // Text background gradient
   text_bg_enabled: true,
-  text_bg_color: "#000000",
-  text_bg_opacity: 180,
-  text_bg_shape: "soft_vignette",
-  text_bg_blur: 30,
+  text_bg_color: "#FFFFFF",
+  text_bg_opacity: 230,
+  text_bg_shape: "cloud",
+  text_bg_blur: 50,
+  text_bg_extend_top: 60,
+  text_bg_extend_bottom: 15,
+  text_bg_extend_sides: 10,
+  text_bg_intensity: 100,
   // Cover title (iç sayfada kullanılmaz ama interface gerektirir)
   cover_title_enabled: false,
   cover_title_font_family: "Lobster",
@@ -1718,6 +1866,7 @@ const defaultDedicationTemplate: PageTemplate = {
   text_x_percent: 15,
   text_y_percent: 25,
   text_position: "overlay",
+  text_vertical_align: "center",
   font_family: "Nunito",
   font_size_pt: 28,
   font_color: "#5B4636",
@@ -1732,6 +1881,10 @@ const defaultDedicationTemplate: PageTemplate = {
   text_bg_opacity: 0,
   text_bg_shape: "soft_vignette",
   text_bg_blur: 0,
+  text_bg_extend_top: 30,
+  text_bg_extend_bottom: 10,
+  text_bg_extend_sides: 10,
+  text_bg_intensity: 100,
   cover_title_enabled: false,
   cover_title_font_family: "Lobster",
   cover_title_font_size_pt: 48,
@@ -1779,12 +1932,23 @@ export default function AdminConfigPage() {
     story_temperature: 0.7,
   });
 
+  const [invoiceSettings, setInvoiceSettings] = useState({
+    invoice_company_name: "",
+    invoice_company_address: "",
+    invoice_company_tax_id: "",
+    invoice_company_tax_office: "",
+    invoice_company_phone: "",
+    invoice_company_email: "",
+  });
+  const [savingInvoice, setSavingInvoice] = useState(false);
+
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     checkAuth();
     fetchData();
+    fetchInvoiceSettings();
   }, []);
 
   const checkAuth = () => {
@@ -1804,12 +1968,40 @@ export default function AdminConfigPage() {
     }
   };
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
+
+  const fetchInvoiceSettings = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/settings/invoice`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setInvoiceSettings(data);
+      }
+    } catch {
+      // non-fatal
+    }
+  };
+
+  const saveInvoiceSettings = async () => {
+    setSavingInvoice(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/settings/invoice`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(invoiceSettings),
+      });
+      if (res.ok) {
+        toast({ title: "Fatura ayarları kaydedildi" });
+      } else {
+        const err = await res.json();
+        toast({ title: "Hata", description: err.detail || "Kayıt başarısız", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Hata", description: "Bağlantı hatası", variant: "destructive" });
+    } finally {
+      setSavingInvoice(false);
+    }
   };
 
   const fetchData = async () => {
@@ -1989,12 +2181,13 @@ export default function AdminConfigPage() {
           <div className="py-8 text-center">Yükleniyor...</div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="cover">Ön Kapak</TabsTrigger>
               <TabsTrigger value="inner">İç Sayfalar</TabsTrigger>
               <TabsTrigger value="dedication">Karşılama</TabsTrigger>
               <TabsTrigger value="back">Arka Kapak</TabsTrigger>
               <TabsTrigger value="ai">AI Ayarları</TabsTrigger>
+              <TabsTrigger value="invoice">Fatura</TabsTrigger>
             </TabsList>
 
             {/* Cover Template Tab */}
@@ -2503,6 +2696,94 @@ export default function AdminConfigPage() {
                       ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Invoice Settings Tab */}
+            <TabsContent value="invoice" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Fatura Şirket Bilgileri</CardTitle>
+                  <CardDescription>
+                    Müşterilere gönderilen PDF faturalarda görünecek firma bilgileri.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="inv_company_name">Firma Adı</Label>
+                      <Input
+                        id="inv_company_name"
+                        value={invoiceSettings.invoice_company_name}
+                        onChange={(e) =>
+                          setInvoiceSettings((s) => ({ ...s, invoice_company_name: e.target.value }))
+                        }
+                        placeholder="Benim Masalım"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="inv_email">E-posta</Label>
+                      <Input
+                        id="inv_email"
+                        type="email"
+                        value={invoiceSettings.invoice_company_email}
+                        onChange={(e) =>
+                          setInvoiceSettings((s) => ({ ...s, invoice_company_email: e.target.value }))
+                        }
+                        placeholder="info@benimmasalim.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="inv_phone">Telefon</Label>
+                      <Input
+                        id="inv_phone"
+                        value={invoiceSettings.invoice_company_phone}
+                        onChange={(e) =>
+                          setInvoiceSettings((s) => ({ ...s, invoice_company_phone: e.target.value }))
+                        }
+                        placeholder="+90 212 000 00 00"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="inv_tax_id">Vergi Kimlik No (VKN)</Label>
+                      <Input
+                        id="inv_tax_id"
+                        value={invoiceSettings.invoice_company_tax_id}
+                        onChange={(e) =>
+                          setInvoiceSettings((s) => ({ ...s, invoice_company_tax_id: e.target.value }))
+                        }
+                        placeholder="1234567890"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="inv_tax_office">Vergi Dairesi</Label>
+                      <Input
+                        id="inv_tax_office"
+                        value={invoiceSettings.invoice_company_tax_office}
+                        onChange={(e) =>
+                          setInvoiceSettings((s) => ({ ...s, invoice_company_tax_office: e.target.value }))
+                        }
+                        placeholder="Beşiktaş V.D."
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="inv_address">Firma Adresi</Label>
+                      <Input
+                        id="inv_address"
+                        value={invoiceSettings.invoice_company_address}
+                        onChange={(e) =>
+                          setInvoiceSettings((s) => ({ ...s, invoice_company_address: e.target.value }))
+                        }
+                        placeholder="Örnek Mah. Örnek Cad. No:1 İstanbul"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-2">
+                    <Button onClick={saveInvoiceSettings} disabled={savingInvoice}>
+                      {savingInvoice ? "Kaydediliyor..." : "Kaydet"}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

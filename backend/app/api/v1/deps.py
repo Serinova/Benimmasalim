@@ -43,7 +43,7 @@ async def get_current_user(
         raise UnauthorizedError("Geçersiz token formatı")
 
     # Check blacklist (revoked via /auth/logout)
-    if is_token_blacklisted(token):
+    if await is_token_blacklisted(token):
         raise UnauthorizedError("Token iptal edilmiş — lütfen tekrar giriş yapın")
 
     payload = decode_token(token)
@@ -67,6 +67,14 @@ async def get_current_user(
 
     if not user.is_active:
         raise ForbiddenError("Hesabınız devre dışı bırakılmış")
+
+    if user.deletion_scheduled_at is not None:
+        raise ForbiddenError("Hesabınız silinmek üzere işaretlenmiş. Geri almak için destek ile iletişime geçin.")
+
+    # token_version mismatch → tokens were revoked (account deletion, password change, etc.)
+    token_tv = payload.get("tv", 0)
+    if token_tv != (user.token_version or 0):
+        raise UnauthorizedError("Oturumunuz sonlandırılmış — lütfen tekrar giriş yapın")
 
     return user
 

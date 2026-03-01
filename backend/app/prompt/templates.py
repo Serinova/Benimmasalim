@@ -72,7 +72,9 @@ DEFAULT_INNER_TEMPLATE = (
     "An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, "
     "wearing {clothing_description}. "
     "{scene_description}. "
-    "Ensure clear areas in the environment where text can be placed without obscuring the main action. "
+    "TEXT AREA RULE: The BOTTOM 25% of the image must have a softer, less detailed, or lighter background "
+    "(sky, mist, open ground, blurred foliage) so that overlaid story text remains readable. "
+    "Place the main action and the child in the UPPER 75% of the frame. "
     "Do NOT include ANY text, letters, words, or watermarks. "
 )
 
@@ -84,6 +86,8 @@ COMPOSITION_RULES = (
     "NEVER crop child's legs, NEVER waist-up framing, NEVER close-up on face. "
     "Camera positioned at child's eye-level or slightly above, maintaining natural distance. "
     "Child is part of the scene, NOT the sole focus. "
+    "BOTTOM 25% TEXT SAFE ZONE: Keep the bottom quarter of the image relatively open, soft, or low-contrast "
+    "(e.g. ground, sky gradient, mist, gentle terrain) — story text will be overlaid here. "
     "IDENTICAL CHARACTER LOCK: Same clothing, same hairstyle, same skin tone, same proportions on EVERY page."
 )
 

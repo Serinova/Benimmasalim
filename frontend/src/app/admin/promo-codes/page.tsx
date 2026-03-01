@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { API_BASE_URL } from "@/lib/api";
+import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -142,13 +143,6 @@ export default function AdminPromoCodesPage() {
     }
   };
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
-  };
 
   // ─── API Calls ────────────────────────────────────────────────
 

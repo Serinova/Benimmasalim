@@ -3,8 +3,9 @@ from types import SimpleNamespace
 import pytest
 from fastapi import HTTPException
 
-from app.api.v1.admin.orders import _detect_pipeline_version
-from app.api.v1.orders import StoryPageData, _ensure_v3_story_pages
+from app.services.preview_display_service import detect_pipeline_version as _detect_pipeline_version
+from app.schemas.orders import StoryPageData
+from app.services.preview_generation_service import ensure_v3_story_pages as _ensure_v3_story_pages
 from app.core.pipeline_version import require_v3_pipeline
 
 

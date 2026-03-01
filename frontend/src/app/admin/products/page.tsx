@@ -63,6 +63,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
+import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
 
 // ============ TYPES ============
 interface Template {
@@ -111,6 +112,7 @@ interface Product {
   discounted_price?: number | null;
   extra_page_price: number;
   discount_percentage?: number | null;
+  vat_rate?: number;
   // Status
   is_active: boolean;
   is_featured: boolean;
@@ -178,6 +180,7 @@ const productSchema = z.object({
   base_price: z.number().min(1),
   discounted_price: z.number().optional().nullable(),
   extra_page_price: z.number().min(0),
+  vat_rate: z.number().min(0).max(100).optional(),
   // Status
   is_active: z.boolean(),
   is_featured: z.boolean(),
@@ -874,6 +877,7 @@ export default function AdminProductsPage() {
       base_price: 299,
       discounted_price: null,
       extra_page_price: 5,
+      vat_rate: 10,
       is_active: true,
       is_featured: false,
       display_order: 0,
@@ -917,13 +921,6 @@ export default function AdminProductsPage() {
     }
   };
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
-  };
 
   const fetchData = async () => {
     try {
@@ -993,6 +990,7 @@ export default function AdminProductsPage() {
         base_price: product.base_price,
         discounted_price: product.discounted_price || null,
         extra_page_price: product.extra_page_price,
+        vat_rate: product.vat_rate ?? 10,
         // Status
         is_active: product.is_active,
         is_featured: product.is_featured,
@@ -1036,6 +1034,7 @@ export default function AdminProductsPage() {
         base_price: 299,
         discounted_price: null,
         extra_page_price: 5,
+        vat_rate: 10,
         is_active: true,
         is_featured: false,
         display_order: 0,
@@ -1101,6 +1100,7 @@ export default function AdminProductsPage() {
         base_price: data.base_price,
         discounted_price: data.discounted_price || null,
         extra_page_price: data.extra_page_price,
+        vat_rate: data.vat_rate ?? 10,
         // Status
         is_active: data.is_active,
         is_featured: data.is_featured,
@@ -2141,6 +2141,25 @@ export default function AdminProductsPage() {
                           <Input
                             type="number"
                             {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            className="mt-1"
+                          />
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <Label>KDV Oranı (%)</Label>
+                      <Controller
+                        control={form.control}
+                        name="vat_rate"
+                        render={({ field }) => (
+                          <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            step={1}
+                            {...field}
+                            value={field.value ?? 10}
                             onChange={(e) => field.onChange(Number(e.target.value))}
                             className="mt-1"
                           />

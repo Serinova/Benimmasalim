@@ -542,6 +542,337 @@ class EmailService:
         )
 
 
+    # ────────────────────────────────────────────────────────
+    # Transactional emails (password reset, order status, etc.)
+    # ────────────────────────────────────────────────────────
+
+    async def send_password_reset_email_async(
+        self, recipient_email: str, recipient_name: str, reset_url: str,
+    ) -> bool:
+        """Send password reset link email."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            partial(
+                self._send_password_reset_email,
+                recipient_email=recipient_email,
+                recipient_name=recipient_name,
+                reset_url=reset_url,
+            ),
+        )
+
+    def _send_password_reset_email(
+        self, recipient_email: str, recipient_name: str, reset_url: str,
+    ) -> bool:
+        actual_recipient = self._get_recipient(recipient_email)
+        safe_name = _esc(recipient_name or "Kullanıcı")
+        safe_url = _esc(reset_url)
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = _sanitize_header("Benim Masalım — Şifre Sıfırlama")
+        msg["From"] = f"{_sanitize_header(self.sender_name)} <{self.sender_email}>"
+        msg["To"] = actual_recipient
+
+        text_content = (
+            f"Merhaba {safe_name},\n\n"
+            "Şifre sıfırlama talebiniz alındı.\n"
+            f"Şifrenizi sıfırlamak için bu linki kullanın: {reset_url}\n\n"
+            "Bu link 15 dakika geçerlidir.\n"
+            "Bu talebi siz yapmadıysanız bu emaili görmezden gelebilirsiniz.\n\n"
+            "© 2026 Benim Masalım"
+        )
+        msg.attach(MIMEText(text_content, "plain", "utf-8"))
+
+        html_content = (
+            '<!DOCTYPE html><html><body style="font-family: -apple-system, BlinkMacSystemFont, '
+            "sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; "
+            'background: #f8f9fa; color: #333;">'
+            '<div style="background: white; border-radius: 12px; padding: 30px; '
+            'box-shadow: 0 2px 8px rgba(0,0,0,0.08);">'
+            f'<h2 style="color: #7c3aed; margin: 0 0 20px 0;">Merhaba {safe_name},</h2>'
+            '<p style="font-size: 15px; line-height: 1.6;">Şifre sıfırlama talebiniz alındı. '
+            "Aşağıdaki butona tıklayarak yeni şifrenizi belirleyebilirsiniz.</p>"
+            '<div style="text-align: center; margin: 30px 0;">'
+            f'<a href="{safe_url}" style="display: inline-block; '
+            "background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); "
+            "color: white; padding: 14px 36px; border-radius: 8px; "
+            'text-decoration: none; font-weight: bold; font-size: 16px;">'
+            "Şifremi Sıfırla</a></div>"
+            '<p style="font-size: 13px; color: #888;">Bu link 15 dakika geçerlidir. '
+            "Bu talebi siz yapmadıysanız bu emaili görmezden gelebilirsiniz.</p>"
+            "</div>"
+            '<p style="text-align: center; font-size: 12px; color: #999; margin-top: 20px;">'
+            "© 2026 Benim Masalım</p></body></html>"
+        )
+        msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+        self._send_with_retry(actual_recipient, msg)
+        logger.info("Password reset email sent", recipient_domain=actual_recipient.rsplit("@", 1)[-1])
+        return True
+
+    async def send_order_status_email_async(
+        self,
+        recipient_email: str,
+        recipient_name: str,
+        child_name: str,
+        order_id: str,
+        status_key: str,
+        extra: dict[str, Any] | None = None,
+    ) -> bool:
+        """Send order status change notification email."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            partial(
+                self._send_order_status_email,
+                recipient_email=recipient_email,
+                recipient_name=recipient_name,
+                child_name=child_name,
+                order_id=order_id,
+                status_key=status_key,
+                extra=extra or {},
+            ),
+        )
+
+    def _send_order_status_email(
+        self,
+        recipient_email: str,
+        recipient_name: str,
+        child_name: str,
+        order_id: str,
+        status_key: str,
+        extra: dict[str, Any],
+    ) -> bool:
+        safe_tracking = _esc(str(extra.get("tracking_number", "-")))
+
+        _STATUS_MAP: dict[str, tuple[str, str, str]] = {
+            "PAID": (
+                "Ödemeniz Alındı",
+                "Ödemeniz başarıyla alındı! Kitabınızın üretimi başlıyor.",
+                "#22c55e",
+            ),
+            "PROCESSING": (
+                "Kitabınız Üretiliyor",
+                "Kitabınız yapay zeka ile üretilmeye başlandı. Tamamlandığında sizi bilgilendireceğiz.",
+                "#3b82f6",
+            ),
+            "READY_FOR_PRINT": (
+                "Baskıya Hazır",
+                "Kitabınız başarıyla üretildi ve baskıya hazır! Kısa süre içinde kargoya verilecek.",
+                "#8b5cf6",
+            ),
+            "SHIPPED": (
+                "Kargoya Verildi",
+                f"Kitabınız kargoya verildi! Takip numarası: {safe_tracking}",
+                "#f59e0b",
+            ),
+            "DELIVERED": (
+                "Teslim Edildi",
+                "Kitabınız teslim edildi! Keyifli okumalar dileriz.",
+                "#10b981",
+            ),
+            "CANCELLED": (
+                "Sipariş İptal Edildi",
+                "Siparişiniz iptal edilmiştir. Sorularınız için destek ekibimize ulaşabilirsiniz.",
+                "#ef4444",
+            ),
+            "REFUNDED": (
+                "İade Tamamlandı",
+                "İade işleminiz tamamlanmıştır. Tutar ödeme yönteminize iade edilecektir.",
+                "#f97316",
+            ),
+        }
+        subject_suffix, body_text, color = _STATUS_MAP.get(
+            status_key, ("Sipariş Güncellendi", "Siparişinizde bir güncelleme var.", "#6b7280")
+        )
+
+        actual_recipient = self._get_recipient(recipient_email)
+        safe_name = _esc(recipient_name or "Değerli Müşterimiz")
+        safe_child = _esc(child_name)
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = _sanitize_header(f"Benim Masalım — {subject_suffix}")
+        msg["From"] = f"{_sanitize_header(self.sender_name)} <{self.sender_email}>"
+        msg["To"] = actual_recipient
+
+        text_content = (
+            f"Merhaba {safe_name},\n\n"
+            f"{safe_child} için hazırlanan kitabınızla ilgili güncelleme:\n\n"
+            f"{body_text}\n\n"
+            f"Sipariş No: {order_id[:8]}...\n\n"
+            "© 2026 Benim Masalım"
+        )
+        msg.attach(MIMEText(text_content, "plain", "utf-8"))
+
+        html_content = (
+            '<!DOCTYPE html><html><body style="font-family: -apple-system, BlinkMacSystemFont, '
+            "sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; "
+            'background: #f8f9fa; color: #333;">'
+            '<div style="background: white; border-radius: 12px; padding: 30px; '
+            'box-shadow: 0 2px 8px rgba(0,0,0,0.08);">'
+            f'<div style="background: {color}; color: white; padding: 16px; '
+            f'border-radius: 8px; text-align: center; margin-bottom: 20px;">'
+            f'<h2 style="margin: 0; font-size: 18px;">{_esc(subject_suffix)}</h2></div>'
+            f'<p style="font-size: 15px;">Merhaba {safe_name},</p>'
+            f'<p style="font-size: 15px; line-height: 1.6;">'
+            f'<strong>{safe_child}</strong> için hazırlanan kitabınızla ilgili güncelleme:</p>'
+            f'<p style="font-size: 15px; line-height: 1.6; background: #f0f9ff; '
+            f'padding: 16px; border-radius: 8px; border-left: 4px solid {color};">'
+            f"{_esc(body_text)}</p>"
+            f'<p style="font-size: 13px; color: #888;">Sipariş No: {_esc(order_id[:8])}...</p>'
+            "</div>"
+            '<p style="text-align: center; font-size: 12px; color: #999; margin-top: 20px;">'
+            "© 2026 Benim Masalım</p></body></html>"
+        )
+        msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+        self._send_with_retry(actual_recipient, msg)
+        logger.info("Order status email sent", status=status_key, order_id=order_id[:8])
+        return True
+
+
+    # ────────────────────────────────────────────────────────
+    # Invoice email (PDF attached)
+    # ────────────────────────────────────────────────────────
+
+    async def send_invoice_email_async(
+        self,
+        recipient_email: str,
+        recipient_name: str,
+        invoice_number: str,
+        order_ref: str,
+        issued_date: str,
+        total_amount: str,
+        pdf_bytes: bytes,
+        download_url: str | None = None,
+    ) -> bool:
+        """Send invoice PDF as email attachment + optional secure download link."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            partial(
+                self._send_invoice_email,
+                recipient_email=recipient_email,
+                recipient_name=recipient_name,
+                invoice_number=invoice_number,
+                order_ref=order_ref,
+                issued_date=issued_date,
+                total_amount=total_amount,
+                pdf_bytes=pdf_bytes,
+                download_url=download_url,
+            ),
+        )
+
+    def _send_invoice_email(
+        self,
+        recipient_email: str,
+        recipient_name: str,
+        invoice_number: str,
+        order_ref: str,
+        issued_date: str,
+        total_amount: str,
+        pdf_bytes: bytes,
+        download_url: str | None = None,
+    ) -> bool:
+        from email.mime.application import MIMEApplication
+
+        actual_recipient = self._get_recipient(recipient_email)
+        safe_name = _esc(recipient_name or "Değerli Müşterimiz")
+        safe_inv = _esc(invoice_number)
+        safe_ref = _esc(order_ref)
+        safe_date = _esc(issued_date)
+        safe_total = _esc(total_amount)
+
+        msg = MIMEMultipart("mixed")
+        msg["Subject"] = _sanitize_header(f"Faturanız Hazır — Sipariş #{order_ref}")
+        msg["From"] = f"{_sanitize_header(self.sender_name)} <{self.sender_email}>"
+        msg["To"] = actual_recipient
+
+        alt = MIMEMultipart("alternative")
+        msg.attach(alt)
+
+        dl_text = ""
+        dl_html = ""
+        if download_url:
+            safe_dl_url = _esc(download_url)
+            dl_text = (
+                f"\nEk açılamıyorsa bu linkten indirebilirsiniz (48 saat geçerli, tek kullanımlık):\n"
+                f"{download_url}\n"
+            )
+            dl_html = (
+                '<div style="text-align: center; margin: 20px 0;">'
+                f'<a href="{safe_dl_url}" style="display: inline-block; '
+                "background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); "
+                "color: white; padding: 12px 28px; border-radius: 8px; "
+                'text-decoration: none; font-weight: bold; font-size: 14px;">'
+                "Faturayı İndir</a>"
+                '<p style="font-size: 11px; color: #999; margin-top: 8px;">'
+                "Bu link 48 saat geçerlidir ve tek kullanımlıktır.</p></div>"
+            )
+
+        text_content = (
+            f"Merhaba {recipient_name or 'Değerli Müşterimiz'},\n\n"
+            f"Faturanız hazırlanmıştır.\n\n"
+            f"Fatura No: {invoice_number}\n"
+            f"Sipariş Ref: {order_ref}\n"
+            f"Tarih: {issued_date}\n"
+            f"Toplam: {total_amount}\n\n"
+            "Fatura PDF'i bu emailin ekinde yer almaktadır.\n"
+            f"{dl_text}\n"
+            "© 2026 Benim Masalım"
+        )
+        alt.attach(MIMEText(text_content, "plain", "utf-8"))
+
+        html_content = (
+            '<!DOCTYPE html><html><body style="font-family: -apple-system, BlinkMacSystemFont, '
+            "sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; "
+            'background: #f8f9fa; color: #333;">'
+            '<div style="background: white; border-radius: 12px; padding: 30px; '
+            'box-shadow: 0 2px 8px rgba(0,0,0,0.08);">'
+            '<div style="text-align: center; margin-bottom: 20px;">'
+            '<h2 style="color: #7c3aed; margin: 0;">Benim Masalım</h2></div>'
+            f'<p style="font-size: 15px;">Merhaba <strong>{safe_name}</strong>,</p>'
+            '<p style="font-size: 15px; line-height: 1.6;">Faturanız hazırlanmıştır. '
+            "PDF dosyası bu emailin ekinde yer almaktadır.</p>"
+            '<div style="background: #f0fdf4; border: 1px solid #bbf7d0; '
+            'padding: 16px; border-radius: 8px; margin: 20px 0;">'
+            '<table style="width: 100%; font-size: 14px; border-collapse: collapse;">'
+            f'<tr><td style="padding: 6px 0; color: #666;">Fatura No:</td>'
+            f'<td style="padding: 6px 0; text-align: right; font-weight: bold;">{safe_inv}</td></tr>'
+            f'<tr><td style="padding: 6px 0; color: #666;">Sipariş Ref:</td>'
+            f'<td style="padding: 6px 0; text-align: right;">{safe_ref}</td></tr>'
+            f'<tr><td style="padding: 6px 0; color: #666;">Tarih:</td>'
+            f'<td style="padding: 6px 0; text-align: right;">{safe_date}</td></tr>'
+            '<tr style="border-top: 1px solid #d1fae5;">'
+            f'<td style="padding: 8px 0; color: #166534; font-weight: bold;">Toplam:</td>'
+            f'<td style="padding: 8px 0; text-align: right; font-weight: bold; '
+            f'color: #166534; font-size: 16px;">{safe_total}</td></tr>'
+            "</table></div>"
+            f"{dl_html}"
+            '<p style="font-size: 13px; color: #888;">Bu belge e-fatura / e-arşiv fatura '
+            "yerine geçmez. Bilgilendirme amaçlıdır.</p>"
+            "</div>"
+            '<p style="text-align: center; font-size: 12px; color: #999; margin-top: 20px;">'
+            "© 2026 Benim Masalım</p></body></html>"
+        )
+        alt.attach(MIMEText(html_content, "html", "utf-8"))
+
+        pdf_attachment = MIMEApplication(pdf_bytes, _subtype="pdf")
+        pdf_attachment.add_header(
+            "Content-Disposition", "attachment",
+            filename=f"fatura_{invoice_number}.pdf",
+        )
+        msg.attach(pdf_attachment)
+
+        self._send_with_retry(actual_recipient, msg)
+        logger.info(
+            "Invoice email sent",
+            invoice_number=invoice_number,
+            recipient_domain=actual_recipient.rsplit("@", 1)[-1],
+        )
+        return True
+
+
 class EmailSendError(Exception):
     """Raised when an email cannot be delivered after retries."""
 
