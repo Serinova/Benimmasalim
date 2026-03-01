@@ -9,7 +9,8 @@ router = APIRouter()
 
 
 @router.post("/reset-all")
-def admin_reset_all_rate_limits(_: AdminUser) -> dict[str, bool | str | int]:
+async def admin_reset_all_rate_limits(_: AdminUser) -> dict[str, bool | str | int]:
     """Tüm IP'ler için rate limit sayaçlarını sıfırla. Sadece admin."""
-    deleted = reset_all_rate_limits()
+    deleted = await reset_all_rate_limits()
     return {"ok": True, "message": "Tüm rate limitler sıfırlandı.", "deleted_keys": deleted}
+

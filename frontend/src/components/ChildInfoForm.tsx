@@ -18,7 +18,7 @@ interface ChildInfoFormProps {
   onBack?: () => void;
   hideNavButtons?: boolean;
   hideClothing?: boolean;
-  scenarioName?: string; // backward compat with old create page
+  scenarioName?: string;
 }
 
 const AGES = ["3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
@@ -44,25 +44,25 @@ export default function ChildInfoForm({
       : ["👦", "🧒", "👨‍🦱"][childInfo.name.length % 3];
 
   return (
-    <div className="space-y-6 px-1 pt-2 pb-4">
+    <div className="space-y-5 sm:space-y-6 px-0 sm:px-1 pt-2 pb-4">
 
       {/* ── Avatar + intro ── */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <motion.div
           key={childInfo.gender + childInfo.name.slice(0, 1)}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center text-3xl shadow-sm"
+          className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center text-2xl sm:text-3xl shadow-sm"
         >
           {avatarEmoji}
         </motion.div>
-        <div>
-          <p className="text-xs font-semibold text-purple-500 uppercase tracking-wider mb-0.5">
-            ⭐ Kahraman Profili
+        <div className="min-w-0">
+          <p className="text-[10px] sm:text-xs font-semibold text-purple-500 uppercase tracking-wider mb-0.5">
+            Kahraman Profili
           </p>
-          <h2 className="text-xl font-bold text-gray-800 leading-tight">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 leading-tight truncate">
             {childInfo.name
-              ? <><span className="text-purple-600">{childInfo.name}</span>&apos;\u0131 tan\u0131yal\u0131m</>
+              ? <><span className="text-purple-600">{childInfo.name}</span>{`'${childInfo.name.endsWith("e") || childInfo.name.endsWith("a") || childInfo.name.endsWith("ı") || childInfo.name.endsWith("i") || childInfo.name.endsWith("o") || childInfo.name.endsWith("ö") || childInfo.name.endsWith("u") || childInfo.name.endsWith("ü") ? "yı" : "ı"} tanıyalım`}</>
               : "Kahramanımızı Tanıyalım"}
           </h2>
         </div>
@@ -71,7 +71,7 @@ export default function ChildInfoForm({
       {/* ── Name ── */}
       <div>
         <label className="block text-sm font-semibold text-gray-600 mb-2">
-          ✏️ Kahramanın Adı
+          Kahramanın Adı
         </label>
         <div className={`
           relative flex items-center rounded-2xl border-2 transition-all duration-200 bg-white
@@ -85,7 +85,9 @@ export default function ChildInfoForm({
             onBlur={() => setNameFocused(false)}
             placeholder="Çocuğun adını yaz..."
             maxLength={30}
-            className="flex-1 bg-transparent px-4 py-4 text-lg font-medium text-gray-800 placeholder:text-gray-300 outline-none"
+            autoComplete="given-name"
+            enterKeyHint="next"
+            className="flex-1 bg-transparent px-4 py-3.5 sm:py-4 text-base sm:text-lg font-medium text-gray-800 placeholder:text-gray-300 outline-none"
           />
           <AnimatePresence>
             {nameValid && (
@@ -93,9 +95,9 @@ export default function ChildInfoForm({
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
-                className="pr-4"
+                className="pr-3 sm:pr-4"
               >
-                <CheckCircle2 className="h-6 w-6 text-green-500" />
+                <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />
               </motion.div>
             )}
           </AnimatePresence>
@@ -105,9 +107,9 @@ export default function ChildInfoForm({
       {/* ── Gender ── */}
       <div>
         <label className="block text-sm font-semibold text-gray-600 mb-2">
-          👤 Cinsiyet
+          Cinsiyet
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
           {[
             { value: "erkek", emoji: "👦", label: "Erkek", color: "from-blue-50 to-indigo-50", border: "border-blue-400", text: "text-blue-700" },
             { value: "kız", emoji: "👧", label: "Kız", color: "from-pink-50 to-rose-50", border: "border-pink-400", text: "text-pink-700" },
@@ -118,20 +120,20 @@ export default function ChildInfoForm({
               whileTap={{ scale: 0.97 }}
               onClick={() => update({ gender: value })}
               className={`
-                relative flex items-center justify-center gap-2.5 rounded-2xl border-2 p-4 transition-all duration-200 font-semibold
+                relative flex items-center justify-center gap-2 sm:gap-2.5 rounded-2xl border-2 p-3 sm:p-4 transition-all duration-200 font-semibold
                 ${childInfo.gender === value
                   ? `bg-gradient-to-br ${color} ${border} ${text} shadow-md`
-                  : "bg-white border-gray-200 text-gray-500"
+                  : "bg-white border-gray-200 text-gray-500 active:bg-gray-50"
                 }
               `}
             >
-              <span className="text-2xl">{emoji}</span>
-              <span className="text-base">{label}</span>
+              <span className="text-xl sm:text-2xl">{emoji}</span>
+              <span className="text-sm sm:text-base">{label}</span>
               {childInfo.gender === value && (
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute top-2 right-2 w-5 h-5 rounded-full bg-current/20 flex items-center justify-center"
+                  className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 rounded-full bg-current/20 flex items-center justify-center"
                 >
                   <span className="text-xs">✓</span>
                 </motion.div>
@@ -144,9 +146,9 @@ export default function ChildInfoForm({
       {/* ── Age ── */}
       <div>
         <label className="block text-sm font-semibold text-gray-600 mb-2">
-          🎂 Yaş
+          Yaş
         </label>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
           {AGES.map((age) => (
             <motion.button
               key={age}
@@ -154,10 +156,10 @@ export default function ChildInfoForm({
               whileTap={{ scale: 0.93 }}
               onClick={() => update({ age })}
               className={`
-                h-12 rounded-xl border-2 text-base font-bold transition-all duration-150
+                h-11 sm:h-12 rounded-xl border-2 text-sm sm:text-base font-bold transition-all duration-150
                 ${childInfo.age === age
                   ? "bg-gradient-to-br from-purple-500 to-pink-500 border-transparent text-white shadow-lg shadow-purple-200"
-                  : "bg-white border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600"
+                  : "bg-white border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600 active:bg-purple-50"
                 }
               `}
             >
@@ -169,9 +171,9 @@ export default function ChildInfoForm({
           <motion.p
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-2 text-center text-sm text-purple-600 font-medium"
+            className="mt-2 text-center text-xs sm:text-sm text-purple-600 font-medium"
           >
-            {childInfo.age} yaşında — Harika bir seçim! ✨
+            {childInfo.age} yaşında — Harika bir seçim!
           </motion.p>
         )}
       </div>
@@ -180,14 +182,14 @@ export default function ChildInfoForm({
       {!hideClothing && (
         <div>
           <label className="block text-sm font-semibold text-gray-600 mb-2">
-            👕 Kıyafet Tarifi <span className="font-normal text-gray-400">(isteğe bağlı)</span>
+            Kıyafet Tarifi <span className="font-normal text-gray-400">(isteğe bağlı)</span>
           </label>
           <textarea
             value={childInfo.clothingDescription}
             onChange={(e) => update({ clothingDescription: e.target.value })}
             placeholder="Örn: Mavi kapüşonlu, sarı ayakkabılı..."
             maxLength={200}
-            rows={3}
+            rows={2}
             className="w-full rounded-2xl border-2 border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-gray-300 outline-none focus:border-purple-400 resize-none transition-colors"
           />
         </div>

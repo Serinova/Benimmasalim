@@ -31,6 +31,7 @@ import {
   Globe,
   Gauge,
   Users,
+  BarChart3,
 } from "lucide-react";
 
 // ============ TYPES ============
@@ -140,6 +141,11 @@ const navigation: NavGroup[] = [
         name: "Terk Edilen Denemeler",
         href: "/admin/abandoned-trials",
         icon: <UserX className="h-5 w-5" />,
+      },
+      {
+        name: "Muhasebe & Gelir",
+        href: "/admin/accounting",
+        icon: <BarChart3 className="h-5 w-5" />,
       },
     ],
   },
@@ -377,6 +383,7 @@ function Header() {
       kvkk: "KVKK Yönetimi",
       "rate-limit": "Rate Limit",
       users: "Kullanıcılar",
+      accounting: "Muhasebe & Gelir",
     };
 
     if (paths.length > 1) {

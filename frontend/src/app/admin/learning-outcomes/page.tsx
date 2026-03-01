@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
 
 // ============ TYPES ============
 interface LearningOutcome {
@@ -323,13 +324,6 @@ export default function AdminLearningOutcomesPage() {
     }
   };
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
-  };
 
   const fetchOutcomes = async () => {
     try {

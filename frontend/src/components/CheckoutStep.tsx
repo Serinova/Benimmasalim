@@ -28,6 +28,7 @@ import {
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/api";
+import { formatPrice } from "@/lib/utils";
 
 interface CheckoutStepProps {
   childName: string;
@@ -39,11 +40,12 @@ interface CheckoutStepProps {
   audioType: "system" | "cloned";
   productName: string;
   initialShipping?: { fullName: string; email: string; phone: string };
-  onComplete: (shippingInfo: ShippingInfo, paymentInfo: PaymentInfo, promoCode?: string | null, hasColoringBook?: boolean) => void;
+  onComplete: (shippingInfo: ShippingInfo, paymentInfo: PaymentInfo, promoCode?: string | null, hasColoringBook?: boolean, isFreeOrder?: boolean, billingData?: BillingFormData) => void;
   onBack: () => void;
   isProcessing?: boolean;
   orderId?: string; // Order ID for promo code apply
-  coloringBookPrice?: number; // Boyama kitabı fiyatı
+  coloringBookPrice?: number; // Boyama kitabı fiyatı (Only used in total calculation)
+  hasColoringBook?: boolean; // Ekstralar adımından gelir
 }
 
 interface ShippingInfo {
@@ -55,6 +57,22 @@ interface ShippingInfo {
   district: string;
   postalCode: string;
   dedicationNote?: string;
+}
+
+interface BillingFormData {
+  billingType: "individual" | "corporate";
+  tcNo: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  companyName: string;
+  taxId: string;
+  taxOffice: string;
+  useShippingAddress: boolean;
+  address: string;
+  city: string;
+  district: string;
+  postalCode: string;
 }
 
 interface PaymentInfo {
@@ -80,6 +98,7 @@ interface PromoResult {
 }
 
 type CheckoutStage = "shipping" | "payment" | "success";
+
 
 // Trust Badge Component
 function TrustBadge({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
@@ -293,12 +312,11 @@ export default function CheckoutStep({
   isProcessing = false,
   orderId: _orderId,
   coloringBookPrice = 0,
+  hasColoringBook = false,
 }: CheckoutStepProps) {
+
   const [stage, setStage] = useState<CheckoutStage>("shipping");
   const [cartTimer, setCartTimer] = useState(15 * 60);
-
-  // Boyama kitabı state
-  const [hasColoringBook, setHasColoringBook] = useState(false);
 
   // Shipping form state — pre-fill from contactInfo if available
   const [shipping, setShipping] = useState<ShippingInfo>({
@@ -310,6 +328,23 @@ export default function CheckoutStep({
     district: "",
     postalCode: "",
     dedicationNote: "",
+  });
+
+  // Billing form state
+  const [billing, setBilling] = useState<BillingFormData>({
+    billingType: "individual",
+    tcNo: "",
+    fullName: "",
+    email: "",
+    phone: "",
+    companyName: "",
+    taxId: "",
+    taxOffice: "",
+    useShippingAddress: true,
+    address: "",
+    city: "",
+    district: "",
+    postalCode: "",
   });
 
   // Payment form state (setPayment reserved for future controlled inputs)
@@ -338,6 +373,49 @@ export default function CheckoutStep({
     return () => clearInterval(timer);
   }, []);
 
+  // Saved addresses for quick selection
+  const [savedAddresses, setSavedAddresses] = useState<Array<{
+    id: string; label: string; full_name: string; phone: string | null;
+    address_line: string; city: string; district: string | null; postal_code: string | null; is_default: boolean;
+  }>>([]);
+
+  // Auto-fill from logged-in user profile (if available and fields are empty)
+  useEffect(() => {
+    try {
+      const userJson = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+      if (!userJson) return;
+      const user = JSON.parse(userJson);
+      setShipping((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.full_name || "",
+        email: prev.email || user.email || "",
+        phone: prev.phone || user.phone || "",
+      }));
+    } catch { /* ignore */ }
+
+    // Load saved addresses
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (token) {
+      import("@/lib/api").then(({ getAddresses }) => {
+        getAddresses().then((addrs) => {
+          setSavedAddresses(addrs);
+          const def = addrs.find((a) => a.is_default);
+          if (def) {
+            setShipping((prev) => ({
+              ...prev,
+              fullName: prev.fullName || def.full_name,
+              phone: prev.phone || def.phone || "",
+              address: prev.address || def.address_line,
+              city: prev.city || def.city,
+              district: prev.district || def.district || "",
+              postalCode: prev.postalCode || def.postal_code || "",
+            }));
+          }
+        }).catch(() => { });
+      });
+    }
+  }, []);
+
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -346,8 +424,8 @@ export default function CheckoutStep({
 
   // Calculate totals (with promo and coloring book)
   const shippingCost = 0;
-  const coloringBookCost = hasColoringBook ? (coloringBookPrice || 0) : 0;
-  const rawTotal = basePrice + (hasAudioBook ? audioPrice : 0) + coloringBookCost + shippingCost;
+  const coloringBookCost = hasColoringBook ? Number(coloringBookPrice || 0) : 0;
+  const rawTotal = Number(basePrice) + (hasAudioBook ? Number(audioPrice) : 0) + coloringBookCost + shippingCost;
   const discountAmount = appliedPromo?.valid ? (appliedPromo.discount_amount ?? 0) : 0;
   const totalPrice = Math.max(rawTotal - discountAmount, 0);
   const isFreeOrder = totalPrice === 0 && appliedPromo?.valid;
@@ -379,9 +457,30 @@ export default function CheckoutStep({
     shipping.city.length > 1;
 
   // Handle form submission — card data is collected on iyzico side (PCI compliant)
+  const isBillingValid = (() => {
+    if (billing.billingType === "corporate") {
+      if (!billing.companyName.trim()) return false;
+      if (!billing.taxId.trim()) return false;
+      const cleaned = billing.taxId.replace(/\s/g, "");
+      if (!/^\d{10,11}$/.test(cleaned)) return false;
+    } else {
+      const name = billing.fullName.trim() || shipping.fullName.trim();
+      if (!name) return false;
+      // TC no opsiyonel; doluysa 11 hane olmalı
+      if (billing.tcNo && !/^\d{11}$/.test(billing.tcNo)) return false;
+    }
+    return true;
+  })();
+
   const handleSubmit = () => {
     const promoCodeToSend = appliedPromo?.valid ? appliedPromo.promo_summary?.code ?? null : null;
-    onComplete(shipping, payment, promoCodeToSend, hasColoringBook);
+    const billingToSend: BillingFormData = {
+      ...billing,
+      fullName: billing.fullName || shipping.fullName,
+      email: billing.email || shipping.email,
+      phone: billing.phone || shipping.phone,
+    };
+    onComplete(shipping, payment, promoCodeToSend, hasColoringBook, isFreeOrder, billingToSend);
   };
 
   // ─── Promo Code API ───────────────────────────────────────────
@@ -469,23 +568,21 @@ export default function CheckoutStep({
               <div
                 className={`
                 flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all
-                ${
-                  (idx === 0 && stage === "shipping") || (idx === 1 && stage === "payment")
+                ${(idx === 0 && stage === "shipping") || (idx === 1 && stage === "payment")
                     ? "bg-purple-600 text-white"
                     : idx === 0 && stage === "payment"
                       ? "bg-green-500 text-white"
                       : "bg-gray-200 text-gray-500"
-                }
+                  }
               `}
               >
                 {idx === 0 && stage === "payment" ? <Check className="h-4 w-4" /> : idx + 1}
               </div>
               <span
-                className={`ml-2 text-sm ${
-                  (idx === 0 && stage === "shipping") || (idx === 1 && stage === "payment")
-                    ? "font-medium text-purple-600"
-                    : "text-gray-500"
-                }`}
+                className={`ml-2 text-sm ${(idx === 0 && stage === "shipping") || (idx === 1 && stage === "payment")
+                  ? "font-medium text-purple-600"
+                  : "text-gray-500"
+                  }`}
               >
                 {step}
               </span>
@@ -551,136 +648,290 @@ export default function CheckoutStep({
                     </div>
                   </div>
 
-                  {/* Coloring Book Checkbox */}
-                  {coloringBookPrice && coloringBookPrice > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="rounded-xl border-2 border-purple-200 bg-purple-50/50 p-6"
-                    >
-                      <div className="flex items-start gap-4">
-                        <input
-                          type="checkbox"
-                          id="coloringBook"
-                          checked={hasColoringBook}
-                          onChange={(e) => setHasColoringBook(e.target.checked)}
-                          className="mt-1 h-5 w-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                        />
-                        <div className="flex-1">
-                          <label htmlFor="coloringBook" className="cursor-pointer">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <span className="text-lg font-semibold text-gray-900">
-                                🎨 Boyama Kitabı Ekle
-                              </span>
-                              <span className="rounded-full bg-purple-600 px-3 py-1 text-sm font-bold text-white">
-                                +{coloringBookPrice} TL
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-3">
-                              Hikayenizdeki görsellerin boyama kitabı versiyonunu da sipariş edin! 
-                              Metin içermez, sadece boyama için optimize edilmiş çizgiler.
-                            </p>
-                            <ul className="space-y-1 text-sm text-gray-500">
-                              <li className="flex items-center gap-2">
-                                <Check className="h-4 w-4 text-purple-600 flex-shrink-0" />
-                                Aynı karakterler, aynı sahneler
-                              </li>
-                              <li className="flex items-center gap-2">
-                                <Check className="h-4 w-4 text-purple-600 flex-shrink-0" />
-                                Profesyonel line-art çizimler
-                              </li>
-                              <li className="flex items-center gap-2">
-                                <Check className="h-4 w-4 text-purple-600 flex-shrink-0" />
-                                Ayrı fiziksel kitap olarak gelir
-                              </li>
-                            </ul>
-                          </label>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
+
 
                   {/* Shipping Form */}
                   <div className="rounded-xl bg-white p-4 shadow-sm">
-                  <div className="mb-4 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100">
-                      <Truck className="h-4 w-4 text-purple-600" />
+                    <div className="mb-4 flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100">
+                        <Truck className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-semibold text-gray-800">Teslimat Adresi</h2>
+                        <p className="text-xs text-gray-500">Kitabınızı nereye gönderelim?</p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-base font-semibold text-gray-800">Teslimat Adresi</h2>
-                      <p className="text-xs text-gray-500">Kitabınızı nereye gönderelim?</p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
+                    {/* Saved address selector */}
+                    {savedAddresses.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs font-medium text-gray-600 mb-2">Kayıtlı Adreslerim</p>
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                          {savedAddresses.map((addr) => (
+                            <button
+                              key={addr.id}
+                              type="button"
+                              onClick={() => setShipping((prev) => ({
+                                ...prev,
+                                fullName: addr.full_name,
+                                phone: addr.phone || prev.phone,
+                                address: addr.address_line,
+                                city: addr.city,
+                                district: addr.district || "",
+                                postalCode: addr.postal_code || "",
+                              }))}
+                              className="shrink-0 rounded-lg border px-3 py-2 text-left text-xs hover:border-purple-300 hover:bg-purple-50 transition-colors"
+                            >
+                              <span className="font-medium text-gray-700">{addr.label}</span>
+                              <br />
+                              <span className="text-gray-500">{addr.city}{addr.district ? `, ${addr.district}` : ""}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <CleanInput
+                          id="fullName"
+                          label="Ad Soyad"
+                          value={shipping.fullName}
+                          onChange={(v) => setShipping({ ...shipping, fullName: v })}
+                          icon={User}
+                          required
+                        />
+                        <CleanInput
+                          id="phone"
+                          label="Telefon"
+                          type="tel"
+                          value={shipping.phone}
+                          onChange={(v) => setShipping({ ...shipping, phone: v })}
+                          icon={Phone}
+                          placeholder="05XX XXX XX XX"
+                          required
+                        />
+                      </div>
+
                       <CleanInput
-                        id="fullName"
-                        label="Ad Soyad"
-                        value={shipping.fullName}
-                        onChange={(v) => setShipping({ ...shipping, fullName: v })}
-                        icon={User}
+                        id="email"
+                        label="E-posta"
+                        type="email"
+                        value={shipping.email}
+                        onChange={(v) => setShipping({ ...shipping, email: v })}
+                        icon={Mail}
+                        placeholder="ornek@email.com"
                         required
                       />
+
                       <CleanInput
-                        id="phone"
-                        label="Telefon"
-                        type="tel"
-                        value={shipping.phone}
-                        onChange={(v) => setShipping({ ...shipping, phone: v })}
-                        icon={Phone}
-                        placeholder="05XX XXX XX XX"
+                        id="address"
+                        label="Adres"
+                        value={shipping.address}
+                        onChange={(v) => setShipping({ ...shipping, address: v })}
+                        icon={MapPin}
+                        placeholder="Mahalle, Sokak, Bina No, Daire"
                         required
                       />
+
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <CleanInput
+                          id="city"
+                          label="İl"
+                          value={shipping.city}
+                          onChange={(v) => setShipping({ ...shipping, city: v })}
+                          icon={Building}
+                          required
+                        />
+                        <CleanInput
+                          id="district"
+                          label="İlçe"
+                          value={shipping.district}
+                          onChange={(v) => setShipping({ ...shipping, district: v })}
+                        />
+                        <CleanInput
+                          id="postalCode"
+                          label="Posta Kodu"
+                          value={shipping.postalCode}
+                          onChange={(v) => setShipping({ ...shipping, postalCode: v })}
+                          maxLength={5}
+                        />
+                      </div>
                     </div>
-
-                    <CleanInput
-                      id="email"
-                      label="E-posta"
-                      type="email"
-                      value={shipping.email}
-                      onChange={(v) => setShipping({ ...shipping, email: v })}
-                      icon={Mail}
-                      placeholder="ornek@email.com"
-                      required
-                    />
-
-                    <CleanInput
-                      id="address"
-                      label="Adres"
-                      value={shipping.address}
-                      onChange={(v) => setShipping({ ...shipping, address: v })}
-                      icon={MapPin}
-                      placeholder="Mahalle, Sokak, Bina No, Daire"
-                      required
-                    />
-
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <CleanInput
-                        id="city"
-                        label="İl"
-                        value={shipping.city}
-                        onChange={(v) => setShipping({ ...shipping, city: v })}
-                        icon={Building}
-                        required
-                      />
-                      <CleanInput
-                        id="district"
-                        label="İlçe"
-                        value={shipping.district}
-                        onChange={(v) => setShipping({ ...shipping, district: v })}
-                      />
-                      <CleanInput
-                        id="postalCode"
-                        label="Posta Kodu"
-                        value={shipping.postalCode}
-                        onChange={(v) => setShipping({ ...shipping, postalCode: v })}
-                        maxLength={5}
-                      />
-                    </div>
-                  </div>
 
                   </div>{/* end shipping form card */}
+
+                  {/* Billing / Invoice section */}
+                  <div className="mt-6 rounded-2xl border-2 border-gray-200 bg-white p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <FileText className="h-5 w-5 text-gray-500" />
+                      <h2 className="text-base font-semibold text-gray-800">Fatura Bilgileri</h2>
+                    </div>
+
+                    {/* Billing type toggle */}
+                    <div className="flex gap-2 mb-4">
+                      {(["individual", "corporate"] as const).map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setBilling((prev) => ({ ...prev, billingType: t }))}
+                          className={`flex-1 rounded-xl border-2 px-4 py-2.5 text-sm font-medium transition-all ${billing.billingType === t
+                              ? "border-purple-500 bg-purple-50 text-purple-700"
+                              : "border-gray-200 text-gray-500 hover:border-gray-300"
+                            }`}
+                        >
+                          {t === "individual" ? "Bireysel" : "Kurumsal"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Corporate fields */}
+                    {billing.billingType === "corporate" && (
+                      <div className="space-y-3 mb-4">
+                        <CleanInput
+                          id="companyName"
+                          label="Şirket Ünvanı"
+                          value={billing.companyName}
+                          onChange={(v) => setBilling({ ...billing, companyName: v })}
+                          icon={Building}
+                          required
+                        />
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <CleanInput
+                            id="taxId"
+                            label="Vergi No / TC Kimlik No"
+                            value={billing.taxId}
+                            onChange={(v) => setBilling({ ...billing, taxId: v.replace(/\D/g, "").slice(0, 11) })}
+                            required
+                            placeholder="10 veya 11 haneli"
+                          />
+                          <CleanInput
+                            id="taxOffice"
+                            label="Vergi Dairesi"
+                            value={billing.taxOffice}
+                            onChange={(v) => setBilling({ ...billing, taxOffice: v })}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Individual: TC no */}
+                    {billing.billingType === "individual" && (
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-2">
+                        <CleanInput
+                          id="tcNo"
+                          label="T.C. Kimlik No (Fatura için, opsiyonel)"
+                          value={billing.tcNo}
+                          onChange={(v) => setBilling({ ...billing, tcNo: v.replace(/\D/g, "").slice(0, 11) })}
+                          maxLength={11}
+                          placeholder="11 haneli TC kimlik numaranız"
+                        />
+                        {billing.tcNo && !/^\d{11}$/.test(billing.tcNo) && (
+                          <p className="text-xs text-red-500">TC kimlik numarası 11 haneli olmalıdır.</p>
+                        )}
+                        <p className="text-xs text-gray-400">
+                          Fatura isterseniz TC kimlik numaranızı girin. Boş bırakabilirsiniz.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Billing address toggle */}
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={billing.useShippingAddress}
+                        onChange={(e) => setBilling({ ...billing, useShippingAddress: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-sm text-gray-600">Fatura adresi teslimat adresiyle aynı</span>
+                    </label>
+
+                    {/* Separate billing address */}
+                    {!billing.useShippingAddress && (
+                      <div className="mt-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                        <p className="text-xs font-medium text-gray-600">Fatura Adresi</p>
+                        <CleanInput
+                          id="billingAddress"
+                          label="Adres"
+                          value={billing.address}
+                          onChange={(v) => setBilling({ ...billing, address: v })}
+                          icon={MapPin}
+                          required
+                        />
+                        <div className="grid gap-3 md:grid-cols-3">
+                          <CleanInput
+                            id="billingCity"
+                            label="İl"
+                            value={billing.city}
+                            onChange={(v) => setBilling({ ...billing, city: v })}
+                            icon={Building}
+                            required
+                          />
+                          <CleanInput
+                            id="billingDistrict"
+                            label="İlçe"
+                            value={billing.district}
+                            onChange={(v) => setBilling({ ...billing, district: v })}
+                          />
+                          <CleanInput
+                            id="billingPostalCode"
+                            label="Posta Kodu"
+                            value={billing.postalCode}
+                            onChange={(v) => setBilling({ ...billing, postalCode: v })}
+                            maxLength={5}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Validation hint */}
+                    {billing.billingType === "corporate" && billing.taxId && !/^\d{10,11}$/.test(billing.taxId.replace(/\s/g, "")) && (
+                      <p className="mt-2 text-xs text-red-500">Vergi numarası 10 (VKN) veya 11 (TCKN) haneli olmalıdır.</p>
+                    )}
+                  </div>
+
+                  {/* Legal Acknowledgment — also for free orders */}
+                  {isFreeOrder && (
+                    <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                      <label className="flex cursor-pointer items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={termsAccepted}
+                          onChange={(e) => setTermsAccepted(e.target.checked)}
+                          className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="text-xs leading-relaxed text-gray-600">
+                          <a
+                            href="/distance-sales"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-purple-600 underline hover:text-purple-800"
+                          >
+                            Mesafeli Satış Sözleşmesi
+                          </a>
+                          &apos;ni,{" "}
+                          <a
+                            href="/privacy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-purple-600 underline hover:text-purple-800"
+                          >
+                            Gizlilik Politikası
+                          </a>
+                          &apos;nı ve{" "}
+                          <a
+                            href="/delivery"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-purple-600 underline hover:text-purple-800"
+                          >
+                            Teslimat ve İade Şartları
+                          </a>
+                          &apos;nı okudum ve kabul ediyorum.
+                        </span>
+                      </label>
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <div className="mt-8 flex items-center gap-4">
@@ -692,16 +943,15 @@ export default function CheckoutStep({
                     {isFreeOrder ? (
                       /* Free order: skip payment, submit directly */
                       <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={{ scale: termsAccepted ? 1.02 : 1 }}
+                        whileTap={{ scale: termsAccepted ? 0.98 : 1 }}
                         onClick={handleSubmit}
-                        disabled={!isShippingValid || isProcessing}
+                        disabled={!isShippingValid || !isBillingValid || isProcessing || !termsAccepted}
                         className={`
                           flex flex-1 items-center justify-center gap-3 rounded-xl px-8 py-4 font-semibold text-white transition-all
-                          ${
-                            isShippingValid && !isProcessing
-                              ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 hover:shadow-green-500/50"
-                              : "cursor-not-allowed bg-gray-300"
+                          ${isShippingValid && isBillingValid && !isProcessing && termsAccepted
+                            ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 hover:shadow-green-500/50"
+                            : "cursor-not-allowed bg-gray-300"
                           }
                         `}
                       >
@@ -720,7 +970,7 @@ export default function CheckoutStep({
                     ) : (
                       <Button
                         onClick={() => setStage("payment")}
-                        disabled={!isShippingValid}
+                        disabled={!isShippingValid || !isBillingValid}
                         className="flex-1 bg-purple-600 hover:bg-purple-700"
                       >
                         Ödemeye Geç
@@ -750,22 +1000,62 @@ export default function CheckoutStep({
                     </p>
                   </div>
 
+                  {/* Legal Acknowledgment for promo-applied free order */}
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={termsAccepted}
+                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-xs leading-relaxed text-gray-600">
+                        <a
+                          href="/distance-sales"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-purple-600 underline hover:text-purple-800"
+                        >
+                          Mesafeli Satış Sözleşmesi
+                        </a>
+                        &apos;ni,{" "}
+                        <a
+                          href="/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-purple-600 underline hover:text-purple-800"
+                        >
+                          Gizlilik Politikası
+                        </a>
+                        &apos;nı ve{" "}
+                        <a
+                          href="/delivery"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-purple-600 underline hover:text-purple-800"
+                        >
+                          Teslimat ve İade Şartları
+                        </a>
+                        &apos;nı okudum ve kabul ediyorum.
+                      </span>
+                    </label>
+                  </div>
+
                   <div className="flex items-center gap-3">
                     <Button variant="outline" onClick={() => setStage("shipping")}>
                       <ChevronLeft className="mr-2 h-4 w-4" />
                       Geri
                     </Button>
                     <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={{ scale: termsAccepted ? 1.02 : 1 }}
+                      whileTap={{ scale: termsAccepted ? 0.98 : 1 }}
                       onClick={handleSubmit}
-                      disabled={!isShippingValid || isProcessing}
+                      disabled={!isShippingValid || !isBillingValid || isProcessing || !termsAccepted}
                       className={`
                         flex flex-1 items-center justify-center gap-3 rounded-xl px-8 py-4 font-semibold text-white transition-all
-                        ${
-                          isShippingValid && !isProcessing
-                            ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 hover:shadow-green-500/50"
-                            : "cursor-not-allowed bg-gray-300"
+                        ${isShippingValid && isBillingValid && !isProcessing && termsAccepted
+                          ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 hover:shadow-green-500/50"
+                          : "cursor-not-allowed bg-gray-300"
                         }
                       `}
                     >
@@ -899,10 +1189,9 @@ export default function CheckoutStep({
                         disabled={isProcessing || !termsAccepted}
                         className={`
                           flex flex-1 items-center justify-center gap-3 rounded-xl px-8 py-4 font-semibold text-white transition-all
-                          ${
-                            !isProcessing && termsAccepted
-                              ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 hover:shadow-green-500/50"
-                              : "cursor-not-allowed bg-gray-300"
+                          ${!isProcessing && termsAccepted
+                            ? "bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 hover:shadow-green-500/50"
+                            : "cursor-not-allowed bg-gray-300"
                           }
                         `}
                       >
@@ -914,7 +1203,7 @@ export default function CheckoutStep({
                         ) : (
                           <>
                             <Rocket className="h-5 w-5" />
-                            <span>Ödemeye Geç ({totalPrice} TL)</span>
+                            <span>Ödemeye Geç ({formatPrice(totalPrice)})</span>
                           </>
                         )}
                       </motion.button>
@@ -967,7 +1256,7 @@ export default function CheckoutStep({
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">{productName}</span>
-                    <span className="font-medium">{basePrice} TL</span>
+                    <span className="font-medium tabular-nums">{formatPrice(basePrice)}</span>
                   </div>
 
                   {hasAudioBook && (
@@ -975,14 +1264,14 @@ export default function CheckoutStep({
                       <span className="text-gray-600">
                         Sesli Kitap ({audioType === "cloned" ? "Klonlanmış Ses" : "Profesyonel Ses"})
                       </span>
-                      <span className="font-medium">{audioPrice} TL</span>
+                      <span className="font-medium tabular-nums">{formatPrice(audioPrice)}</span>
                     </div>
                   )}
 
                   {hasColoringBook && coloringBookPrice && coloringBookPrice > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">🎨 Boyama Kitabı</span>
-                      <span className="font-medium">{coloringBookPrice} TL</span>
+                      <span className="font-medium tabular-nums">{formatPrice(coloringBookPrice)}</span>
                     </div>
                   )}
 
@@ -998,7 +1287,7 @@ export default function CheckoutStep({
                         <Ticket className="h-3.5 w-3.5" />
                         Kupon ({appliedPromo.promo_summary?.code})
                       </span>
-                      <span className="font-medium">-{discountAmount} TL</span>
+                      <span className="font-medium tabular-nums">-{formatPrice(discountAmount)}</span>
                     </div>
                   )}
 
@@ -1006,10 +1295,10 @@ export default function CheckoutStep({
                     <span className="font-semibold">Toplam</span>
                     <div className="text-right">
                       {discountAmount > 0 && (
-                        <span className="mr-2 text-sm text-gray-400 line-through">{rawTotal} TL</span>
+                        <span className="mr-2 text-sm text-gray-400 line-through">{formatPrice(rawTotal)}</span>
                       )}
                       <span className="font-bold text-purple-600">
-                        {totalPrice === 0 ? "ÜCRETSİZ" : `${totalPrice} TL`}
+                        {totalPrice === 0 ? "ÜCRETSİZ" : formatPrice(totalPrice)}
                       </span>
                     </div>
                   </div>

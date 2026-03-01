@@ -1,6 +1,7 @@
 """Security utilities: JWT (PyJWT), password hashing (bcrypt), token blacklist."""
 
 import hashlib
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
@@ -9,6 +10,39 @@ import bcrypt
 import jwt
 
 from app.config import settings
+
+# ---------------------------------------------------------------------------
+# Password validation
+# ---------------------------------------------------------------------------
+
+_COMMON_PASSWORDS: frozenset[str] = frozenset({
+    "12345678", "password", "password1", "qwerty12", "abc12345",
+    "11111111", "123456789", "1234567890", "iloveyou", "sunshine",
+    "princess", "football", "charlie1", "shadow12", "master12",
+})
+
+_SPECIAL_CHARS_RE = re.compile(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]~`]')
+
+
+def validate_password_strength(v: str, *, check_common: bool = False) -> str:
+    """Enforce password complexity: upper + lower + digit + special char.
+
+    Args:
+        v: Password string (must already pass min_length=8 Pydantic constraint).
+        check_common: If True, reject passwords in the common-passwords blocklist.
+    """
+    if not re.search(r"[A-Z]", v):
+        raise ValueError("Şifre en az bir büyük harf içermelidir")
+    if not re.search(r"[a-z]", v):
+        raise ValueError("Şifre en az bir küçük harf içermelidir")
+    if not re.search(r"\d", v):
+        raise ValueError("Şifre en az bir rakam içermelidir")
+    if not _SPECIAL_CHARS_RE.search(v):
+        raise ValueError("Şifre en az bir özel karakter içermelidir (!@#$%^&*...)")
+    if check_common and v.lower() in _COMMON_PASSWORDS:
+        raise ValueError("Bu şifre çok yaygın, lütfen daha güçlü bir şifre seçin")
+    return v
+
 
 # ---------------------------------------------------------------------------
 # Password hashing (bcrypt)
@@ -41,8 +75,9 @@ def create_access_token(
     subject: UUID | str,
     expires_delta: timedelta | None = None,
     additional_claims: dict[str, Any] | None = None,
+    token_version: int = 0,
 ) -> str:
-    """Create a JWT access token with iss/aud/iat claims."""
+    """Create a JWT access token with iss/aud/iat claims + token_version."""
     now = datetime.now(UTC)
     expire = now + (expires_delta or timedelta(minutes=settings.jwt_access_token_expire_minutes))
 
@@ -53,6 +88,7 @@ def create_access_token(
         "iss": _ISSUER,
         "aud": _AUDIENCE,
         "type": "access",
+        "tv": token_version,
     }
 
     if additional_claims:
@@ -65,8 +101,8 @@ def create_access_token(
     )
 
 
-def create_refresh_token(subject: UUID | str) -> str:
-    """Create a JWT refresh token."""
+def create_refresh_token(subject: UUID | str, token_version: int = 0) -> str:
+    """Create a JWT refresh token with token_version."""
     now = datetime.now(UTC)
     expire = now + timedelta(days=settings.jwt_refresh_token_expire_days)
 
@@ -77,6 +113,7 @@ def create_refresh_token(subject: UUID | str) -> str:
         "iss": _ISSUER,
         "aud": _AUDIENCE,
         "type": "refresh",
+        "tv": token_version,
     }
 
     return jwt.encode(
@@ -122,42 +159,56 @@ def create_guest_token() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Token blacklist (Redis-backed) — used by /auth/logout
+# Token blacklist (Redis-backed, async) — used by /auth/logout
 # ---------------------------------------------------------------------------
 
 _TOKEN_BLACKLIST_PREFIX = "token_blacklist:"
 
+# Shared async Redis connection — lazy-initialized, reused across calls.
+_async_redis: "redis.asyncio.Redis | None" = None
 
-def _get_redis():
-    """Lazy Redis connection for token blacklist."""
-    import redis as _redis
 
+async def _get_async_redis():
+    """Get or create a shared async Redis connection for token ops."""
+    global _async_redis
+    if _async_redis is not None:
+        return _async_redis
     try:
-        return _redis.Redis.from_url(str(settings.redis_url), decode_responses=True)
+        import redis.asyncio as aioredis
+
+        _async_redis = aioredis.from_url(
+            str(settings.redis_url),
+            decode_responses=True,
+            socket_connect_timeout=5,
+            socket_timeout=5,
+        )
+        await _async_redis.ping()
+        return _async_redis
     except Exception:
+        _async_redis = None
         return None
 
 
-def blacklist_token(token: str, expires_in_seconds: int = 7200) -> bool:
+async def blacklist_token(token: str, expires_in_seconds: int = 7200) -> bool:
     """Add a token's hash to the blacklist. Returns True on success."""
-    r = _get_redis()
+    r = await _get_async_redis()
     if not r:
         return False
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     try:
-        r.setex(f"{_TOKEN_BLACKLIST_PREFIX}{token_hash}", expires_in_seconds, "1")
+        await r.setex(f"{_TOKEN_BLACKLIST_PREFIX}{token_hash}", expires_in_seconds, "1")
         return True
     except Exception:
         return False
 
 
-def is_token_blacklisted(token: str) -> bool:
+async def is_token_blacklisted(token: str) -> bool:
     """Check if a token is blacklisted."""
-    r = _get_redis()
+    r = await _get_async_redis()
     if not r:
         return False
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     try:
-        return r.exists(f"{_TOKEN_BLACKLIST_PREFIX}{token_hash}") > 0
+        return await r.exists(f"{_TOKEN_BLACKLIST_PREFIX}{token_hash}") > 0
     except Exception:
         return False

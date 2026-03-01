@@ -75,6 +75,7 @@ class PageTemplateCreate(BaseModel):
     text_x_percent: float = Field(default=5.0, ge=0, le=100)
     text_y_percent: float = Field(default=72.0, ge=0, le=100)
     text_position: str = "bottom"
+    text_vertical_align: str = "bottom"
 
     # Text styling
     font_family: str = "Nunito"
@@ -94,10 +95,14 @@ class PageTemplateCreate(BaseModel):
 
     # Text Background Gradient (metin arkası gölge)
     text_bg_enabled: bool = True
-    text_bg_color: str = "#000000"
-    text_bg_opacity: int = Field(default=180, ge=0, le=255)
-    text_bg_shape: str = "soft_vignette"
-    text_bg_blur: int = Field(default=30, ge=0, le=80)
+    text_bg_color: str = "#FFFFFF"
+    text_bg_opacity: int = Field(default=230, ge=0, le=255)
+    text_bg_shape: str = "cloud"
+    text_bg_blur: int = Field(default=50, ge=0, le=200)
+    text_bg_extend_top: int = Field(default=60, ge=0, le=200)
+    text_bg_extend_bottom: int = Field(default=15, ge=0, le=100)
+    text_bg_extend_sides: int = Field(default=10, ge=0, le=50)
+    text_bg_intensity: int = Field(default=100, ge=50, le=100)
 
     # Cover Title — WordArt kapak başlığı
     cover_title_enabled: bool = True
@@ -150,6 +155,7 @@ class PageTemplateUpdate(BaseModel):
     text_x_percent: float | None = Field(default=None, ge=0, le=100)
     text_y_percent: float | None = Field(default=None, ge=0, le=100)
     text_position: str | None = None
+    text_vertical_align: str | None = None
     font_family: str | None = None
     font_size_pt: int | None = Field(default=None, ge=8, le=732)
     font_color: str | None = None
@@ -166,7 +172,11 @@ class PageTemplateUpdate(BaseModel):
     text_bg_color: str | None = None
     text_bg_opacity: int | None = Field(default=None, ge=0, le=255)
     text_bg_shape: str | None = None
-    text_bg_blur: int | None = Field(default=None, ge=0, le=80)
+    text_bg_blur: int | None = Field(default=None, ge=0, le=200)
+    text_bg_extend_top: int | None = Field(default=None, ge=0, le=200)
+    text_bg_extend_bottom: int | None = Field(default=None, ge=0, le=100)
+    text_bg_extend_sides: int | None = Field(default=None, ge=0, le=50)
+    text_bg_intensity: int | None = Field(default=None, ge=50, le=100)
     # Cover Title — WordArt kapak başlığı
     cover_title_enabled: bool | None = None
     cover_title_font_family: str | None = None
@@ -386,6 +396,7 @@ async def list_page_templates(
             "text_x_percent": t.text_x_percent,
             "text_y_percent": t.text_y_percent,
             "text_position": t.text_position,
+            "text_vertical_align": getattr(t, "text_vertical_align", "bottom"),
             "font_family": t.font_family,
             "font_size_pt": t.font_size_pt,
             "font_color": t.font_color,
@@ -400,6 +411,10 @@ async def list_page_templates(
             "text_bg_opacity": t.text_bg_opacity,
             "text_bg_shape": t.text_bg_shape,
             "text_bg_blur": t.text_bg_blur,
+            "text_bg_extend_top": getattr(t, "text_bg_extend_top", 60),
+            "text_bg_extend_bottom": getattr(t, "text_bg_extend_bottom", 15),
+            "text_bg_extend_sides": getattr(t, "text_bg_extend_sides", 6),
+            "text_bg_intensity": getattr(t, "text_bg_intensity", 100),
             "cover_title_enabled": t.cover_title_enabled,
             "cover_title_font_family": t.cover_title_font_family,
             "cover_title_font_size_pt": t.cover_title_font_size_pt,

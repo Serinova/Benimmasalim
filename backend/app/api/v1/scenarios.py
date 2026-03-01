@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.api.v1.deps import DbSession
 from app.core.database import async_session_factory
@@ -154,8 +155,8 @@ class VisualStyleResponse(BaseModel):
 
 
 def _is_url(s: str) -> bool:
-    """True if s looks like an HTTP(S) URL (not base64 or inline data)."""
-    return s.startswith(("http://", "https://", "/"))
+    """True if s is a full absolute HTTP(S) URL (not relative paths or base64)."""
+    return s.startswith(("http://", "https://"))
 
 
 def _normalize_gallery_images(raw: list | None) -> list[str]:
@@ -175,10 +176,76 @@ def _normalize_gallery_images(raw: list | None) -> list[str]:
 
 
 def _safe_thumb(val: str | None) -> str:
-    """Return thumbnail_url only if it's a real URL, not base64."""
-    if val and isinstance(val, str) and _is_url(val):
+    """Return thumbnail_url only if it's an absolute http(s) URL; filter out relative paths and base64."""
+    if val and isinstance(val, str) and val.startswith(("http://", "https://")):
         return val
     return ""
+
+
+def _normalize_options(opts: object) -> list[str] | None:
+    """Normalize options field to list[str] regardless of source format."""
+    if opts is None:
+        return None
+    if isinstance(opts, str):
+        return [o.strip() for o in opts.split(",") if o.strip()]
+    if isinstance(opts, list):
+        result: list[str] = []
+        for item in opts:
+            if isinstance(item, str):
+                result.append(item)
+            elif isinstance(item, dict):
+                result.append(item.get("label_tr") or item.get("label") or item.get("label_en") or str(item.get("value", "")))
+            else:
+                result.append(str(item))
+        return result
+    return None
+
+
+def _normalize_custom_inputs(raw: list | dict | None) -> list[dict] | None:
+    """Ensure custom_inputs_schema is list[dict] with options always as list[str]."""
+    if raw is None:
+        return None
+    items: list[dict] = []
+    if isinstance(raw, list):
+        items = raw
+    elif isinstance(raw, dict):
+        items = [{"key": k, **v} if isinstance(v, dict) else {"key": k, "value": v} for k, v in raw.items()]
+    else:
+        return None
+
+    for field in items:
+        if "options" in field:
+            field["options"] = _normalize_options(field["options"])
+        if "label" not in field:
+            field["label"] = field.get("label_tr") or field.get("label_en") or field.get("key", "")
+    return items
+
+
+def _resolve_price_label(scenario: Scenario) -> str | None:
+    """Resolve the marketing price label for a scenario.
+
+    Priority:
+    1. Linked product's base_price (always up-to-date from product management)
+    2. scenario.marketing_price_label as manual override/fallback
+    3. None if neither is available
+
+    This ensures the displayed price on scenario cards always reflects
+    the actual product price rather than a cached/stale static label.
+    """
+    linked = getattr(scenario, "linked_product", None)
+    if linked is not None:
+        price = getattr(linked, "base_price", None)
+        if price is not None:
+            try:
+                price_float = float(price)
+                if price_float > 0:
+                    # Format as Turkish currency, e.g. "549 TL'den başlayan fiyatlarla"
+                    formatted = f"{price_float:,.0f}".replace(",", ".")
+                    return f"{formatted} TL'den başlayan fiyatlarla"
+            except (TypeError, ValueError):
+                pass
+    # Fallback to manually stored label
+    return getattr(scenario, "marketing_price_label", None)
 
 
 def scenario_to_response(scenario: Scenario) -> ScenarioResponse:
@@ -199,7 +266,7 @@ def scenario_to_response(scenario: Scenario) -> ScenarioResponse:
         gallery_images=gallery,
         marketing_video_url=getattr(scenario, "marketing_video_url", None),
         marketing_gallery=marketing_gallery,
-        marketing_price_label=getattr(scenario, "marketing_price_label", None),
+        marketing_price_label=_resolve_price_label(scenario),
         marketing_features=getattr(scenario, "marketing_features", None) or [],
         marketing_badge=getattr(scenario, "marketing_badge", None),
         age_range=getattr(scenario, "age_range", None),
@@ -207,11 +274,13 @@ def scenario_to_response(scenario: Scenario) -> ScenarioResponse:
         tagline=getattr(scenario, "tagline", None),
         rating=getattr(scenario, "rating", None),
         review_count=getattr(scenario, "review_count", 0),
-        price_override_base=float(scenario.price_override_base) if getattr(scenario, "price_override_base", None) is not None else None,
-        price_override_extra_page=float(scenario.price_override_extra_page) if getattr(scenario, "price_override_extra_page", None) is not None else None,
+        # Scenarios are topics, not products — pricing always comes from the Product model
+        price_override_base=None,
+        price_override_extra_page=None,
         default_page_count=getattr(scenario, "default_page_count", None),
         outfit_girl=getattr(scenario, "outfit_girl", None),
         outfit_boy=getattr(scenario, "outfit_boy", None),
+        custom_inputs_schema=_normalize_custom_inputs(scenario.custom_inputs_schema),
         linked_product_page_count=(
             scenario.linked_product.default_page_count
             if getattr(scenario, "linked_product", None) and scenario.linked_product.default_page_count
@@ -235,24 +304,38 @@ def scenario_to_response(scenario: Scenario) -> ScenarioResponse:
 
 
 @router.get("", response_model=list[ScenarioResponse])
-async def list_scenarios() -> list[ScenarioResponse]:
+async def list_scenarios(include_all: bool = False) -> list[ScenarioResponse]:
     """
     List active scenarios. If none are active, returns all scenarios (fallback).
+    Pass ?include_all=true to include inactive scenarios (for debugging).
     Session is created inside handler so DB connection errors are caught and we return []
     (never 500), ensuring CORS headers are always sent.
     """
     try:
         async with async_session_factory() as db:
-            result = await db.execute(
-                select(Scenario)
-                .where(Scenario.is_active == True)
-                .order_by(Scenario.display_order, Scenario.name)
-            )
-            scenarios = result.scalars().all()
-            if not scenarios:
-                result_all = await db.execute(
-                    select(Scenario).order_by(Scenario.display_order, Scenario.name)
+            if include_all:
+                query = (
+                    select(Scenario)
+                    .options(selectinload(Scenario.linked_product))
+                    .order_by(Scenario.display_order, Scenario.name)
                 )
+            else:
+                query = (
+                    select(Scenario)
+                    .where(Scenario.is_active == True)
+                    .options(selectinload(Scenario.linked_product))
+                    .order_by(Scenario.display_order, Scenario.name)
+                )
+            result = await db.execute(query)
+            scenarios = result.scalars().all()
+            
+            if not scenarios:
+                query_all = (
+                    select(Scenario)
+                    .options(selectinload(Scenario.linked_product))
+                    .order_by(Scenario.display_order, Scenario.name)
+                )
+                result_all = await db.execute(query_all)
                 scenarios = result_all.scalars().all()
 
             out: list[ScenarioResponse] = []
@@ -260,7 +343,7 @@ async def list_scenarios() -> list[ScenarioResponse]:
                 try:
                     out.append(scenario_to_response(s))
                 except Exception as e:
-                    logger.warning("list_scenarios: skip scenario %s: %s", getattr(s, "id", None), e)
+                    logger.warning("list_scenarios: skip scenario %s (%s): %s", getattr(s, "id", None), getattr(s, "name", "?"), str(e)[:500])
             return out
     except Exception as e:
         logger.exception("list_scenarios failed: %s", e)
@@ -330,8 +413,6 @@ async def list_learning_outcomes_grouped(
                 description=outcome.description,
                 icon_url=outcome.icon_url,
                 color_theme=outcome.color_theme,
-                ai_prompt=outcome.ai_prompt,
-                ai_prompt_instruction=outcome.ai_prompt_instruction,
             )
         )
 
@@ -375,8 +456,6 @@ async def list_learning_outcomes_flat(
             category=o.category,
             category_label=o.category_label,
             age_group=o.age_group,
-            ai_prompt=o.ai_prompt,
-            ai_prompt_instruction=o.ai_prompt_instruction,
         )
         for o in outcomes
     ]

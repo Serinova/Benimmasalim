@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.api.v1.admin import (
     abandoned_trials,
+    accounting,
     back_cover,
     book_config,
     coloring_books,
@@ -17,6 +18,7 @@ from app.api.v1.admin import (
     rate_limit,
     scenarios,
     seed_coloring,
+    settings,
     users,
     visual_styles,
 )
@@ -43,3 +45,5 @@ router.include_router(
 router.include_router(homepage.router, prefix="/homepage", tags=["Admin - Homepage"])
 router.include_router(rate_limit.router, prefix="/rate-limit", tags=["Admin - Rate Limit"])
 router.include_router(seed_coloring.router, tags=["Admin - Seed"])
+router.include_router(settings.router, prefix="/settings", tags=["Admin - Settings"])
+router.include_router(accounting.router, prefix="/accounting", tags=["Admin - Accounting"])

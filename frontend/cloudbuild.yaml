@@ -6,6 +6,10 @@ steps:
       - 'runner'
       - '-t'
       - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/frontend:latest'
+      - '--build-arg'
+      - 'BACKEND_INTERNAL_URL=https://benimmasalim-backend-pl5vhpeiya-ew.a.run.app'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=https://benimmasalim-backend-pl5vhpeiya-ew.a.run.app/api/v1'
       - '.'
 images:
   - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/frontend:latest'

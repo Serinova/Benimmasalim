@@ -1,380 +1,299 @@
-# -*- coding: utf-8 -*-
 """
-Kudus Eski Sehir Macerasi Senaryosu - Yeni Sistem (Sifirdan)
-
-Bu script, Kudus Eski Sehir senaryosunu profesyonel, hassas ve
-3 dine saygilי modular prompt'larla olusturur.
-
-HASSAS ICERIK: Dini danisman onayi onerilir.
-
-Calistirma:
-    cd backend
-    python -m scripts.update_jerusalem_scenario
+Kudüs Eski Şehir Macerası — Birleştirilmiş Güncelleme
+======================================================
+create_kudus_scenario.py ve eski update_jerusalem_scenario.py birleştirildi.
+- Modular prompt (500 char limit, tüm placeholder'lar mevcut)
+- Hikaye: Kültürel keşif macerası (3 dine eşit saygı)
+- Outfit: update_all_outfits.py standardı (EXACTLY lock phrase)
+- custom_inputs_schema: list formatı (frontend uyumlu)
+- theme_key: kudus (tek senaryo)
+- Yüz benzerliği: CHARACTER block önce
 """
 
 import asyncio
-import json
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from sqlalchemy import select, or_
+
 from app.core.database import async_session_factory
 from app.models.scenario import Scenario
 
+# ============================================================================
+# MODULAR PROMPT COMPONENTS (500 char limit!)
+# ============================================================================
 
-# =============================================================================
-# KUDUS ESKI SEHIR - MODULAR MASTER PROMPT TEMPLATES
-# =============================================================================
+KUDUS_COVER_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Ancient Jerusalem Old City walls, golden Dome of the Rock in distance. "
+    "Narrow cobblestone streets, arched doorways, golden Jerusalem stone. "
+    "Wide shot: child 25%, historic architecture 75%. "
+    "Peaceful, multi-cultural atmosphere. UNESCO site."
+)
 
-# -----------------------------------------------------------------------------
-# KAPAK PROMPT TEMPLATE (Modular - Pipeline-Friendly: ~410 char)
-# -----------------------------------------------------------------------------
+KUDUS_PAGE_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Elements: [Walls: Ottoman golden limestone / Dome of Rock: golden dome, blue tiles / "
+    "Souq: spices, copper lanterns, crafts / Alleys: narrow cobblestone, arched / "
+    "Four Quarters: diverse architecture / Jerusalem stone: warm golden glow]. "
+    "Golden light, peaceful, historic atmosphere."
+)
 
-JERUSALEM_COVER_PROMPT = """Jerusalem Old City scene: {scene_description}. 
-Child in foreground, golden Dome of the Rock and ancient stone walls in distance. 
-Narrow cobblestone streets, arched doorways, limestone buildings. 
-Peaceful pilgrims from diverse backgrounds (distant, no detailed faces). 
-Golden sunset light on ancient Jerusalem stone. 
-Wide shot: child 20%, historic architecture 80%. 
-Multi-faith respect, peaceful atmosphere. 
-NO religious figure depictions, NO worship close-ups."""
+# ============================================================================
+# OUTFIT DEFINITIONS (update_all_outfits.py standardı)
+# ============================================================================
 
+OUTFIT_GIRL = (
+    "soft ivory white cotton long-sleeve modest dress reaching ankles, "
+    "white cotton hijab headscarf covering hair completely with neat edges, "
+    "comfortable light beige flat sandals, small white cotton drawstring bag. "
+    "EXACTLY the same outfit on every page — same ivory dress, same white hijab, same beige sandals."
+)
 
-# -----------------------------------------------------------------------------
-# IC SAYFA PROMPT TEMPLATE (Modular - Pipeline-Friendly: ~490 char)
-# -----------------------------------------------------------------------------
+OUTFIT_BOY = (
+    "clean white cotton knee-length kurta tunic shirt, "
+    "white knit taqiyah prayer cap on head, light beige loose-fitting cotton pants, "
+    "comfortable tan leather sandals, small white cotton drawstring bag. "
+    "EXACTLY the same outfit on every page — same white kurta, same white taqiyah, same beige pants."
+)
 
-JERUSALEM_PAGE_PROMPT = """Jerusalem Old City scene: {scene_description}. 
-Locations: [Dome of Rock: golden dome, blue tiles / Al-Aqsa: gray dome / Western Wall: ancient stones / Holy Sepulchre: stone domes / Via Dolorosa: cobblestone / Gates: Jaffa, Damascus / Four Quarters: Armenian, Jewish, Christian, Muslim / Olive trees, limestone]. 
-Golden Jerusalem stone, warm sunlight. 
-Diverse pilgrims (distant, no faces). 
-NO worship close-ups, NO religious figures. 
-Historic, peaceful, multi-faith respect."""
+# ============================================================================
+# STORY BLUEPRINT (Kültürel Keşif Macerası)
+# ============================================================================
 
+KUDUS_STORY_PROMPT_TR = """
+# KUDÜS ESKİ ŞEHİR MACERASI — KÜLTÜREL KEŞİF
 
-# -----------------------------------------------------------------------------
-# AI HIKAYE URETIM PROMPTU (Gemini icin - TR) - Cultural Journey Blueprint
-# -----------------------------------------------------------------------------
+## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
 
-JERUSALEM_STORY_PROMPT_TR = """Ailesiyle birlikte Kudus Eski Sehir'e kulturel bir yolculuga giden {child_name} adli {child_age} yasinda bir cocugun tarih ve hos goru hikayesini yaz.
+Bu hikaye bir kültürel keşif macerası. {child_name}, Kudüs Eski Şehir'de
+bir Bilge Kedi (surların labirent sokaklarını ezbere bilen antik kedi) ile
+birlikte 5000 yıllık tarihi, kültürel çeşitliliği ve hoşgörüyü keşfeder.
 
-KULTUREL KESIF YAPISI - 7 BOLUM (22 sayfa):
+⚠️ ÖNEMLİ KURALLAR:
+- Bu bir MACERA hikayesi, gezi rehberi DEĞİL
+- Her bölümde çocuk AKTİF katılımcı
+- Endişe → Eylem → Başarı döngüsü
+- Yardımcı karakter: Bilge Kedi (surların antik kedisi)
+- Çocuk TEK BAŞINA macerada (aile yok)
+- Korku/şiddet/gore YOK
+- Dini ritüel/ibadet sahnesi YOK — yapılar "mimari şaheser" olarak
+- 3 dine EŞİT saygı, siyasi mesaj YOK
+- Peygamber görseli YOK (sadece hikaye anlatımı)
+- Odak: MİMARİ, ARKEOLOJİ, ÇARŞI KÜLTÜRÜ, HOŞGÖRÜ
 
-**BOLUM 1 - GIRIS** (Sayfa 1-4) [role: opening]:
-- Sayfa 1-2: Kudus Eski Sehir'e varis, tas sokaklari
-  Ilk izlenim: Altin kubbenin gorunusu
-  Emotion: Merak, tarih hissi
-- Sayfa 3-4: Dort mahalleyi ogrenmek
-  Kesfedilecek: Islam, Hiristiyan, Musevi, Ermeni mahalleleri
-  Kesif basliyor
+---
 
-**BOLUM 2 - ALTIN KUBBE (Kubbetus-Sahra)** (Sayfa 5-8) [role: exploration]:
-- Sayfa 5-6: Dome of the Rock yaklasma
-  Epic #1: Altin kubbenin pariltisi guneste
-  Mimari hayranlık: Sekizgen yapi, mavi cini suslemeleri
-- Sayfa 7-8: Islamî mimari
-  Tarihi bilgi: Hz. Muhammed'in Mirac gecesi (hikaye anlatimi, gorsel YOK)
-  Deger: Kutsal mekan, saygi
+### BÖLÜM 1 — GİRİŞ: SURLARIN ARDINDA (Sayfa 1-4)
+{child_name} Şam Kapısı'ndan Eski Şehir'e giriyor. Dev taş surlar,
+dar sokaklar, altın rengi taşlar. Bilge Kedi kapının kenarında bekliyor.
+"Bu surların arkasında 5000 yıllık sırlar var. Gel, göstereyim!"
+- S1: Şam Kapısı'na varış, dev kemerli giriş
+- S2: Surların içine adım atma — dar taş sokaklar
+- S3: Bilge Kedi ile tanışma — "5000 yıllık sırlar!"
+- S4: Altın rengi Kudüs taşı güneşte parlıyor ✓ İLK HAYRANLIK
+**Değer**: Merak, keşif cesareti
 
-**BOLUM 3 - MESCID-I AKSA** (Sayfa 9-11) [role: exploration]:
-- Sayfa 9-10: Mescid-i Aksa avlusu
-  Epic #2: Genis avlu, gri kubbe
-  Mimari: Tas kemerler, tarihi binalar
-- Sayfa 11: Islam tarihi
-  Deger: Uc kutsal mescidden biri, manevi bag
+---
 
-**BOLUM 4 - AGLAMA DUVARI (Western Wall)** (Sayfa 12-14) [role: climax]:
-- Sayfa 12-13: Western Wall plazasi
-  Epic #3: Eski tas duvar (2000 yillik)
-  Gozlem: Musevi ziyaretciler (uzaktan, saygili)
-- Sayfa 14: Hosgoru anı
-  Ogrenme: Farkli dinler, ayni sehir, baris
-  Deger: Hosgoru, saygi
+### BÖLÜM 2 — ALTIN KUBBE: MİMARİ ŞAHESER (Sayfa 5-8)
+Bilge Kedi çocuğu yüksek bir noktaya götürüyor. Altın Kubbe
+(Kubbetüs-Sahra) güneşte parlıyor! Sekizgen yapı, mavi çini
+süslemeleri. "Bu kubbe 1300 yıldır burada parlıyor!"
+- S5: Yüksek noktaya tırmanma, manzara
+- S6: Altın Kubbe'nin parıltısı — "İnanılmaz!" ✓ MİMARİ ZİRVESİ
+- S7: Sekizgen yapı, mavi çiniler — mimari detaylar
+- S8: Mescid-i Aksa avlusu, geniş taş alan
+**Değer**: Mimari güzellik, tarih bilinci
 
-**BOLUM 5 - HRISTIYAN MIRASI** (Sayfa 15-17) [role: resolution]:
-- Sayfa 15-16: Church of Holy Sepulchre
-  Epic #4: Tas kubbe, tarihi giris
-  Ogrenme: Hz. Isa'nin yolu (hikaye, gorsel YOK)
-- Sayfa 17: Via Dolorosa sokagi
-  Dar tasli sokaklar, tarihi atmosfer
-  Deger: Hristiyan mirasi, saygi
+---
 
-**BOLUM 6 - DORT MAHALLE KESFI** (Sayfa 18-20) [role: resolution]:
-- Sayfa 18: Ermeni mahallesi
-  Farklı kültür, mozaik sanat
-- Sayfa 19: Carsi ve sokaklari
-  Rengarenk carsi, eski sehir yasami
-- Sayfa 20: Dort mahallenin birligi
-  Ogrenme: Farkliliklar zenginlik
-  Deger: Kulturel cesitlilik
+### BÖLÜM 3 — ÇARŞI: BAHARAT VE ZANAAT (Sayfa 9-12)
+Kapalı çarşıya giriş! Baharat dağları (zerdeçal, kırmızı biber, zahter),
+bakır fenerler, zeytin ağacı oymalar, seramik karolar. Bilge Kedi
+bir baharat tüccarının tezgahının altından geçiyor. Çocuk mozaik
+ustasından küçük taşları birleştirmeyi öğreniyor.
+- S9: Çarşıya giriş — renk ve koku cümbüşü
+- S10: Baharat dağları — "Zerdeçal altın gibi!"
+- S11: Mozaik ustasının atölyesi — sabırla taş birleştirme ✓ ZANAAT ZİRVESİ
+- S12: Kendi mozaiğini yapma — başarı! ✓ BAŞARI HİSSİ
+**Değer**: Sabır, el sanatı, kültürel zenginlik
 
-**BOLUM 7 - BARISIN SEHRI** (Sayfa 21-22) [role: conclusion]:
-- Sayfa 21: Eski Sehir surlari panorama
-  Epic #5: Tum sehir gorus, gun batimi
-  3 din, 1 sehir, baris mesaji
-- Sayfa 22: Donus ve soz
-  "Farkliliklar bizi zenginlestirir"
-  Emotion: Hosgoru, baris, umut
+---
 
-KULTUREL KESIF MOMENTLERI (5 Epic):
+### BÖLÜM 4 — DÖRT MAHALLE: FARKLILIKLAR ZENGİNLİK (Sayfa 13-16)
+Bilge Kedi çocuğu dört mahalleye götürüyor. Her mahallede farklı
+mimari, farklı kokular, farklı sesler. Ama hepsi aynı surların
+içinde, aynı taş sokaklarda. "Farklılıklar zenginliktir!"
+- S13: İlk mahalle — kendine özgü mimari ve atmosfer
+- S14: İkinci mahalle — farklı ama güzel
+- S15: Üçüncü mahalle — "Her biri ayrı dünya!" ✓ KÜLTÜREL ZİRVE
+- S16: Dördüncü mahalle — "Hepsi bir arada yaşıyor!"
+**Değer**: Hoşgörü, farklılıklara saygı, birlikte yaşama
 
-1. **Altin Kubbe pariltisi** (Sayfa 6): Mimari hayranlık
-2. **Mescid-i Aksa avlu** (Sayfa 10): Islam tarihi
-3. **Aglama Duvari** (Sayfa 13): 2000 yillik tas, Musevi mirası
-4. **Church of Holy Sepulchre** (Sayfa 16): Hristiyan mirası
-5. **Eski Sehir panorama** (Sayfa 21): 3 din birlikte, baris
+---
 
-4 KESIF DONGUSU (Hosgoru Merdivenֱ):
+### BÖLÜM 5 — YERALTI: ARKEOLOJİK KATMANLAR (Sayfa 17-19)
+Bilge Kedi gizli bir geçitten yeraltına iniyor. Arkeolojik katmanlar —
+Roma sütunları, Bizans mozaikleri, Osmanlı kemerleri. Her katman
+farklı uygarlık! "Bu şehir katman katman tarih."
+- S17: Yeraltı geçidine giriş — karanlık, Bilge Kedi yol gösteriyor
+- S18: Arkeolojik katmanlar — "Roma, Bizans, Osmanlı!" ✓ TARİH ZİRVESİ
+- S19: Antik su tüneli — "Binlerce yıllık mühendislik!"
+**Değer**: Tarih bilinci, uygarlık mirası
 
-**Dongu 1 - Islam Mirası (5-8):**
-- Kesif: Altin Kubbe + Mescid-i Aksa
-- Ogrenme: Islamî mimari, Hz. Muhammed'in Mirac'i (hikaye)
-- Deger: Kutsal mekan, manevi bag
+---
 
-**Dongu 2 - Musevi Mirası (12-14):**
-- Kesif: Aglama Duvarי, 2000 yillik tas
-- Ogrenme: Musevi ibadet (uzaktan gozlem, saygi)
-- Deger: Farklı dine saygi, hosgoru ZIRVESI
+### BÖLÜM 6 — SURLAR: PANORAMA (Sayfa 20-21)
+Surların üstüne çıkma. Tüm Eski Şehir ayakların altında — altın
+kubbeler, taş çatılar, minareler, çan kuleleri. Gün batımında
+her şey altın rengi. Bilge Kedi: "Bu şehir insanlığın ortak hazinesi."
+- S20: Surların üstünde yürüme — panoramik manzara
+- S21: Gün batımı — tüm şehir altın rengi ✓ PANORAMA DORUĞU
+**Değer**: Kültürel miras, insanlığın ortak değeri
 
-**Dongu 3 - Hristiyan Mirası (15-17):**
-- Kesif: Kutsal Kabir Kilisesi, Via Dolorosa
-- Ogrenme: Hz. Isa'nin yolu (hikaye anlatimi)
-- Deger: Hristiyan mirası, saygi
+---
 
-**Dongu 4 - Dort Mahalle Birligi (18-20):**
-- Kesif: Dort mahalle (Islam, Musevi, Hristiyan, Ermeni)
-- Ogrenme: Kulturel cesitlilik zenginlik
-- Deger: Birlikte yasama, baris
+### BÖLÜM 7 — FİNAL: HOŞGÖRÜNÜN ŞEHRİ (Sayfa 22)
+Şam Kapısı'na dönüş. Bilge Kedi: "Bu şehir sana ne öğretti?"
+Çocuk: "Farklılıklar zenginliktir. Birlikte yaşamak güzeldir."
+Bilge Kedi gülümsüyor ve surların arasında kayboluyor.
+- S22: Dönüş, hoşgörü mesajı, gurur ✓ TATMIN DORUĞU
+**Değer**: Hoşgörü, barış, kültürel zenginlik
 
-HIKAYE YAPISI (Kulturel ve Tarihi Kesif):
+---
 
-KUTSAL MEKANLAR (3 Dine Saygili):
-- **Islam**: Kubbetus-Sahra (Altin Kubbe), Mescid-i Aksa
-- **Yahudilik**: Aglama Duvari (Western Wall)
-- **Hristiyanlık**: Kutsal Kabir Kilisesi, Via Dolorosa
+## DOPAMIN ZİRVELERİ:
+1. S4: Kudüs taşının altın parıltısı
+2. S6: Altın Kubbe — mimari şaheser
+3. S12: Mozaik yapma — el sanatı başarısı
+4. S15: Dört mahalle — kültürel çeşitlilik
+5. S18: Arkeolojik katmanlar — uygarlık tarihi
+6. S21: Surlardan panorama — gün batımı
+7. S22: Hoşgörü mesajı — tatmin
 
-MIMARI UNSURLAR:
-- Altin kubbe (Islamic architecture)
-- Eski tas duvarlar (2000+ yillik)
-- Dar tasli sokaklari
-- Tas kemerler
-- Dort mahalle farkli mimarileri
+## GÜVENLİK KURALLARI:
+- Korku/şiddet/gore YOK
+- Dini ritüel/ibadet sahnesi YOK
+- Peygamber görseli YOK
+- Siyasi mesaj/taraf tutma YOK
+- 3 dine eşit saygı
+- Yapılar "mimari şaheser ve tarihî anıt" olarak
+"""
 
-EGITSEL BILGILER (hikayeye organik):
-- Kudus: 3 buyuk dinin kutsal sehri
-- Eski Sehir: 4 mahalle (Islam, Musevi, Hristiyan, Ermeni)
-- Mirac Gecesi hikayesi (gorsel YOK, anlatim)
-- Hz. Isa'nin yolu (gorsel YOK, anlatim)
-- Aglama Duvari: Ikinci Mabet'ten kalan duvar
+# ============================================================================
+# CULTURAL ELEMENTS
+# ============================================================================
 
-ANA DEGER: HOSGORU ve BARIS
-- 3 dine esit saygi
-- Farkliliklara saygi
-- Kulturel cesitlilik zenginliktir
-- Birlikte yasama
-- Baris mesajı
-
-TON:
-- Saygili, kulturel, ogretici
-- Bariscil, dostane
-- Tarihi odakli (dini degil)
-- Hosgoru vurgusu
-- Yaşa uygun dil ({child_age} yas)
-
-YASAKLAR (Dini Hassasiyet - KRITIK!):
-- Hz. Muhammed, Hz. Isa, peygamberler GORSELLESTIRMEZ
-- Ibadet close-up'lari YOK (namaz, dua sadece uzaktan bahsedilir)
-- 3 dinden birine oncelik YOK (esit saygi)
-- Politik soylem YOK
-- Mezhep/sekt ayrimciligi YOK
-- Korku, catisma, travma YOK
-
-SAYFA DAGILIMI:
-Hikayeyi {page_count} sayfaya uygun yaz. Her sayfa 2-4 cumle (50-90 kelime).
-
-CUSTOM INPUT KULLANIMI:
-- {favorite_location}: Cocugun en sevdigi yeri hikayede one cikar
-- {learning_focus}: Ogrenme odagi (tarih/mimari/kulturler)
-
-Hikayede giris-gelisme-sonuc olsun, cocuk hosgoruyu ogrensin, farkliliklara saygi duysun.
-Vurgulanmak istenen deger: HOSGORU ve BARIS. Kulturel zenginlik vurgula."""
-
-
-# -----------------------------------------------------------------------------
-# KIYAFET TASARIMLARI (Islamic Modest - Umre gibi)
-# -----------------------------------------------------------------------------
-
-OUTFIT_GIRL = """white cotton modest dress with long sleeves reaching wrists, floor-length covering ankles, white hijab headscarf covering hair completely with simple edges, comfortable beige sandals, small backpack, simple and clean appearance, no jewelry, serene look"""
-
-OUTFIT_BOY = """white cotton tunic (knee-length kurta style), white taqiyah prayer cap on head, light beige loose-fitting pants, comfortable tan sandals, small backpack, simple and clean appearance, no patterns, humble look"""
-
-
-# -----------------------------------------------------------------------------
-# KULTUREL ELEMENTLER (JSON)
-# -----------------------------------------------------------------------------
-
-JERUSALEM_CULTURAL_ELEMENTS = {
-    "holy_sites": [
-        "Dome of the Rock (Islamic)",
-        "Al-Aqsa Mosque (Islamic)",
-        "Western Wall (Jewish)",
-        "Church of the Holy Sepulchre (Christian)",
-        "Via Dolorosa (Christian)",
-        "Four Quarters of Old City"
-    ],
+KUDUS_CULTURAL_ELEMENTS = {
+    "location": "Old City of Jerusalem, UNESCO World Heritage Site",
+    "historic_significance": "5000+ years of continuous habitation",
     "architecture": [
-        "Golden Dome of the Rock",
-        "Ancient Jerusalem stone (golden limestone)",
-        "Narrow cobblestone streets",
-        "Stone arches and doorways",
-        "Old City walls and gates",
-        "Blue decorative tiles (Islamic)",
-        "Ancient olive trees"
+        "Ottoman city walls (Suleiman the Magnificent, 16th century)",
+        "Golden Dome of the Rock (iconic golden dome, blue tiles)",
+        "Narrow cobblestone alleys with arched passageways",
+        "Jerusalem stone (meleke limestone) — golden glow in sunlight",
+        "Four distinct quarters with unique architecture",
     ],
-    "four_quarters": [
-        "Muslim Quarter",
-        "Jewish Quarter",
-        "Christian Quarter",
-        "Armenian Quarter"
+    "cultural_elements": [
+        "Covered souq bazaars (spices, crafts, lanterns)",
+        "Artisan workshops (mosaic, olive wood, ceramics, copper)",
+        "Archaeological layers (Roman, Byzantine, Crusader, Ottoman)",
+        "Ancient water systems and underground tunnels",
     ],
-    "historical_elements": [
-        "Miraj Night (Prophet Muhammad, narrative only)",
-        "Western Wall - remnant of Second Temple",
-        "Via Dolorosa - Jesus's path (narrative only)",
-        "Multi-faith coexistence",
-        "Ancient city history (3000+ years)"
-    ],
-    "values": [
-        "Tolerance (Hosgoru)",
-        "Peace (Baris)",
-        "Respect for diversity",
-        "Multi-faith harmony",
-        "Cultural appreciation"
-    ],
-    "atmosphere": "peaceful, historic, multi-cultural, respectful, tolerant",
-    "color_palette": "golden limestone, warm amber, ancient stone beige, blue tiles, sunset gold"
+    "atmosphere": "Ancient, multicultural, warm golden light, peaceful",
+    "color_palette": "Jerusalem gold stone, Mediterranean blue, spice colors, olive green",
+    "values": ["Tolerance", "Peace", "Cultural diversity", "Respect"],
 }
 
+# ============================================================================
+# CUSTOM INPUTS (list formatı — frontend uyumlu)
+# ============================================================================
 
-# -----------------------------------------------------------------------------
-# OZEL GIRIS ALANLARI (Custom Inputs)
-# -----------------------------------------------------------------------------
-
-JERUSALEM_CUSTOM_INPUTS = [
+KUDUS_CUSTOM_INPUTS = [
     {
-        "key": "favorite_location",
-        "label": "En Sevdigi Yer",
+        "key": "favorite_quarter",
+        "label": "En Merak Ettiği Yer",
         "type": "select",
-        "options": [
-            "Altin Kubbe (Kubbetus-Sahra)",
-            "Mescid-i Aksa",
-            "Eski Sehir Surlari",
-            "Carsi ve Sokaklari"
-        ],
-        "default": "Altin Kubbe (Kubbetus-Sahra)",
+        "options": ["Çarşı ve Baharat Sokağı", "Zanaatkâr Atölyeleri", "Surlar ve Kapılar", "Arkeoloji Alanları"],
+        "default": "Çarşı ve Baharat Sokağı",
         "required": False,
-        "help_text": "Hikayede cocugun en cok vakit gecirecegi yer"
+        "help_text": "Hikayenin en renkli sahnesinin geçeceği yer",
     },
     {
-        "key": "learning_focus",
-        "label": "Ogrenme Odagi",
+        "key": "special_discovery",
+        "label": "Keşfetmek İstediği Şey",
         "type": "select",
-        "options": [
-            "Tarihi Yapilar",
-            "Kulturel Cesitlilik",
-            "Mimari Guzellikler",
-            "Baris Mesaji"
-        ],
-        "default": "Kulturel Cesitlilik",
+        "options": ["Kayıp Mozaik Haritası", "Sihirli Baharat Tarifi", "Gizli Yeraltı Tüneli", "Antik Zanaatkâr Sırrı"],
+        "default": "Kayıp Mozaik Haritası",
         "required": False,
-        "help_text": "Hikayede vurgulanacak ana tema"
-    }
+        "help_text": "Hikayede çocuğun peşine düşeceği büyük gizem",
+    },
 ]
+
+# ============================================================================
+# DATABASE UPDATE FUNCTION
+# ============================================================================
 
 
 async def update_jerusalem_scenario():
-    """Kudus Eski Sehir senaryosunu sifirdan modular prompt'larla olusturur."""
-    
-    print("\n" + "="*60)
-    print(" KUDUS ESKI SEHIR - YENI SISTEM (SIFIRDAN)")
-    print("="*60 + "\n")
-    
+    """Kudüs senaryosunu günceller. Çift senaryo varsa birini siler."""
+
     async with async_session_factory() as db:
         result = await db.execute(
             select(Scenario).where(
                 or_(
+                    Scenario.theme_key == "kudus",
+                    Scenario.theme_key == "jerusalem_old_city",
+                    Scenario.name.ilike("%Kudüs%"),
                     Scenario.name.ilike("%Kudus%"),
                     Scenario.name.ilike("%Jerusalem%"),
-                    Scenario.theme_key == "jerusalem_old_city",
                 )
             )
         )
-        scenario = result.scalar_one_or_none()
-        
-        if not scenario:
-            print("[INFO] Kudus senaryosu bulunamadi. Yeni olusturuluyor...")
-            scenario = Scenario(
-                name="Kudus Eski Sehir Macerasi",
-                is_active=True,
-            )
-            db.add(scenario)
+        scenarios = result.scalars().all()
+
+        if len(scenarios) > 1:
+            # Birden fazla Kudüs senaryosu var — birini koru, diğerlerini sil
+            keep = scenarios[0]
+            for s in scenarios[1:]:
+                await db.delete(s)
+                print(f"Deleted duplicate Kudüs scenario: {s.name} ({s.id})")
+            scenario = keep
+        elif len(scenarios) == 1:
+            scenario = scenarios[0]
         else:
-            print(f"[OK] Senaryo bulundu: {scenario.name} (ID: {scenario.id})")
-            print("[INFO] Eski prompt'lar SIFIRLANIYOR, yeni sistem yukleniyor...")
-        
+            print("Kudüs scenario not found — skipping")
+            return
+
+        scenario.name = "Kudüs Eski Şehir Macerası"
         scenario.description = (
-            "3 buyuk dinin kutsal sehri Kudus'te kulturel bir yolculuk! "
-            "Altin Kubbe, Mescid-i Aksa, Aglama Duvari, Kutsal Kabir. "
-            "Hosgoru, baris ve kulturel zenginlik dolu bir deneyim."
+            "UNESCO Dünya Mirası surlarla çevrili antik şehirde büyülü bir macera! "
+            "5.000 yıllık taş sokaklarda zaman yolculuğu, sihirli baharat çarşısı "
+            "ve altın rengi Kudüs taşının ışığında kültürlerin mozaiğini keşfet!"
         )
-        scenario.thumbnail_url = "/scenarios/jerusalem_old_city.jpg"
-        scenario.cover_prompt_template = JERUSALEM_COVER_PROMPT
-        scenario.page_prompt_template = JERUSALEM_PAGE_PROMPT
-        scenario.story_prompt_tr = JERUSALEM_STORY_PROMPT_TR
-        scenario.ai_prompt_template = None
-        scenario.location_en = "Jerusalem Old City"
-        scenario.theme_key = "jerusalem_old_city"
-        scenario.cultural_elements = JERUSALEM_CULTURAL_ELEMENTS
-        scenario.custom_inputs_schema = JERUSALEM_CUSTOM_INPUTS
+        scenario.theme_key = "kudus"
+        scenario.cover_prompt_template = KUDUS_COVER_PROMPT
+        scenario.page_prompt_template = KUDUS_PAGE_PROMPT
+        scenario.story_prompt_tr = KUDUS_STORY_PROMPT_TR
         scenario.outfit_girl = OUTFIT_GIRL
         scenario.outfit_boy = OUTFIT_BOY
-        scenario.default_page_count = 22
-        scenario.display_order = 11
+        scenario.cultural_elements = KUDUS_CULTURAL_ELEMENTS
+        scenario.custom_inputs_schema = KUDUS_CUSTOM_INPUTS
+        scenario.marketing_badge = "Kültürel Keşif"
+        scenario.age_range = "7-10"
+        scenario.tagline = "5000 yıllık kültürlerin mozaiği"
         scenario.is_active = True
-        scenario.marketing_badge = "Kulturel Kesif"
-        scenario.age_range = "7-10 yas"
-        scenario.tagline = "3 dinin kutsal sehrinde hosgoru ve baris yolculugu"
-        scenario.marketing_features = [
-            "Altin Kubbe ve Mescid-i Aksa",
-            "Aglama Duvari ve Kutsal Kabir",
-            "4 mahalle kesfi",
-            "3 dine esit saygi",
-            "Hosgoru ve baris degerleri",
-            "Kulturel zenginlik"
-        ]
-        scenario.estimated_duration = "20-25 dakika okuma"
-        scenario.rating = 5.0
-        
+        scenario.display_order = 9
+
         await db.commit()
-        await db.refresh(scenario)
-        
-        print("\n[OK] GUNCELLEME TAMAMLANDI!\n")
-        print("-" * 60)
-        print("Guncellenen alanlar:")
-        print(f"   - ID: {scenario.id}")
-        print(f"   - name: {scenario.name}")
-        print(f"   - cover_prompt_template: {len(JERUSALEM_COVER_PROMPT)} karakter")
-        print(f"   - page_prompt_template: {len(JERUSALEM_PAGE_PROMPT)} karakter")
-        print(f"   - story_prompt_tr: {len(JERUSALEM_STORY_PROMPT_TR)} karakter")
-        print(f"   - default_page_count: {scenario.default_page_count}")
-        print(f"   - display_order: {scenario.display_order}")
-        print("-" * 60)
-        print("\nKAPAK PROMPT (ilk 300 char):")
-        print(JERUSALEM_COVER_PROMPT[:300] + "...")
-        print("\nSAYFA PROMPT (ilk 300 char):")
-        print(JERUSALEM_PAGE_PROMPT[:300] + "...")
-        print("\n" + "=" * 60)
-        print("Kudus Eski Sehir YENI SISTEM ile hazir!")
-        print("DIKKAT: Dini danisman onayi onerilir!")
-        print("=" * 60 + "\n")
+        print(f"Kudüs scenario updated: {scenario.id}")
 
 
 if __name__ == "__main__":

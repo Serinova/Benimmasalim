@@ -50,114 +50,145 @@ if settings.sentry_dsn and settings.is_production:
     )
 
 
-async def _cleanup_stuck_payments() -> None:
-    """Background task: rollback PAYMENT_PENDING orders older than 2 hours."""
-    from datetime import datetime, timedelta
+_SEED_VERSION = "3"  # Increment when creators/updaters list changes
 
-    from sqlalchemy import select
 
+async def _seed_missing_scenarios() -> None:
+    """Seed scenarios that exist in scripts but not in production DB.
+
+    Version-gated: skips all work if app_settings.seeded_version == _SEED_VERSION.
+    Increment _SEED_VERSION whenever the creators/updaters lists change.
+    """
     from app.core.database import async_session_factory
-    from app.models.order import Order, OrderStatus
+    from sqlalchemy import select, func
 
-    while True:
-        await asyncio.sleep(1800)  # run every 30 minutes
+    creators: list[tuple[str, str, str]] = [
+        ("gobeklitepe", "scripts.create_gobeklitepe_scenario", "create_gobeklitepe_scenario"),
+        ("ephesus", "scripts.create_efes_scenario", "create_efes_scenario"),
+        ("sumela", "scripts.create_sumela_scenario", "create_sumela_scenario"),
+        ("sultanahmet", "scripts.create_sultanahmet_scenario", "create_sultanahmet_scenario"),
+        ("galata", "scripts.create_galata_scenario", "create_galata_scenario"),
+        ("toy_world", "scripts.create_toy_world_scenario", "create_toy_world_scenario"),
+        ("fairy_tale_world", "scripts.create_fairy_tale_scenario", "create_fairy_tale_scenario"),
+    ]
+
+    updaters: list[tuple[str, str, str]] = [
+        ("cappadocia", "scripts.update_cappadocia_scenario", "update_cappadocia_scenario"),
+        ("solar_system", "scripts.update_space_scenario", "update_space_scenario"),
+        ("catalhoyuk", "scripts.update_catalhoyuk_scenario", "update_catalhoyuk_scenario"),
+        ("kudus", "scripts.update_jerusalem_scenario", "update_jerusalem_scenario"),
+        ("ocean_depths", "scripts.update_ocean_adventure_scenario", "update_ocean_adventure_scenario"),
+        ("umre_pilgrimage", "scripts.update_umre_scenario", "update_umre_scenario"),
+        ("amazon_rainforest", "scripts.update_amazon_scenario", "update_amazon_scenario"),
+        ("dinosaur_time_travel", "scripts.update_dinosaur_scenario", "update_dinosaur_scenario"),
+    ]
+
+    try:
+        import importlib
+        import uuid as _uuid
+        from app.models.app_setting import AppSetting
+        from app.models.scenario import Scenario
+
+        # Version gate — skip expensive seeding if already done for this version
+        async with async_session_factory() as db:
+            result = await db.execute(
+                select(AppSetting).where(AppSetting.key == "seeded_version")
+            )
+            setting = result.scalar_one_or_none()
+            if setting and setting.value == _SEED_VERSION:
+                logger.info("seed_scenarios_skipped", reason="already_seeded", version=_SEED_VERSION)
+                return
+
+        for theme_key, module_path, func_name in creators:
+            try:
+                async with async_session_factory() as db:
+                    exists = await db.execute(
+                        select(Scenario).where(Scenario.theme_key == theme_key)
+                    )
+                    if exists.scalar_one_or_none():
+                        continue
+                mod = importlib.import_module(module_path)
+                fn = getattr(mod, func_name)
+                await fn()
+                logger.info("seed_scenario_created", theme_key=theme_key)
+            except Exception as exc:
+                logger.warning("seed_scenario_failed", theme_key=theme_key, error=str(exc))
+
+        stub_seeds: list[tuple[str, str, str, int]] = [
+            ("cappadocia", "Kapadokya Macerası",
+             "Kapadokya'nın büyülü dünyasına yolculuk! Peri bacaları (60 milyon yıllık!), "
+             "sıcak hava balonu turu, yeraltı şehri keşfi (8 kat derinlik!) ve kaya "
+             "kiliselerdeki 1000 yıllık freskler. UNESCO Dünya Mirası'nda doğa mucizesi ve macera!", 0),
+            ("solar_system", "Güneş Sistemi Macerası: Gezegen Kaşifleri",
+             "8 gezegen macerası! Modüler uzay istasyonundan başlayarak Merkür'den Neptün'e "
+             "kadar tüm gezegenleri keşfet. AI robot arkadaşınla birlikte Jüpiter'in ihtişamını, "
+             "Satürn'ün halkalarını ve Mars'taki yaşam izlerini öğren!", 15),
+        ]
+        for theme_key, name, desc, order in stub_seeds:
+            try:
+                async with async_session_factory() as db:
+                    exists = await db.execute(
+                        select(Scenario).where(Scenario.theme_key == theme_key)
+                    )
+                    if exists.scalar_one_or_none():
+                        continue
+                    s = Scenario(
+                        id=_uuid.uuid4(), name=name, description=desc,
+                        thumbnail_url="", theme_key=theme_key,
+                        display_order=order, is_active=True,
+                    )
+                    db.add(s)
+                    await db.commit()
+                    logger.info("seed_scenario_stub_created", theme_key=theme_key)
+            except Exception as exc:
+                logger.warning("seed_scenario_stub_failed", theme_key=theme_key, error=str(exc))
+
+        # Link all scenarios to A4 YATAY product if not linked
         try:
-            threshold = datetime.now(UTC) - timedelta(hours=2)
+            from app.models.product import Product
+            async with async_session_factory() as db:
+                prod_result = await db.execute(
+                    select(Product).where(Product.slug == "a4-yatay")
+                )
+                a4_product = prod_result.scalar_one_or_none()
+                if a4_product:
+                    unlinked = await db.execute(
+                        select(Scenario).where(Scenario.linked_product_id.is_(None))
+                    )
+                    for s in unlinked.scalars().all():
+                        s.linked_product_id = a4_product.id
+                    await db.commit()
+                    logger.info("seed_scenarios_linked_product")
+        except Exception as exc:
+            logger.warning("seed_scenarios_link_failed", error=str(exc))
+
+        for theme_key, module_path, func_name in updaters:
+            try:
+                mod = importlib.import_module(module_path)
+                fn = getattr(mod, func_name)
+                await fn()
+                logger.info("seed_scenario_updated", theme_key=theme_key)
+            except Exception as exc:
+                logger.warning("seed_scenario_update_failed", theme_key=theme_key, error=str(exc))
+
+        # Mark seeding complete for this version
+        try:
             async with async_session_factory() as db:
                 result = await db.execute(
-                    select(Order).where(
-                        Order.status == OrderStatus.PAYMENT_PENDING,
-                        Order.updated_at < threshold,
-                    )
+                    select(AppSetting).where(AppSetting.key == "seeded_version")
                 )
-                stuck_orders = result.scalars().all()
+                setting = result.scalar_one_or_none()
+                if setting:
+                    setting.value = _SEED_VERSION
+                else:
+                    db.add(AppSetting(key="seeded_version", value=_SEED_VERSION))
+                await db.commit()
+            logger.info("seed_version_saved", version=_SEED_VERSION)
+        except Exception as exc:
+            logger.warning("seed_version_save_failed", error=str(exc))
 
-                for order in stuck_orders:
-                    from app.api.v1.payments import rollback_promo_code
-                    from app.services.order_state_machine import transition_order
-
-                    await rollback_promo_code(order, db)
-                    await transition_order(order, OrderStatus.COVER_APPROVED, db)
-                    order.payment_status = "EXPIRED"
-                    logger.warning(
-                        "STUCK_PAYMENT_CLEANED",
-                        order_id=str(order.id),
-                        stuck_since=str(order.updated_at),
-                    )
-                if stuck_orders:
-                    await db.commit()
-                    logger.info("payment_cleanup_done", cleaned=len(stuck_orders))
-        except Exception:
-            logger.exception("payment_cleanup_error")
-
-
-async def _cleanup_temp_images() -> None:
-    """Background task: delete temp GCS images older than 24 hours (KVKK compliance)."""
-    while True:
-        await asyncio.sleep(3600)  # run every hour
-        try:
-            from app.services.storage_service import storage_service
-
-            provider = storage_service.provider
-            if not hasattr(provider, "_get_bucket"):
-                continue
-
-            from datetime import datetime, timedelta
-
-            threshold = datetime.now(UTC) - timedelta(hours=24)
-            bucket = provider._get_bucket()
-            deleted = 0
-            for prefix in ("temp/pulid-faces/", "temp/voice-samples/"):
-                blobs = bucket.list_blobs(prefix=prefix)
-                for blob in blobs:
-                    if blob.time_created and blob.time_created < threshold:
-                        blob.delete()
-                        deleted += 1
-            if deleted:
-                logger.info("temp_image_cleanup_done", deleted=deleted)
-        except Exception:
-            logger.exception("temp_image_cleanup_error")
-
-
-async def _kvkk_daily_cleanup() -> None:
-    """Background task: run KVKK photo cleanup daily at ~02:00 UTC.
-
-    Also runs abandoned preview cleanup for KVKK compliance.
-    """
-    from datetime import datetime
-
-    await asyncio.sleep(60)  # wait 1 min after startup for DB readiness
-
-    while True:
-        try:
-            now = datetime.now(UTC)
-            # Calculate seconds until next 02:00 UTC
-            target_hour = 2
-            if now.hour < target_hour:
-                seconds_until = (target_hour - now.hour) * 3600 - now.minute * 60 - now.second
-            else:
-                seconds_until = (24 - now.hour + target_hour) * 3600 - now.minute * 60 - now.second
-
-            # Min 1 hour wait — prevent tight loops if time drifts
-            seconds_until = max(seconds_until, 3600)
-
-            logger.info("kvkk_daily_cleanup: next run", wait_seconds=seconds_until)
-            await asyncio.sleep(seconds_until)
-
-            from app.tasks.kvkk_cleanup import (
-                kvkk_abandoned_preview_cleanup,
-                kvkk_photo_cleanup,
-            )
-
-            result1 = await kvkk_photo_cleanup()
-            logger.info("kvkk_daily_cleanup: photo cleanup done", **result1)
-
-            result2 = await kvkk_abandoned_preview_cleanup()
-            logger.info("kvkk_daily_cleanup: abandoned preview cleanup done", **result2)
-
-        except Exception:
-            logger.exception("kvkk_daily_cleanup_error")
-            await asyncio.sleep(3600)  # retry in 1 hour on error
+    except Exception as exc:
+        logger.warning("seed_missing_scenarios_failed", error=str(exc))
 
 
 async def _apply_data_fixes() -> None:
@@ -185,17 +216,303 @@ async def _apply_data_fixes() -> None:
     except Exception as exc:
         logger.warning("startup_data_fixes_failed", error=str(exc))
 
+    await _seed_missing_scenarios()
+
+
+# ---------------------------------------------------------------------------
+# Distributed leader lock — ensures periodic tasks run on ONE worker only
+# ---------------------------------------------------------------------------
+_leader_redis = None
+
+
+async def _get_leader_redis():
+    """Get shared async Redis connection for leader election."""
+    global _leader_redis
+    if _leader_redis is not None:
+        return _leader_redis
+    try:
+        import redis.asyncio as aioredis
+        _leader_redis = aioredis.from_url(
+            str(settings.redis_url), decode_responses=True,
+            socket_connect_timeout=5, socket_timeout=5,
+        )
+        await _leader_redis.ping()
+        return _leader_redis
+    except Exception:
+        _leader_redis = None
+        return None
+
+
+async def _acquire_leader_lock(lock_name: str, ttl_seconds: int = 60) -> bool:
+    """Try to acquire a distributed lock via Redis SET NX EX.
+
+    Returns True if this worker is the leader for *lock_name*.
+    The lock auto-expires after *ttl_seconds* so a crashed leader
+    doesn't block others permanently.
+    """
+    r = await _get_leader_redis()
+    if r is None:
+        # Redis unavailable — fall back to "everyone runs" (better than nobody)
+        return True
+    import os
+    worker_id = f"{os.getpid()}"
+    try:
+        acquired = await r.set(
+            f"leader:{lock_name}", worker_id, nx=True, ex=ttl_seconds,
+        )
+        return bool(acquired)
+    except Exception:
+        return True  # fail-open: run the task if Redis is flaky
+
+
+async def _renew_leader_lock(lock_name: str, ttl_seconds: int = 60) -> bool:
+    """Renew leader lock TTL. Returns False if lock was lost."""
+    r = await _get_leader_redis()
+    if r is None:
+        return True
+    import os
+    worker_id = f"{os.getpid()}"
+    try:
+        current = await r.get(f"leader:{lock_name}")
+        if current == worker_id:
+            await r.expire(f"leader:{lock_name}", ttl_seconds)
+            return True
+        return False
+    except Exception:
+        return True
+
+
+async def _leader_task_wrapper(task_coro, lock_name: str, ttl: int = 120):
+    """Only run *task_coro* if this worker holds the leader lock.
+
+    Attempts to acquire the lock on startup. If another worker already
+    holds it, this worker sleeps and retries periodically (in case the
+    leader crashes). The lock is renewed each cycle.
+    """
+    import asyncio
+
+    # Initial attempt
+    while True:
+        if await _acquire_leader_lock(lock_name, ttl):
+            logger.info("leader_lock_acquired", lock=lock_name, pid=__import__("os").getpid())
+            break
+        # Not leader — wait and retry in case leader dies
+        await asyncio.sleep(ttl // 2)
+
+    # Run the actual task
+    try:
+        await task_coro()
+    finally:
+        # Release lock on cancellation
+        r = await _get_leader_redis()
+        if r:
+            try:
+                await r.delete(f"leader:{lock_name}")
+            except Exception:
+                pass
+
+
+# Wrappers that renew the lock inside each loop iteration
+async def _cleanup_stuck_payments_leader():
+    """Stuck payment cleanup — single leader only."""
+    from datetime import datetime, timedelta
+    from sqlalchemy import select
+    from app.core.database import async_session_factory
+    from app.models.order import Order, OrderStatus
+
+    while True:
+        if not await _renew_leader_lock("bg:stuck_payments", 3600):
+            logger.info("leader_lock_lost", task="stuck_payments")
+            return
+        await asyncio.sleep(1800)
+        try:
+            threshold = datetime.now(UTC) - timedelta(hours=2)
+            async with async_session_factory() as db:
+                result = await db.execute(
+                    select(Order).where(
+                        Order.status == OrderStatus.PAYMENT_PENDING,
+                        Order.updated_at < threshold,
+                    )
+                )
+                stuck_orders = result.scalars().all()
+                for order in stuck_orders:
+                    from app.services.promo_code_service import rollback_promo_code
+                    from app.services.order_state_machine import transition_order
+                    await rollback_promo_code(order, db)
+                    await transition_order(order, OrderStatus.COVER_APPROVED, db)
+                    order.payment_status = "EXPIRED"
+                    logger.warning("STUCK_PAYMENT_CLEANED", order_id=str(order.id))
+                if stuck_orders:
+                    await db.commit()
+                    logger.info("payment_cleanup_done", cleaned=len(stuck_orders))
+        except Exception:
+            logger.exception("payment_cleanup_error")
+
+
+async def _cleanup_temp_images_leader():
+    """Temp GCS image cleanup — single leader only."""
+    while True:
+        if not await _renew_leader_lock("bg:temp_images", 7200):
+            logger.info("leader_lock_lost", task="temp_images")
+            return
+        await asyncio.sleep(3600)
+        try:
+            from app.services.storage_service import storage_service
+            provider = storage_service.provider
+            if not hasattr(provider, "_get_bucket"):
+                continue
+            from datetime import datetime, timedelta
+            threshold = datetime.now(UTC) - timedelta(hours=24)
+            bucket = provider._get_bucket()
+            deleted = 0
+            for prefix in ("temp/pulid-faces/", "temp/voice-samples/"):
+                blobs = bucket.list_blobs(prefix=prefix)
+                for blob in blobs:
+                    if blob.time_created and blob.time_created < threshold:
+                        blob.delete()
+                        deleted += 1
+            if deleted:
+                logger.info("temp_image_cleanup_done", deleted=deleted)
+        except Exception:
+            logger.exception("temp_image_cleanup_error")
+
+
+async def _kvkk_daily_cleanup_leader():
+    """KVKK daily cleanup — single leader only."""
+    from datetime import datetime
+    await asyncio.sleep(60)
+    while True:
+        if not await _renew_leader_lock("bg:kvkk_cleanup", 86400):
+            logger.info("leader_lock_lost", task="kvkk_cleanup")
+            return
+        try:
+            now = datetime.now(UTC)
+            target_hour = 2
+            if now.hour < target_hour:
+                seconds_until = (target_hour - now.hour) * 3600 - now.minute * 60 - now.second
+            else:
+                seconds_until = (24 - now.hour + target_hour) * 3600 - now.minute * 60 - now.second
+            seconds_until = max(seconds_until, 3600)
+            logger.info("kvkk_daily_cleanup: next run", wait_seconds=seconds_until)
+            await asyncio.sleep(seconds_until)
+
+            from app.tasks.kvkk_cleanup import (
+                kvkk_abandoned_preview_cleanup,
+                kvkk_photo_cleanup,
+                purge_deleted_accounts,
+            )
+            result1 = await kvkk_photo_cleanup()
+            logger.info("kvkk_daily_cleanup: photo cleanup done", **result1)
+            result2 = await kvkk_abandoned_preview_cleanup()
+            logger.info("kvkk_daily_cleanup: abandoned preview done", **result2)
+            result3 = await purge_deleted_accounts()
+            logger.info("kvkk_daily_cleanup: purge done", **result3)
+
+            from app.core.database import async_session_factory as _sf
+            from app.services.invoice_token_service import cleanup_expired_tokens
+            async with _sf() as _db:
+                purged = await cleanup_expired_tokens(_db)
+                await _db.commit()
+                if purged:
+                    logger.info("kvkk_daily_cleanup: tokens purged", count=purged)
+        except Exception:
+            logger.exception("kvkk_daily_cleanup_error")
+            await asyncio.sleep(3600)
+
+
+async def _outbox_worker_leader():
+    """Outbox worker — single leader only. Renews lock on every poll cycle.
+
+    Deliberately does not delegate to run_outbox_worker() because that function
+    has no lock-renewal logic and the 120s TTL would expire mid-run.
+    """
+    from app.core.database import async_session_factory
+    from app.tasks.outbox_worker import (
+        _POLL_INTERVAL_BUSY_SECONDS,
+        _POLL_INTERVAL_IDLE_SECONDS,
+        process_outbox_batch,
+    )
+
+    await asyncio.sleep(10)
+    logger.info("outbox_worker_started")
+
+    while True:
+        if not await _renew_leader_lock("bg:outbox", 120):
+            logger.info("leader_lock_lost", task="outbox")
+            return
+        count = 0
+        try:
+            async with async_session_factory() as db:
+                count = await process_outbox_batch(db)
+                if count > 0:
+                    logger.info("outbox_batch_processed", count=count)
+        except Exception:
+            logger.exception("outbox_worker_error")
+        await asyncio.sleep(_POLL_INTERVAL_BUSY_SECONDS if count > 0 else _POLL_INTERVAL_IDLE_SECONDS)
+
+
+async def _invoice_retry_leader():
+    """Invoice PDF retry — single leader only."""
+    await asyncio.sleep(120)
+    while True:
+        if not await _renew_leader_lock("bg:invoice_retry", 600):
+            logger.info("leader_lock_lost", task="invoice_retry")
+            return
+        try:
+            from app.core.database import async_session_factory
+            from app.services.invoice_pdf_service import retry_failed_invoices
+            async with async_session_factory() as db:
+                count = await retry_failed_invoices(db)
+                if count:
+                    logger.info("invoice_retry_worker: retried", count=count)
+        except Exception:
+            logger.exception("invoice_retry_worker_error")
+        await asyncio.sleep(300)
+
+
+async def _invoice_email_retry_leader():
+    """Invoice email retry — single leader only."""
+    await asyncio.sleep(150)
+    while True:
+        if not await _renew_leader_lock("bg:invoice_email_retry", 600):
+            logger.info("leader_lock_lost", task="invoice_email_retry")
+            return
+        try:
+            from app.core.database import async_session_factory
+            from app.services.invoice_email_service import retry_failed_invoice_emails
+            async with async_session_factory() as db:
+                count = await retry_failed_invoice_emails(db)
+                if count:
+                    logger.info("invoice_email_retry_worker: retried", count=count)
+        except Exception:
+            logger.exception("invoice_email_retry_worker_error")
+        await asyncio.sleep(300)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Application lifespan handler."""
+    """Application lifespan handler.
+
+    Background tasks use Redis-based leader election so only ONE
+    Gunicorn worker runs periodic jobs (cleanup, outbox, retries).
+    If the leader crashes, another worker acquires the lock automatically.
+    """
     logger.info("Starting application", env=settings.app_env)
     await _apply_data_fixes()
-    cleanup_task = asyncio.create_task(_cleanup_stuck_payments())
-    temp_cleanup_task = asyncio.create_task(_cleanup_temp_images())
-    kvkk_cleanup_task = asyncio.create_task(_kvkk_daily_cleanup())
+
+    # Each background task is wrapped with leader election
+    bg_tasks = [
+        asyncio.create_task(_leader_task_wrapper(_cleanup_stuck_payments_leader, "bg:stuck_payments", 3600)),
+        asyncio.create_task(_leader_task_wrapper(_cleanup_temp_images_leader, "bg:temp_images", 7200)),
+        asyncio.create_task(_leader_task_wrapper(_kvkk_daily_cleanup_leader, "bg:kvkk_cleanup", 86400)),
+        asyncio.create_task(_leader_task_wrapper(_outbox_worker_leader, "bg:outbox", 120)),
+        asyncio.create_task(_leader_task_wrapper(_invoice_retry_leader, "bg:invoice_retry", 600)),
+        asyncio.create_task(_leader_task_wrapper(_invoice_email_retry_leader, "bg:invoice_email_retry", 600)),
+    ]
+
     yield
-    for _task in (cleanup_task, temp_cleanup_task, kvkk_cleanup_task):
+
+    for _task in bg_tasks:
         _task.cancel()
         try:
             await _task
@@ -236,7 +553,7 @@ _SAFE_ORIGINS = [
     "https://www.benimmasalim.com.tr",
     "https://benimmasalim.com",
     "https://www.benimmasalim.com",
-    "https://benimmasalim-frontend-554846094227.europe-west1.run.app",
+    "https://benimmasalim-frontend-pl5vhpeiya-ew.a.run.app",
 ]
 if settings.is_production:
     CORS_ORIGINS = list(dict.fromkeys(_SAFE_ORIGINS + [settings.frontend_url]))

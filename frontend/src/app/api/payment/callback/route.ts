@@ -7,6 +7,18 @@ const BACKEND_URL =
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_TOKEN_LEN = 500;
 
+function getBaseUrl(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-host");
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  if (forwarded) return `${proto}://${forwarded}`;
+
+  const host = request.headers.get("host");
+  if (host && !host.startsWith("0.0.0.0") && !host.startsWith("127.0.0.1"))
+    return `${proto}://${host}`;
+
+  return process.env.NEXTAUTH_URL || request.url;
+}
+
 /**
  * Iyzico redirects the user here after checkout form submission.
  *
@@ -15,8 +27,9 @@ const MAX_TOKEN_LEN = 500;
  * - ?trialId=UUID  → trial flow (pass token back to /create page for client-side verify)
  */
 export async function POST(request: NextRequest) {
+  const base = getBaseUrl(request);
   const errorUrl = (reason: string) =>
-    new URL(`/create-v2?payment=error&reason=${reason}`, request.url);
+    new URL(`/create-v2?payment=error&reason=${reason}`, base);
 
   try {
     const formData = await request.formData();
@@ -34,8 +47,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.redirect(errorUrl("invalid_trial"));
       }
       const encodedToken = encodeURIComponent(token);
+      const trialToken = request.nextUrl.searchParams.get("tt") || "";
+      const ttParam = trialToken ? `&tt=${encodeURIComponent(trialToken)}` : "";
       return NextResponse.redirect(
-        new URL(`/create-v2?payment=success&trialId=${trialId}&token=${encodedToken}`, request.url),
+        new URL(`/create-v2?payment=success&trialId=${trialId}&token=${encodedToken}${ttParam}`, base),
       );
     }
 
@@ -66,7 +81,7 @@ export async function POST(request: NextRequest) {
         const data = await verifyRes.json();
         if (data.status === "success") {
           return NextResponse.redirect(
-            new URL(`/create-v2?payment=success&orderId=${orderId}`, request.url),
+            new URL(`/create-v2?payment=success&orderId=${orderId}`, base),
           );
         }
       }
@@ -75,9 +90,11 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.redirect(
-      new URL(`/create-v2?payment=failed&orderId=${orderId}`, request.url),
+      new URL(`/create-v2?payment=failed&orderId=${orderId}`, base),
     );
   } catch {
-    return NextResponse.redirect(errorUrl("server_error"));
+    return NextResponse.redirect(
+      new URL(`/create-v2?payment=error&reason=server_error`, base),
+    );
   }
 }

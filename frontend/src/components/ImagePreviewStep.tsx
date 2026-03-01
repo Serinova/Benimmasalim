@@ -5,13 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
-  Printer,
   AlertCircle,
   X,
   Sparkles,
   BookOpen,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { GenerationProgress } from "@/lib/api";
 
 interface ImagePreviewStepProps {
@@ -491,7 +489,9 @@ function MagicalLoadingAnimation({
 export default function ImagePreviewStep({
   childName,
   previewImages,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onApprove,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onBack,
   onReportIssue,
   isLoading = false,
@@ -503,13 +503,40 @@ export default function ImagePreviewStep({
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const touchStartX = useRef(0);
 
-  // Slide count: Kapak, Karşılama 1, Karşılama 2 (if available), Sayfa 1, Sayfa 2, Arka kapak (if available)
+  // Image mapping:
+  //   cover        → key 0
+  //   dedication   → key "dedication"  (karşılama 1)
+  //   intro        → key "intro"       (karşılama 2, optional)
+  //   story pages  → numeric keys > 0, sorted ascending
+  const coverImage = previewImages[0] || "";
+  const dedicationImage = previewImages["dedication"] || "";
+  const introImage = (previewImages as Record<string, string>)["intro"] || "";
   const hasIntro = Boolean(previewImages["intro"]);
-  const TOTAL_SLIDES = (hasIntro ? 5 : 4) + (backCoverImageUrl ? 1 : 0);
+
+  // Dynamically find ALL story page keys (any numeric key > 0, sorted ascending)
+  const storyPageKeys = Object.keys(previewImages)
+    .filter((k) => k !== "0" && k !== "dedication" && k !== "intro" && !k.includes("back"))
+    .map(Number)
+    .filter((n) => !Number.isNaN(n) && n > 0)
+    .sort((a, b) => a - b);
+
+  // Slide layout:
+  //   0: cover
+  //   1: dedication
+  //   2 (if hasIntro): intro
+  //   2 or 3 ... N: story pages (all of them)
+  //   last: back cover (if available)
+  // cover=0, dedication=1, [intro=2 if hasIntro], story pages start at (hasIntro?3:2)
+  const pagesStartIdx = hasIntro ? 3 : 2;
+  const TOTAL_SLIDES = 2 + (hasIntro ? 1 : 0) + storyPageKeys.length + (backCoverImageUrl ? 1 : 0);
+  // back cover is always at the last slide index if available
+  const backCoverSlideIdx = backCoverImageUrl ? TOTAL_SLIDES - 1 : -1;
+
 
   useEffect(() => {
-    // At minimum: cover (0) + dedication + 2 story pages = 4 keys
-    if (!isLoading && Object.keys(previewImages).length >= 3) {
+    // Show preview as soon as loading is done and at least the cover image exists.
+    // Dedication / intro pages may be absent (partial generation) — handled gracefully below.
+    if (!isLoading && Object.keys(previewImages).length >= 1) {
       const timer = setTimeout(() => setImagesLoaded(true), 1500);
       return () => clearTimeout(timer);
     }
@@ -517,7 +544,7 @@ export default function ImagePreviewStep({
 
   const goNext = useCallback(() => {
     setCurrentSlide((s) => (s < TOTAL_SLIDES - 1 ? s + 1 : s));
-  }, []);
+  }, [TOTAL_SLIDES]);
 
   const goPrev = useCallback(() => {
     setCurrentSlide((s) => (s > 0 ? s - 1 : s));
@@ -525,7 +552,7 @@ export default function ImagePreviewStep({
 
   const goToSlide = useCallback((index: number) => {
     setCurrentSlide(Math.max(0, Math.min(index, TOTAL_SLIDES - 1)));
-  }, []);
+  }, [TOTAL_SLIDES]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -543,33 +570,8 @@ export default function ImagePreviewStep({
     onReportIssue?.(issue);
   };
 
-  // Image mapping:
-  //   cover        → key 0
-  //   dedication   → key "dedication"  (karşılama 1)
-  //   intro        → key "intro"       (karşılama 2, optional)
-  //   story pages  → numeric keys > 0, sorted ascending
-  const coverImage = previewImages[0] || "";
-  const dedicationImage = previewImages["dedication"] || "";
-  const introImage = (previewImages as Record<string, string>)["intro"] || "";
-
-  // Dynamically find story page keys (any numeric key > 0, sorted ascending)
-  const storyPageKeys = Object.keys(previewImages)
-    .filter((k) => k !== "0" && k !== "dedication" && k !== "intro")
-    .map(Number)
-    .filter((n) => !Number.isNaN(n))
-    .sort((a, b) => a - b);
-  const innerLeftImage = previewImages[storyPageKeys[0]] || "";
-  const innerRightImage = previewImages[storyPageKeys[1]] || "";
-
-  // Slide index mapping (dynamic because karşılama 2 may be absent)
-  const slideMap = {
-    cover: 0,
-    dedication: 1,
-    intro: hasIntro ? 2 : -1,
-    page1: hasIntro ? 3 : 2,
-    page2: hasIntro ? 4 : 3,
-    back: hasIntro ? 5 : 4,
-  };
+  // Helper: get slide index for a story page (0-based in storyPageKeys)
+  const getStorySlideIdx = (pageIdx: number) => pagesStartIdx + pageIdx;
 
   if (isLoading || !imagesLoaded) {
     return <MagicalLoadingAnimation progress={generationProgress} />;
@@ -577,10 +579,10 @@ export default function ImagePreviewStep({
 
   return (
     <>
-      <div className="relative min-h-[80vh] overflow-hidden pb-24">
+      <div className="relative overflow-hidden pb-4">
         {/* Premium Textured Background */}
         <div
-          className="fixed inset-0 z-0"
+          className="absolute inset-0 z-0"
           style={{
             background: `linear-gradient(135deg, #2d1f14 0%, #3d2b1f 50%, #4a3728 100%)`,
           }}
@@ -665,7 +667,8 @@ export default function ImagePreviewStep({
               style={{ aspectRatio: "297 / 210" }}
             >
               <AnimatePresence mode="wait">
-                {currentSlide === slideMap.cover && (
+                {/* Kapak */}
+                {currentSlide === 0 && (
                   <motion.div
                     key="cover"
                     initial={{ opacity: 0, x: 20 }}
@@ -674,10 +677,11 @@ export default function ImagePreviewStep({
                     transition={{ duration: 0.25 }}
                     className="absolute inset-0"
                   >
-                    <CoverPage imageUrl={coverImage} isFront={true} ref={() => {}} />
+                    <CoverPage imageUrl={coverImage} isFront={true} ref={() => { }} />
                   </motion.div>
                 )}
-                {currentSlide === slideMap.dedication && (
+                {/* Karşılama 1 - İthaf sayfası */}
+                {currentSlide === 1 && (
                   <motion.div
                     key="dedication"
                     initial={{ opacity: 0, x: 20 }}
@@ -686,10 +690,11 @@ export default function ImagePreviewStep({
                     transition={{ duration: 0.25 }}
                     className="absolute inset-0"
                   >
-                    <DedicationPage childName={childName} imageUrl={dedicationImage} ref={() => {}} />
+                    <DedicationPage childName={childName} imageUrl={dedicationImage} ref={() => { }} />
                   </motion.div>
                 )}
-                {hasIntro && currentSlide === slideMap.intro && (
+                {/* Karşılama 2 - isteğe bağlı intro sayfası */}
+                {hasIntro && currentSlide === 2 && (
                   <motion.div
                     key="intro"
                     initial={{ opacity: 0, x: 20 }}
@@ -698,44 +703,32 @@ export default function ImagePreviewStep({
                     transition={{ duration: 0.25 }}
                     className="absolute inset-0"
                   >
-                    <DedicationPage childName={childName} imageUrl={introImage} ref={() => {}} />
+                    <DedicationPage childName={childName} imageUrl={introImage} ref={() => { }} />
                   </motion.div>
                 )}
-                {currentSlide === slideMap.page1 && (
-                  <motion.div
-                    key="page1"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.25 }}
-                    className="absolute inset-0"
-                  >
-                    <InnerPage
-                      imageUrl={innerLeftImage}
-                      pageNumber={1}
-                      side="left"
-                      ref={() => {}}
-                    />
-                  </motion.div>
-                )}
-                {currentSlide === slideMap.page2 && (
-                  <motion.div
-                    key="page2"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.25 }}
-                    className="absolute inset-0"
-                  >
-                    <InnerPage
-                      imageUrl={innerRightImage}
-                      pageNumber={2}
-                      side="right"
-                      ref={() => {}}
-                    />
-                  </motion.div>
-                )}
-                {currentSlide === slideMap.back && (
+                {/* TÜM hikaye sayfaları — döngüyle */}
+                {storyPageKeys.map((pageKey, pageIdx) => {
+                  const slideIdx = getStorySlideIdx(pageIdx);
+                  return currentSlide === slideIdx ? (
+                    <motion.div
+                      key={`story-page-${pageKey}`}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.25 }}
+                      className="absolute inset-0"
+                    >
+                      <InnerPage
+                        imageUrl={previewImages[pageKey] || ""}
+                        pageNumber={pageIdx + 1}
+                        side={pageIdx % 2 === 0 ? "left" : "right"}
+                        ref={() => { }}
+                      />
+                    </motion.div>
+                  ) : null;
+                })}
+                {/* Arka kapak */}
+                {backCoverImageUrl && currentSlide === backCoverSlideIdx && (
                   <motion.div
                     key="back"
                     initial={{ opacity: 0, x: 20 }}
@@ -744,11 +737,20 @@ export default function ImagePreviewStep({
                     transition={{ duration: 0.25 }}
                     className="absolute inset-0"
                   >
-                    {backCoverImageUrl ? (
-                      <CoverPage imageUrl={backCoverImageUrl} isFront={false} ref={() => {}} />
-                    ) : (
-                      <BackCover ref={() => {}} />
-                    )}
+                    <CoverPage imageUrl={backCoverImageUrl} isFront={false} ref={() => { }} />
+                  </motion.div>
+                )}
+                {/* Arka kapak (resim yoksa dekoratif) */}
+                {!backCoverImageUrl && currentSlide === TOTAL_SLIDES - 1 && storyPageKeys.length > 0 && (
+                  <motion.div
+                    key="back-default"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.25 }}
+                    className="absolute inset-0"
+                  >
+                    <BackCover ref={() => { }} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -766,94 +768,46 @@ export default function ImagePreviewStep({
             </button>
           </motion.div>
 
-          {/* Sayfa göstergesi (noktalar + etiketler) */}
+          {/* Sayfa göstergesi (noktalar + etiketler) — tüm sayfalar */}
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 px-2">
             {[
-              { label: "Kapak", idx: slideMap.cover },
-              { label: "Karşılama 1", idx: slideMap.dedication },
-              ...(hasIntro ? [{ label: "Karşılama 2", idx: slideMap.intro }] : []),
-              { label: "Sayfa 1", idx: slideMap.page1 },
-              { label: "Sayfa 2", idx: slideMap.page2 },
-              ...(backCoverImageUrl ? [{ label: "Arka Kapak", idx: slideMap.back }] : []),
+              { label: "Kapak", idx: 0 },
+              { label: "İthaf", idx: 1 },
+              ...(hasIntro ? [{ label: "Giriş", idx: 2 }] : []),
+              ...storyPageKeys.map((_, pageIdx) => ({
+                label: `Sayfa ${pageIdx + 1}`,
+                idx: getStorySlideIdx(pageIdx),
+              })),
+              ...(backCoverImageUrl ? [{ label: "Arka Kapak", idx: backCoverSlideIdx }] : []),
             ].map(({ label, idx }) => (
               <button
-                key={idx}
+                key={`nav-${idx}`}
                 type="button"
                 onClick={() => goToSlide(idx)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all touch-manipulation ${
-                  currentSlide === idx
-                    ? "bg-amber-500 text-white shadow-lg"
-                    : "bg-amber-200/20 text-amber-200/80 hover:bg-amber-200/30"
-                }`}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all touch-manipulation ${currentSlide === idx
+                  ? "bg-amber-500 text-white shadow-lg"
+                  : "bg-amber-200/20 text-amber-200/80 hover:bg-amber-200/30"
+                  }`}
               >
                 {label}
               </button>
             ))}
           </div>
+          {/* Sayfa konumu bilgisi */}
+          <p className="mt-2 text-center text-xs text-amber-300/50">
+            {currentSlide + 1} / {TOTAL_SLIDES}
+          </p>
         </div>
 
-        {/* Sticky Footer */}
-        <div className="fixed bottom-0 left-0 right-0 z-50">
-          <div
-            className="px-4 pb-3 pt-5"
-            style={{
-              background:
-                "linear-gradient(to top, rgba(45,31,20,0.98) 0%, rgba(45,31,20,0.9) 70%, transparent 100%)",
-            }}
+        {/* Issue report link (non-sticky) */}
+        <div className="mt-3 flex justify-center">
+          <button
+            onClick={() => setShowIssueModal(true)}
+            className="flex items-center gap-2 text-xs text-amber-300/60 transition-colors hover:text-amber-200"
           >
-            <div className="mx-auto max-w-xl space-y-3">
-              {/* Main CTA */}
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
-                onClick={onApprove}
-                className="relative w-full overflow-hidden rounded-xl px-6 py-3 text-base font-semibold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
-                style={{
-                  background: "linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)",
-                  boxShadow: "0 10px 30px -5px rgba(16, 185, 129, 0.4)",
-                }}
-              >
-                <span className="relative z-10 flex items-center justify-center gap-3">
-                  <Printer className="h-5 w-5" />
-                  <span>Harika! Devam Et</span>
-                  <ChevronRight className="h-5 w-5" />
-                </span>
-
-                <motion.div
-                  animate={{ x: ["-100%", "100%"] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-0 z-0"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
-                  }}
-                />
-              </motion.button>
-
-              {/* Secondary Actions */}
-              <div className="flex items-center justify-center gap-4">
-                <Button
-                  variant="ghost"
-                  onClick={onBack}
-                  className="text-amber-300/80 hover:bg-white/10 hover:text-amber-200"
-                >
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  Geri
-                </Button>
-
-                <span className="text-amber-200/30">|</span>
-
-                <button
-                  onClick={() => setShowIssueModal(true)}
-                  className="flex items-center gap-2 text-sm text-amber-300/60 transition-colors hover:text-amber-200"
-                >
-                  <AlertCircle className="h-4 w-4" />
-                  Bir sorun mu var?
-                </button>
-              </div>
-            </div>
-          </div>
+            <AlertCircle className="h-3.5 w-3.5" />
+            Bir sorun mu var?
+          </button>
         </div>
       </div>
 

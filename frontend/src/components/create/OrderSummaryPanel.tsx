@@ -2,6 +2,7 @@
 
 import { Package, Truck, Shield, Clock, Heart, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
+import { formatPrice } from "@/lib/utils";
 
 interface OrderSummaryPanelProps {
   /** Product name to display */
@@ -32,6 +33,7 @@ interface OrderSummaryPanelProps {
   promoCode?: string | null;
 }
 
+
 export default function OrderSummaryPanel({
   productName,
   basePrice,
@@ -50,10 +52,10 @@ export default function OrderSummaryPanel({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const shippingCost = 0;
-  const rawTotal = 
-    (basePrice ?? 0) + 
-    (hasAudioBook ? audioPrice : 0) + 
-    (hasColoringBook ? coloringBookPrice : 0) + 
+  const rawTotal =
+    Number(basePrice ?? 0) +
+    (hasAudioBook ? Number(audioPrice) : 0) +
+    (hasColoringBook ? Number(coloringBookPrice) : 0) +
     shippingCost;
   const totalPrice = Math.max(rawTotal - discountAmount, 0);
 
@@ -118,7 +120,7 @@ export default function OrderSummaryPanel({
             <div className="space-y-1.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-gray-600">{productName}</span>
-                <span className="font-medium">{basePrice} TL</span>
+                <span className="font-medium tabular-nums">{formatPrice(basePrice)}</span>
               </div>
               {hasAudioBook && (
                 <div className="flex justify-between">
@@ -126,7 +128,7 @@ export default function OrderSummaryPanel({
                     Sesli Kitap{" "}
                     {audioType === "cloned" ? "(Klonlanmış)" : "(Profesyonel)"}
                   </span>
-                  <span className="font-medium">{audioPrice} TL</span>
+                  <span className="font-medium tabular-nums">{formatPrice(audioPrice)}</span>
                 </div>
               )}
               {hasColoringBook && (
@@ -134,7 +136,7 @@ export default function OrderSummaryPanel({
                   <span className="flex items-center gap-1 text-gray-600">
                     🎨 Boyama Kitabı
                   </span>
-                  <span className="font-medium">{coloringBookPrice} TL</span>
+                  <span className="font-medium tabular-nums">{formatPrice(coloringBookPrice)}</span>
                 </div>
               )}
               <div className="flex justify-between text-green-600">
@@ -144,7 +146,7 @@ export default function OrderSummaryPanel({
               {discountAmount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>İndirim {promoCode && `(${promoCode})`}</span>
-                  <span className="font-medium">-{discountAmount} TL</span>
+                  <span className="font-medium tabular-nums">-{formatPrice(discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between border-t border-gray-100 pt-2">
@@ -152,11 +154,11 @@ export default function OrderSummaryPanel({
                 <div className="text-right">
                   {discountAmount > 0 && (
                     <span className="mr-1.5 text-xs text-gray-400 line-through">
-                      {rawTotal} TL
+                      {formatPrice(rawTotal)}
                     </span>
                   )}
                   <span className="font-bold text-purple-600">
-                    {totalPrice === 0 ? "ÜCRETSİZ" : `${totalPrice} TL`}
+                    {totalPrice === 0 ? "ÜCRETSİZ" : formatPrice(totalPrice)}
                   </span>
                 </div>
               </div>
@@ -222,7 +224,7 @@ export default function OrderSummaryPanel({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-base font-bold text-purple-600">
-                {totalPrice === 0 ? "ÜCRETSİZ" : `${totalPrice} TL`}
+                {totalPrice === 0 ? "ÜCRETSİZ" : formatPrice(totalPrice)}
               </span>
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4 text-gray-400" />
@@ -236,18 +238,18 @@ export default function OrderSummaryPanel({
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>{productName}</span>
-                  <span>{basePrice} TL</span>
+                  <span className="tabular-nums">{formatPrice(basePrice)}</span>
                 </div>
                 {hasAudioBook && (
                   <div className="flex justify-between text-gray-600">
                     <span>Sesli Kitap</span>
-                    <span>{audioPrice} TL</span>
+                    <span className="tabular-nums">{formatPrice(audioPrice)}</span>
                   </div>
                 )}
                 {hasColoringBook && (
                   <div className="flex justify-between text-gray-600">
                     <span>🎨 Boyama Kitabı</span>
-                    <span>{coloringBookPrice} TL</span>
+                    <span className="tabular-nums">{formatPrice(coloringBookPrice)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-green-600">
@@ -257,7 +259,7 @@ export default function OrderSummaryPanel({
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>İndirim</span>
-                    <span>-{discountAmount} TL</span>
+                    <span className="tabular-nums">-{formatPrice(discountAmount)}</span>
                   </div>
                 )}
               </div>

@@ -57,6 +57,7 @@ import {
 import { API_BASE_URL } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
 
 // ============ TYPES ============
 
@@ -81,6 +82,9 @@ interface Scenario {
   story_prompt_tr: string | null;
   location_en: string | null;
   default_page_count: number | null;
+  /** Gösterim için: linked product varsa ürünün sayfa sayısı (tutarlı 22 vb.) */
+  effective_default_page_count?: number;
+  effective_story_page_count?: number | null;
   flags: Record<string, boolean> | null;
   // Legacy (kept for compat, hidden from UI)
   cover_prompt_template: string;
@@ -833,13 +837,6 @@ export default function AdminScenariosPage() {
     }
   };
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
-  };
 
   const fetchScenarios = async () => {
     try {
@@ -1338,10 +1335,10 @@ export default function AdminScenariosPage() {
                           {scenario.linked_product_name}
                         </span>
                       )}
-                      {scenario.total_page_count != null && (
+                      {(scenario.total_page_count != null || scenario.effective_story_page_count != null) && (
                         <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
                           <BookOpen className="h-3 w-3" />
-                          {scenario.total_page_count} sayfa
+                          {scenario.total_page_count ?? scenario.effective_story_page_count ?? 0} sayfa
                         </span>
                       )}
                       <span className="flex items-center gap-1">
@@ -2363,7 +2360,7 @@ export default function AdminScenariosPage() {
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-gray-500">Sayfa:</span>
                       <span className="font-mono text-blue-600">
-                        {watchedValues.default_page_count ?? 6}
+                        {editingScenario?.effective_default_page_count ?? watchedValues.default_page_count ?? 6}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-xs">

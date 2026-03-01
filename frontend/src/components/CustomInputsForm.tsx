@@ -92,21 +92,34 @@ export default function CustomInputsForm({
               />
             )}
 
-            {field.type === "select" && field.options && (
-              <select
-                id={field.key}
-                value={values[field.key] || field.default || ""}
-                onChange={(e) => handleChange(field.key, e.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">Seçiniz...</option>
-                {field.options.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            )}
+            {field.type === "select" && field.options && (() => {
+              const opts: string[] = Array.isArray(field.options)
+                ? field.options.map((o: unknown) =>
+                    typeof o === "string"
+                      ? o
+                      : typeof o === "object" && o !== null
+                        ? (o as Record<string, string>).label_tr ?? (o as Record<string, string>).label ?? (o as Record<string, string>).label_en ?? String((o as Record<string, string>).value ?? "")
+                        : String(o),
+                  )
+                : typeof field.options === "string"
+                  ? (field.options as string).split(",").map((s: string) => s.trim()).filter(Boolean)
+                  : [];
+              return (
+                <select
+                  id={field.key}
+                  value={values[field.key] || field.default || ""}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">Seçiniz...</option>
+                  {opts.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              );
+            })()}
 
             {field.help_text && <p className="text-xs text-gray-400">{field.help_text}</p>}
           </div>

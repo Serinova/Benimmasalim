@@ -10,14 +10,21 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # Proje kök .env — cwd'den bağımsız, restart sonrası da aynı kaynak kullanılır
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 _ROOT_ENV = _PROJECT_ROOT / ".env"
+_ROOT_ENV_LOCAL = _PROJECT_ROOT / ".env.local"
+
+# Dosya sırası: pydantic-settings'de listedeki son dosya öncelikli (dict.update)
+# .env.local varsa en sona koy → lokal geliştirme değerleri .env'yi override eder
+_env_files: list[str] = [".env", str(_ROOT_ENV)]
+if _ROOT_ENV_LOCAL.exists():
+    _env_files.append(str(_ROOT_ENV_LOCAL))
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        # Kök .env öncelikli — sistem DATABASE_URL varsa o override eder (herosteps vs postgres)
-        env_file=[str(_ROOT_ENV), ".env"],
+        # Sıra: cwd .env < kök .env < .env.local — son dosya override eder
+        env_file=_env_files,
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -37,8 +44,12 @@ class Settings(BaseSettings):
 
     # Database (str to support Cloud SQL Unix socket URLs with empty host)
     database_url: str
-    db_pool_size: int = 20    # Safe limit for connection pool per worker instance
-    db_max_overflow: int = 10  # Extra headroom under burst load
+    # Connection pool sizing — tuned for multi-worker deployment:
+    #   4 Gunicorn workers × (5 + 3) = 32 backend connections
+    #   + ARQ workers × (5 + 3) = ~8-40 connections
+    #   Total ≤ 72 (well under Cloud SQL 100 limit)
+    db_pool_size: int = 5
+    db_max_overflow: int = 3
     db_echo: bool = False
 
     # Redis
@@ -119,6 +130,17 @@ class Settings(BaseSettings):
     rate_limit_backoff_max: int = 60  # Max backoff seconds for 429
     rate_limit_circuit_threshold: int = 8  # Consecutive 429s to trip circuit
     rate_limit_circuit_reset: int = 120  # Circuit breaker reset time (seconds)
+
+    # Invoice company info (used in PDF template)
+    invoice_company_name: str = "Benim Masalım"
+    invoice_company_address: str = ""
+    invoice_company_tax_id: str = ""
+    invoice_company_tax_office: str = ""
+    invoice_company_phone: str = ""
+    invoice_company_email: str = ""
+    invoice_token_salt: str = ""  # falls back to secret_key[:32] if empty
+    invoice_vat_rate: float = 10.0   # KDV oranı (%) — Türkiye'de fiziksel kitap: %10
+    invoice_vat_label: str = "KDV"   # Faturada gösterilecek vergi etiketi
 
     # Email (SMTP)
     smtp_host: str = "smtp.gmail.com"

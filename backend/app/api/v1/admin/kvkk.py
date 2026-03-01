@@ -1,6 +1,6 @@
 """KVKK Management API endpoints for admin panel."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import structlog
@@ -103,7 +103,7 @@ class ManualCleanupResponse(BaseModel):
 @router.get("/stats", response_model=KVKKStats)
 async def get_kvkk_stats(admin: AdminUser, db: AsyncSession = Depends(get_db)) -> KVKKStats:
     """KVKK istatistiklerini getir."""
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     # Toplam kullanıcı sayısı
     total_users = await db.scalar(select(func.count(User.id)))
@@ -159,7 +159,7 @@ async def get_deletion_queue(
     admin: AdminUser, db: AsyncSession = Depends(get_db), limit: int = 50
 ) -> list[DeletionQueueItem]:
     """Silinme sırasındaki siparişleri listele."""
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     result = await db.execute(
         select(Order)
@@ -264,7 +264,7 @@ async def export_user_data(user_id: str, admin: AdminUser, db: AsyncSession = De
     orders_result = await db.execute(select(Order).where(Order.user_id == uid))
     orders = orders_result.scalars().all()
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     valid_until = now + timedelta(days=7)
 
     # Sipariş verilerini hazırla (fotoğraf URL'leri hariç - güvenlik)

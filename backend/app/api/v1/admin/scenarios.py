@@ -15,9 +15,11 @@ import structlog
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.api.v1.deps import DbSession, SuperAdminUser
 from app.core.exceptions import ConflictError, NotFoundError
+from app.models.product import Product
 from app.models.scenario import DEFAULT_COVER_TEMPLATE, DEFAULT_PAGE_TEMPLATE, Scenario
 from app.services.storage_service import StorageService
 
@@ -79,6 +81,34 @@ def _safe_gallery(images: list | None) -> list[str]:
     return [img for img in images if isinstance(img, str) and img.startswith(_URL_PREFIXES)]
 
 
+def _safe_get_variables(scenario) -> list[str]:
+    """Safely get available variables — guards against malformed custom_inputs_schema in DB."""
+    import json
+
+    standard = [
+        "book_title", "child_name", "child_age", "child_gender",
+        "scene_description", "clothing_description", "visual_style",
+    ]
+    schema = scenario.custom_inputs_schema or []
+    # Guard: if schema is a JSON string (malformed DB data), parse it
+    if isinstance(schema, str):
+        try:
+            schema = json.loads(schema)
+        except Exception:
+            schema = []
+    # Guard: if schema is not iterable, skip
+    if not isinstance(schema, list):
+        return standard
+    custom = []
+    for field in schema:
+        if isinstance(field, dict):
+            key = field.get("key")
+            if key:
+                custom.append(str(key))
+        # Skip string or other non-dict elements gracefully
+    return standard + custom
+
+
 # ============ PYDANTIC SCHEMAS ============
 
 
@@ -93,6 +123,16 @@ class CustomInputFieldSchema(BaseModel):
     required: bool = True
     placeholder: str | None = None
     help_text: str | None = None
+
+    @field_validator("options", mode="before")
+    @classmethod
+    def coerce_options(cls, v: object) -> list[str] | None:
+        """Allow options stored as comma-separated string (legacy) or list."""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return [s.strip() for s in v.split(",") if s.strip()]
+        return list(v)
 
 
 class ScenarioCreate(BaseModel):
@@ -414,6 +454,17 @@ def scenario_to_response(scenario: Scenario) -> dict:
     if thumb and _is_base64(thumb):
         thumb = ""  # Don't send base64 thumbnails in response
 
+    # Sayfa sayısı: linked product varsa tek kaynak ürün — ürünü 20 yaparsan hepsi 20 görünür
+    _lp = getattr(scenario, "linked_product", None)
+    _def_page = getattr(scenario, "default_page_count", None)
+    _story_page = getattr(scenario, "story_page_count", None)
+    effective_default_page_count = (
+        (_lp.default_page_count if _lp and _lp.default_page_count else _def_page) or 6
+    )
+    effective_story_page_count = (
+        (_lp.default_page_count if _lp and _lp.default_page_count else _story_page)
+    )
+
     return {
         "id": str(scenario.id),
         "name": scenario.name,
@@ -428,9 +479,15 @@ def scenario_to_response(scenario: Scenario) -> dict:
         "location_en": getattr(scenario, "location_en", None),
         "flags": getattr(scenario, "flags", None) or {},
         "default_page_count": getattr(scenario, "default_page_count", 6),
-        # Dynamic Variables / Custom Inputs
-        "custom_inputs_schema": scenario.custom_inputs_schema or [],
-        "available_variables": scenario.get_available_variables(),
+        "effective_default_page_count": effective_default_page_count,
+        "effective_story_page_count": effective_story_page_count,
+        # Dynamic Variables / Custom Inputs — guard against malformed DB data
+        "custom_inputs_schema": (
+            scenario.custom_inputs_schema
+            if isinstance(scenario.custom_inputs_schema, list)
+            else []
+        ),
+        "available_variables": _safe_get_variables(scenario),
         # Media — FILTERED: no base64 data in responses
         "gallery_images": _safe_gallery(scenario.gallery_images),
         # Marketing Fields
@@ -488,7 +545,11 @@ async def list_scenarios(
     include_inactive: bool = False,
 ) -> list[dict]:
     """List all scenarios (admin view with full marketing data)."""
-    query = select(Scenario).order_by(Scenario.display_order, Scenario.name)
+    query = (
+        select(Scenario)
+        .options(selectinload(Scenario.linked_product))
+        .order_by(Scenario.display_order, Scenario.name)
+    )
 
     if not include_inactive:
         query = query.where(Scenario.is_active == True)
@@ -506,7 +567,11 @@ async def get_scenario(
     admin: SuperAdminUser,
 ) -> dict:
     """Get a single scenario with full details."""
-    result = await db.execute(select(Scenario).where(Scenario.id == scenario_id))
+    result = await db.execute(
+        select(Scenario)
+        .options(selectinload(Scenario.linked_product))
+        .where(Scenario.id == scenario_id)
+    )
     scenario = result.scalar_one_or_none()
 
     if not scenario:
@@ -555,6 +620,19 @@ async def create_scenario(
     # Upload base64 marketing gallery images to GCS
     marketing_gallery_urls = _upload_gallery_images(request.marketing_gallery, request.name)
 
+    # Linked product varsa sayfa sayısını üründen al (tutarlılık: yatay A4 = 22 vb.)
+    resolved_default_page = request.default_page_count
+    resolved_story_page = request.story_page_count
+    linked_product_id = _to_uuid(request.linked_product_id)
+    if linked_product_id:
+        result_p = await db.execute(select(Product).where(Product.id == linked_product_id))
+        linked_product = result_p.scalar_one_or_none()
+        if linked_product and linked_product.default_page_count and linked_product.default_page_count >= 4:
+            if resolved_default_page is None or resolved_default_page == 6:
+                resolved_default_page = linked_product.default_page_count
+            if resolved_story_page is None:
+                resolved_story_page = linked_product.default_page_count
+
     scenario = Scenario(
         # Basic Info
         name=request.name,
@@ -568,7 +646,7 @@ async def create_scenario(
         story_prompt_tr=request.story_prompt_tr,
         location_en=request.location_en,
         flags=request.flags or {},
-        default_page_count=request.default_page_count or 6,
+        default_page_count=resolved_default_page or 6,
         # Dynamic Variables / Custom Inputs
         custom_inputs_schema=custom_inputs_data or [],
         # Media — always store URLs, never base64
@@ -585,7 +663,7 @@ async def create_scenario(
         rating=request.rating,
         review_count=request.review_count or 0,
         # Product Link & Override Settings
-        linked_product_id=_to_uuid(request.linked_product_id),
+        linked_product_id=linked_product_id,
         price_override_base=request.price_override_base,
         price_override_extra_page=request.price_override_extra_page,
         cover_template_id_override=request.cover_template_id_override,
@@ -599,8 +677,8 @@ async def create_scenario(
         orientation_override=request.orientation_override,
         min_page_count_override=request.min_page_count_override,
         max_page_count_override=request.max_page_count_override,
-        # Book Structure
-        story_page_count=request.story_page_count,
+        # Book Structure (resolved from product when linked)
+        story_page_count=resolved_story_page,
         cover_count=request.cover_count if request.cover_count is not None else 2,
         greeting_page_count=request.greeting_page_count if request.greeting_page_count is not None else 2,
         back_info_page_count=request.back_info_page_count if request.back_info_page_count is not None else 1,
@@ -691,6 +769,17 @@ async def update_scenario(
 
     for field, value in update_data.items():
         setattr(scenario, field, value)
+
+    # linked_product değiştiyse veya sayfa sayısı boş/6 ise üründen senkronize et
+    _lid = getattr(scenario, "linked_product_id", None)
+    if _lid:
+        res_lp = await db.execute(select(Product).where(Product.id == _lid))
+        _lp = res_lp.scalar_one_or_none()
+        if _lp and _lp.default_page_count and _lp.default_page_count >= 4:
+            if (getattr(scenario, "default_page_count", None) is None or scenario.default_page_count == 6):
+                scenario.default_page_count = _lp.default_page_count
+            if getattr(scenario, "story_page_count", None) is None:
+                scenario.story_page_count = _lp.default_page_count
 
     await db.commit()
     await db.refresh(scenario)

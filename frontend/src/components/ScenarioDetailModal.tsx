@@ -16,7 +16,6 @@ import {
   Shield,
   Users,
   Clock,
-  Flame,
   Wand2,
   Gift,
 } from "lucide-react";
@@ -90,8 +89,8 @@ export default function ScenarioDetailModal({
   const features = (scenario.marketing_features && scenario.marketing_features.length > 0)
     ? scenario.marketing_features
     : scenario.features || [];
-  const rating = scenario.rating ?? 4.8;
-  const reviewCount = scenario.review_count ?? scenario.reviewCount ?? 500;
+  const rating = scenario.rating;
+  const reviewCount = scenario.review_count ?? scenario.reviewCount;
   const tagline = scenario.tagline || scenario.description;
 
   return (
@@ -128,16 +127,17 @@ export default function ScenarioDetailModal({
                 <div className="grid gap-5 md:grid-cols-2">
                   {/* Left Column - Visuals */}
                   <div className="space-y-4">
-                    {/* Promo Banner */}
-                    {(scenario.marketing_badge || scenario.marketing_price_label) && (
-                      <div className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 p-3 text-white">
-                        <Flame className="h-5 w-5 shrink-0" />
-                        <span className="text-sm font-semibold">
-                          {scenario.marketing_badge || scenario.marketing_price_label}
-                        </span>
+                    {/* Age range & duration info */}
+                    {(scenario.age_range || scenario.estimated_duration) && (
+                      <div className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-100 to-pink-100 p-3 text-purple-700">
+                        <BookOpen className="h-5 w-5 shrink-0" />
+                        <span className="text-sm font-semibold">Hikaye Konusu</span>
+                        {scenario.age_range && (
+                          <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-xs font-medium">{scenario.age_range}</span>
+                        )}
                         {scenario.estimated_duration && (
                           <>
-                            <Clock className="ml-auto h-4 w-4 shrink-0" />
+                            <Clock className="h-4 w-4 shrink-0" />
                             <span className="text-xs">{scenario.estimated_duration}</span>
                           </>
                         )}
@@ -216,11 +216,10 @@ export default function ScenarioDetailModal({
                               <button
                                 key={idx}
                                 onClick={() => setGalleryIndex(idx)}
-                                className={`h-2 rounded-full transition-all ${
-                                  idx === galleryIndex
-                                    ? "w-6 bg-purple-500"
-                                    : "w-2 bg-gray-300 hover:bg-purple-300"
-                                }`}
+                                className={`h-2 rounded-full transition-all ${idx === galleryIndex
+                                  ? "w-6 bg-purple-500"
+                                  : "w-2 bg-gray-300 hover:bg-purple-300"
+                                  }`}
                               />
                             ))}
                           </div>
@@ -240,24 +239,27 @@ export default function ScenarioDetailModal({
                         <p className="mt-1 text-sm text-gray-600">{tagline}</p>
                       )}
 
-                      <div className="mt-3 flex items-center gap-2">
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`h-4 w-4 ${
-                                star <= Math.floor(rating)
+                      {rating != null && rating > 0 && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-4 w-4 ${star <= Math.floor(rating)
                                   ? "fill-yellow-400 text-yellow-400"
                                   : "text-gray-300"
-                              }`}
-                            />
-                          ))}
+                                  }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm font-bold">{rating.toFixed(1)}</span>
+                          {reviewCount != null && reviewCount > 0 && (
+                            <span className="text-xs text-gray-500">
+                              ({Number(reviewCount).toLocaleString()} aile)
+                            </span>
+                          )}
                         </div>
-                        <span className="text-sm font-bold">{typeof rating === 'number' ? rating.toFixed(1) : rating}</span>
-                        <span className="text-xs text-gray-500">
-                          ({Number(reviewCount).toLocaleString()} aile)
-                        </span>
-                      </div>
+                      )}
                     </div>
 
                     {/* Meta badges */}
@@ -268,11 +270,7 @@ export default function ScenarioDetailModal({
                           {scenario.age_range}
                         </span>
                       )}
-                      {scenario.marketing_price_label && (
-                        <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
-                          {scenario.marketing_price_label}
-                        </span>
-                      )}
+
                     </div>
 
                     {/* Description */}
@@ -332,25 +330,7 @@ export default function ScenarioDetailModal({
                       </div>
                     </div>
 
-                    {/* Social Proof */}
-                    <div className="flex items-center gap-2 rounded-xl border border-yellow-200 bg-yellow-50 p-2.5">
-                      <div className="flex -space-x-2">
-                        {["👧", "👦", "👧", "👦"].map((emoji, idx) => (
-                          <div
-                            key={idx}
-                            className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-yellow-200 bg-white text-xs"
-                          >
-                            {emoji}
-                          </div>
-                        ))}
-                      </div>
-                      <span className="ml-1 text-xs">
-                        <strong className="text-yellow-700">
-                          {Number(reviewCount).toLocaleString()}+
-                        </strong>{" "}
-                        aile bayıldı!
-                      </span>
-                    </div>
+
 
                     {/* CTA Button */}
                     <Button
@@ -361,7 +341,7 @@ export default function ScenarioDetailModal({
                       className="w-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 py-6 text-base font-bold shadow-lg shadow-purple-300 hover:shadow-xl hover:shadow-purple-400"
                     >
                       <Wand2 className="mr-2 h-5 w-5" />
-                      Bu Maceraya Başla
+                      Bu Konuyu Seç
                       <Sparkles className="ml-2 h-5 w-5" />
                     </Button>
                   </div>

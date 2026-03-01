@@ -11,7 +11,7 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import { BookOpen, Menu } from "lucide-react";
+import { BookOpen, Menu, UserCircle } from "lucide-react";
 
 const navLinks = [
   { href: "#nasil-calisir", label: "Nasıl Çalışır?" },
@@ -21,29 +21,54 @@ const navLinks = [
   { href: "/contact", label: "İletişim" },
 ];
 
+interface UserData {
+  role?: string;
+  full_name?: string;
+  email?: string;
+}
+
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const user = localStorage.getItem("user");
-    setIsLoggedIn(!!token);
-    if (user) {
-      try {
-        const userData = JSON.parse(user);
-        setIsAdmin(userData.role === "admin");
-      } catch {
-        /* ignore */
+    const syncAuth = () => {
+      const token = localStorage.getItem("token");
+      const user = localStorage.getItem("user");
+      setIsLoggedIn(!!token);
+      setIsAdmin(false);
+      setUserName(null);
+      if (user) {
+        try {
+          const userData: UserData = JSON.parse(user);
+          setIsAdmin(userData.role === "admin");
+          if (userData.full_name) {
+            setUserName(userData.full_name.split(" ")[0]);
+          }
+        } catch {
+          /* ignore */
+        }
       }
-    }
+    };
+
+    syncAuth();
+    window.addEventListener("storage", syncAuth);
+    window.addEventListener("auth-change", syncAuth);
+    return () => {
+      window.removeEventListener("storage", syncAuth);
+      window.removeEventListener("auth-change", syncAuth);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     setIsLoggedIn(false);
     setIsAdmin(false);
+    setUserName(null);
+    window.location.href = "/";
   };
 
   return (
@@ -82,9 +107,18 @@ export default function Header() {
             </Link>
           )}
           {isLoggedIn ? (
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              Çıkış Yap
-            </Button>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/account"
+                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              >
+                <UserCircle className="h-4 w-4" />
+                {userName ? userName : "Hesabım"}
+              </Link>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                Çıkış Yap
+              </Button>
+            </div>
           ) : (
             <Link href="/auth/login">
               <Button variant="ghost" size="sm">
@@ -142,6 +176,17 @@ export default function Header() {
                       className="rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent"
                     >
                       Admin Panel
+                    </Link>
+                  </SheetClose>
+                )}
+                {isLoggedIn && (
+                  <SheetClose asChild>
+                    <Link
+                      href="/account"
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent"
+                    >
+                      <UserCircle className="h-5 w-5" />
+                      {userName ? `${userName} — Hesabım` : "Hesabım"}
                     </Link>
                   </SheetClose>
                 )}

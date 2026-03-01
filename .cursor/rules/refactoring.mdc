@@ -1,0 +1,140 @@
+---
+description: Monolitik backend dosyalarını parçalara bölme (refactoring) kuralları. 4 büyük refaktör tamamlandı: trials.py, orders.py, admin/orders.py, _story_writer.py
+globs: backend/**/*.py
+alwaysApply: false
+---
+
+# Backend Refactoring Kuralları
+
+## Tamamlanan Refaktörler
+
+### trials.py (4360 → 1575 satır)
+```
+app/api/v1/trials.py              → ince router, thin endpoints
+app/schemas/trials.py             → 9 Pydantic schema
+app/services/trial_generation_service.py  → AI üretim pipeline
+app/services/trial_payment_service.py     → Iyzico ödeme mantığı
+```
+
+## Monolith Bölme Kuralları
+
+### Dosya Sorumluluk Sınırları
+- `api/v1/*.py` — sadece route tanımı + ince endpoint handler (≤500 satır)
+- `schemas/*.py` — Pydantic model tanımları
+- `services/*.py` — iş mantığı, DB sorguları, dış servis çağrıları
+- `workers/*.py` — arq/background task sarmalayıcılar
+
+### Import Kuralları
+```python
+# ❌ YANLIŞ: worker, API private fonksiyon import eder
+from app.api.v1.trials import _generate_trial_story_inner
+
+# ✅ DOĞRU: worker, service layer'dan import eder
+from app.services.trial_generation_service import generate_trial_story_inner
+```
+
+### Lazy Import Kuralları (worker içinde)
+```python
+# ✅ Lazy import kabul edilebilir (circular import önlemek için)
+async def job_fn(ctx, ...):
+    from app.services.trial_generation_service import generate_trial_story_inner
+    await generate_trial_story_inner(...)
+```
+
+### Paylaşılan Helper'lar
+- Birden fazla modülün kullandığı helper'lar `services/` altında public fonksiyon olmalı
+- `_resolve_visual_style_from_db` → `services/trial_generation_service.resolve_visual_style_from_db`
+- API router'dan import etme, service layer'dan import et
+
+### Encoding Uyarısı (Windows)
+- Python dosyalarını `Write` aracıyla yazarken encoding sorunları çıkabilir
+- Null byte kontrolü: `python -c "with open(f,'rb') as x: print(b'\\x00' in x.read())"`
+- Düzeltme: `open(f,'rb').read().replace(b'\\x00',b'').decode('utf-8','replace')`
+
+## Refaktör Sonrası Kontrol Listesi
+```python
+# 1. Syntax check
+import ast; ast.parse(open(f, encoding='utf-8').read())
+
+# 2. Eski import yok
+# grep: "from app.api.v1.trials import _"
+
+# 3. Bozuk karakter yok
+assert content.count('\ufffd') == 0
+assert content.count('\x01') == 0
+
+# 4. Tüm export'lar mevcut
+```
+
+### orders.py (3544 → 1752 satır)
+```
+app/api/v1/orders.py                     → ince router, thin endpoints
+app/schemas/orders.py                    → 13 Pydantic schema
+app/services/preview_generation_service.py → image generation pipeline
+app/services/order_helpers.py            → billing, title, DB helpers
+```
+**Çözülen ihlaller:**
+- `image_worker.py` → `preview_generation_service` (artık API'dan import etmiyor)
+- `order_state_machine.py` → `order_helpers` (circular dep kırıldı)
+- `trials.py` + `trial_generation_service.py` → `order_helpers.force_deterministic_title`
+
+### admin/orders.py (2566 → 1945 satır)
+```
+app/api/v1/admin/orders.py              → ince router, thin endpoints
+app/services/preview_display_service.py → 8 display/formatting helper
+app/services/admin_pdf_service.py       → PDF generation pipeline (Arq worker entry)
+```
+**Çözülen ihlaller:**
+- `image_worker.py` → `admin_pdf_service.generate_admin_pdf_inner` (API'dan service'e taşındı)
+- `String` import bug düzeltildi (L186 NameError)
+- Test dosyaları güncellendi: `test_pipeline_version_guard.py`, `test_preview_detail_response.py`
+
+### _story_writer.py (2362 → 1564 satır)
+```
+app/services/ai/_story_writer.py              → orchestration, generate_story_v3, _pass1_generate_pages
+app/services/ai/_story_learning_outcomes.py   → FALLBACK constants + learning outcome helpers (199 satır)
+app/services/ai/_story_blueprint.py           → PASS-0 blueprint generation (189 satır)
+app/services/ai/_story_legacy_passes.py       → legacy PASS-1/PASS-2 (508 satır)
+```
+**Korunanlar (hiç değişmedi):**
+- Tüm temperature değerleri (0.7 / 0.92 / 0.5)
+- BLOCK_MEDIUM_AND_ABOVE safety settings
+- validate_story_output + apply_all_fixes + validate_visual_prompts
+- Retry logic (3/4 max retries, 10/8s base wait)
+- Closure keyword check, family ban, all system prompts
+
+## Tüm Refaktörler Tamamlandı ✔
+
+### Doğrulanmış Son Durum (2026-03-01)
+
+| Dosya | Öncesi | Sonrası | Durum |
+|---|---|---|---|
+| `api/v1/trials.py` | 4360 | 1575 | OK |
+| `schemas/trials.py` | — | 181 | OK |
+| `services/trial_generation_service.py` | — | 2197 | OK |
+| `services/trial_payment_service.py` | — | 431 | OK |
+| `api/v1/orders.py` | 3544 | 1752 | OK |
+| `schemas/orders.py` | — | 179 | OK |
+| `services/preview_generation_service.py` | — | 1528 | OK |
+| `services/order_helpers.py` | — | 229 | OK |
+| `api/v1/admin/orders.py` | 2566 | 1945 | OK |
+| `services/admin_pdf_service.py` | — | 412 | OK |
+| `services/preview_display_service.py` | — | 235 | OK |
+| `services/ai/_story_writer.py` | 2362 | 1564 | OK |
+| `services/ai/_story_learning_outcomes.py` | — | 199 | OK |
+| `services/ai/_story_blueprint.py` | — | 189 | OK |
+| `services/ai/_story_legacy_passes.py` | — | 508 | OK |
+
+**Tüm testler güncel, sıfır stale import, sıfır encoding sorunu.**
+
+### Korunan API Endpoints
+- `trials.py`: 12 endpoint
+- `orders.py`: 15 endpoint
+- `admin/orders.py`: 29 endpoint
+
+### Korunan Özel Semboller (orders.py'de kaldı)
+- `_verify_order_ownership` — test_invoice.py + test_guest_convert_idor.py tarafından import ediliyor
+- `_BILLING_EDITABLE_STATUSES` — test_billing.py tarafından import ediliyor
+- `_LIST_COLUMNS` — test_orders_performance.py tarafından import ediliyor
+- `_IMAGE_GEN_SEMAPHORE` — dahili kullanım
+- `process_preview_background`, `process_remaining_pages` — semaphore wrapper'lar

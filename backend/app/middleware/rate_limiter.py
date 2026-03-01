@@ -4,10 +4,11 @@ Global Rate Limiting Middleware for FastAPI.
 Provides IP-based and endpoint-specific rate limiting
 to protect the application from abuse.
 
-Uses Redis when available (production) and falls back to
+Uses async Redis when available (production) and falls back to
 in-memory storage (development / single-worker).
 """
 
+import asyncio
 import time
 from collections import defaultdict
 
@@ -27,6 +28,8 @@ logger = structlog.get_logger()
 class InMemoryRateLimitStorage:
     """In-memory rate limit storage. Only works within a single process."""
 
+    is_async = False
+
     def __init__(self) -> None:
         self.requests: dict[str, list[float]] = defaultdict(list)
         self.endpoint_requests: dict[str, list[float]] = defaultdict(list)
@@ -38,81 +41,169 @@ class InMemoryRateLimitStorage:
         if key in self.endpoint_requests:
             self.endpoint_requests[key] = [ts for ts in self.endpoint_requests[key] if ts > cutoff]
 
-    def get_request_count(self, key: str, window_seconds: int) -> int:
+    async def get_request_count(self, key: str, window_seconds: int) -> int:
         self._cleanup(key, window_seconds)
         return len(self.requests.get(key, []))
 
-    def get_endpoint_count(self, key: str, window_seconds: int) -> int:
+    async def get_endpoint_count(self, key: str, window_seconds: int) -> int:
         self._cleanup(key, window_seconds)
         return len(self.endpoint_requests.get(key, []))
 
-    def record_request(self, ip: str, endpoint: str, *, skip_endpoint_record: bool = False) -> None:
+    async def record_request(self, ip: str, endpoint: str, *, skip_endpoint_record: bool = False) -> None:
         now = time.time()
         self.requests[ip].append(now)
         if not skip_endpoint_record:
             self.endpoint_requests[f"{ip}:{endpoint}"].append(now)
 
+    async def scan_and_delete(self, pattern: str) -> int:
+        """Delete keys matching pattern (in-memory variant)."""
+        deleted = 0
+        if ":" in pattern:
+            # Endpoint-specific pattern
+            keys_to_remove = [k for k in self.endpoint_requests if pattern.replace("*", "") in k]
+            for key in keys_to_remove:
+                del self.endpoint_requests[key]
+                deleted += 1
+        # Also check global requests
+        keys_to_remove = [k for k in self.requests if pattern.replace("*", "") in k]
+        for key in keys_to_remove:
+            del self.requests[key]
+            deleted += 1
+        return deleted
 
-class RedisRateLimitStorage:
-    """Redis-backed rate limit storage. Works across multiple workers/containers."""
+    async def clear_all(self) -> int:
+        self.requests.clear()
+        self.endpoint_requests.clear()
+        return 0
+
+
+class AsyncRedisRateLimitStorage:
+    """Async Redis-backed rate limit storage. Works across multiple workers/containers."""
+
+    is_async = True
 
     def __init__(self) -> None:
-        import redis
+        import redis.asyncio as aioredis
 
         redis_url = str(settings.redis_url)
-        self._redis = redis.from_url(redis_url, decode_responses=True)
-        try:
-            self._redis.ping()
-            logger.info("RateLimiter connected to Redis", url=redis_url[:30])
-        except redis.ConnectionError:
-            logger.warning("RateLimiter: Redis unavailable, falling back to in-memory")
-            raise
+        self._redis = aioredis.from_url(
+            redis_url,
+            decode_responses=True,
+            socket_connect_timeout=5,
+            socket_timeout=5,
+        )
+        self._verified = False
+
+    async def _ensure_connected(self) -> None:
+        if not self._verified:
+            await self._redis.ping()
+            self._verified = True
+            logger.info("RateLimiter connected to async Redis")
 
     def _key(self, prefix: str, identifier: str) -> str:
         return f"rl:{prefix}:{identifier}"
 
-    def get_request_count(self, key: str, window_seconds: int) -> int:
+    async def get_request_count(self, key: str, window_seconds: int) -> int:
         rk = self._key("global", key)
         now = time.time()
         cutoff = now - window_seconds
-        self._redis.zremrangebyscore(rk, "-inf", cutoff)
-        return int(self._redis.zcard(rk))
+        await self._redis.zremrangebyscore(rk, "-inf", cutoff)
+        return int(await self._redis.zcard(rk))
 
-    def get_endpoint_count(self, key: str, window_seconds: int) -> int:
+    async def get_endpoint_count(self, key: str, window_seconds: int) -> int:
         rk = self._key("ep", key)
         now = time.time()
         cutoff = now - window_seconds
-        self._redis.zremrangebyscore(rk, "-inf", cutoff)
-        return int(self._redis.zcard(rk))
+        await self._redis.zremrangebyscore(rk, "-inf", cutoff)
+        return int(await self._redis.zcard(rk))
 
-    def record_request(self, ip: str, endpoint: str, *, skip_endpoint_record: bool = False) -> None:
+    async def record_request(self, ip: str, endpoint: str, *, skip_endpoint_record: bool = False) -> None:
         now = time.time()
-        pipe = self._redis.pipeline()
+        async with self._redis.pipeline(transaction=False) as pipe:
+            global_key = self._key("global", ip)
+            pipe.zadd(global_key, {str(now): now})
+            pipe.expire(global_key, 7200)
 
-        global_key = self._key("global", ip)
-        pipe.zadd(global_key, {str(now): now})
-        pipe.expire(global_key, 7200)
+            if not skip_endpoint_record:
+                ep_key = self._key("ep", f"{ip}:{endpoint}")
+                pipe.zadd(ep_key, {str(now): now})
+                pipe.expire(ep_key, 7200)
 
-        if not skip_endpoint_record:
-            ep_key = self._key("ep", f"{ip}:{endpoint}")
-            pipe.zadd(ep_key, {str(now): now})
-            pipe.expire(ep_key, 7200)
+            await pipe.execute()
 
-        pipe.execute()
+    async def scan_and_delete(self, pattern: str) -> int:
+        """Delete keys matching a pattern using async SCAN."""
+        deleted = 0
+        async for key in self._redis.scan_iter(pattern):
+            await self._redis.delete(key)
+            deleted += 1
+        return deleted
+
+    async def clear_all(self) -> int:
+        """Delete all rate-limit keys."""
+        deleted = 0
+        async for key in self._redis.scan_iter("rl:*"):
+            await self._redis.delete(key)
+            deleted += 1
+        return deleted
 
 
-def _create_storage() -> InMemoryRateLimitStorage | RedisRateLimitStorage:
-    """Try Redis first; fall back to in-memory."""
-    if settings.app_env == "development":
-        return InMemoryRateLimitStorage()
-    try:
-        return RedisRateLimitStorage()
-    except Exception:
-        logger.warning("Redis unavailable — using in-memory rate limiter (single-worker only)")
-        return InMemoryRateLimitStorage()
+# Lazy-init storage: created on first use inside the async event loop
+_storage: InMemoryRateLimitStorage | AsyncRedisRateLimitStorage | None = None
+_storage_init_failed: bool = False
+_storage_last_retry: float = 0.0  # timestamp of last retry attempt
+_STORAGE_RETRY_INTERVAL = 30.0  # retry Redis connection every 30 seconds
+_storage_lock = asyncio.Lock()
 
 
-_storage = _create_storage()
+async def _get_storage() -> InMemoryRateLimitStorage | AsyncRedisRateLimitStorage | None:
+    """Get or create the rate limit storage (thread-safe lazy init).
+
+    Returns None when Redis is unavailable in production — middleware will
+    skip rate limiting entirely (fail-open) rather than using per-worker
+    in-memory counters that multi-instance deployments can bypass.
+
+    Retries Redis connection every 30s so a temporary blip doesn't permanently
+    disable rate limiting until restart.
+    """
+    import time
+
+    global _storage, _storage_init_failed, _storage_last_retry
+    if _storage is not None:
+        return _storage
+    if _storage_init_failed:
+        # Retry periodically instead of permanently giving up
+        if time.monotonic() - _storage_last_retry < _STORAGE_RETRY_INTERVAL:
+            return None
+
+    async with _storage_lock:
+        # Double-check after acquiring lock
+        if _storage is not None:
+            return _storage
+        if _storage_init_failed:
+            if time.monotonic() - _storage_last_retry < _STORAGE_RETRY_INTERVAL:
+                return None
+
+        if settings.app_env == "development":
+            _storage = InMemoryRateLimitStorage()
+            return _storage
+        try:
+            s = AsyncRedisRateLimitStorage()
+            await s._ensure_connected()
+            _storage = s
+            if _storage_init_failed:
+                logger.info("Redis reconnected — rate limiting RE-ENABLED")
+                _storage_init_failed = False
+        except Exception:
+            logger.error(
+                "CRITICAL: Redis unavailable in production — rate limiting DISABLED. "
+                "In-memory fallback skipped to prevent multi-worker bypass. "
+                "Will retry in %ds.",
+                _STORAGE_RETRY_INTERVAL,
+            )
+            _storage_init_failed = True
+            _storage_last_retry = time.monotonic()
+        return _storage
 
 
 # =============================================================================
@@ -162,6 +253,9 @@ ENDPOINT_LIMITS = {
     ),
     # Registration
     "/api/v1/auth/register": (5, 3600),  # 5 per hour
+    # Password reset — prevent brute force / email enumeration
+    "/api/v1/auth/forgot-password": (5, 3600),  # 5 per hour per IP
+    "/api/v1/auth/reset-password": (10, 900),   # 10 per 15 min per IP
     # Trial creation - expensive AI generation
     "/api/v1/trials/create": (getattr(settings, "rate_limit_trial_create", 15), 3600),
     "/api/v1/trials/generate-preview": (getattr(settings, "rate_limit_trial_preview", 20), 3600),
@@ -177,8 +271,13 @@ ENDPOINT_LIMITS = {
     "/api/v1/ai/upload/temp-image": (10, 3600),  # 10 per hour per IP
     # Trial status polling — lightweight DB read, needs high limit for preview flow
     "/api/v1/trials/status": (600, 3600),  # 600 per hour (generous for polling)
-    # Trial retry — re-queues expensive image generation
-    "/api/v1/trials": (10, 3600),  # 10 per hour per IP (covers /{trial_id}/retry etc.)
+    # Trial payment endpoints — specific limits to avoid falling into generic /api/v1/trials bucket
+    "/api/v1/trials/create-payment": (60, 3600),  # 60 per hour (covers /{id}/create-payment)
+    "/api/v1/trials/complete": (60, 3600),        # 60 per hour (covers /{id}/complete)
+    "/api/v1/trials/verify-payment": (60, 3600),   # 60 per hour (covers /{id}/verify-payment)
+    "/api/v1/trials/preview": (50, 3600),           # 50 per hour (covers /{id}/preview GET polling)
+    # Trial retry — re-queues expensive image generation (generic catch-all)
+    "/api/v1/trials": (30, 3600),  # 30 per hour per IP
     # Webhook endpoints — signature-verified but still rate-limit against replay floods
     "/api/v1/webhooks/payment": (30, 3600),  # 30 per hour
     "/api/v1/webhooks/elevenlabs": (20, 3600),  # 20 per hour
@@ -186,6 +285,8 @@ ENDPOINT_LIMITS = {
     "/api/v1/ai/preview-voice": (20, 3600),  # 20 per hour per IP
     # Voice sample upload
     "/api/v1/ai/upload-voice-sample": (10, 3600),  # 10 per hour per IP
+    # Invoice token download — public, rate-limit against brute-force
+    "/api/v1/invoice": (10, 300),  # 10 per 5 min per IP
 }
 
 # Endpoints where authenticated admin/editor skip the endpoint limit (still count global)
@@ -216,6 +317,15 @@ def _endpoint_limit_key(path: str) -> str:
     # Trial status polling — lightweight GET, needs separate high-limit bucket
     if path.startswith("/api/v1/trials/") and path.endswith("/status"):
         return "/api/v1/trials/status"
+    # Trial payment endpoints — must be checked before generic /api/v1/trials catch-all
+    if path.startswith("/api/v1/trials/") and path.endswith("/create-payment"):
+        return "/api/v1/trials/create-payment"
+    if path.startswith("/api/v1/trials/") and path.endswith("/complete"):
+        return "/api/v1/trials/complete"
+    if path.startswith("/api/v1/trials/") and path.endswith("/verify-payment"):
+        return "/api/v1/trials/verify-payment"
+    if path.startswith("/api/v1/trials/") and path.endswith("/preview"):
+        return "/api/v1/trials/preview"
     # Prefix match for dynamic paths (e.g. /api/v1/ai/orders/{id}/regenerate-cover)
     for key in ENDPOINT_LIMITS:
         if path.startswith(key + "/"):
@@ -235,7 +345,10 @@ GLOBAL_LIMIT = (
 
 
 class RateLimitMiddleware:
-    """Pure ASGI rate limiting middleware (no BaseHTTPMiddleware — avoids streaming deadlocks)."""
+    """Pure ASGI rate limiting middleware (no BaseHTTPMiddleware — avoids streaming deadlocks).
+
+    All Redis calls are fully async — no event loop blocking.
+    """
 
     def __init__(self, app) -> None:
         self.app = app
@@ -252,10 +365,16 @@ class RateLimitMiddleware:
             if self._should_skip(path):
                 return await self.app(scope, receive, send)
 
+            storage = await _get_storage()
+            if storage is None:
+                # Redis unavailable — skip rate limiting (fail-open)
+                logger.warning("rate_limit_skipped: Redis unavailable, passing request through")
+                return await self.app(scope, receive, send)
+
             client_ip = self._get_client_ip(scope)
             endpoint = _endpoint_limit_key(path)
 
-            global_count = _storage.get_request_count(client_ip, GLOBAL_LIMIT[1])
+            global_count = await storage.get_request_count(client_ip, GLOBAL_LIMIT[1])
             if global_count >= GLOBAL_LIMIT[0]:
                 logger.warning("Global rate limit exceeded", ip=client_ip, count=global_count, limit=GLOBAL_LIMIT[0])
                 return await self._send_429(scope, receive, send, GLOBAL_LIMIT[1])
@@ -265,12 +384,12 @@ class RateLimitMiddleware:
             if endpoint in ENDPOINT_LIMITS and not is_admin_exempt:
                 limit, window = ENDPOINT_LIMITS[endpoint]
                 endpoint_key = f"{client_ip}:{endpoint}"
-                endpoint_count = _storage.get_endpoint_count(endpoint_key, window)
+                endpoint_count = await storage.get_endpoint_count(endpoint_key, window)
                 if endpoint_count >= limit:
                     logger.warning("Endpoint rate limit exceeded", ip=client_ip, endpoint=endpoint, count=endpoint_count, limit=limit)
                     return await self._send_429(scope, receive, send, window)
 
-            _storage.record_request(client_ip, endpoint, skip_endpoint_record=is_admin_exempt)
+            await storage.record_request(client_ip, endpoint, skip_endpoint_record=is_admin_exempt)
 
             need_headers = endpoint in ENDPOINT_LIMITS and not is_admin_exempt
 
@@ -278,9 +397,12 @@ class RateLimitMiddleware:
                 limit, window = ENDPOINT_LIMITS[endpoint]
                 endpoint_key = f"{client_ip}:{endpoint}"
 
+                # Capture storage ref for closure
+                _st = storage
+
                 async def send_with_headers(message):
                     if message["type"] == "http.response.start":
-                        remaining = limit - _storage.get_endpoint_count(endpoint_key, window)
+                        remaining = limit - await _st.get_endpoint_count(endpoint_key, window)
                         extra = [
                             (b"x-ratelimit-limit", str(limit).encode()),
                             (b"x-ratelimit-remaining", str(max(0, remaining)).encode()),
@@ -344,15 +466,18 @@ class RateLimitMiddleware:
 
 
 # =============================================================================
-# UTILITY FUNCTIONS
+# UTILITY FUNCTIONS (all async)
 # =============================================================================
 
 
-def get_rate_limit_status(client_ip: str) -> dict:
+async def get_rate_limit_status(client_ip: str) -> dict:
     """Get current rate limit status for an IP."""
+    storage = await _get_storage()
+    if storage is None:
+        return {"error": "Redis unavailable — rate limiting disabled"}
     status = {
         "global": {
-            "count": _storage.get_request_count(client_ip, GLOBAL_LIMIT[1]),
+            "count": await storage.get_request_count(client_ip, GLOBAL_LIMIT[1]),
             "limit": GLOBAL_LIMIT[0],
             "window_seconds": GLOBAL_LIMIT[1],
         },
@@ -362,7 +487,7 @@ def get_rate_limit_status(client_ip: str) -> dict:
     for endpoint, (limit, window) in ENDPOINT_LIMITS.items():
         endpoint_key = f"{client_ip}:{endpoint}"
         status["endpoints"][endpoint] = {
-            "count": _storage.get_endpoint_count(endpoint_key, window),
+            "count": await storage.get_endpoint_count(endpoint_key, window),
             "limit": limit,
             "window_seconds": window,
         }
@@ -370,38 +495,38 @@ def get_rate_limit_status(client_ip: str) -> dict:
     return status
 
 
-def reset_rate_limit(client_ip: str) -> None:
+async def reset_rate_limit(client_ip: str) -> None:
     """Reset rate limits for an IP (admin function)."""
-    if isinstance(_storage, InMemoryRateLimitStorage):
-        if client_ip in _storage.requests:
-            del _storage.requests[client_ip]
-        keys_to_remove = [k for k in _storage.endpoint_requests if k.startswith(f"{client_ip}:")]
+    storage = await _get_storage()
+    if storage is None:
+        return
+    if isinstance(storage, InMemoryRateLimitStorage):
+        if client_ip in storage.requests:
+            del storage.requests[client_ip]
+        keys_to_remove = [k for k in storage.endpoint_requests if k.startswith(f"{client_ip}:")]
         for key in keys_to_remove:
-            del _storage.endpoint_requests[key]
-    elif isinstance(_storage, RedisRateLimitStorage):
+            del storage.endpoint_requests[key]
+    elif isinstance(storage, AsyncRedisRateLimitStorage):
         try:
-            r = _storage._redis
-            for key in r.scan_iter(f"rl:*:{client_ip}*"):
-                r.delete(key)
+            await storage.scan_and_delete(f"rl:*:{client_ip}*")
         except Exception as exc:
             logger.error("Redis reset_rate_limit failed", error=str(exc))
     logger.info("Rate limit reset", ip=client_ip)
 
 
-def reset_all_rate_limits() -> int:
+async def reset_all_rate_limits() -> int:
     """Reset all rate limits (tüm IP'ler). Returns number of keys deleted. Admin only."""
-    if isinstance(_storage, InMemoryRateLimitStorage):
-        _storage.requests.clear()
-        _storage.endpoint_requests.clear()
+    storage = await _get_storage()
+    if storage is None:
+        return 0
+    if isinstance(storage, InMemoryRateLimitStorage):
+        storage.requests.clear()
+        storage.endpoint_requests.clear()
         logger.info("Rate limit reset all (in-memory)")
         return 0
-    if isinstance(_storage, RedisRateLimitStorage):
+    if isinstance(storage, AsyncRedisRateLimitStorage):
         try:
-            r = _storage._redis
-            deleted = 0
-            for key in r.scan_iter("rl:*"):
-                r.delete(key)
-                deleted += 1
+            deleted = await storage.clear_all()
             logger.info("Rate limit reset all (Redis)", deleted=deleted)
             return deleted
         except Exception as exc:

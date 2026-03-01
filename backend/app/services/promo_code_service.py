@@ -11,6 +11,8 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ValidationError
+from app.models.audit_log import AuditLog
+from app.models.order import Order
 from app.models.promo_code import DiscountType, PromoCode
 
 logger = structlog.get_logger()
@@ -145,3 +147,58 @@ async def consume_promo_code(promo_id: UUID, db: AsyncSession) -> bool:
         logger.warning("promo_code_consume_failed", promo_id=str(promo_id))
 
     return consumed
+
+
+async def rollback_promo_code(order: Order, db: AsyncSession) -> None:
+    """
+    Rollback a consumed promo code: decrement used_count by 1.
+
+    Called when payment fails or order is cancelled from PAYMENT_PENDING.
+    Only rolls back if the order has a promo_code_id attached.
+    """
+    if not order.promo_code_id:
+        return
+
+    result = await db.execute(
+        update(PromoCode)
+        .where(
+            PromoCode.id == order.promo_code_id,
+            PromoCode.used_count > 0,
+        )
+        .values(used_count=PromoCode.used_count - 1)
+    )
+
+    if result.rowcount > 0:
+        logger.info(
+            "promo_code_rolled_back",
+            promo_code_id=str(order.promo_code_id),
+            order_id=str(order.id),
+        )
+        db.add(AuditLog(
+            action="PROMO_CODE_ROLLED_BACK",
+            order_id=order.id,
+            details={
+                "promo_code_id": str(order.promo_code_id),
+                "promo_code_text": order.promo_code_text,
+                "reason": "payment_failed_or_cancelled",
+            },
+        ))
+
+
+async def _rollback_promo_after_failure(promo: PromoCode, order: Order, user_id: UUID, db: AsyncSession) -> None:
+    """Rollback promo code when Iyzico checkout creation fails."""
+    try:
+        await rollback_promo_code(order, db)
+        logger.info(
+            "PROMO_ROLLBACK_ON_IYZICO_FAILURE",
+            order_id=str(order.id),
+            promo_code=promo.code,
+            user_id=str(user_id),
+        )
+    except Exception as rb_exc:
+        logger.critical(
+            "PROMO_ROLLBACK_FAILED",
+            order_id=str(order.id),
+            promo_code=promo.code,
+            error=str(rb_exc),
+        )

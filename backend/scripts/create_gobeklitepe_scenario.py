@@ -1,354 +1,280 @@
-﻿"""
-GÃ¶beklitepe MacerasÄ± Senaryosu - Master Prompt OluÅŸturma
-
-Bu script, GÃ¶beklitepe MacerasÄ± senaryosunu profesyonel, tutarlÄ± ve
-kÃ¼ltÃ¼rel aÃ§Ä±dan zengin prompt'larla oluÅŸturur veya gÃ¼nceller.
-
-Ã–NEMLÄ° - PuLID UYUMLULUK:
-- Fiziksel Ã¶zellikler YASAK (saÃ§, gÃ¶z, ten rengi) - PuLID fotoÄŸraftan alÄ±yor
-- {clothing_description} zorunlu - kÄ±yafet tutarlÄ±lÄ±ÄŸÄ± iÃ§in
-- Sahne aÃ§Ä±klamalarÄ± ACTION-ONLY - stil StyleConfig'den geliyor
-- YÃ¼z kimliÄŸi korunmalÄ± - "Bu kesin benim Ã§ocuÄŸum" hissi
-
-Ã‡alÄ±ÅŸtÄ±rma:
-    cd backend
-    python -m scripts.create_gobeklitepe_scenario
+"""
+Göbeklitepe Macerası — Birleştirilmiş Güncelleme
+=================================================
+- Modular prompt (500 char limit, tüm placeholder'lar mevcut)
+- Hikaye: Macera odaklı (gezi rehberi DEĞİL)
+- Outfit: update_all_outfits.py standardı (EXACTLY lock phrase)
+- custom_inputs_schema: list formatı (frontend uyumlu)
+- Yüz benzerliği: CHARACTER block önce, fiziksel özellik yok
 """
 
 import asyncio
-import json
 import os
 import sys
 import uuid
 
-# Ensure /app (or parent dir) is in Python path for direct script execution
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from sqlalchemy import select
+
 from app.core.database import async_session_factory
 from app.models.scenario import Scenario
 
+# ============================================================================
+# MODULAR PROMPT COMPONENTS (500 char limit!)
+# ============================================================================
 
-# =============================================================================
-# GÃ–BEKLÄ°TEPE MACERASI - MASTER PROMPT TEMPLATES
-# =============================================================================
+GOBEKLITEPE_COVER_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Ancient Gobeklitepe T-shaped megalithic pillars with animal carvings in background. "
+    "Harran Plain steppe, golden sunset light on limestone. "
+    "Wide shot: child 30%, ancient pillars 70%. "
+    "Epic archaeological wonder atmosphere."
+)
 
-# -----------------------------------------------------------------------------
-# KAPAK PROMPT TEMPLATE
-# -----------------------------------------------------------------------------
-# Kapak: Epik, kahramanca poz, GÃ¶beklitepe'nin en ikonik gÃ¶rÃ¼nÃ¼mÃ¼
-# Format: Dikey (768x1024), poster tarzÄ±, baÅŸlÄ±k alanÄ± yukarÄ±da
-# PuLID: YÃ¼z referans fotoÄŸraftan, fiziksel Ã¶zellik yazÄ±lmaz
-# -----------------------------------------------------------------------------
+GOBEKLITEPE_PAGE_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Elements: [T-pillars: 3-5m limestone megaliths, animal carvings (fox, lion, snake, vulture) / "
+    "Circular enclosures: stone rings / Harran Plain: golden steppe / "
+    "Stone quarry: unfinished pillars in bedrock]. "
+    "Warm sandstone gold, amber, sage green tones."
+)
 
-GOBEKLITEPE_COVER_PROMPT = """A breathtaking children's book cover illustration.
+# ============================================================================
+# OUTFIT DEFINITIONS (update_all_outfits.py standardı)
+# ============================================================================
 
-SCENE COMPOSITION:
-A young child {scene_description}, standing in awe before the ancient megalithic pillars of GÃ¶beklitepe, the world's oldest known temple, in southeastern Turkey.
+OUTFIT_GIRL = (
+    "sand-yellow cotton t-shirt with small compass emblem on chest, "
+    "light olive green cotton shorts reaching knees, tan brown leather sandals, "
+    "wide-brim straw sun hat with brown ribbon, small woven crossbody bag. "
+    "EXACTLY the same outfit on every page — same yellow shirt, same olive shorts, same straw hat."
+)
 
-ICONIC BACKGROUND ELEMENTS (include 2-3 key details):
-- Massive T-shaped limestone pillars (3-5 meters tall) with intricate animal carvings â€” foxes, lions, snakes, and birds etched into the stone
-- Circular stone enclosures with concentric rings of pillars, partially excavated from the earth
-- The vast Harran Plain stretching to the horizon under a dramatic sky
-- Rolling golden-brown hills of the ÅanlÄ±urfa steppe landscape
-- Ancient stone walls connecting the pillars, showing the earliest known architecture
-- Scattered wildflowers and dry grasses around the archaeological site
+OUTFIT_BOY = (
+    "burnt orange cotton polo shirt, "
+    "stone beige cargo shorts with button-flap pockets, dark brown leather sandals, "
+    "khaki bucket hat, small tan canvas satchel bag across body. "
+    "EXACTLY the same outfit on every page — same orange polo, same beige shorts, same bucket hat."
+)
 
-LIGHTING & ATMOSPHERE:
-- Magical golden hour light casting long dramatic shadows from the towering pillars
-- Warm amber and honey tones across the ancient limestone
-- A vast, epic sky with scattered clouds lit by the setting or rising sun
-- Sense of deep mystery and ancient wonder â€” 12,000 years of history
-- Warm earth tones: golden sandstone, dusty amber, sage green, sky blue
+# ============================================================================
+# STORY BLUEPRINT (Macera odaklı)
+# ============================================================================
 
-CLOTHING:
-The child is wearing {clothing_description}.
+GOBEKLITEPE_STORY_PROMPT_TR = """
+# GÖBEKLİTEPE MACERASI — 12.000 YILLIK GİZEM
 
-STYLE:
-{visual_style}.
+## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
 
-COMPOSITION REQUIREMENTS:
-- Professional book cover design with clear title space at the top
-- Child positioned in lower third, looking up at the massive pillars with wonder
-- Epic cinematic scale showing the monumentality of the ancient pillars
-- Balanced composition with T-shaped pillars framing the scene"""
+Bu hikaye bir arkeoloji macerası. {child_name}, Göbeklitepe'de dikilitaşlardan
+canlanan bir Bilge Tilki ile 12.000 yıl öncesinin gizemini çözer.
 
+⚠️ ÖNEMLİ KURALLAR:
+- Bu bir MACERA hikayesi, gezi rehberi DEĞİL
+- Her bölümde çocuk AKTİF katılımcı (gözlemci değil)
+- Endişe → Eylem → Başarı döngüsü her bölümde
+- Yardımcı karakter: Bilge Tilki (dikilitaştaki tilki kabartmasından canlanan)
+- Çocuk TEK BAŞINA macerada (aile yok)
+- Korku/şiddet/gore YOK, eğitici ve heyecanlı
+- Dini ritüel/ibadet sahnesi YOK
 
-# -----------------------------------------------------------------------------
-# Ä°Ã‡ SAYFA PROMPT TEMPLATE
-# -----------------------------------------------------------------------------
-# Ä°Ã§ Sayfalar: Hikaye anlatÄ±mÄ±, karakter-Ã§evre etkileÅŸimi
-# Format: Yatay (1024x768), alt kÄ±sÄ±mda metin alanÄ±
-# PuLID: YÃ¼z korunur, kÄ±yafet tutarlÄ±lÄ±ÄŸÄ± Ã¶nemli
-# -----------------------------------------------------------------------------
+---
 
-GOBEKLITEPE_PAGE_PROMPT = """A stunning children's book illustration set in and around the ancient site of GÃ¶beklitepe, the world's oldest temple, in southeastern Turkey.
+### BÖLÜM 1 — GİRİŞ: GİZEMLİ DİKİLİTAŞLAR (Sayfa 1-4)
+{child_name} Şanlıurfa'da bir tepeye tırmanırken dev taş sütunlar görür.
+Bir dikilitaştaki tilki kabartması parlamaya başlar — Bilge Tilki canlanır!
+"12.000 yıllık bir gizem var, çözmeme yardım eder misin?"
+- S1: Harran Ovası'nda tepeye tırmanma, uzakta garip taşlar
+- S2: Dev T-şekilli dikilitaşlara yaklaşma, hayvan kabartmaları
+- S3: Tilki kabartması parlıyor, Bilge Tilki canlanıyor!
+- S4: "12.000 yıllık bir gizem!" — macera başlıyor ✓ İLK HEYECAN
+**Değer**: Merak, keşif cesareti
 
-SCENE ACTION:
-A young child {scene_description}.
+---
 
-AUTHENTIC GÃ–BEKLITEPE SETTING (vary these elements per scene):
-- T-SHAPED PILLARS: Massive limestone megaliths (3-5m tall) with carved reliefs of animals â€” foxes, wild boars, lions, vultures, scorpions, snakes, cranes â€” each carving tells an ancient story
-- CIRCULAR ENCLOSURES: Concentric stone rings partially excavated, showing layers of 12,000-year history, connecting walls between pillars
-- ARCHAEOLOGICAL DETAILS: Carefully excavated trenches, stone benches between pillars, carved stone bowls, flint tools, ancient grinding stones
-- HARRAN PLAIN LANDSCAPE: Rolling golden steppe hills, distant mountains, vast open sky, pistachio orchards, olive groves
-- ÅANLIURFA ELEMENTS: Traditional stone-cut houses, the famous BalÄ±klÄ±gÃ¶l (Sacred Fish Pool) with its mosque and courtyard, bazaar alleys with copper crafts
-- MUSEUM ARTIFACTS: The Urfa Man statue (world's oldest life-size human sculpture), stone animal figurines, carved totems, obsidian tools
+### BÖLÜM 2 — DAİRESEL TAPINAK: TAŞLARIN SIRRI (Sayfa 5-8)
+Bilge Tilki çocuğu dairesel taş yapıların içine götürür. Her dikilitaşta
+farklı hayvan kabartması — aslan, yılan, akbaba, akrep. "Bu hayvanlar
+bir mesaj veriyor, ama sırayı bulmamız lazım!"
+- S5: Dairesel taş yapıya giriş, iç içe halkalar
+- S6: Hayvan kabartmalarını inceleme — her biri farklı
+- S7: "Sırayı bulmamız lazım!" — bulmaca başlıyor ✓ ENDİŞE
+- S8: İlk ipucu bulundu — akbaba kabartması yukarı bakıyor
+**Değer**: Gözlem, analitik düşünme
 
-GEOLOGICAL & HISTORICAL ACCURACY:
-- Limestone bedrock of the GermuÅŸ Mountains ridge
-- Ancient tool marks visible on pillar surfaces
-- Partially buried enclosures showing excavation layers
-- Stone quarry areas with unfinished pillars still in the bedrock
-- Predates Stonehenge by 6,000 years â€” sense of primordial antiquity
+---
 
-LIGHTING OPTIONS (match to scene mood):
-- Golden sunrise illuminating the pillar carvings with warm side-light
-- Bright midday with deep blue sky and cotton clouds over the steppe
-- Warm sunset with dramatic amber light and long pillar shadows
-- Mystical starlit night with the Milky Way arching over the ancient pillars
+### BÖLÜM 3 — TAŞ OCAĞI: YARIM KALMIŞ DEV (Sayfa 9-12)
+Bilge Tilki çocuğu taş ocağına götürür. Devasa bir dikilitaş hâlâ ana
+kayaya bağlı — yarım kalmış! "Bunu yapmak için yüzlerce insan birlikte
+çalışmış. Tek başına yapılamaz!" Çocuk taş aletleri deniyor.
+- S9: Taş ocağına varış, yarım kalmış dev dikilitaş
+- S10: "Bu kadar büyük taşı nasıl kesmişler?" — hayranlık
+- S11: Taş aletleri deneme, çok zor! ✓ ZORLUK
+- S12: "Yüzlerce insan birlikte çalışmış!" — işbirliği dersi ✓ MİMARİ ZİRVESİ
+**Değer**: İşbirliği, azim, takım çalışması
 
-CLOTHING:
-The child is wearing {clothing_description}.
+---
 
-STYLE:
-{visual_style}.
+### BÖLÜM 4 — GİZEMLİ SEMBOLLER: MESAJI ÇÖZMEK (Sayfa 13-16)
+Dikilitaşlardaki hayvan kabartmaları bir harita oluşturuyor! Çocuk
+Bilge Tilki'nin yardımıyla sembolleri birleştiriyor. Her hayvan bir yönü
+gösteriyor — tilki kuzeyi, akbaba gökyüzünü, yılan yeraltını...
+- S13: Sembolleri birleştirme fikri — "Bu bir harita!"
+- S14: Tilki = kuzey, akbaba = gökyüzü, yılan = yeraltı
+- S15: Haritayı takip etme, gizli bir geçit bulma ✓ KEŞİF HEYECANI
+- S16: "Mesajı çözüyoruz!" — bulmaca tamamlanıyor ✓ BULMACA ZİRVESİ
+**Değer**: Problem çözme, yaratıcı düşünme
 
-COMPOSITION:
-- Clear focal point on the child in the middle-ground
-- Rich, detailed GÃ¶beklitepe background with soft bokeh on distant steppe
-- Space at bottom for text overlay (25% of image height)
-- Warm, inviting color palette: sandstone gold, amber, sage, terracotta"""
+---
 
+### BÖLÜM 5 — YERİN ALTINDA: GİZLİ ODA (Sayfa 17-19)
+Gizli geçit yeraltına iniyor. Karanlık ama Bilge Tilki'nin gözleri parlıyor
+ve yol gösteriyor. Bir oda — içinde hiç görülmemiş kabartmalar, taş
+figürinler ve obsidyen aletler!
+- S17: Yeraltı geçidine giriş, karanlık, biraz korku ✓ ENDİŞE
+- S18: Bilge Tilki yol gösteriyor, cesaret bulma
+- S19: Gizli oda! Hiç görülmemiş kabartmalar! ✓ DORUK KEŞİF
+**Değer**: Cesaret, güven
 
-# -----------------------------------------------------------------------------
-# AI HÄ°KAYE ÃœRETÄ°M PROMPTU (Gemini Pass-1 iÃ§in)
-# Sistemle uyumlu: Placeholder kullanÄ±lmaz. Kahraman, yaÅŸ, eÄŸitsel deÄŸerler
-# ana promptta zaten verilir. Bu blok sadece GÃ¶beklitepe Ã¶zel talimatlarÄ±nÄ± iÃ§erir.
-# -----------------------------------------------------------------------------
+---
 
-GOBEKLITEPE_STORY_PROMPT_TR = """Sen Ã¶dÃ¼llÃ¼ Ã§ocuk kitabÄ± yazarÄ± ve GÃ¶beklitepe/arkeoloji uzmanÄ±sÄ±n.
-Kahraman, yaÅŸ ve eÄŸitsel deÄŸerler yukarÄ±da verilmiÅŸtir. GÃ¶revin: GÃ¶beklitepe'de geÃ§en bÃ¼yÃ¼lÃ¼ bir macera yazmak.
+### BÖLÜM 6 — URFA ADAMI: İNSANLIĞIN İLK HEYKELİ (Sayfa 20-21)
+Gizli odada özel bir taş heykel — Urfa Adamı! Dünyanın en eski insan
+heykeli. Bilge Tilki: "12.000 yıl önce insanlar sanat yapıyordu,
+birlikte çalışıyordu, yıldızları izliyordu. İnsanlık hep meraklıydı."
+- S20: Urfa Adamı heykeli — "Dünyanın en eski insan heykeli!"
+- S21: Bilge Tilki'nin bilgeliği — "İnsanlık hep meraklıydı" ✓ BİLGELİK DORUĞU
+**Değer**: Tarih bilinci, insanlık mirası
 
-ğŸ“ GÃ–BEKLÄ°TEPE â€” KULLANILACAK KÃœLTÃœREL MEKANLAR (hikayeye en az 6 tanesini entegre et):
-1. T-biÃ§imli dev dikilitaÅŸlar â€” hayvan kabartmalarÄ± (tilki, aslan, yÄ±lan, akbaba, akrep), her taÅŸÄ±n bir hikayesi var
-2. Dairesel taÅŸ yapÄ±lar â€” iÃ§ iÃ§e halkalar, dÃ¼nyanÄ±n en eski tapÄ±naÄŸÄ±, 12.000 yÄ±llÄ±k gizem
-3. TaÅŸ ocaÄŸÄ± alanÄ± â€” yarÄ±m kalmÄ±ÅŸ dev dikilitaÅŸlar hÃ¢lÃ¢ ana kayaya baÄŸlÄ±, antik taÅŸ ustalarÄ±
-4. Arkeolojik kazÄ± alanlarÄ± â€” tabaka tabaka tarih, topraktan Ã§Ä±kan sÄ±rlar
-5. ÅanlÄ±urfa Arkeoloji MÃ¼zesi â€” Urfa AdamÄ± (dÃ¼nyanÄ±n en eski insan heykeli), taÅŸ figÃ¼rinler, obsidyen aletler
-6. BalÄ±klÄ±gÃ¶l (Kutsal BalÄ±k GÃ¶lÃ¼) â€” efsanevi kutsal balÄ±klar, tarihi havuz, huzurlu bahÃ§e
-7. Harran KÃ¼mbet Evleri â€” konik toprak evler, antik Harran Ãœniversitesi kalÄ±ntÄ±larÄ±
-8. GÃ¶beklitepe tepesi â€” Harran OvasÄ±'na hakim panoramik manzara, gÃ¶kyÃ¼zÃ¼ gÃ¶zlemi
-9. ÅanlÄ±urfa Ã§arÅŸÄ±sÄ± â€” bakÄ±rcÄ±lar, baharat satÄ±cÄ±larÄ±, geleneksel el sanatlarÄ±
-10. Karahantepe â€” GÃ¶beklitepe'nin "kardeÅŸ" arkeolojik alanÄ±, yeni keÅŸifler
+---
 
-ğŸ­ YARDIMCI KARAKTER (en az biri hikayede olsun):
-Bilge Tilki (dikilitaÅŸtaki tilki kabartmasÄ±ndan esinlenmiÅŸ), Cesur Akbaba, Gizemli YÄ±lan,
-MeraklÄ± Akrep veya KonuÅŸan Turna kuÅŸu. Hayvan, dikilitaÅŸlardaki kabartmalardan "canlanmÄ±ÅŸ" olabilir.
-Ã‡ocuk macerayÄ± bu dostuyla yaÅŸasÄ±n. YardÄ±mcÄ± karakter MENTOR rolÃ¼ Ã¼stlenebilir.
+### BÖLÜM 7 — FİNAL: DÖNÜŞ VE GURUR (Sayfa 22)
+Çocuk yerüstüne çıkar. Gün batımında dikilitaşlara bakar. Bilge Tilki
+tekrar kabartmaya dönüyor ama gülümsüyor. "Gizem çözüldü. Ama daha
+çok gizem var — merakını hiç kaybetme!"
+- S22: Gün batımı, dikilitaşlar, gurur ve şükran ✓ TATMIN DORUĞU
+**Değer**: Merak, bilimsel düşünme, kültürel miras koruma
 
-âš¡ Ã–NEMLI â€” BU BÄ°R GEZÄ° REHBERÄ° DEÄÄ°L, BÄ°R MACERA HÄ°KAYESÄ°!
-GÃ¶beklitepe mekanlarÄ± ARKA PLAN olarak kullan. Hikayenin motorunu MEKANLAR DEÄÄ°L,
-Ã§ocuÄŸun Ä°Ã‡ YOLCULUÄU ve eÄŸitsel deÄŸerler oluÅŸtursun.
+---
 
-âŒ YANLIÅ: "Ali dikilitaÅŸlarÄ± gÃ¶rdÃ¼. Sonra mÃ¼zeye gitti. Sonra balÄ±klara baktÄ±."
-âœ… DOÄRU: Ã‡ocuÄŸun bir SORUNU/ZAYIFLIÄI var. Bu sorun GÃ¶beklitepe'nin gizemli mekanlarÄ±nda
-bir MACERA'ya dÃ¶nÃ¼ÅŸÃ¼yor. DikilitaÅŸlardaki hayvan kabartmalarÄ± "canlanÄ±yor" ve Ã§ocuÄŸa
-12.000 yÄ±l Ã¶ncesinden gelen bir bilgelik Ã¶ÄŸretiyor. Ã‡ocuk antik gizemi Ã§Ã¶zerken KENDÄ°NÄ° keÅŸfediyor.
+## DOPAMIN ZİRVELERİ:
+1. S4: Bilge Tilki canlanıyor — macera başlıyor
+2. S8: İlk ipucu bulundu
+3. S12: Taş ocağı — işbirliği dersi
+4. S16: Bulmaca çözüldü — harita tamamlandı
+5. S19: Gizli oda keşfi — doruk
+6. S21: Urfa Adamı — bilgelik
+7. S22: Gurur ve dönüş
 
-ğŸ”‘ EÄÄ°TSEL DEÄER ENTEGRASYONU:
-SeÃ§ilen eÄŸitsel deÄŸer hikayenin OLAY Ã–RGÃœSÃœNÃœ belirlemeli:
-- Cesaret seÃ§ildiyse â†’ Ã§ocuÄŸun korkusu olsun, karanlÄ±k yeraltÄ± geÃ§itlerinden geÃ§mek zorunda kalsÄ±n
-- SabÄ±r seÃ§ildiyse â†’ Ã§ocuk acele etsin, arkeolojik bulmacayÄ± Ã§Ã¶zmek iÃ§in sabretmesi gereksin
-- PaylaÅŸmak seÃ§ildiyse â†’ Ã§ocuk keÅŸfettiÄŸi sÄ±rrÄ± paylaÅŸarak herkesin faydalanmasÄ±nÄ± saÄŸlasÄ±n
-- Merak seÃ§ildiyse â†’ Ã§ocuÄŸun sorularÄ± onu daha derin gizemlere gÃ¶tÃ¼rsÃ¼n
-DeÄŸer sadece "sÃ¶ylenmesin", Ã§ocuk YAÅAYARAK Ã¶ÄŸrensin!
+## GÜVENLİK KURALLARI:
+- Korku/şiddet/gore YOK
+- Dini ritüel/ibadet YOK
+- Tehlikeli davranış teşviki YOK
+- Yeraltı sahnesi korkutucu DEĞİL, heyecanlı
+"""
 
-âš ï¸ Ã–NEMLÄ° KISITLAMA:
-Hikayede DÄ°NÄ° RÄ°TÃœEL veya Ä°BADET SAHNESI OLMAMALIDIR.
-GÃ¶beklitepe'nin gizemi arkeolojik ve bilimsel merak perspektifinden iÅŸlensin.
-Ã‡ocuk doÄŸal oluÅŸumlarÄ±, antik yapÄ±larÄ±, hayvan kabartmalarÄ±nÄ± ve kÃ¼ltÃ¼rel mirasÄ± keÅŸfetsin.
-
-ğŸ¨ SAHNE AÃ‡IKLAMASI KURALLARI (Pass-2 iÃ§in ipucu):
-Her sahne iÃ§in spesifik GÃ¶beklitepe lokasyonu ve arkeolojik detay kullan.
-Ã–rn: "Enclosure D'nin dev tilki kabartmalÄ± dikilitaÅŸlarÄ± Ã¶nÃ¼nde", "ÅanlÄ±urfa MÃ¼zesi'nde Urfa AdamÄ± heykeli karÅŸÄ±sÄ±nda",
-"BalÄ±klÄ±gÃ¶l'Ã¼n huzurlu sularÄ±nda kutsal balÄ±klarÄ± izlerken", "taÅŸ ocaÄŸÄ±nda yarÄ±m kalmÄ±ÅŸ dev dikilitaÅŸÄ±n yanÄ±nda".
-Genel ifadelerden kaÃ§Ä±n ("GÃ¶beklitepe'de", "taÅŸlarÄ±n yanÄ±nda" yerine somut yer adÄ± ve detay kullan)."""
-
-
-# -----------------------------------------------------------------------------
-# LOKASYON KISITLAMALARI
-# -----------------------------------------------------------------------------
-
-GOBEKLITEPE_LOCATION_CONSTRAINTS = """GÃ¶beklitepe iconic elements (include 1-2 relevant details depending on the scene):
-- T-shaped megalithic pillars with animal relief carvings (fox, lion, snake, vulture, scorpion)
-- Circular stone enclosures showing the world's oldest known temple architecture
-- Harran Plain steppe landscape with golden-brown rolling hills
-- Archaeological excavation details (layers, trenches, tools)
-- ÅanlÄ±urfa regional cultural elements (stone houses, sacred fish pool, copper crafts)"""
-
-
-# -----------------------------------------------------------------------------
-# KÃœLTÃœREL ELEMENTLER (JSON)
-# -----------------------------------------------------------------------------
+# ============================================================================
+# CULTURAL ELEMENTS
+# ============================================================================
 
 GOBEKLITEPE_CULTURAL_ELEMENTS = {
-    "primary_landmarks": [
-        "T-shaped megalithic pillars with animal carvings",
-        "circular stone enclosures (Enclosure A, B, C, D)",
-        "Harran Plain panoramic vista from the hilltop",
-        "ÅanlÄ±urfa Archaeological Museum (Urfa Man statue)",
-        "BalÄ±klÄ±gÃ¶l (Sacred Fish Pool)"
+    "location": "Sanliurfa, Turkey (Harran Plain)",
+    "historic_site": "Gobeklitepe, 12,000 years old (world's oldest temple)",
+    "unesco": "UNESCO World Heritage Site",
+    "architecture": [
+        "T-shaped megalithic pillars (3-5m tall)",
+        "Animal relief carvings (fox, lion, snake, vulture, scorpion)",
+        "Circular stone enclosures (concentric rings)",
+        "Stone quarry with unfinished pillars in bedrock",
     ],
-    "secondary_elements": [
-        "stone quarry with unfinished pillars still in bedrock",
-        "Harran beehive houses (kÃ¼mbet evler)",
-        "Karahantepe sister site",
-        "ancient grinding stones and flint tools",
-        "ÅanlÄ±urfa historic bazaar"
+    "atmosphere": "Ancient, mysterious, archaeological wonder",
+    "color_palette": "golden sandstone, warm amber, dusty terracotta, sage green, sky blue",
+    "educational_focus": [
+        "World's oldest known temple (12,000 years)",
+        "Predates Stonehenge by 6,000 years",
+        "Hunter-gatherer society building monumental architecture",
+        "Archaeological discovery and scientific method",
     ],
-    "cultural_items": [
-        "animal relief carvings on pillars (fox, vulture, scorpion, snake, crane)",
-        "Urfa Man statue replica (world's oldest human sculpture)",
-        "obsidian tools and stone bowls",
-        "traditional copper crafts from ÅanlÄ±urfa bazaar",
-        "local pistachio and pomegranate motifs"
-    ],
-    "color_palette": "golden sandstone, warm amber, dusty terracotta, sage green steppe, deep sky blue, sunset oranges",
-    "atmosphere": "ancient, mysterious, awe-inspiring, archaeological wonder, timeless",
-    "time_periods": [
-        "golden sunrise casting side-light on pillar carvings",
-        "bright midday with blue sky over the steppe",
-        "amber sunset with long pillar shadows",
-        "starlit night with Milky Way over the ancient temple"
-    ]
+    "values": ["Curiosity", "Cooperation", "History appreciation", "Scientific thinking"],
 }
 
-
-# -----------------------------------------------------------------------------
-# Ã–ZEL GÄ°RÄ°Å ALANLARI (Custom Inputs)
-# -----------------------------------------------------------------------------
+# ============================================================================
+# CUSTOM INPUTS (list formatı — frontend uyumlu)
+# ============================================================================
 
 GOBEKLITEPE_CUSTOM_INPUTS = [
     {
         "key": "favorite_animal",
-        "label": "En SevdiÄŸi DikilitaÅŸ HayvanÄ±",
+        "label": "En Sevdiği Dikilitaş Hayvanı",
         "type": "select",
-        "options": ["Tilki", "Aslan", "YÄ±lan", "Akbaba", "Akrep", "Turna KuÅŸu"],
+        "options": ["Tilki", "Aslan", "Yılan", "Akbaba", "Akrep"],
         "default": "Tilki",
         "required": False,
-        "help_text": "Hikayede bu hayvan dikilitaÅŸtan canlanacak ve Ã§ocuÄŸa rehberlik edecek"
+        "help_text": "Hikayede bu hayvan dikilitaştan canlanacak ve rehberlik edecek",
     },
     {
         "key": "special_discovery",
-        "label": "KeÅŸfetmek Ä°stediÄŸi Åey",
+        "label": "Keşfetmek İstediği Şey",
         "type": "select",
-        "options": ["Gizli YeraltÄ± OdasÄ±", "KayÄ±p DikilitaÅŸ", "Antik Harita", "Sihirli TaÅŸ FigÃ¼rini"],
-        "default": "Gizli YeraltÄ± OdasÄ±",
+        "options": ["Gizli Yeraltı Odası", "Kayıp Dikilitaş", "Antik Harita", "Sihirli Taş Figürini"],
+        "default": "Gizli Yeraltı Odası",
         "required": False,
-        "help_text": "Hikayede Ã§ocuÄŸun keÅŸfedeceÄŸi bÃ¼yÃ¼k sÄ±r"
+        "help_text": "Hikayede çocuğun keşfedeceği büyük sır",
     },
-    {
-        "key": "travel_companion",
-        "label": "Yol ArkadaÅŸÄ±",
-        "type": "select",
-        "options": ["Bilge Tilki", "Cesur Akbaba", "MeraklÄ± Akrep", "Gizemli YÄ±lan"],
-        "default": "Bilge Tilki",
-        "required": False,
-        "help_text": "GÃ¶beklitepe'de Ã§ocuÄŸa eÅŸlik edecek dikilitaÅŸ hayvan arkadaÅŸ"
-    }
 ]
+
+# ============================================================================
+# DATABASE UPDATE FUNCTION
+# ============================================================================
 
 
 async def create_gobeklitepe_scenario():
-    """GÃ¶beklitepe MacerasÄ± senaryosunu oluÅŸtur veya gÃ¼ncelle."""
-
-    print("\n" + "=" * 70)
-    print("GÃ–BEKLÄ°TEPE MACERASI SENARYO OLUÅTURMA")
-    print("Master Prompts - PuLID Optimized - Archaeological Wonder")
-    print("=" * 70 + "\n")
+    """Göbeklitepe senaryosunu oluşturur veya günceller."""
 
     async with async_session_factory() as db:
-        # Mevcut senaryoyu kontrol et
         result = await db.execute(
-            select(Scenario).where(Scenario.name.ilike("%GÃ¶beklitepe%"))
+            select(Scenario).where(
+                (Scenario.theme_key == "gobeklitepe")
+                | (Scenario.name.ilike("%Göbeklitepe%"))
+                | (Scenario.name.ilike("%Gobeklitepe%"))
+            )
         )
-        existing = result.scalar_one_or_none()
+        scenario = result.scalar_one_or_none()
 
-        if existing:
-            print(f"[INFO] Mevcut senaryo bulundu, gÃ¼ncelleniyor... (ID: {existing.id})")
-            scenario = existing
-        else:
-            print("[INFO] Yeni senaryo oluÅŸturuluyor...")
+        if not scenario:
             scenario = Scenario(id=uuid.uuid4())
             db.add(scenario)
 
-        # TÃ¼m alanlarÄ± gÃ¼ncelle
-        scenario.name = "GÃ¶beklitepe MacerasÄ±"
+        scenario.name = "Göbeklitepe Macerası"
         scenario.description = (
-            "DÃ¼nyanÄ±n en eski tapÄ±naÄŸÄ± GÃ¶beklitepe'de 12.000 yÄ±llÄ±k bir gizemi Ã§Ã¶z! "
-            "Dev dikilitaÅŸlarÄ±n hayvan kabartmalarÄ± canlanÄ±yor, antik taÅŸ ustalarÄ± fÄ±sÄ±ldÄ±yor. "
-            "ÅanlÄ±urfa'nÄ±n bÃ¼yÃ¼lÃ¼ topraklarÄ±nda arkeolojik bir macera seni bekliyor!"
+            "12.000 yıl öncesine yolculuk! Dünyanın EN ESKİ tapınağı "
+            "Göbeklitepe'yi keşfet. 5m yüksek T-sütunlar, hayvan kabartmaları "
+            "ve avcı-toplayıcıların mucizesi. UNESCO Dünya Mirası'nda "
+            "prehistorik keşif!"
         )
-        scenario.thumbnail_url = "/scenarios/gobeklitepe.jpg"
+        scenario.theme_key = "gobeklitepe"
         scenario.cover_prompt_template = GOBEKLITEPE_COVER_PROMPT
         scenario.page_prompt_template = GOBEKLITEPE_PAGE_PROMPT
-        # V2: story_prompt_tr Ã¶ncelikli
         scenario.story_prompt_tr = GOBEKLITEPE_STORY_PROMPT_TR
-        scenario.ai_prompt_template = None  # V2 story_prompt_tr kullanÄ±yor
-        scenario.location_constraints = GOBEKLITEPE_LOCATION_CONSTRAINTS
-        scenario.location_en = "GÃ¶beklitepe"
+        scenario.outfit_girl = OUTFIT_GIRL
+        scenario.outfit_boy = OUTFIT_BOY
         scenario.cultural_elements = GOBEKLITEPE_CULTURAL_ELEMENTS
-        scenario.theme_key = "gobeklitepe"
         scenario.custom_inputs_schema = GOBEKLITEPE_CUSTOM_INPUTS
+        scenario.marketing_badge = "YENİ! Zaman Sıfır Noktası"
+        scenario.age_range = "8-10"
+        scenario.tagline = "12.000 yıllık gizemi çöz!"
         scenario.is_active = True
         scenario.display_order = 3
 
         await db.commit()
-
-        print("\n[OK] GÃ–BEKLÄ°TEPE MACERASI OLUÅTURULDU!\n")
-        print("-" * 70)
-        print("Senaryo DetaylarÄ±:")
-        print(f"  - name: {scenario.name}")
-        print(f"  - description: {len(scenario.description)} karakter")
-        print(f"  - cover_prompt_template: {len(GOBEKLITEPE_COVER_PROMPT)} karakter")
-        print(f"  - page_prompt_template: {len(GOBEKLITEPE_PAGE_PROMPT)} karakter")
-        print(f"  - story_prompt_tr: {len(GOBEKLITEPE_STORY_PROMPT_TR)} karakter")
-        print("  - location_en: GÃ¶beklitepe")
-        print(f"  - location_constraints: {len(GOBEKLITEPE_LOCATION_CONSTRAINTS)} karakter")
-        print(f"  - cultural_elements: {len(json.dumps(GOBEKLITEPE_CULTURAL_ELEMENTS))} karakter (JSON)")
-        print("  - theme_key: gobeklitepe")
-        print(f"  - custom_inputs_schema: {len(GOBEKLITEPE_CUSTOM_INPUTS)} Ã¶zel alan")
-        print("-" * 70)
-
-        # Custom inputs preview
-        print("\nÃ–ZEL GÄ°RÄ°Å ALANLARI:")
-        for inp in GOBEKLITEPE_CUSTOM_INPUTS:
-            print(f"  - {inp['label']}: {', '.join(inp['options'][:3])}...")
-
-        # Prompt previews
-        print("\n" + "=" * 70)
-        print("KAPAK PROMPT Ã–NÄ°ZLEME (ilk 500 karakter):")
-        print("-" * 70)
-        print(GOBEKLITEPE_COVER_PROMPT[:500] + "...")
-
-        print("\n" + "=" * 70)
-        print("SAYFA PROMPT Ã–NÄ°ZLEME (ilk 500 karakter):")
-        print("-" * 70)
-        print(GOBEKLITEPE_PAGE_PROMPT[:500] + "...")
-
-        print("\n" + "=" * 70)
-        print("STORY_PROMPT_TR Ã–NÄ°ZLEME (ilk 500 karakter):")
-        print("-" * 70)
-        print(GOBEKLITEPE_STORY_PROMPT_TR[:500] + "...")
-
-        print("\n" + "=" * 70)
-        print("GÃ¶beklitepe MacerasÄ± senaryosu hazÄ±r!")
-        print("Ã‡ocuklar artÄ±k 12.000 yÄ±llÄ±k gizemi keÅŸfedebilir!")
-        print("=" * 70 + "\n")
+        print(f"Göbeklitepe scenario updated: {scenario.id}")
 
 
 if __name__ == "__main__":
     asyncio.run(create_gobeklitepe_scenario())
-
-
