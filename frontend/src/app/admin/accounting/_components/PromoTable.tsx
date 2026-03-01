@@ -46,10 +46,10 @@ export default function PromoTable({ data, loading }: Props) {
                   <Ticket className="h-4 w-4 text-amber-500 shrink-0" />
                   <span className="font-mono font-semibold text-slate-800">{row.code}</span>
                   {row.is_active === true && (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" title="Aktif" />
+                    <span title="Aktif"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /></span>
                   )}
                   {row.is_active === false && (
-                    <XCircle className="h-3.5 w-3.5 text-slate-400" title="Pasif" />
+                    <span title="Pasif"><XCircle className="h-3.5 w-3.5 text-slate-400" /></span>
                   )}
                 </div>
               </td>
