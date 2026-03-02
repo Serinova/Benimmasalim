@@ -149,26 +149,25 @@ async def pipeline_step_dedication_pages(
     if not ded_note:
         ded_note = f"Bu kitap {child_name} için özel olarak hazırlanmıştır."
 
-    if ded_note:
-        try:
-            ded_tpl_result = await db.execute(
-                select(PageTemplate)
-                .where(PageTemplate.page_type == "dedication")
-                .where(PageTemplate.is_active == True)  # noqa: E712
-                .limit(1)
-            )
-            ded_tpl = ded_tpl_result.scalar_one_or_none()
-            ded_cfg = build_template_config(ded_tpl) if ded_tpl else {}
-            dedication_base64 = await asyncio.to_thread(
-                PageComposer().compose_dedication_page,
-                text=ded_note,
-                template_config=ded_cfg,
-                dpi=300,
-            )
-            if dedication_base64:
-                logger.info("Dedication page composed for PDF", order_id=order_id)
-        except Exception as e:
-            logger.warning("Dedication compose failed", order_id=order_id, error=str(e))
+    try:
+        ded_tpl_result = await db.execute(
+            select(PageTemplate)
+            .where(PageTemplate.page_type == "dedication")
+            .where(PageTemplate.is_active == True)  # noqa: E712
+            .limit(1)
+        )
+        ded_tpl = ded_tpl_result.scalar_one_or_none()
+        ded_cfg = build_template_config(ded_tpl) if ded_tpl else {}
+        dedication_base64 = await asyncio.to_thread(
+            PageComposer().compose_dedication_page,
+            text=ded_note,
+            template_config=ded_cfg,
+            dpi=300,
+        )
+        if dedication_base64:
+            logger.info("Dedication page composed for PDF", order_id=order_id)
+    except Exception as e:
+        logger.warning("Dedication compose failed", order_id=order_id, error=str(e))
 
     # Step 8b: scenario intro page
     try:
