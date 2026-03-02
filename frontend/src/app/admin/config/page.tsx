@@ -1919,6 +1919,10 @@ export default function AdminConfigPage() {
   const [dedicationTemplate, setDedicationTemplate] = useState<PageTemplate>({
     ...defaultDedicationTemplate,
   });
+  const [defaultIntroText, setDefaultIntroText] = useState(
+    "{story_title} macerasına hoş geldin, sevgili {child_name}!\n\nBu özel yolculukta seni harika sürprizler bekliyor. Her sayfayı çevirirken gözlerin parlasın, hayal gücün kanatlanasın!"
+  );
+  const [savingIntroText, setSavingIntroText] = useState(false);
 
   const [newAIConfig, setNewAIConfig] = useState({
     name: "",
@@ -2006,11 +2010,14 @@ export default function AdminConfigPage() {
 
   const fetchData = async () => {
     try {
-      const [pageRes, aiRes] = await Promise.all([
+      const [pageRes, aiRes, introRes] = await Promise.all([
         fetch(`${API_BASE_URL}/admin/book-config/page-templates`, {
           headers: getAuthHeaders(),
         }),
         fetch(`${API_BASE_URL}/admin/book-config/ai-configs`, {
+          headers: getAuthHeaders(),
+        }),
+        fetch(`${API_BASE_URL}/admin/settings/app-setting/default_intro_text`, {
           headers: getAuthHeaders(),
         }),
       ]);
@@ -2036,6 +2043,10 @@ export default function AdminConfigPage() {
         if (dedication) setDedicationTemplate({ ...defaultDedicationTemplate, ...dedication });
       }
       if (aiRes.ok) setAIConfigs(await aiRes.json());
+      if (introRes.ok) {
+        const introData = await introRes.json();
+        if (introData.value) setDefaultIntroText(introData.value);
+      }
     } catch (error) {
       console.error("Failed to fetch config:", error);
     } finally {
@@ -2431,7 +2442,68 @@ export default function AdminConfigPage() {
                     disabled={saving}
                     className="w-full"
                   >
-                    {saving ? "Kaydediliyor..." : "Karşılama Sayfası Ayarlarını Kaydet"}
+                    {saving ? "Kaydediliyor..." : "Karşılama 1 Ayarlarını Kaydet"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* ── Karşılama 2 (Senaryo Tanıtım Sayfası) ── */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="text-base">Karşılama 2 — Senaryo Tanıtım Sayfası</CardTitle>
+                  <p className="text-xs text-gray-500">
+                    Kapaktan sonra 2. sayfada gösterilir. Senaryo açıklaması varsa onu kullanır;
+                    yoksa buradaki varsayılan metin kullanılır.
+                    <br />
+                    <code className="bg-gray-100 px-1 rounded">{"{child_name}"}</code> ve{" "}
+                    <code className="bg-gray-100 px-1 rounded">{"{story_title}"}</code> otomatik doldurulur.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Varsayılan Karşılama 2 Metni</Label>
+                    <Textarea
+                      value={defaultIntroText}
+                      onChange={(e) => setDefaultIntroText(e.target.value)}
+                      placeholder="{story_title} macerasına hoş geldin, {child_name}!"
+                      rows={5}
+                    />
+                  </div>
+                  <div
+                    className="mx-auto flex items-center justify-center rounded-lg border-2 border-dashed bg-amber-50"
+                    style={{ width: "100%", maxWidth: 500, aspectRatio: "297/210" }}
+                  >
+                    <p className="p-8 text-center text-sm leading-relaxed text-slate-700"
+                      style={{ fontFamily: dedicationTemplate.font_family }}>
+                      {defaultIntroText
+                        .replace("{child_name}", "Uras")
+                        .replace("{story_title}", "Uzay Macerası")}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      setSavingIntroText(true);
+                      try {
+                        const res = await fetch(`${API_BASE_URL}/admin/settings/app-setting`, {
+                          method: "PUT",
+                          headers: getAuthHeaders(),
+                          body: JSON.stringify({ key: "default_intro_text", value: defaultIntroText }),
+                        });
+                        if (res.ok) {
+                          toast({ title: "Başarılı", description: "Karşılama 2 metni kaydedildi" });
+                        } else {
+                          toast({ title: "Hata", description: "Kayıt başarısız", variant: "destructive" });
+                        }
+                      } catch {
+                        toast({ title: "Hata", description: "Bağlantı hatası", variant: "destructive" });
+                      } finally {
+                        setSavingIntroText(false);
+                      }
+                    }}
+                    disabled={savingIntroText}
+                    className="w-full"
+                  >
+                    {savingIntroText ? "Kaydediliyor..." : "Karşılama 2 Metnini Kaydet"}
                   </Button>
                 </CardContent>
               </Card>

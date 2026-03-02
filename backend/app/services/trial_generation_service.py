@@ -1195,13 +1195,28 @@ async def generate_composed_preview_inner(
                                 f'Hazır mısın?'
                             )
 
-                # Always guarantee an intro page using story_title fallback
+                # Always guarantee an intro page — use AppSetting or fallback
                 if not _intro_text:
-                    _intro_text = (
-                        f'{story_title} hikayesine hosgeldin, {child_name}!\n\n'
-                        f'Bu ozel macera tam senin icin yazildi. '
-                        f'Her sayfada seni yeni surprizler bekliyor!'
-                    )
+                    try:
+                        from app.models.app_setting import AppSetting as _AppSetting
+                        _setting_row = (await db.execute(
+                            select(_AppSetting).where(_AppSetting.key == 'default_intro_text')
+                        )).scalar_one_or_none()
+                        _tpl_text = _setting_row.value if _setting_row and _setting_row.value else None
+                    except Exception:
+                        _tpl_text = None
+                    if _tpl_text:
+                        _intro_text = (
+                            _tpl_text
+                            .replace('{child_name}', child_name)
+                            .replace('{story_title}', story_title or 'Masalim')
+                        )
+                    else:
+                        _intro_text = (
+                            f'{story_title} macerasina hosgeldin, {child_name}!\n\n'
+                            f'Bu ozel yolculukta seni harika surprizler bekliyor. '
+                            f'Her sayfayi cevirerek hayal gucun kanatlansin!'
+                        )
 
                 from sqlalchemy import desc as _desc2_
                 _intro_tpl_result = await db.execute(
