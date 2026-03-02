@@ -83,3 +83,42 @@ async def update_invoice_settings(
     """Fatura şirket bilgilerini güncelle."""
     await _save_settings(payload.model_dump(), db)
     return payload
+
+
+# ── Generic app-setting endpoints ────────────────────────────────────────────
+
+
+class AppSettingPayload(BaseModel):
+    key: str = Field(..., min_length=1, max_length=100)
+    value: str | None = None
+
+
+@router.get("/app-setting/{key}")
+async def get_app_setting(
+    key: str,
+    db: DbSession,
+    _admin: AdminUser,
+) -> dict:
+    """Tek bir app_setting anahtarını getir."""
+    result = await db.execute(select(AppSetting).where(AppSetting.key == key))
+    row = result.scalar_one_or_none()
+    if row is None:
+        return {"key": key, "value": None}
+    return {"key": row.key, "value": row.value}
+
+
+@router.put("/app-setting")
+async def upsert_app_setting(
+    payload: AppSettingPayload,
+    db: DbSession,
+    _admin: AdminUser,
+) -> dict:
+    """Bir app_setting anahtarını oluştur veya güncelle."""
+    result = await db.execute(select(AppSetting).where(AppSetting.key == payload.key))
+    row = result.scalar_one_or_none()
+    if row:
+        row.value = payload.value
+    else:
+        db.add(AppSetting(key=payload.key, value=payload.value))
+    await db.commit()
+    return {"key": payload.key, "value": payload.value}
