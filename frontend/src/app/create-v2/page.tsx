@@ -616,8 +616,8 @@ function CreatePageInner() {
         return (
           <PreviewStep
             childName={draft.childName}
-            previewImages={draft.previewImages}
-            backCoverImageUrl={draft.previewImages["backcover"]}
+            previewImages={draft.previewImages ?? {}}
+            backCoverImageUrl={(draft.previewImages ?? {})["backcover"]}
             isLoading={previewLoading}
             generationProgress={draft.generationProgress}
             errorMessage={previewError}

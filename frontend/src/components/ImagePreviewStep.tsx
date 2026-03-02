@@ -503,18 +503,21 @@ export default function ImagePreviewStep({
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const touchStartX = useRef(0);
 
+  // Defensive: treat null/undefined previewImages as empty object
+  const _images: Record<string | number, string> = previewImages ?? {};
+
   // Image mapping:
   //   cover        → key 0
   //   dedication   → key "dedication"  (karşılama 1)
-  //   intro        → key "intro"       (karşılama 2, optional)
+  //   intro        → key "intro"       (karşılama 2, always present now)
   //   story pages  → numeric keys > 0, sorted ascending
-  const coverImage = previewImages[0] || "";
-  const dedicationImage = previewImages["dedication"] || "";
-  const introImage = (previewImages as Record<string, string>)["intro"] || "";
-  const hasIntro = Boolean(previewImages["intro"]);
+  const coverImage = _images[0] || "";
+  const dedicationImage = _images["dedication"] || "";
+  const introImage = (_images as Record<string, string>)["intro"] || "";
+  const hasIntro = Boolean(_images["intro"]);
 
   // Dynamically find ALL story page keys (any numeric key > 0, sorted ascending)
-  const storyPageKeys = Object.keys(previewImages)
+  const storyPageKeys = Object.keys(_images)
     .filter((k) => k !== "0" && k !== "dedication" && k !== "intro" && !k.includes("back"))
     .map(Number)
     .filter((n) => !Number.isNaN(n) && n > 0)
@@ -536,7 +539,7 @@ export default function ImagePreviewStep({
   useEffect(() => {
     // Show preview as soon as loading is done and at least the cover image exists.
     // Dedication / intro pages may be absent (partial generation) — handled gracefully below.
-    if (!isLoading && Object.keys(previewImages).length >= 1) {
+    if (!isLoading && Object.keys(_images).length >= 1) {
       const timer = setTimeout(() => setImagesLoaded(true), 1500);
       return () => clearTimeout(timer);
     }
@@ -719,7 +722,7 @@ export default function ImagePreviewStep({
                       className="absolute inset-0"
                     >
                       <InnerPage
-                        imageUrl={previewImages[pageKey] || ""}
+                         imageUrl={_images[pageKey] || ""}
                         pageNumber={pageIdx + 1}
                         side={pageIdx % 2 === 0 ? "left" : "right"}
                         ref={() => { }}

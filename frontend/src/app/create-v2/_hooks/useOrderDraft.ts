@@ -208,7 +208,12 @@ function restoreFromStorage(): OrderDraft | null {
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    return { ...INITIAL_DRAFT, ...parsed };
+    const restored = { ...INITIAL_DRAFT, ...parsed };
+    // Guard against null/non-object values that would crash Object.keys()
+    if (!restored.previewImages || typeof restored.previewImages !== "object") {
+      restored.previewImages = {};
+    }
+    return restored;
   } catch {
     return null;
   }
