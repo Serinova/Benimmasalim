@@ -1,4 +1,4 @@
-"""Trial generation pipeline: story generation, preview images, and remaining images.
+﻿"""Trial generation pipeline: story generation, preview images, and remaining images.
 
 These functions are the heavy AI generation workers extracted from the API router.
 They run as Arq background tasks (or FastAPI BackgroundTask fallbacks).
@@ -1138,12 +1138,6 @@ async def generate_composed_preview_inner(
 
             # --- Compose dedication page ---
             try:
-                _ai_ded_text = ""
-                for p in prompts:
-                    if p.get("page_type") == "front_matter":
-                        _ai_ded_text = (p.get("text") or "").strip()
-                        break
-
                 from sqlalchemy import desc as _desc_
 
                 ded_result = await db.execute(
@@ -1154,14 +1148,12 @@ async def generate_composed_preview_inner(
                 )
                 ded_tpl = ded_result.scalar_one_or_none()
 
-                if _ai_ded_text:
-                    ded_text = _ai_ded_text
-                    logger.info("Using AI-generated dedication text", trial_id=trial_id, text_preview=ded_text[:80])
-                elif ded_tpl:
-                    ded_text = (getattr(ded_tpl, "dedication_default_text", None) or "Bu kitap {child_name} için özel hazırlanmıştır")
-                    ded_text = ded_text.replace("{child_name}", child_name)
+                # Never use AI story content as dedication text.
+                # The front_matter prompt contains the opening story scene, not an ithaf message.
+                if ded_tpl and getattr(ded_tpl, 'dedication_default_text', None):
+                    ded_text = ded_tpl.dedication_default_text.replace('{child_name}', child_name)
                 else:
-                    ded_text = f"Bu kitap {child_name} için özel hazırlanmıştır"
+                    ded_text = f'Bu ozel masal, sevgili {child_name} icin hazirlandi.\n\nUnutma, her macera seni bekliyor!'
 
                 ded_cfg = build_template_config(ded_tpl) if ded_tpl else {}
                 ded_b64 = await asyncio.to_thread(
@@ -1181,10 +1173,8 @@ async def generate_composed_preview_inner(
             except Exception as ded_err:
                 logger.warning("Failed to compose dedication preview: %s", ded_err)
 
-            # --- Compose scenario intro page ---
+            # --- Compose scenario intro page (karsılama 2) ---
             try:
-                from app.config import get_settings as _get_settings_svc
-                _settings = _get_settings_svc()
                 _intro_text: str | None = None
 
                 if scenario_id:
@@ -1193,58 +1183,51 @@ async def generate_composed_preview_inner(
                         select(_Scenario).where(_Scenario.id == uuid.UUID(scenario_id))
                     )
                     _sc = _sc_result.scalar_one_or_none()
-                    if _sc and getattr(_sc, "description", None) and len(_sc.description) > 20:
+                    if _sc and getattr(_sc, 'description', None) and len(_sc.description) > 20:
                         _intro_text = _sc.description[:500]
                     elif _sc:
-                        location = getattr(_sc, "location_en", None) or getattr(_sc, "name", None)
-                        if location:
-                            import httpx as _httpx
-                            _intro_prompt = (
-                                f"'{story_title}' adlı çocuk kitabı için '{location}' hakkında "
-                                f"2-3 cümlelik, çocuk dostu, eğitici ve büyülü bir giriş paragrafı yaz. "
-                                f"Türkçe yaz. Sadece paragrafı yaz, başlık veya açıklama ekleme."
+                        # Try scenario name as fallback
+                        _sc_name = getattr(_sc, 'name', None) or getattr(_sc, 'location_en', None)
+                        if _sc_name:
+                            _intro_text = (
+                                f'{_sc_name} macerasina hosgeldin, {child_name}!\n\n'
+                                f'Bu kitapta seni cok ozel bir yolculuk bekliyor. '
+                                f'Hazır mısın?'
                             )
-                            _api_key = _settings.gemini_api_key
-                            if _api_key:
-                                _url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_api_key}"
-                                _payload = {
-                                    "contents": [{"parts": [{"text": _intro_prompt}]}],
-                                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 200},
-                                }
-                                try:
-                                    async with _httpx.AsyncClient(timeout=30.0) as _hc:
-                                        _resp = await _hc.post(_url, json=_payload)
-                                        _resp.raise_for_status()
-                                        _intro_text = _resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()[:500]
-                                except Exception as _gem_err:
-                                    logger.warning("Gemini intro text failed for preview", error=str(_gem_err))
 
-                if _intro_text:
-                    from sqlalchemy import desc as _desc2_
-                    _intro_tpl_result = await db.execute(
-                        select(PageTemplate)
-                        .where(PageTemplate.page_type == "dedication", PageTemplate.is_active == True)
-                        .order_by(_desc2_(PageTemplate.updated_at))
-                        .limit(1)
+                # Always guarantee an intro page using story_title fallback
+                if not _intro_text:
+                    _intro_text = (
+                        f'{story_title} hikayesine hosgeldin, {child_name}!\n\n'
+                        f'Bu ozel macera tam senin icin yazildi. '
+                        f'Her sayfada seni yeni surprizler bekliyor!'
                     )
-                    _intro_tpl = _intro_tpl_result.scalar_one_or_none()
-                    _intro_cfg = build_template_config(_intro_tpl) if _intro_tpl else {}
-                    _intro_b64 = await asyncio.to_thread(
-                        page_composer.compose_dedication_page,
-                        text=_intro_text,
-                        template_config=_intro_cfg,
-                        dpi=PREVIEW_DPI,
-                    )
-                    _intro_uploaded = await asyncio.to_thread(
-                        storage_service.upload_multiple_images,
-                        images={"intro": _intro_b64},
-                        story_id=f"preview-{story_id}",
-                    )
-                    if "intro" in _intro_uploaded:
-                        composed_urls["intro"] = _intro_uploaded["intro"]
-                        logger.info("Scenario intro page (karşılama 2) composed for preview", trial_id=trial_id)
+
+                from sqlalchemy import desc as _desc2_
+                _intro_tpl_result = await db.execute(
+                    select(PageTemplate)
+                    .where(PageTemplate.page_type == 'dedication', PageTemplate.is_active == True)
+                    .order_by(_desc2_(PageTemplate.updated_at))
+                    .limit(1)
+                )
+                _intro_tpl = _intro_tpl_result.scalar_one_or_none()
+                _intro_cfg = build_template_config(_intro_tpl) if _intro_tpl else {}
+                _intro_b64 = await asyncio.to_thread(
+                    page_composer.compose_dedication_page,
+                    text=_intro_text,
+                    template_config=_intro_cfg,
+                    dpi=PREVIEW_DPI,
+                )
+                _intro_uploaded = await asyncio.to_thread(
+                    storage_service.upload_multiple_images,
+                    images={'intro': _intro_b64},
+                    story_id=f'preview-{story_id}',
+                )
+                if 'intro' in _intro_uploaded:
+                    composed_urls['intro'] = _intro_uploaded['intro']
+                    logger.info('Scenario intro page (karsılama 2) composed', trial_id=trial_id)
             except Exception as _intro_err:
-                logger.warning("Failed to compose scenario intro preview: %s", _intro_err)
+                logger.warning('Failed to compose scenario intro preview: %s', _intro_err)
 
             final_images = composed_urls if composed_urls else preview_images
             if final_images:

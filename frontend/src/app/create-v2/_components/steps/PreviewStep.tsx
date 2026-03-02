@@ -28,7 +28,7 @@ export default function PreviewStep({
   onBack,
   onRetry,
 }: PreviewStepProps) {
-  const hasImages = Object.keys(previewImages).length > 0;
+  const hasImages = Object.keys(previewImages ?? {}).length > 0;
 
   if (isLoading && !hasImages) {
     return (
