@@ -782,7 +782,12 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
         #     - page_type="front_matter", NO image generation
         #     - Carries only text, no visual_prompt needed
         # =====================================================================
-        _FRONT_MATTER_ROLES = {"dedication"}
+        # ⚠️ Hiçbir blueprint sayfa rolü front_matter olarak işaretlenmiyor!
+        # "dedication" rolü blueprint'te sayfa 1'e verilse bile, AI o sayfaya
+        # hikayenin 1. paragrafını yazar. Bu metni front_matter yaparsak kaybolur.
+        # Karşılama 1 (dedication) ve Karşılama 2 sayfaları PDF'de template üzerinden
+        # ayrıca render ediliyor — AI'ın üretmesine gerek yok.
+        _FRONT_MATTER_ROLES: set[str] = set()  # boş: hiçbir sayfa front_matter olmaz
         bp_pages_list = blueprint.get("pages", [])
         bp_role_by_page: dict[int, str] = {}
         for bp in bp_pages_list:
@@ -908,15 +913,16 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 f"V3 pipeline FAILED: {len(non_v3)} pages have pipeline/composer version != 'v3' — aborting"
             )
 
-        # 3) Inner page count: page_count = kapak + iç sayfalar; kapak döngüde atlandığı için iç = page_count - 1 - front_matter
+        # 3) Inner page count: LLM is called with page_count and produces page_count inner pages
+        # (cover is page 0 and added separately in STEP 1, not counted in LLM page_count).
         front_matter_count = sum(1 for p in final_pages if p.page_type == "front_matter")
-        expected_inner = page_count - 1 - front_matter_count
+        expected_inner = page_count  # LLM writes exactly page_count inner pages (1..N)
         if inner_count != expected_inner:
             logger.warning(
                 "V3 inner page count mismatch",
                 expected=expected_inner,
                 actual=inner_count,
-                front_matter=front_matter_count,
+                front_matter=front_matter_count,  # beklenen: 0
             )
 
         story_response = StoryResponse(title=title, pages=story_pages)
@@ -1229,7 +1235,7 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
             scenario_name=scenario.name,
             location_constraints=location_constraints,
             fixed_outfit=fixed_outfit,
-            expected_page_count=page_count,
+            expected_page_count=page_count + 1,  # +1 for cover (page 0) + page_count inner pages
         )
 
         logger.info(
