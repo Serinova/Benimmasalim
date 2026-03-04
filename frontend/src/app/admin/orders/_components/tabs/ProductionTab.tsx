@@ -140,7 +140,7 @@ export function ProductionTab({
                 <PageThumb
                   key={idx}
                   pageKey={String(idx)}
-                  label={`${idx + 1}${idx === 0 ? " (Kapak)" : ""}`}
+                  label={idx === 0 ? "0 (Kapak)" : `${idx}`}
                   url={url}
                   detail={detail}
                   text={page.text}

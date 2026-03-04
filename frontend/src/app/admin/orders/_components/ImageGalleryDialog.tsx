@@ -63,12 +63,15 @@ export function ImageGalleryDialog({
           {entries.map(([pageKey, url]) => {
             const isDedication = pageKey === "dedication";
             const isIntro = pageKey === "intro";
+            const pageNum = parseInt(pageKey);
             const label = isDedication ? "Karşılama 1" :
               isIntro ? "Karşılama 2" :
-              `Sayfa ${parseInt(pageKey) + 1}`;
+              pageNum === 0 ? "0 (Kapak)" :
+              `Sayfa ${pageNum}`;
             const filename = isDedication ? "karsilama_1" :
               isIntro ? "karsilama_2" :
-              `sayfa_${parseInt(pageKey) + 1}`;
+              pageNum === 0 ? "kapak" :
+              `sayfa_${pageNum}`;
 
             return (
               <div key={pageKey} className="overflow-hidden rounded-lg border">
