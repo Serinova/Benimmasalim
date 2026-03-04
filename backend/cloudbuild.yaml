@@ -1,10 +1,119 @@
 steps:
+  # 1) Build backend API image
   - name: 'gcr.io/cloud-builders/docker'
+    id: build-backend
     args:
       - 'build'
       - '-t'
       - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/backend:latest'
+      - '-f'
+      - 'Dockerfile'
       - '.'
+    waitFor: ['-']
+
+  # 2) Build worker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: build-worker
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/worker:latest'
+      - '-f'
+      - 'Dockerfile.worker'
+      - '.'
+    waitFor: ['-']
+
+  # 3) Push backend
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push-backend
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/backend:latest'
+    waitFor: ['build-backend']
+
+  # 4) Push worker
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push-worker
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/worker:latest'
+    waitFor: ['build-worker']
+
+  # 5) Deploy backend API to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy-backend
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'benimmasalim-backend'
+      - '--image=europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/backend:latest'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--quiet'
+    waitFor: ['push-backend']
+
+  # 6) Deploy worker (arq) to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy-worker
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'benimmasalim-worker'
+      - '--image=europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/worker:latest'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--no-traffic'
+      - '--min-instances=1'
+      - '--max-instances=5'
+      - '--cpu=2'
+      - '--memory=4Gi'
+      - '--timeout=1800'
+      - '--quiet'
+    waitFor: ['push-worker']
+
+  # 7) Cleanup backend revisions (son 5 tut)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: cleanup-backend
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        revisions=$(gcloud run revisions list \
+          --service benimmasalim-backend \
+          --region europe-west1 \
+          --format "value(name)" \
+          --sort-by "~creationTimestamp" | tail -n +6)
+        if [ -n "$revisions" ]; then
+          echo "$revisions" | xargs -I{} gcloud run revisions delete {} --region europe-west1 --quiet
+          echo "Backend eski revision'lar temizlendi."
+        else
+          echo "Temizlenecek revision yok."
+        fi
+    waitFor: ['deploy-backend']
+
+  # 8) Cleanup worker revisions (son 5 tut)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: cleanup-worker
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        revisions=$(gcloud run revisions list \
+          --service benimmasalim-worker \
+          --region europe-west1 \
+          --format "value(name)" \
+          --sort-by "~creationTimestamp" | tail -n +6)
+        if [ -n "$revisions" ]; then
+          echo "$revisions" | xargs -I{} gcloud run revisions delete {} --region europe-west1 --quiet
+          echo "Worker eski revision'lar temizlendi."
+        else
+          echo "Temizlenecek revision yok."
+        fi
+    waitFor: ['deploy-worker']
+
 images:
   - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/backend:latest'
+  - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/worker:latest'
 timeout: '1200s'

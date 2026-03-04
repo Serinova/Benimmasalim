@@ -150,8 +150,10 @@ class PDFService:
         for i, page in enumerate(pages):
             if isinstance(page, dict) and page.get("page_type") == "front_matter":
                 continue
-            # Use cover template for first page, inner for rest
-            if i == 0 and product.cover_template:
+            # is_cover: dict'teki flag'e bak; yoksa ilk eleman kapak sayılır (geriye uyumluluk)
+            _is_cover = page.get("is_cover", i == 0) if isinstance(page, dict) else (i == 0)
+            # Use cover template for cover page, inner for rest
+            if _is_cover and product.cover_template:
                 template = product.cover_template
             else:
                 template = inner_template
@@ -163,7 +165,7 @@ class PDFService:
                 template=template,
                 page_width=page_width,
                 page_height=page_height,
-                is_cover=(i == 0),
+                is_cover=_is_cover,
                 skip_text=skip_text,
             )
             c.showPage()
@@ -173,13 +175,13 @@ class PDFService:
                 gc.collect()
 
             # Insert dedication page (karşılama 1) right after the cover
-            if i == 0 and dedication_image_base64:
+            if _is_cover and dedication_image_base64:
                 self._add_base64_page(c, dedication_image_base64, page_width, page_height)
                 c.showPage()
                 logger.info("Dedication page added to PDF (after cover)")
 
             # Insert scenario intro page (karşılama 2) right after dedication
-            if i == 0 and intro_image_base64:
+            if _is_cover and intro_image_base64:
                 self._add_base64_page(c, intro_image_base64, page_width, page_height)
                 c.showPage()
                 logger.info("Scenario intro page (karşılama 2) added to PDF")
@@ -762,15 +764,15 @@ class PDFService:
                 del image
                 tmp.seek(0)
 
-                # Place image
+                # Place image — görsel zaten resize_to_target() ile tam PDF oranına getirildi,
+                # preserveAspectRatio=True boşluk/bant oluşturur.
                 c.drawImage(
                     ImageReader(tmp),
                     0,
                     0,
                     width=page_width,
                     height=page_height,
-                    preserveAspectRatio=True,
-                    anchor="c",
+                    preserveAspectRatio=False,
                 )
                 tmp.close()
             except Exception as e:
@@ -800,7 +802,8 @@ class PDFService:
         template: PageTemplate | None,
     ):
         """Add text to page with proper formatting from template."""
-        # Get text settings from template or use defaults
+        from reportlab.pdfbase.pdfmetrics import stringWidth
+
         if template:
             margin_mm = template.margin_bottom_mm
             text_height_pct = template.text_height_percent
@@ -828,29 +831,30 @@ class PDFService:
         # Get font settings from template (8-732 pt; geçersiz/eksik ise 14)
         raw_fs = template.font_size_pt if template else 12
         font_size = 14 if not raw_fs or raw_fs < 8 or raw_fs > 732 else int(raw_fs)
+        font_name = "DejaVuSans"
         try:
-            c.setFont("DejaVuSans", font_size)
+            c.setFont(font_name, font_size)
         except Exception:
-            c.setFont("Helvetica", font_size)
+            font_name = "Helvetica"
+            c.setFont(font_name, font_size)
 
-        # Word wrap and draw
+        # Pixel-accurate word wrap using stringWidth
         text_obj = c.beginText(margin + 5 * mm, margin + text_box_height - 10 * mm)
         text_obj.setLeading(font_size * 1.3)
+        max_width = page_width - 2 * margin - 10 * mm
 
-        # Simple word wrap
         words = text.split()
         line = ""
-        max_chars = int((page_width - 2 * margin - 10 * mm) / (6 * mm) * 2)
-
         for word in words:
-            if len(line) + len(word) + 1 <= max_chars:
-                line += word + " "
+            candidate = (line + " " + word).lstrip() if line else word
+            if stringWidth(candidate, font_name, font_size) <= max_width:
+                line = candidate
             else:
-                text_obj.textLine(line.strip())
-                line = word + " "
-
+                if line:
+                    text_obj.textLine(line)
+                line = word
         if line:
-            text_obj.textLine(line.strip())
+            text_obj.textLine(line)
 
         c.drawText(text_obj)
 
@@ -872,23 +876,29 @@ class PDFService:
         c.setFillColorRGB(1, 1, 1, alpha=0.85)
         c.rect(margin, margin, page_width - 2 * margin, text_box_height, fill=1, stroke=0)
         c.setFillColorRGB(0, 0, 0)
+        font_name = "DejaVuSans"
         try:
-            c.setFont("DejaVuSans", font_size)
+            c.setFont(font_name, font_size)
         except Exception:
-            c.setFont("Helvetica", font_size)
+            font_name = "Helvetica"
+            c.setFont(font_name, font_size)
         text_obj = c.beginText(margin + 5 * mm, margin + text_box_height - 10 * mm)
         text_obj.setLeading(font_size * 1.3)
+
+        from reportlab.pdfbase.pdfmetrics import stringWidth
+        max_width = page_width - 2 * margin - 10 * mm
         words = text.split()
         line = ""
-        max_chars = int((page_width - 2 * margin - 10 * mm) / (6 * mm) * 2)
         for word in words:
-            if len(line) + len(word) + 1 <= max_chars:
-                line += word + " "
+            candidate = (line + " " + word).lstrip() if line else word
+            if stringWidth(candidate, font_name, font_size) <= max_width:
+                line = candidate
             else:
-                text_obj.textLine(line.strip())
-                line = word + " "
+                if line:
+                    text_obj.textLine(line)
+                line = word
         if line:
-            text_obj.textLine(line.strip())
+            text_obj.textLine(line)
         c.drawText(text_obj)
 
     async def _download_image(self, url: str) -> Image.Image:
@@ -1066,33 +1076,46 @@ class PDFService:
         back_cover_image_url: str | None = None,
     ):
         """
-        Render back cover / QR info page design.
+        Render QR+text info page matching the admin frontend preview design.
 
-        If back_cover_image_url is provided:
-          - AI-generated image fills the full page as background
-          - A semi-transparent gradient panel at the bottom hosts the text/QR overlay
-        Otherwise: solid background color.
-
-        Layout:
-        - Top: Company logo and tagline
-        - Middle: Parent tips
-        - Bottom: QR code (if audio), company info, copyright
+        Layout (top to bottom):
+        - Gradient background (background_color → background_gradient_end)
+        - Decorative corner glows
+        - Border (if show_border)
+        - 5 Stars row (if show_stars) — accent_color
+        - Company name — primary_color, bold
+        - Decorative line: short lines + center dot — accent_color (if show_decorative_lines)
+        - Tagline — italic, muted
+        - Dedication text box — left-accent-border, italic (if dedication_text)
+        - Tips section title — UPPERCASE, primary_color
+        - Tips content lines
+        - Separator: lines + 3 dots (if show_decorative_lines)
+        - Bottom: company info (left) + QR code (right)
+        - Copyright
         """
         import io as _io
-
-        from reportlab.lib.colors import HexColor
+        import math as _math
+        from reportlab.lib.colors import HexColor, Color as _RLColor
 
         def safe_hex(color_str: str, fallback: str = "#333333") -> HexColor:
-            """Parse hex color with fallback for invalid values."""
             try:
                 return HexColor(color_str)
             except Exception:
-                logger.warning("Invalid hex color: %s, using fallback: %s", color_str, fallback)
                 return HexColor(fallback)
+
+        def hex_to_rgb01(h: HexColor) -> tuple:
+            """Return (r, g, b) in 0-1 range."""
+            return (h.red, h.green, h.blue)
+
+        def set_font(size, bold=False):
+            try:
+                c.setFont("DejaVuSans-Bold" if bold else "DejaVuSans", size)
+            except Exception:
+                c.setFont("Helvetica-Bold" if bold else "Helvetica", size)
 
         margin = 15 * mm
 
-        # --- Background: AI image or solid color ---
+        # ── Background: gradient (background_color → background_gradient_end) ──
         _image_background_used = False
         if back_cover_image_url:
             try:
@@ -1101,162 +1124,359 @@ class PDFService:
                 _resp = _httpx.get(back_cover_image_url, timeout=15.0)
                 _resp.raise_for_status()
                 _img_buf = _io.BytesIO(_resp.content)
-                _img_reader = _IR(_img_buf)
-                c.drawImage(_img_reader, 0, 0, width=page_width, height=page_height, preserveAspectRatio=False)
+                c.drawImage(_IR(_img_buf), 0, 0, width=page_width, height=page_height,
+                            preserveAspectRatio=False)
                 _image_background_used = True
                 logger.info("BACK_COVER_AI_IMAGE_RENDERED", url=back_cover_image_url[:60])
             except Exception as _e:
                 logger.warning("BACK_COVER_IMAGE_LOAD_FAILED", error=str(_e))
 
         if not _image_background_used:
-            # Solid background (legacy / fallback)
-            bg_color = safe_hex(config.background_color, "#FFFFFF")
-            c.setFillColor(bg_color)
-            c.rect(0, 0, page_width, page_height, fill=1, stroke=0)
+            bg_start = safe_hex(config.background_color, "#FDF6EC")
+            bg_end_hex = getattr(config, "background_gradient_end", config.background_color)
+            bg_end = safe_hex(bg_end_hex, "#EDE4F8")
+            rs, gs, bs = hex_to_rgb01(bg_start)
+            re, ge, be = hex_to_rgb01(bg_end)
+            _steps = 60
+            for _i in range(_steps):
+                _t = _i / max(_steps - 1, 1)
+                _band_color = _RLColor(
+                    rs + (re - rs) * _t,
+                    gs + (ge - gs) * _t,
+                    bs + (be - bs) * _t,
+                )
+                c.setFillColor(_band_color)
+                _bh = page_height / _steps
+                c.rect(0, _i * _bh, page_width, _bh + 0.5, fill=1, stroke=0)
+
+            # Soft corner glows
+            primary_color_str = getattr(config, "primary_color", "#6B21A8")
+            accent_color_str = getattr(config, "accent_color", "#F59E0B")
+            try:
+                _pc = safe_hex(primary_color_str, "#6B21A8")
+                _ac = safe_hex(accent_color_str, "#F59E0B")
+                _g1 = _RLColor(_pc.red, _pc.green, _pc.blue, alpha=0.08)
+                c.setFillColor(_g1)
+                c.circle(0, page_height, 30 * mm, fill=1, stroke=0)
+                _g2 = _RLColor(_ac.red, _ac.green, _ac.blue, alpha=0.07)
+                c.setFillColor(_g2)
+                c.circle(page_width, 0, 35 * mm, fill=1, stroke=0)
+            except Exception:
+                pass
 
         if _image_background_used:
-            # Semi-transparent dark overlay panel for the bottom 40% — ensures text is readable
-            from reportlab.lib.colors import Color as _Color
             _panel_h = page_height * 0.42
-            _overlay = _Color(0, 0, 0, alpha=0.55)
-            c.setFillColor(_overlay)
+            _ov = _RLColor(0, 0, 0, alpha=0.55)
+            c.setFillColor(_ov)
             c.rect(0, 0, page_width, _panel_h, fill=1, stroke=0)
 
-        # Border if enabled
-        if config.show_border:
-            border_color = safe_hex(config.border_color, "#CCCCCC")
-            c.setStrokeColor(border_color)
-            c.setLineWidth(2)
-            c.rect(
-                margin / 2, margin / 2, page_width - margin, page_height - margin, fill=0, stroke=1
-            )
-
-        # Current Y position (start from top)
-        y_pos = page_height - margin - 10 * mm
-
-        # === TOP SECTION: Company name and tagline ===
-        # When AI image is used as background, override colors to white for readability
+        # ── Colors ──────────────────────────────────────────────────────────────
         if _image_background_used:
             primary_color = HexColor("#FFFFFF")
+            accent_color = HexColor("#F59E0B")
             text_color = HexColor("#F0F0F0")
+            border_col = HexColor("#C4B5FD")
         else:
-            primary_color = safe_hex(config.primary_color, "#333333")
-            text_color = safe_hex(config.text_color, "#333333")
+            primary_color = safe_hex(getattr(config, "primary_color", "#6B21A8"), "#6B21A8")
+            accent_color = safe_hex(getattr(config, "accent_color", "#F59E0B"), "#F59E0B")
+            text_color = safe_hex(config.text_color, "#2D1B4E")
+            border_col = safe_hex(config.border_color, "#C4B5FD")
 
-        # Helper to set font with Turkish support (must match _register_fonts: DejaVuSans)
-        def set_font(size, bold=False):
+        # ── Border ──────────────────────────────────────────────────────────────
+        if config.show_border:
+            c.setStrokeColor(border_col)
+            c.setLineWidth(1.5)
+            c.roundRect(margin / 2, margin / 2, page_width - margin, page_height - margin,
+                        2 * mm, fill=0, stroke=1)
+
+        # ── Layout: top-down ────────────────────────────────────────────────────
+        y_pos = page_height - margin - 5 * mm
+
+        # ── Logo (üstte ortalanmış) ───────────────────────────────────────────────
+        import os as _os
+        from reportlab.lib.utils import ImageReader as _IR2
+        try:
+            from PIL import Image as _PILImg2
+            _pil_available = True
+        except ImportError:
+            _pil_available = False
+
+        _logo_h_pt = 32.0 * mm  # biraz daha büyük — daha belirgin
+        _logo_rendered = False
+
+        _logo_candidates = [
+            "/app/assets/logo.png",
+            _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(
+                _os.path.abspath(__file__)))), "assets", "logo.png"),
+        ]
+        for _lpath in _logo_candidates:
+            if _os.path.exists(_lpath):
+                try:
+                    if _pil_available:
+                        _logo_pil = _PILImg2.open(_lpath).convert("RGBA")
+                        _lw, _lh = _logo_pil.size
+                        _aspect = _lw / _lh
+                        _logo_w_pt = _logo_h_pt * _aspect
+
+                        # Arka plan rengiyle composite et → JPEG olarak kaydet
+                        # Böylece mask="auto"'nun soluklaştırma sorunu olmaz
+                        if not _image_background_used:
+                            # Gradient başlangıç rengi (bg_start değişkeni mevcut)
+                            try:
+                                _bg_r = int(bg_start.red * 255)
+                                _bg_g = int(bg_start.green * 255)
+                                _bg_b = int(bg_start.blue * 255)
+                            except Exception:
+                                _bg_r, _bg_g, _bg_b = 253, 246, 236
+                        else:
+                            _bg_r, _bg_g, _bg_b = 15, 10, 30  # koyu arka plan
+
+                        _bg_layer = _PILImg2.new("RGBA", (_lw, _lh), (_bg_r, _bg_g, _bg_b, 255))
+                        _bg_layer.paste(_logo_pil, mask=_logo_pil.split()[3])  # alpha channel ile
+                        _composited = _bg_layer.convert("RGB")
+
+                        _logo_buf = _io.BytesIO()
+                        _composited.save(_logo_buf, format="JPEG", quality=95)
+                        _logo_buf.seek(0)
+
+                        _logo_x = (page_width - _logo_w_pt) / 2
+                        _logo_y = y_pos - _logo_h_pt
+                        c.drawImage(
+                            _IR2(_logo_buf),
+                            _logo_x, _logo_y,
+                            width=_logo_w_pt, height=_logo_h_pt,
+                            preserveAspectRatio=True,
+                        )
+                    else:
+                        # PIL yoksa direkt binary yükle (boyut 1:1 varsay)
+                        _aspect = 1.0
+                        _logo_w_pt = _logo_h_pt * _aspect
+                        _logo_buf = _io.BytesIO()
+                        with open(_lpath, "rb") as _lf:
+                            _logo_buf.write(_lf.read())
+                        _logo_buf.seek(0)
+                        _logo_x = (page_width - _logo_w_pt) / 2
+                        _logo_y = y_pos - _logo_h_pt
+                        c.drawImage(
+                            _IR2(_logo_buf),
+                            _logo_x, _logo_y,
+                            width=_logo_w_pt, height=_logo_h_pt,
+                            preserveAspectRatio=True,
+                            mask="auto",
+                        )
+
+                    y_pos -= _logo_h_pt + 3 * mm
+                    _logo_rendered = True
+                    logger.info("BACK_COVER_LOGO_RENDERED", path=_lpath)
+                    break
+                except Exception as _le:
+                    logger.warning("BACK_COVER_LOGO_FAILED", path=_lpath, error=str(_le))
+
+
+        if not _logo_rendered:
+            # Fallback: 5 yıldız + company name
+            if config.show_stars:
+                _star_sz = 3.5 * mm
+                _star_gap = 1.0 * mm
+                _total_w = 5 * _star_sz + 4 * _star_gap
+                _sx0 = (page_width - _total_w) / 2
+                c.setFillColor(accent_color)
+                for _si in range(5):
+                    _cx = _sx0 + _si * (_star_sz + _star_gap) + _star_sz / 2
+                    _cy = y_pos - _star_sz / 2
+                    _outer = _star_sz / 2
+                    _inner = _outer * 0.38
+                    _pts = []
+                    for _pi in range(10):
+                        _ang = _math.radians(-90 + _pi * 36)
+                        _r = _outer if _pi % 2 == 0 else _inner
+                        _pts.append((_cx + _r * _math.cos(_ang), _cy + _r * _math.sin(_ang)))
+                    _path = c.beginPath()
+                    _path.moveTo(_pts[0][0], _pts[0][1])
+                    for _p in _pts[1:]:
+                        _path.lineTo(_p[0], _p[1])
+                    _path.close()
+                    c.drawPath(_path, fill=1, stroke=0)
+                y_pos -= _star_sz + 4 * mm
+            c.setFillColor(primary_color)
+            set_font(16, bold=True)
+            c.drawCentredString(page_width / 2, y_pos, config.company_name)
+            y_pos -= 5.5 * mm
+
+        # ── Decorative: line · dot · line ────────────────────────────────────────
+        if getattr(config, "show_decorative_lines", True):
+            _dot_r = 1.0 * mm
+            _line_len = 12 * mm
+            _mid_x = page_width / 2
+            _dot_y = y_pos - 1.5 * mm
+            c.setFillColor(accent_color)
+            c.setStrokeColor(accent_color)
+            c.setLineWidth(0.6)
+            c.line(_mid_x - _dot_r - _line_len, _dot_y, _mid_x - _dot_r - 1, _dot_y)
+            c.circle(_mid_x, _dot_y, _dot_r, fill=1, stroke=0)
+            c.line(_mid_x + _dot_r + 1, _dot_y, _mid_x + _dot_r + _line_len, _dot_y)
+            y_pos -= 5.5 * mm
+        else:
+            y_pos -= 3 * mm
+
+        # ── Tagline ───────────────────────────────────────────────────────────────
+        c.setFillColor(text_color)
+        set_font(9.5)
+        _tl_text = config.tagline or ""
+        _max_tl_w = page_width - 4 * margin
+        try:
+            _tl_total_w = c.stringWidth(_tl_text, "DejaVuSans", 9.5)
+        except Exception:
+            _tl_total_w = 0
+        if _tl_total_w > _max_tl_w:
+            _tl_words = _tl_text.split()
+            _tl_lines, _tl_line = [], ""
+            for _w in _tl_words:
+                _cand = (_tl_line + " " + _w).lstrip() if _tl_line else _w
+                try:
+                    _fits = c.stringWidth(_cand, "DejaVuSans", 9.5) <= _max_tl_w
+                except Exception:
+                    _fits = True
+                if _fits:
+                    _tl_line = _cand
+                else:
+                    _tl_lines.append(_tl_line)
+                    _tl_line = _w
+            if _tl_line:
+                _tl_lines.append(_tl_line)
+            for _tl_l in _tl_lines:
+                c.drawCentredString(page_width / 2, y_pos, _tl_l)
+                y_pos -= 4.5 * mm
+        else:
+            c.drawCentredString(page_width / 2, y_pos, _tl_text)
+            y_pos -= 4.5 * mm
+        y_pos -= 5 * mm
+
+        # ── Dedication text box ────────────────────────────────────────────────────
+        _dedication = getattr(config, "dedication_text", "") or ""
+        if _dedication:
+            _ded_fs = 8.5
+            _ded_x = margin * 1.5
+            _ded_w = page_width - 3 * margin
+            set_font(_ded_fs)
+            # Word wrap
+            _ded_words = _dedication.split()
+            _ded_lines, _ded_l = [], ""
+            _max_ded = _ded_w - 8 * mm
+            for _w in _ded_words:
+                _cand = (_ded_l + " " + _w).lstrip() if _ded_l else _w
+                if c.stringWidth(_cand, "DejaVuSans", _ded_fs) <= _max_ded:
+                    _ded_l = _cand
+                else:
+                    _ded_lines.append(_ded_l)
+                    _ded_l = _w
+            if _ded_l:
+                _ded_lines.append(_ded_l)
+            _ded_lh = _ded_fs * 0.5 * mm + 1.2 * mm
+            _ded_bh = len(_ded_lines) * _ded_lh + 5 * mm
+            _ded_by = y_pos - _ded_bh
+            # Box background
             try:
-                c.setFont("DejaVuSans", size)
+                _ded_bg = _RLColor(primary_color.red, primary_color.green, primary_color.blue, alpha=0.06)
+                c.setFillColor(_ded_bg)
+                c.roundRect(_ded_x, _ded_by, _ded_w, _ded_bh, 1.5 * mm, fill=1, stroke=0)
             except Exception:
-                c.setFont("Helvetica-Bold" if bold else "Helvetica", size)
+                pass
+            # Left accent border
+            c.setFillColor(accent_color)
+            c.rect(_ded_x, _ded_by, 2.5, _ded_bh, fill=1, stroke=0)
+            # Text
+            c.setFillColor(text_color)
+            set_font(_ded_fs)
+            _ded_ty = y_pos - 3 * mm
+            for _dl in _ded_lines:
+                c.drawString(_ded_x + 5 * mm, _ded_ty, _dl)
+                _ded_ty -= _ded_lh
+            y_pos = _ded_by - 8 * mm
 
-        # Company name
+        # ── Tips section title (UPPERCASE, letter-spaced) ─────────────────────────
         c.setFillColor(primary_color)
-        set_font(18, bold=True)
-        c.drawCentredString(page_width / 2, y_pos, config.company_name)
-        y_pos -= 8 * mm
+        set_font(8, bold=True)
+        _tips_title = (config.tips_title or "").upper()
+        c.drawCentredString(page_width / 2, y_pos, _tips_title)
+        y_pos -= 6.5 * mm
 
-        # Tagline
+        # ── Tips content ──────────────────────────────────────────────────────────
         c.setFillColor(text_color)
-        set_font(11)
-        c.drawCentredString(page_width / 2, y_pos, config.tagline)
-        y_pos -= 15 * mm
+        _tfsize = max(7.0, min(float(config.tips_font_size), 11.0))
+        set_font(_tfsize)
+        _tips_lines = config.tips_content.strip().split("\n")
+        _tip_lh = _tfsize * 0.45 * mm + 1.5 * mm
+        for _tline in _tips_lines:
+            _ts = _tline.strip()
+            if _ts:
+                c.drawString(margin * 1.5, y_pos, _ts)
+                y_pos -= _tip_lh
 
-        # Decorative line
-        c.setStrokeColor(primary_color)
-        c.setLineWidth(1)
-        c.line(margin * 2, y_pos, page_width - margin * 2, y_pos)
-        y_pos -= 12 * mm
+        # ── Separator: line •••  line ─────────────────────────────────────────────
+        y_pos -= 5 * mm
+        if getattr(config, "show_decorative_lines", True):
+            _sep_y = y_pos
+            _sep_mid = page_width / 2
+            _avail = page_width - 2 * margin * 1.5
+            _dot_span = 6 * mm  # space for 3 dots
+            _seg_len = (_avail - _dot_span) / 2
+            c.setStrokeColor(border_col)
+            c.setLineWidth(0.5)
+            c.line(margin * 1.5, _sep_y, margin * 1.5 + _seg_len, _sep_y)
+            c.line(_sep_mid + _dot_span / 2, _sep_y, margin * 1.5 + _seg_len + _dot_span + _seg_len, _sep_y)
+            c.setFillColor(accent_color)
+            for _di, _dx in enumerate([-2.5 * mm, 0, 2.5 * mm]):
+                c.circle(_sep_mid + _dx, _sep_y, 0.7 * mm, fill=1, stroke=0)
+            y_pos -= 6 * mm
 
-        # === MIDDLE SECTION: Parent tips ===
-        # Tips title
-        c.setFillColor(primary_color)
-        set_font(12, bold=True)
-        c.drawCentredString(page_width / 2, y_pos, config.tips_title)
-        y_pos -= 8 * mm
+        # ── Bottom section: company info (left) + QR code (right) ─────────────────
+        _bottom_base = margin + 4 * mm
 
-        # Tips content
-        c.setFillColor(text_color)
-        set_font(config.tips_font_size)
-
-        tips_lines = config.tips_content.strip().split("\n")
-        for line in tips_lines:
-            c.drawString(margin * 1.5, y_pos, line.strip())
-            y_pos -= 5 * mm
-
-        y_pos -= 10 * mm
-
-        # === BOTTOM SECTION: QR Code and Company Info ===
-
-        # Debug log for QR
-        logger.info(
-            "Back cover QR check",
-            audio_qr_url=audio_qr_url,
-            qr_enabled=config.qr_enabled if config else None,
-        )
-
-        # QR Code (if audio book)
+        # QR Code
+        _qr_rendered = False
         if audio_qr_url and config.qr_enabled:
-            qr_size = config.qr_size_mm * mm
-            qr_reader, qr_buf = self._generate_qr_image(audio_qr_url)
-
-            # Position based on config
-            if config.qr_position == "bottom_left":
-                qr_x = margin
-            elif config.qr_position == "center":
-                qr_x = (page_width - qr_size) / 2
-            else:  # bottom_right
-                qr_x = page_width - qr_size - margin
-
-            qr_y = margin + 20 * mm
-
-            # QR background
+            _qr_sz = config.qr_size_mm * mm
+            _qr_reader, _qr_buf = self._generate_qr_image(audio_qr_url)
+            _qr_x = page_width - _qr_sz - margin
+            _qr_y = _bottom_base + 3 * mm
+            # White rounded box
             c.setFillColor(HexColor("#FFFFFF"))
-            c.roundRect(
-                qr_x - 3 * mm,
-                qr_y - 3 * mm,
-                qr_size + 6 * mm,
-                qr_size + 10 * mm,
-                3 * mm,
-                fill=1,
-                stroke=0,
-            )
-
-            # Draw QR
-            c.drawImage(qr_reader, qr_x, qr_y, width=qr_size, height=qr_size)
-            qr_buf.close()  # Free QR buffer after drawing
-
-            # QR Label
+            c.roundRect(_qr_x - 2.5 * mm, _qr_y - 2.5 * mm,
+                        _qr_sz + 5 * mm, _qr_sz + 9 * mm, 2 * mm, fill=1, stroke=0)
+            c.drawImage(_qr_reader, _qr_x, _qr_y, width=_qr_sz, height=_qr_sz)
+            _qr_buf.close()
+            _qr_rendered = True
             c.setFillColor(primary_color)
-            set_font(8)
-            c.drawCentredString(qr_x + qr_size / 2, qr_y + qr_size + 2 * mm, config.qr_label)
+            set_font(6.5)
+            c.drawCentredString(_qr_x + _qr_sz / 2, _qr_y + _qr_sz + 1.5 * mm, config.qr_label)
 
-        # Company info at bottom
+        # Company info (left side)
+        c.setFillColor(primary_color)
+        set_font(7.5, bold=True)
+        _info_x = margin * 1.3
+        _info_y = _bottom_base + 14 * mm
+        c.drawString(_info_x, _info_y, config.company_website)
         c.setFillColor(text_color)
-        set_font(8)
-
-        info_y = margin + 8 * mm
-        c.drawCentredString(page_width / 2, info_y, config.company_website)
-        info_y -= 4 * mm
-        c.drawCentredString(page_width / 2, info_y, config.company_email)
-
-        # Copyright at very bottom
-        c.setFillColor(HexColor("#CCCCCC") if _image_background_used else HexColor("#888888"))
         set_font(7)
-        c.drawCentredString(page_width / 2, margin, config.copyright_text)
+        _info_y -= 4.5 * mm
+        c.drawString(_info_x, _info_y, config.company_email)
+        if config.company_phone:
+            _info_y -= 4 * mm
+            c.drawString(_info_x, _info_y, config.company_phone)
 
-        # Personalization - child name if provided
-        if child_name:
-            c.setFillColor(primary_color)
-            try:
-                c.setFont("DejaVuSans", 9)
-            except Exception:
-                c.setFont("Helvetica-Oblique", 9)
-            c.drawCentredString(
-                page_width / 2,
-                page_height - margin - 25 * mm,
-                f"Bu kitap {child_name} için özel olarak hazırlandı",
-            )
+        # Copyright
+        c.setFillColor(HexColor("#CCCCCC") if _image_background_used else HexColor("#888888"))
+        set_font(6.5)
+        c.drawCentredString(page_width / 2, margin - 2 * mm, config.copyright_text)
+
+        logger.info(
+            "BACK_COVER_RENDERED",
+            has_stars=config.show_stars,
+            has_dedication=bool(_dedication),
+            has_qr=_qr_rendered,
+            has_gradient=not _image_background_used,
+        )
 
     def convert_to_cmyk(self, pdf_bytes: bytes) -> bytes:
         """

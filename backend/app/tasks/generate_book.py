@@ -224,18 +224,19 @@ async def generate_full_book(order_id: str) -> dict:
 
         from app.services.ai.face_service import resolve_face_reference
 
-        _face_ref_url, _face_embedding = await resolve_face_reference(
+        _face_ref_url, _original_photo_url, _face_embedding = await resolve_face_reference(
             order.child_photo_url or "", storage
         )
 
-        # Character description: DB'den oku, yoksa on-the-fly üret
+                # Character description: DB'den oku, yoksa on-the-fly üret
         character_description = (getattr(order, "face_description", None) or "").strip()
         if not character_description and _face_ref_url:
             try:
                 from app.services.ai.face_analyzer_service import get_face_analyzer
 
                 _face_analyzer = get_face_analyzer()
-                character_description = await _face_analyzer.get_enhanced_child_description(
+                # Use "AI Director" mode for concise description (30-50 words) to avoid prompt dilution
+                character_description = await _face_analyzer.analyze_for_ai_director(
                     image_source=_face_ref_url,
                     child_name=order.child_name or "",
                     child_age=order.child_age or 7,
@@ -244,7 +245,7 @@ async def generate_full_book(order_id: str) -> dict:
                 order.face_description = character_description
                 await db.commit()
                 logger.info(
-                    "CHARACTER_DESCRIPTION_GENERATED",
+                    "CHARACTER_DESCRIPTION_GENERATED_CONCISE",
                     order_id=order_id,
                     desc_preview=character_description[:80],
                 )
@@ -425,6 +426,7 @@ async def generate_full_book(order_id: str) -> dict:
                         skip_compose=True,
                         precomposed_negative=_final_negative_text,
                         reference_embedding=_face_embedding,
+                        original_photo_url=_original_photo_url,
                     )
                     image_url = result[0] if isinstance(result, tuple) else result
 
@@ -492,6 +494,8 @@ async def generate_full_book(order_id: str) -> dict:
                             {
                                 "text": (_story_title if page.is_cover else page.text_content) or "",
                                 "image_url": final_url,
+                                "is_cover": page.is_cover,
+                                "page_number": page.page_number,
                             }
                         )
                     else:
@@ -522,6 +526,7 @@ async def generate_full_book(order_id: str) -> dict:
                 clothing_description=clothing_description,
                 style_modifier=style_modifier,
                 face_ref_url=_face_ref_url,
+                original_photo_url=_original_photo_url,
                 face_embedding=_face_embedding,
                 true_cfg_override=_style_overrides["true_cfg"],
                 start_step_override=_style_overrides["start_step"],
@@ -555,6 +560,8 @@ async def generate_full_book(order_id: str) -> dict:
         )
 
         # ── Step 9: Generate PDF ──────────────────────────────────────────────
+        # Kapak önce, sonra hikaye sayfaları (page_number sırasına göre) gelsin.
+        generated_pages.sort(key=lambda p: (0 if p.get("is_cover") else 1, p.get("page_number", 999)))
         try:
             pdf_bytes = await pdf_service.generate_book_pdf(
                 order=order,
@@ -572,24 +579,97 @@ async def generate_full_book(order_id: str) -> dict:
 
             await transition_order(order, OrderStatus.READY_FOR_PRINT, db)
 
-            # Send "your book is ready" email
+            # Create StoryPreview for customer approval + send confirmation email
             try:
+                import secrets as _secrets
+                from datetime import datetime, timedelta, timezone
+
+                from app.models.story_preview import PreviewStatus, StoryPreview
                 from app.models.user import User
                 from app.services.email_service import email_service
 
                 _user = await db.get(User, order.user_id) if order.user_id else None
                 _recipient_email = _user.email if _user and _user.email else None
-                _recipient_name = _user.full_name if _user else None
+                _recipient_name = (_user.full_name if _user else None) or ""
 
                 if _recipient_email:
-                    await email_service.send_story_email_async(
+                    # Build page_images dict from generated OrderPages
+                    _page_images: dict[str, str] = {}
+                    _story_pages_data: list[dict] = []
+                    _pages_result = await db.execute(
+                        select(OrderPage)
+                        .where(OrderPage.order_id == order.id)
+                        .order_by(OrderPage.page_number)
+                    )
+                    _all_pages = list(_pages_result.scalars().all())
+                    for _op in _all_pages:
+                        if _op.image_url:
+                            _key = "0" if _op.is_cover else str(_op.page_number)
+                            _page_images[_key] = _op.image_url
+                        if not _op.is_cover:
+                            _story_pages_data.append({
+                                "page_number": _op.page_number,
+                                "text": _op.text_content or "",
+                                "visual_prompt": _op.image_prompt or "",
+                            })
+
+                    # Add back cover if generated
+                    if back_cover_image_url:
+                        _page_images["back_cover"] = back_cover_image_url
+
+                    _confirmation_token = _secrets.token_urlsafe(32)
+                    _product_price: float | None = None
+                    if product and hasattr(product, "base_price") and product.base_price:
+                        _product_price = float(product.base_price)
+
+                    _approval_preview = StoryPreview(
+                        confirmation_token=_confirmation_token,
+                        status=PreviewStatus.PENDING.value,
+                        lead_user_id=order.user_id,
+                        parent_name=_recipient_name,
+                        parent_email=_recipient_email,
+                        child_name=order.child_name,
+                        child_age=order.child_age,
+                        child_gender=order.child_gender,
+                        child_photo_url=order.child_photo_url,
+                        product_id=order.product_id,
+                        product_name=product.name if product else "",
+                        product_price=_product_price,
+                        story_title=_story_title,
+                        story_pages=_story_pages_data,
+                        page_images=_page_images,
+                        back_cover_image_url=back_cover_image_url,
+                        scenario_name=_scenario.name if _scenario else None,
+                        visual_style_name=style.name if style else None,
+                        is_preview_mode=False,
+                        # Cache prompts for per-page regeneration
+                        generated_prompts_cache={
+                            "order_id": order_id,
+                            "prompts": _story_pages_data,
+                        },
+                        expires_at=datetime.now(timezone.utc) + timedelta(hours=48),
+                    )
+                    db.add(_approval_preview)
+                    await db.commit()
+
+                    _confirmation_url = f"{settings.frontend_url}/confirm/{_confirmation_token}"
+
+                    # No images in email — user reviews them on the website
+                    await email_service.send_story_email_with_confirmation_async(
                         recipient_email=_recipient_email,
                         recipient_name=_recipient_name or _recipient_email,
                         child_name=order.child_name,
-                        story_title=f"{order.child_name}'in Masalı",
+                        story_title=_story_title,
                         story_pages=[],
+                        confirmation_url=_confirmation_url,
+                        product_price=_product_price,
                     )
-                    logger.info("ORDER_READY_EMAIL_SENT", order_id=order_id)
+                    logger.info(
+                        "ORDER_READY_CONFIRMATION_EMAIL_SENT",
+                        order_id=order_id,
+                        preview_id=str(_approval_preview.id),
+                        confirmation_url=_confirmation_url[:60],
+                    )
                 else:
                     logger.warning(
                         "ORDER_READY_EMAIL_SKIP_NO_EMAIL",
@@ -733,7 +813,7 @@ async def _process_existing_cover(
             order_id=order_id,
             highres_url=highres_cover_url,
         )
-        return {"text": story_title or page.text_content or "", "image_url": highres_cover_url}
+        return {"text": story_title or page.text_content or "", "image_url": highres_cover_url, "is_cover": True, "page_number": page.page_number}
 
     except Exception as cover_err:
         logger.error(
@@ -741,7 +821,7 @@ async def _process_existing_cover(
             order_id=order_id,
             error=str(cover_err),
         )
-        return {"text": story_title or page.text_content or "", "image_url": page.image_url}
+        return {"text": story_title or page.text_content or "", "image_url": page.image_url, "is_cover": True, "page_number": page.page_number}
 
 
 async def _upscale_and_resize(

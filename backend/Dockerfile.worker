@@ -1,0 +1,69 @@
+# Worker image — backend ile aynı base, farklı CMD (arq worker)
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+
+# Production stage
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    libgl1 \
+    libglib2.0-0 \
+    fonts-liberation \
+    fonts-dejavu-core \
+    fontconfig \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Google Fonts (page_composer metin çizimi için — backend Dockerfile ile aynı set)
+RUN mkdir -p /usr/share/fonts/truetype/google && cd /usr/share/fonts/truetype/google && \
+    curl -sfL -o Nunito.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/nunito/Nunito%5Bwght%5D.ttf" && \
+    curl -sfL -o Quicksand.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/quicksand/Quicksand%5Bwght%5D.ttf" && \
+    curl -sfL -o Comfortaa.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/comfortaa/Comfortaa%5Bwght%5D.ttf" && \
+    curl -sfL -o Baloo2.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/baloo2/Baloo2%5Bwght%5D.ttf" && \
+    curl -sfL -o BubblegumSans-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/bubblegumsans/BubblegumSans-Regular.ttf" && \
+    curl -sfL -o ComicNeue-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/comicneue/ComicNeue-Regular.ttf" && \
+    curl -sfL -o PatrickHand-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/patrickhand/PatrickHand-Regular.ttf" && \
+    curl -sfL -o Caveat.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/caveat/Caveat%5Bwght%5D.ttf" && \
+    curl -sfL -o Lobster-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/lobster/Lobster-Regular.ttf" && \
+    curl -sfL -o Pacifico-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/pacifico/Pacifico-Regular.ttf" && \
+    curl -sfL -o Fredoka.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/fredoka/Fredoka%5Bwdth%2Cwght%5D.ttf" && \
+    curl -sfL -o Bangers-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/bangers/Bangers-Regular.ttf" && \
+    curl -sfL -o Poppins-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Regular.ttf" || true && \
+    curl -sfL -o Montserrat.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/montserrat/Montserrat%5Bwght%5D.ttf" || true && \
+    curl -sfL -o OpenSans.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/opensans/OpenSans%5Bwdth%2Cwght%5D.ttf" || true && \
+    curl -sfL -o Roboto.ttf "https://raw.githubusercontent.com/google/fonts/main/apache/roboto/Roboto%5Bwdth%2Cwght%5D.ttf" || true && \
+    curl -sfL -o IndieFlower-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/indieflower/IndieFlower-Regular.ttf" || true && \
+    curl -sfL -o ShadowsIntoLight-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/shadowsintolight/ShadowsIntoLight.ttf" || true && \
+    curl -sfL -o Pangolin-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/pangolin/Pangolin-Regular.ttf" || true && \
+    curl -sfL -o GloriaHallelujah-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/gloriahallelujah/GloriaHallelujah.ttf" || true && \
+    curl -sfL -o AmaticSC-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/amaticsc/AmaticSC-Regular.ttf" || true && \
+    curl -sfL -o PermanentMarker-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/apache/permanentmarker/PermanentMarker-Regular.ttf" || true && \
+    curl -sfL -o Kalam-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/kalam/Kalam-Regular.ttf" || true && \
+    fc-cache -fv 2>/dev/null || true
+
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --home /home/appuser --ingroup appgroup appuser
+
+ENV HOME=/home/appuser
+
+COPY --from=builder /app/wheels /wheels
+RUN pip install --no-cache /wheels/*
+
+COPY --chown=appuser:appgroup . .
+
+USER appuser
+
+# Arq worker: Redis'ten iş alır, generate_full_book + preview görevlerini çalıştırır
+CMD ["python", "-m", "arq", "app.workers.image_worker.WorkerSettings"]

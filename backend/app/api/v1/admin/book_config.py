@@ -469,8 +469,9 @@ async def update_page_template(
     if not template:
         raise NotFoundError("Sayfa şablonu", template_id)
 
-    # Get all fields that are not None
-    update_data = {k: v for k, v in request.model_dump().items() if v is not None}
+    # exclude_unset=True: sadece gönderilen alanları güncelle; None/False/0.0 gibi
+    # geçerli değerlerin None filtresiyle silinmesini önler.
+    update_data = request.model_dump(exclude_unset=True)
 
     for field, value in update_data.items():
         setattr(template, field, value)
