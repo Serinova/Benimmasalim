@@ -4,6 +4,7 @@ export interface StoryPageContent {
   visual_prompt?: string;
   is_back_cover?: boolean;
   page_number?: number;
+  page_type?: string;
 }
 
 export interface GenerationManifestEntry {
