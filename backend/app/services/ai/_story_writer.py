@@ -794,11 +794,28 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
             bp_role_by_page[bp.get("page", 0)] = bp.get("role", "")
 
         inner_count = 0
-        for page_data in pages:
-            llm_page_num = page_data.get("page", 0)
-            # Kapak (page 0) zaten STEP 1'de eklendi; blueprint sayfa 0'ı atla, 1. sayfa metni ilk iç sayfada kalsın
+        _page_nums_seen: set[int] = set()
+        for _page_idx, page_data in enumerate(pages):
+            llm_page_num = page_data.get("page")
+            if llm_page_num is None:
+                llm_page_num = _page_idx + 1
+                logger.warning(
+                    "V3_PAGE_MISSING_PAGE_FIELD: assigning sequential page number",
+                    page_index=_page_idx,
+                    assigned_page_num=llm_page_num,
+                )
+            llm_page_num = int(llm_page_num)
             if llm_page_num == 0:
-                continue
+                if page_data.get("text_tr", "").strip():
+                    llm_page_num = max(_page_nums_seen, default=0) + 1
+                    logger.warning(
+                        "V3_PAGE0_HAS_STORY_TEXT: reassigning to inner page",
+                        new_page_num=llm_page_num,
+                        text_preview=page_data.get("text_tr", "")[:60],
+                    )
+                else:
+                    continue
+            _page_nums_seen.add(llm_page_num)
             text_tr = page_data.get("text_tr", "")
             image_prompt_en = page_data.get("image_prompt_en", "")
             _llm_neg = (page_data.get("negative_prompt_en") or "").strip()
