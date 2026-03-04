@@ -45,7 +45,8 @@ export function ProductionTab({
   const pageImages = detail.page_images ?? {};
   const imageCount = Object.keys(pageImages).length;
   const numericKeys = Object.keys(pageImages).filter((k) => /^\d+$/.test(k));
-  const totalPages = detail.story_pages?.length || 0;
+  const storyOnly = detail.story_pages?.filter((p) => p.page_type !== "backcover") ?? [];
+  const totalPages = storyOnly.length;
   const missingCount = totalPages - numericKeys.length;
 
   const pageImageUrl = (pageKey: string): string => {
@@ -134,13 +135,17 @@ export function ProductionTab({
               />
             )}
             {/* Story pages */}
-            {detail.story_pages?.map((page: StoryPageContent, idx: number) => {
-              const url = pageImageUrl(idx.toString());
+            {detail.story_pages
+              ?.filter((p: StoryPageContent) => p.page_type !== "backcover")
+              .map((page: StoryPageContent) => {
+              const pn = page.page_number ?? 0;
+              const pageKey = String(pn);
+              const url = pageImageUrl(pageKey);
               return (
                 <PageThumb
-                  key={idx}
-                  pageKey={String(idx)}
-                  label={idx === 0 ? "0 (Kapak)" : `${idx}`}
+                  key={pageKey}
+                  pageKey={pageKey}
+                  label={pn === 0 ? "0 (Kapak)" : `${pn}`}
                   url={url}
                   detail={detail}
                   text={page.text}
