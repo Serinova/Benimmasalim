@@ -170,10 +170,10 @@ async def upscale_image_bytes_safe(
     *,
     face_enhance: bool = False,
 ) -> bytes:
-    """upscale_image_bytes'ın güvenli versiyonu — hata durumunda orijinal döner.
+    """upscale_image_bytes'ın güvenli versiyonu — Replicate hata verince PIL fallback.
 
-    Upscale başarısız olursa log kaydeder ve orijinal görseli döndürür.
-    Üretim akışında kullanılması önerilir.
+    Önce Replicate Real-ESRGAN dener. Başarısız olursa PIL LANCZOS ile upscale yapar
+    (boyut korunur, kalite AI'dan düşük ama 1024px'te bırakmaktan iyidir).
     """
     try:
         return await upscale_image_bytes(
@@ -182,11 +182,19 @@ async def upscale_image_bytes_safe(
             face_enhance=face_enhance,
         )
     except UpscaleError as e:
-        logger.warning("UPSCALE_FAILED_FALLBACK", error=str(e))
-        return image_bytes
+        logger.warning(
+            "UPSCALE_REPLICATE_FAILED_PIL_FALLBACK",
+            error=str(e),
+            upscale_factor=upscale_factor,
+        )
+        return upscale_with_pil(image_bytes, upscale_factor)
     except Exception as e:
-        logger.error("UPSCALE_UNEXPECTED_ERROR_FALLBACK", error=str(e))
-        return image_bytes
+        logger.error(
+            "UPSCALE_UNEXPECTED_ERROR_PIL_FALLBACK",
+            error=str(e),
+            upscale_factor=upscale_factor,
+        )
+        return upscale_with_pil(image_bytes, upscale_factor)
 
 
 def upscale_with_pil(image_bytes: bytes, upscale_factor: int) -> bytes:

@@ -1,4 +1,4 @@
-# Proje kökünden: backend + frontend (ve isteğe bağlı worker) tek seferde build + push
+# Proje kökünden: backend + worker + frontend tek seferde build + push + deploy
 # Kullanım: gcloud builds submit --config=cloudbuild.yaml .
 # Substitutions (opsiyonel): _REGION, _REPO, _TAG
 
@@ -12,7 +12,9 @@ options:
   machineType: E2_HIGHCPU_8
 
 steps:
-  # 1) Backend image
+  # ── BUILD (paralel) ────────────────────────────────────────────────────────
+
+  # 1) Backend API image
   - name: gcr.io/cloud-builders/docker
     id: build-backend
     args:
@@ -24,7 +26,19 @@ steps:
       - backend
     waitFor: ['-']
 
-  # 2) Frontend image (production runner stage)
+  # 2) Worker image (arq)
+  - name: gcr.io/cloud-builders/docker
+    id: build-worker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/worker:${_TAG}
+      - -f
+      - backend/Dockerfile.worker
+      - backend
+    waitFor: ['-']
+
+  # 3) Frontend image
   - name: gcr.io/cloud-builders/docker
     id: build-frontend
     args:
@@ -38,7 +52,9 @@ steps:
       - frontend
     waitFor: ['-']
 
-  # 3) Push backend
+  # ── PUSH (paralel, build bittikten sonra) ──────────────────────────────────
+
+  # 4) Push backend
   - name: gcr.io/cloud-builders/docker
     id: push-backend
     args:
@@ -46,7 +62,15 @@ steps:
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/backend:${_TAG}
     waitFor: ['build-backend']
 
-  # 4) Push frontend
+  # 5) Push worker
+  - name: gcr.io/cloud-builders/docker
+    id: push-worker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/worker:${_TAG}
+    waitFor: ['build-worker']
+
+  # 6) Push frontend
   - name: gcr.io/cloud-builders/docker
     id: push-frontend
     args:
@@ -54,8 +78,101 @@ steps:
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/frontend:${_TAG}
     waitFor: ['build-frontend']
 
+  # ── DEPLOY (Cloud Run) ─────────────────────────────────────────────────────
+
+  # 7) Deploy backend API
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy-backend
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - benimmasalim-backend
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/backend:${_TAG}
+      - --region=${_REGION}
+      - --platform=managed
+      - --quiet
+    waitFor: ['push-backend']
+
+  # 8) Deploy worker (arq) — no-traffic Cloud Run job / always-on
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy-worker
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - benimmasalim-worker
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/worker:${_TAG}
+      - --region=${_REGION}
+      - --platform=managed
+      - --no-traffic           # Worker HTTP trafik almaz; arq Redis'ten iş çeker
+      - --min-instances=1      # Her zaman en az 1 instance ayakta (Redis polling için)
+      - --max-instances=5
+      - --cpu=2
+      - --memory=4Gi
+      - --timeout=1800         # generate_full_book max 30 dakika
+      - --quiet
+    waitFor: ['push-worker']
+
+  # 9) Deploy frontend
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy-frontend
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - benimmasalim-frontend
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/frontend:${_TAG}
+      - --region=${_REGION}
+      - --platform=managed
+      - --quiet
+    waitFor: ['push-frontend']
+
+  # ── CLEANUP ────────────────────────────────────────────────────────────────
+
+  # 10) Eski backend revision'ları temizle (son 5 tut)
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: cleanup-backend
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        revisions=$(gcloud run revisions list \
+          --service benimmasalim-backend \
+          --region ${_REGION} \
+          --format "value(name)" \
+          --sort-by "~creationTimestamp" | tail -n +6)
+        if [ -n "$revisions" ]; then
+          echo "$revisions" | xargs -I{} gcloud run revisions delete {} --region ${_REGION} --quiet
+          echo "Backend eski revision'lar temizlendi."
+        else
+          echo "Backend: temizlenecek revision yok."
+        fi
+    waitFor: ['deploy-backend']
+
+  # 11) Eski worker revision'ları temizle (son 5 tut)
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: cleanup-worker
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        revisions=$(gcloud run revisions list \
+          --service benimmasalim-worker \
+          --region ${_REGION} \
+          --format "value(name)" \
+          --sort-by "~creationTimestamp" | tail -n +6)
+        if [ -n "$revisions" ]; then
+          echo "$revisions" | xargs -I{} gcloud run revisions delete {} --region ${_REGION} --quiet
+          echo "Worker eski revision'lar temizlendi."
+        else
+          echo "Worker: temizlenecek revision yok."
+        fi
+    waitFor: ['deploy-worker']
+
 images:
   - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/backend:${_TAG}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/worker:${_TAG}
   - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/frontend:${_TAG}
 
 timeout: 2400s

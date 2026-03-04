@@ -24,8 +24,11 @@ from PIL import Image, ImageDraw, ImageFont
 from app.models.book_template import PageTemplate
 from app.services._cover_renderer import _CoverRendererMixin
 from app.services._page_helpers import (
+    _TURKISH_FALLBACK_FONTS,
     _auto_trim_borders,
+    _font_supports_turkish,
     _resolve_font_path,
+    _text_needs_turkish,
     build_template_config,
     effective_page_dimensions_mm,
 )
@@ -136,8 +139,9 @@ class PageComposer(_CoverRendererMixin, _TextRendererMixin):
                 box_w = max(1, page_width_px - img_x)
                 box_h = max(1, page_height_px - img_y)
 
-            # Otomatik kenar tespiti — AI'nin eklediği beyaz/siyah border'ları kırp
-            img = _auto_trim_borders(img, tolerance=40, min_strip_px=3)
+            # Otomatik kenar tespiti — AI'nin eklediği beyaz/siyah border'ları kırp.
+            # max_trim_fraction=0.02: overscan ile birlikte toplam kayıp ~%4'te kalır (önceki %6).
+            img = _auto_trim_borders(img, tolerance=12, min_strip_px=5, max_trim_fraction=0.02)
 
             src_w, src_h = img.size
             logger.info(
@@ -146,9 +150,9 @@ class PageComposer(_CoverRendererMixin, _TextRendererMixin):
             )
 
             # Oranı koru: kutuyu doldur + overscan (AI kenar boşluklarını kırp).
-            # Kapak: 1.03 (başlık AI'da, hafif kırpma OK); iç sayfa: 1.05 (daha agresif).
+            # Kapak: 1.01 (başlık AI'da); iç sayfa: 1.005 (double-crop riskini düşür).
             _is_cover_page = template_config.get("page_type", "inner") == "cover"
-            _OVERSCAN = 1.03 if _is_cover_page else 1.05
+            _OVERSCAN = 1.01 if _is_cover_page else 1.005
             if src_w > 0 and src_h > 0 and box_w > 0 and box_h > 0:
                 scale = max(box_w / src_w, box_h / src_h) * _OVERSCAN
                 new_w = int(round(src_w * scale))
@@ -292,7 +296,7 @@ class PageComposer(_CoverRendererMixin, _TextRendererMixin):
                         stroke_enabled=_stroke_on,
                         stroke_color=_stroke_color,
                         stroke_width=_stroke_width,
-                        bg_enabled=False,
+                        bg_enabled=template_config.get("text_bg_enabled", True),
                         bg_color=template_config.get("text_bg_color", "#FFFFFF"),
                         bg_opacity=template_config.get("text_bg_opacity", 230),
                         bg_shape=template_config.get("text_bg_shape", "cloud"),
@@ -316,9 +320,9 @@ class PageComposer(_CoverRendererMixin, _TextRendererMixin):
             elif text and not text_enabled:
                 logger.debug("Text rendering skipped (text_enabled=False)")
 
-            # Convert to base64 with 300 DPI metadata for print
+            # Save with actual DPI so print pipelines see the correct resolution
             buffer = io.BytesIO()
-            final_page.save(buffer, format="PNG", dpi=(300, 300))
+            final_page.save(buffer, format="PNG", dpi=(dpi, dpi))
             buffer.seek(0)
 
             composed_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
@@ -802,11 +806,12 @@ class PageComposer(_CoverRendererMixin, _TextRendererMixin):
         page_width_mm, page_height_mm = effective_page_dimensions_mm(
             page_width_mm, page_height_mm
         )
-        canvas_w = mm_to_px(page_width_mm, dpi)
-        canvas_h = mm_to_px(page_height_mm, dpi)
+        cfg = template_config or {}
+        bleed_mm = float(cfg.get("bleed_mm", 3.0))
+        canvas_w = mm_to_px(page_width_mm, bleed_mm=bleed_mm, dpi=dpi)
+        canvas_h = mm_to_px(page_height_mm, bleed_mm=bleed_mm, dpi=dpi)
 
         # Defaults for dedication pages
-        cfg = template_config or {}
         bg_color = cfg.get("background_color", "#FFF5E6")
         font_family = cfg.get("font_family", "Nunito")
         font_size_pt = cfg.get("font_size_pt", 28)

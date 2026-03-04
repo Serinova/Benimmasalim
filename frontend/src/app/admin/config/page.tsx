@@ -106,6 +106,7 @@ interface PageTemplate {
   // Typography
   font_family: string;
   font_size_pt: number;
+  line_height: number;
   font_color: string;
   font_weight: string;
   text_align: string;
@@ -755,6 +756,53 @@ const PageTemplateForm = ({
             <p className="text-xs text-gray-500">
               Sayfa altındaki metnin punto boyutu (8–732). Baskıda bu boyut kullanılır; ekranda
               önizleme küçük görünebilir.
+            </p>
+          </div>
+          {/* Satır Aralığı */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Satır Aralığı</Label>
+              <span className="rounded bg-blue-50 px-2 py-0.5 font-mono text-sm font-bold text-blue-700">
+                {((template.line_height ?? 1.35)).toFixed(2)}×
+              </span>
+            </div>
+            <input
+              type="range"
+              min={1.00}
+              max={3.00}
+              step={0.05}
+              value={template.line_height ?? 1.35}
+              onChange={(e) => setTemplate({ ...template, line_height: parseFloat(e.target.value) })}
+              className="w-full accent-blue-600"
+            />
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>Sıkışık (1.00)</span>
+              <span>Normal (1.35)</span>
+              <span>Geniş (3.00)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1.00}
+                max={3.00}
+                step={0.05}
+                value={template.line_height ?? 1.35}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (!isNaN(v)) setTemplate({ ...template, line_height: Math.min(3.0, Math.max(1.0, v)) });
+                }}
+                className="w-24 font-mono text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setTemplate({ ...template, line_height: 1.35 })}
+                className="rounded border px-3 py-1 text-xs text-gray-500 hover:bg-gray-100"
+              >
+                Sıfırla
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Satırlar arası boşluk çarpanı. 1.00 = tek satır; 1.35 = varsayılan; 2.00 = çift aralık.
             </p>
           </div>
           <div className="space-y-2">
@@ -1693,6 +1741,7 @@ const defaultCoverTemplate: PageTemplate = {
   text_vertical_align: "center",
   font_family: "Nunito",
   font_size_pt: 32,
+  line_height: 1.35,
   font_color: "#FFFFFF",
   font_weight: "normal",
   text_align: "center",
@@ -1753,6 +1802,7 @@ const defaultBackCoverTemplate: PageTemplate = {
   text_vertical_align: "center",
   font_family: "Nunito",
   font_size_pt: 12,
+  line_height: 1.35,
   font_color: "#333333",
   font_weight: "normal",
   text_align: "center",
@@ -1813,6 +1863,7 @@ const defaultInnerTemplate: PageTemplate = {
   text_vertical_align: "bottom",
   font_family: "Nunito",
   font_size_pt: 16,
+  line_height: 1.35,
   font_color: "#333333",
   font_weight: "normal",
   text_align: "center",
@@ -1869,6 +1920,7 @@ const defaultDedicationTemplate: PageTemplate = {
   text_vertical_align: "center",
   font_family: "Nunito",
   font_size_pt: 28,
+  line_height: 1.35,
   font_color: "#5B4636",
   font_weight: "normal",
   text_align: "center",
