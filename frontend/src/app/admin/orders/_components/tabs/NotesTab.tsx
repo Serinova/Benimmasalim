@@ -40,7 +40,7 @@ export function NotesTab({ detail }: NotesTabProps) {
                 return (
                   <div key={pageKey} className="rounded border bg-white p-2 font-mono text-[10px]">
                     <div className="mb-1 font-semibold text-slate-700">
-                      Sayfa {Number(pageKey) + 1} {m?.is_cover ? "(Kapak)" : ""}
+                      {m?.is_cover ? `Kapak (0)` : `Sayfa ${Number(pageKey)}`}
                     </div>
                     <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5">
                       <dt className="text-slate-500">provider</dt><dd>{String(m?.provider ?? "-")}</dd>
