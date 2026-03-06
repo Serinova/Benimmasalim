@@ -351,8 +351,6 @@ STYLES: dict[str, StyleConfig] = {
             f"long neck, elongated neck, stretched neck, twisted neck, crooked neck, craned neck, "
             f"cross-eyed, wall-eyed, misaligned eyes, asymmetric gaze, off-axis eyes, lazy eye, "
             f"adult face, beard, mustache, ancient robe, toga, historical costume, period costume, "
-            f"headscarf on child, hijab on child, veil on child, head covering on child, scarf on child head, "
-            f"hood over child head, head wrap on child, "
             f"portrait, close-up, face filling frame, headshot, waist-up, cropped body, "
             f"{_COMPOSITION_NEG}, {_CONSISTENCY_NEG}"
         ),

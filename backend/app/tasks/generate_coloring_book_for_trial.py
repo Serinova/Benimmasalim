@@ -153,25 +153,62 @@ async def generate_coloring_book_for_trial(trial_id: UUID, db: AsyncSession):
             
         if not coloring_product:
              raise ValueError("No product found to base the PDF dimensions on")
-             
-        # Generate PDF (without text)
-        class MockOrder:
-            id = trial.id
-            child_name = trial.child_name
-            language = "tr" # default
-            is_coloring_book = True
-            
-        mock_order = MockOrder()
+
+        # Build template_config from product's inner_template
+        _inner_tpl = coloring_product.inner_template
+        _page_width_mm = 297.0
+        _page_height_mm = 210.0
+        _bleed_mm = 3.0
+        if _inner_tpl:
+            _tw, _th = _inner_tpl.page_width_mm, _inner_tpl.page_height_mm
+            if _tw < _th:
+                from app.utils.resolution_calc import (
+                    A4_LANDSCAPE_HEIGHT_MM,
+                    A4_LANDSCAPE_WIDTH_MM,
+                )
+                _page_width_mm, _page_height_mm = A4_LANDSCAPE_WIDTH_MM, A4_LANDSCAPE_HEIGHT_MM
+            else:
+                _page_width_mm, _page_height_mm = _tw, _th
+            _bleed_mm = _inner_tpl.bleed_mm
+
+        _template_config: dict = {
+            "page_width_mm": _page_width_mm,
+            "page_height_mm": _page_height_mm,
+            "bleed_mm": _bleed_mm,
+            "image_x_percent": 0.0,
+            "image_y_percent": 0.0,
+            "image_width_percent": 100.0,
+            "image_height_percent": 100.0,
+            "text_x_percent": 0.0,
+            "text_y_percent": 0.0,
+            "text_width_percent": 0.0,
+            "text_height_percent": 0.0,
+            "text_enabled": False,
+        }
+        if _inner_tpl:
+            _template_config.update({
+                "image_x_percent": _inner_tpl.image_x_percent or 0.0,
+                "image_y_percent": _inner_tpl.image_y_percent or 0.0,
+                "image_width_percent": _inner_tpl.image_width_percent or 100.0,
+                "image_height_percent": 100.0,  # Full page for coloring
+                "text_enabled": False,
+            })
+
+        _pdf_data = {
+            "child_name": trial.child_name,
+            "story_pages": line_art_pages,
+            "cover_image_url": None,
+            "back_cover_config": None,
+            "audio_qr_url": None,
+            "page_width_mm": _page_width_mm,
+            "page_height_mm": _page_height_mm,
+            "bleed_mm": _bleed_mm,
+            "template_config": _template_config,
+            "images_precomposed": True,  # Line-art images are ready, no text
+        }
 
         pdf_service = PDFService()
-        pdf_bytes = await pdf_service.generate_book_pdf(
-            order=mock_order, # type: ignore
-            product=coloring_product,
-            pages=line_art_pages,
-            audio_qr_url=None,  # No QR code
-            back_cover_config=None,  # No back cover info
-            skip_text=True,  # CRITICAL: Skip text rendering
-        )
+        pdf_bytes = pdf_service.generate_book_pdf_from_preview(_pdf_data)
 
         # Upload PDF to GCS via provider
         pdf_blob_path = f"coloring/trials/{trial_id}/coloring_book.pdf"

@@ -46,23 +46,23 @@ export default function Features({ title, subtitle, data }: FeaturesProps) {
   const items = (data?.items ?? DEFAULT_ITEMS) as FeatureItem[];
 
   return (
-    <section className="bg-muted/30 py-20">
+    <section className="bg-slate-50 py-20 md:py-28">
       <div className="container">
         <div className="mx-auto mb-16 max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{heading}</h2>
-          <p className="mt-4 text-lg text-muted-foreground">{sub}</p>
+          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">{heading}</h2>
+          <p className="mt-4 text-lg text-slate-500">{sub}</p>
         </div>
 
-        <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((feature) => {
             const Icon = ICON_MAP[feature.icon] ?? Sparkles;
             return (
-              <div key={feature.title} className="group rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
-                  <Icon className="h-6 w-6 text-primary" />
+              <div key={feature.title} className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 transition-colors group-hover:bg-purple-100">
+                  <Icon className="h-6 w-6 text-purple-600" aria-hidden="true" />
                 </div>
-                <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{feature.description}</p>
+                <h3 className="mb-2 text-lg font-bold text-slate-900">{feature.title}</h3>
+                <p className="text-sm leading-relaxed text-slate-500">{feature.description}</p>
               </div>
             );
           })}

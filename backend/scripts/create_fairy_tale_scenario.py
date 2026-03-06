@@ -1,10 +1,11 @@
 """
-Masal Dünyası Macerası — Meşhur masal ve çizgi film kahramanlarıyla macera
-==========================================================================
-- Modular prompt (500 char limit, tüm placeholder'lar mevcut)
-- Outfit: EXACTLY lock phrase
-- Blueprint hikaye (bölüm bölüm, dopamin döngüsü)
-- Çocuk TEK BAŞINA (aile yok)
+Masal Dünyası: Rüya Anahtarı — Gizem, Macera, Büyülü Atmosfer
+=============================================================================================
+- Kitap adı: [Çocuk adı]'ın Masal Dünyası: Rüya Anahtarı (alt başlık yok)
+- Eski bir masal kitabından düşen rüya anahtarıyla açılan kapıdan geçerek Masal Ağacı'nı kurtarma macerası
+- Yerler: Uçan adalar, Bulut Köprüsü, Şeker Ormanı, Kristal Göl, Masal Ağacı
+- Kıyafet: Masal kâşif kıyafeti (zümrüt yeşili pelerin), kız ve erkek için zorunlu ve her sayfada aynı tutarlı (kıyafet kilidi)
+- Kurguyu bozabilecek kullanıcı seçenekleri yok (custom_inputs boş)
 """
 
 import asyncio
@@ -15,182 +16,110 @@ import uuid
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from sqlalchemy import select
-
 from app.core.database import async_session_factory
-from app.models.scenario import Scenario
+from app.models import Scenario
 
 # ============================================================================
-# MODULAR PROMPT COMPONENTS (500 char limit!)
+# MODULAR PROMPT COMPONENTS (AI DIRECTOR - PASS 2)
 # ============================================================================
 
 FAIRY_COVER_PROMPT = (
     "An {child_age}-year-old {child_gender} named {child_name} "
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
-    "Enchanted fairy tale kingdom: glowing mushroom forest, crystal castle towers, "
-    "rainbow bridge over sparkling river, flying books with golden pages. "
-    "Soft magical glow, storybook illustration style. "
-    "Wide shot: child 30%, fairy tale world 70%. "
-    "Dreamy, enchanted atmosphere."
+    "Child holding a glowing magical key. "
+    "Background features majestic floating islands, sparkling fairy lights, and dreamy clouds. "
+    "Dynamic angle, enchanting magical lighting. Wide shot: child 30%, environment 70%. Whimsical, fairytale adventure atmosphere. {STYLE}"
 )
 
 FAIRY_PAGE_PROMPT = (
     "An {child_age}-year-old {child_gender} named {child_name} "
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
-    "Elements: [Mushroom forest: giant glowing caps, fairy lights / "
-    "Crystal castle: glass towers, floating stairs / "
-    "Enchanted library: flying books, golden ink / "
-    "Dragon meadow: friendly baby dragons, flower fields / "
-    "Rainbow bridge: sparkling arch over river]. "
-    "Soft pastels: lavender, rose gold, mint, pearl white."
+    "Elements: [floating islands, glowing fairies, sparkling particles, talking animals, tiny dragon, candy forest, crystal lake, flying fish, star dust]. "
+    "Fill scenes with magical elements and fairytale wonder. "
+    "Cinematic action lighting, dynamic pose, detailed environment, depth of field. Wide angle, full body visible in action, child 30-40% of frame. No eye contact with camera. "
+    "child wearing an emerald green cloak and carrying a small satchel, dynamic action, full body visible. "
+    "Avoid: photorealistic, pasted face, collage, duplicate child, random text, watermark, logo, blurry, low quality. {STYLE}"
 )
 
 # ============================================================================
-# OUTFIT DEFINITIONS
+# OUTFIT — Masal Kaşif Takımı (Kesin Kilidi)
 # ============================================================================
 
 OUTFIT_GIRL = (
-    "shimmering lilac purple dress with golden star patterns along the hem, "
-    "white tights, soft gold ballet flats with small bow, "
-    "thin silver headband with tiny crystal star, small velvet purple satchel. "
-    "EXACTLY the same outfit on every page — same lilac dress, same gold flats, same silver headband."
+    "fairytale explorer outfit for a child: emerald green cloak with a small hood, light brown tunic, "
+    "dark leggings, comfy boots, a small leather satchel, and a tiny glowing lantern charm, no logos, plus a small star hairpin. "
+    "EXACTLY the same outfit on every page — same green cloak, same brown tunic, same boots. "
+    "Same child character, consistent face and hair across all pages."
 )
 
 OUTFIT_BOY = (
-    "deep emerald green velvet vest over crisp white cotton shirt with rolled sleeves, "
-    "dark brown corduroy pants, polished brown leather boots with brass buckles, "
-    "small brown leather messenger bag across body. "
-    "EXACTLY the same outfit on every page — same green vest, same white shirt, same brown boots."
+    "fairytale explorer outfit for a child: emerald green cloak with a small hood, light brown tunic, "
+    "dark leggings, comfy boots, a small leather satchel, and a tiny glowing lantern charm, no logos. "
+    "EXACTLY the same outfit on every page — same green cloak, same brown tunic, same boots. "
+    "Same child character, consistent face and hair across all pages."
 )
 
 # ============================================================================
-# STORY BLUEPRINT
+# STORY BLUEPRINT — Rüya Işığı ve Masal Ağacı Bulmacaları (PURE AUTHOR - PASS 1)
 # ============================================================================
 
 FAIRY_STORY_PROMPT_TR = """
-# MASAL DÜNYASI MACERASI — HİKÂYELERİN KALBİNDE
+# MASAL DÜNYASI: RÜYA ANAHTARI
 
-## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
+## YAPI: {child_name} okuduğu kitabın içinden düşen sihirli Rüya Anahtarı sayesinde duvarında beliren kapıdan Masal Dünyası'na adım atar. Renksizleşen Masal Ağacı'nı kurtarmak için kahkaha tozu ve rüya ışığını bulması gerekmektedir. Bulut köprüsündeki şaşırtmacaları geçip, Şeker Ormanı ve Kristal Göl'de ipuçlarını tamamlar. Şiddet, korkunç canavarlar veya karanlık temalar KESİNLİKLE YOKTUR. Çok yaratıcı, gizemli ve parlak fantastik çocuk aksiyonudur.
 
-Bu hikaye bir fantastik macera. {child_name}, eski bir masal kitabını
-açınca sayfaların içine çekilir ve kendini Masal Dünyası'nda bulur.
-Rehberi: Hikâye Perisi (kitaptan çıkan, parlayan, bilge bir peri —
-tüm masalları bilen, küçük, kanatları kitap sayfalarından yapılmış).
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Masal Dünyası: Rüya Anahtarı" olmalı. Alt başlık EKLEME.
 
-⚠️ ÖNEMLİ KURALLAR:
-- Bu bir MACERA hikayesi, masal özeti DEĞİL
-- Her bölümde çocuk AKTİF katılımcı (izleyici değil)
-- Endişe → Eylem → Başarı döngüsü
-- Yardımcı karakter: Hikâye Perisi (kitap kanatlı, bilge)
-- Çocuk TEK BAŞINA macerada (aile yok). Anne-baba-aile karakteri KULLANMA.
-- Korku/şiddet YOK
-- Telif haklı karakterler KULLANMA (Disney, Marvel vb.)
-- Bunun yerine arketip kahramanlar kullan: Cesur Şövalye, Bilge Ejderha,
-  Uçan Halı Prensi, Deniz Kızı, Cüce Ustalar, Dev Ama İyi Kalpli
-- Her masal dünyasında çocuk bir SORUNU çözer
+**STİL & TON:** 
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. Dili pırıl pırıl, sürükleyici, gizemli ve eğlencelidir.
+- Sayfaların sonunda küçük merak kırıntıları bırak. Bolca masalsı obje (şeker ağaçları, su perileri, ışık küreleri, uçan balıklar vd.) kullan.
 
 ---
 
-### BÖLÜM 1 — GİRİŞ: KİTABIN İÇİNE DÜŞÜŞ (Sayfa 1-4)
-{child_name} eski bir kitapçıda parlayan bir masal kitabı buluyor.
-Kitabı açınca sayfalar rüzgârla dönmeye başlıyor, harfler havada
-uçuşuyor! Bir ışık çocuğu içine çekiyor. Hikâye Perisi: "Hoş geldin!
-Masal Dünyası'nın hikâyeleri karışmış. Düzeltmemiz lazım!"
-- S1: Eski kitapçı, tozlu raflar, parlayan kitap
-- S2: Kitap açılıyor — harfler havada uçuşuyor!
-- S3: Işık çocuğu içine çekiyor — Masal Dünyası! ✓ İLK HEYECAN
-- S4: Hikâye Perisi: "Hikâyeler karışmış!" — görev başlıyor
-**Değer**: Merak, okuma sevgisi
+### Bölüm 1 — Sihirli Kapı (Sayfa 1-3)
+- Sayfa 1: {child_name} odasında eski bir masal kitabını okurken sayfaların içinden aniden altın renginde pırıl pırıl parlayan gizemli bir ışık huzmesi fırlar. Sayfalar kendi kendine hızla dönerken kitabın tam ortasından minik, üzeri yıldız desenli bir "Rüya Anahtarı" "tık" diye kucağına düşüverir!
+- Sayfa 2: Anahtarı usulca avucuna aldığında eline sıcacık, tatlı bir karıncalanma yayılır. O eşsiz anahtarı hiç düşünmeden boşlukta çevirdiği anda, odasının düz duvarında ışıl ışıl parlayan devasa bir sayfa kapısı ardına kadar açılır.
+- Sayfa 3: {child_name} o ışıltılı kapıdan büyük bir cesaretle adım atar atmaz kendini havada süzülen koca uçan adaların tam üstünde bulur! Ayaklarının altından yumuşacık bulutlar hızla akarken şaşkınlıkla fısıldar: "İnanamıyorum, bir masalın bizzat içine düştüm!"
+
+### Bölüm 4 — Tavşanın Çağrısı (Sayfa 4-6)
+- Sayfa 4: Tam o an uzun kulaklı, zıplayarak neşeyle ama biraz da telaşla koşan mavi yelekli, konuşan bir tavşan yanına gelir. "Yardımına ihtiyacımız var kâşif! Harika Masal Ağacı soluyor, çünkü neşe kaynağımız 'rüya ışığı' kayboldu!" der.
+- Sayfa 5: Çok uzakta devasa kollarına rağmen yaprakları şeffaflaşıp solgunlaşan büyük Masal Ağacı hüzünlü şekilde görünmektedir. Tavşan o eşsiz rüya ışığını bulması için ona üç zorlu yol gösterir: Bulut Köprüsü, Şeker Ormanı ve Kristal Göl.
+- Sayfa 6: Zaman kaybetmeden doğruca havada salınan Bulut Köprüsü'ne koşar; ama bu köprünün koca pamuk taşları şiddetli rüzgarla dans edercesine sallanmaktadır. Üstelik o geveze pofuduk taşlar, komik şarkılar söyleyerek çocuğun kafasını ve yönünü şaşırtmaya çalışır!
+
+### Bölüm 7 — Rüzgarın Ritmi (Sayfa 7-9)
+- Sayfa 7: Zeki kâşifimiz o aldatıcı şarkılara kulak tıkayarak gözlerini yumar ve sadece okyanus gibi esen nazik rüzgarın gerçek ritmini dinleyerek doğru pamuksu taşlara bir bir sıçrar. Karşıya geçtiğinde havada uçan gümüş bir balık ilk sihirli ipucunu ağzından bırakır: "Işık, kahkahanın peşinden gider."
+- Sayfa 8: İkinci durak olan Şeker Ormanı'na daldığında etrafını kocaman lolipop ağaçlar, jelibon çalılar ve kanatları pırıl pırıl eden şeker kelebekler sarar. Fakat ormandaki tüm o tatlı pembe yollar birbirinin tıpatıp aynısıdır; burada sonsuza dek kaybolmak işten bile değildir!
+- Sayfa 9: Şaşkınlıkla etrafına bakarken turuncu pullu, avuç içi kadar küçücük bir ejderha pırpır ederek yanına gelir; ateş yerine sadece simli bir parıltı üflemektedir. Zeki küçük ejderha, parıltısıyla yere çok kısa ama ışıltılı bir ok çizer: "Beni takip et, bu taraftan!"
+
+### Bölüm 10 — Şeker Şifresi (Sayfa 10-12)
+- Sayfa 10: O simli oku şevkle takip eden kahramanımız çikolatadan devasa bir sınır kapısına ulaşır, ancak kapı sımsıkı kilitlidir. Kapının üstündeki renkli kilit yuvasında koca üç sembolün sırasıyla boş durduğunu görür: Kalp, yıldız ve ay!
+- Sayfa 11: Mükemmel bir dikkatle hemen etrafı arayan çocuk, çalıların altında çok gizli kalp şeklinde bir şeker, üst dallarda bir şişe yıldız tozu ve en sonda hilal şeklinde bir ay kurabiyesi bulur. Objelere bakıp doğru şifre sırasını çözdüğü anda kapı şekerimsi bir kokuyla ardına kadar açılır.
+- Sayfa 12: Kapının ardındaki pamuk şeker masanın tam üzerinde, üstünde "Kahkaha Tozu" yazan, içi kıkırdayan altın baloncuklarla dolu sihirli bir minik kavanoz onu bekliyordur. Ve hemen yanında gümüş bir yaprağın üzerinde ikinci ipucu yatıyordur: "Toz, suyun aynasında parlar."
+
+### Bölüm 13 — Yansıma Oyunu (Sayfa 13-16)
+- Sayfa 13: {child_name} o harika kavanozu sımsıkı cebine koyup koşarak kocaman, ayna gibi pürüzsüz ve cam gibi parlayan Kristal Göl'e varır. Gölün o dingin suyunun tam üzerinde masmavi kanatlı dev uçan balıklar şakıyarak neşeyle sıçramaktadır.
+- Sayfa 14: Gölün çok ilerisinde, tam ortasındaki adacıkta asıl aradığı o muazzam "Rüya Işığı" küresi pırıl pırıl parıldıyordur; ama ona doğru heyecanla su kıyısındaki kayalardan yaklaşınca, küre adeta bir oyun gibi yer değiştirmeye başlar!
+- Sayfa 15: Kahramanımız bunun kocaman yanıltıcı bir "yansıma ve sihir oyunu" olduğunu anlayarak belindeki küçük fener charm'ını (nazarlığını) çıkarıp güçlü ışığını gölün serin suyuna doğru tutar. Böylece illüzyon olan sahte yansımalar suya karışır ve o asıl gerçek Rüya Işığı'nın yeri apaçık belli olur.
+- Sayfa 16: İşe yaradığını görünce sudaki irili ufaklı nilüfer taşlarının üzerinden inanılmaz çevik adımlarla atlayarak gölün kalbine doğru ilerler. Ama o esnada gökyüzündeki sisli bulutlar hızla gölün üstüne kapanmaya başlayarak zamanla büyük bir yarış başlatır!
+
+### Bölüm 17 — Son Birleştirme (Sayfa 17-19)
+- Sayfa 17: Sisteki son andaki dev sıçrayışıyla adacığa varıp o paha biçilmez sıcak "Rüya Işığı" küresini ellerinin arasına kapıverir. Fakat dönüş için atladığı taşların üzeri tamamen yoğun ve pembe bir sisle örtülerek çıkış yolunu bir duvar gibi gizlemitşir.
+- Sayfa 18: Çantasındaki ışık huzmesinin parlamasıyla, ona ilk başta yardım eden mavi yelekli tavşan ve minicik sevimli parıltı ejderhası sisleri aralayarak koşturup gelirler. Parçaları birleştiren {child_name} bağırır: "Anladım! Kahkaha Tozu ve Rüya Işığı birlikte parlamak zorunda!"
+- Sayfa 19: Gölgeleri yırtarak hep birlikte coşkuyla Masal Ağacı'nın o devasa hastalanmış köklerinin tam dibine varırlar. Kahramanımız elindeki altın Kahkaha Tozu'nu gökyüzüne serperek, o sıcacık Rüya Işığı'nı ağacın tam kalbine ustaca ve sevgiyle yerleştirir; o an etraftaki her şey fena halde titremeye başlar!
+
+### Bölüm 20 — Renklerin Dönüşü (Sayfa 20-22)
+- Sayfa 20: Masal Ağacı derin bir nefes alır gibi "vuuuh!" diye canlanarak tüm solgun yapraklarına göz kamaştıran rengarenk bir hayat fışkırttı. Gökyüzündeki tüm bulutlardan pırıl pırıl altın rengi yıldız tozları bir müzik eşliğinde yağarken, tüm Masal Dünyası büyük kıkırdamalarla kocaman bir gülümsemeye bürünür!
+- Sayfa 21: Çocuğumuz o büyük, sıcacık görevi tamamlamanın haklı gururuyla cebinden ilk baştaki "Rüya Anahtarı"nı çıkarıp karanlığa doğru "tık" diye çevirerek masal kapısını aralar. Yüzünde mutlu bir tebessüm, üzerinde yıldız tozlarıyla güvenle odasına geri döner.
+- Sayfa 22: Odasındaki pencereden içeri süzülen ayışığıyla beraber cebine baktığında, o muazzam anahtar gerçek bir yıldız parçası gibi son bir kez tatlıca parlayıp huzurla sessizleşir. {child_name} onu masasının en özel yerine koyarken fısıldar: “Acaba bir gün başka bir maceranın masal kapısı beni bekler mi?”
 
 ---
 
-### BÖLÜM 2 — MANTAR ORMANI: CÜCELERİN ATÖLYES İ (Sayfa 5-8)
-Dev parlayan mantarların altında Cüce Ustalar yaşıyor. Ama atölyeleri
-karışmış — aletler yanlış yerlerde, tarifler kayıp! Çocuk onlara
-yardım ederek atölyeyi düzenliyor. Cüceler teşekkür olarak sihirli
-bir anahtar veriyor.
-- S5: Dev mantar ormanı — parlak, renkli
-- S6: Cüce Ustalar — "Atölyemiz karışmış!" ✓ ENDİŞE
-- S7: Aletleri doğru yere koyma, tarifleri eşleştirme
-- S8: Atölye düzenlendi! Sihirli anahtar ödülü ✓ BAŞARI
-**Değer**: Düzen, yardımlaşma, el becerisi
-
----
-
-### BÖLÜM 3 — KRİSTAL KALE: CESUR ŞÖVALYE (Sayfa 9-12)
-Kristal kuleleri olan görkemli kale. Cesur Şövalye zırhını kaybetmiş,
-kendine güveni yok. "Zırhım olmadan cesur olamam!" Çocuk ona cesaretin
-içten geldiğini gösteriyor — birlikte bir bulmacayı çözüyorlar.
-- S9: Kristal kale — cam kuleler, yüzen merdivenler
-- S10: Cesur Şövalye zırhsız, üzgün ✓ ENDİŞE
-- S11: "Cesaret zırhta değil, kalpte!" — birlikte bulmaca
-- S12: Şövalye cesaret buluyor! İkinci anahtar ✓ BAŞARI
-**Değer**: Özgüven, cesaret, iç güç
-
----
-
-### BÖLÜM 4 — EJDERHA ÇAYIRI: BİLGE EJDERHA (Sayfa 13-16)
-Çiçekli çayırda küçük, sevimli ejderhalar yaşıyor. Bilge Ejderha
-(yaşlı, gözlüklü, kitap okuyan) çocuğa bir bilmece soruyor:
-"Herkes taşır ama kimse göremez. Nedir?" Cevap: HİKÂYE!
-Her insanın içinde bir hikâye var.
-- S13: Çiçekli çayır — bebek ejderhalar oynuyor
-- S14: Bilge Ejderha — gözlüklü, kitap okuyor ✓ HAYRANLIK
-- S15: Bilmece — "Herkes taşır ama kimse göremez?" ✓ MERAK ZİRVESİ
-- S16: "HİKÂYE!" — üçüncü anahtar ✓ BAŞARI
-**Değer**: Bilgelik, hikâye anlatma, hayal gücü
-
----
-
-### BÖLÜM 5 — GÖKKUŞAĞI KÖPRÜSÜ: DENİZ KIZI (Sayfa 17-19)
-Parlayan gökkuşağı köprüsü bir nehrin üzerinde. Nehirde Deniz Kızı
-şarkı söylüyor ama sesi çıkmıyor — sihri bozulmuş. Çocuk üç
-anahtarı birleştirerek Deniz Kızı'nın sesini geri getiriyor.
-Muhteşem şarkı tüm Masal Dünyası'nda yankılanıyor!
-- S17: Gökkuşağı köprüsü — parlak, büyülü
-- S18: Deniz Kızı sessiz, üzgün ✓ ENDİŞE
-- S19: Üç anahtar birleşiyor — şarkı geri geliyor! ✓ BÜYÜ ZİRVESİ
-**Değer**: Yardım, müzik, empati
-
----
-
-### BÖLÜM 6 — UÇAN KİTAPLAR KÜTÜPHANESİ: HİKÂYELER DÜZELİYOR (Sayfa 20-21)
-Devasa kütüphane — kitaplar havada uçuyor, sayfalar kendiliğinden
-yazılıyor. Hikâye Perisi: "Şarkı tüm hikâyeleri uyandırdı! Ama
-son bir şey eksik — SENİN hikâyen." Çocuk kendi hikâyesini anlatıyor
-ve kitaba yazılıyor!
-- S20: Uçan kitaplar kütüphanesi — görkemli, büyülü
-- S21: "SENİN hikâyen!" — çocuğun hikâyesi kitaba yazılıyor ✓ DORUK
-**Değer**: Özgünlük, kendini ifade, yaratıcılık
-
----
-
-### BÖLÜM 7 — FİNAL: KİTAPTAN DÖNÜŞ (Sayfa 22)
-Kitabın sayfaları tekrar dönmeye başlıyor. Çocuk kitapçıya geri
-dönüyor. Elinde masal kitabı — ama artık içinde çocuğun kendi
-hikâyesi de var! Hikâye Perisi kitabın kapağından göz kırpıyor.
-- S22: Kitapçıya dönüş, kitap elde, gülümseme ✓ TATMİN DORUĞU
-**Değer**: Okuma sevgisi, hayal gücü, hikâyenin gücü
-
----
-
-## DOPAMİN ZİRVELERİ:
-1. S3: Kitabın içine çekilme
-2. S8: Cüce atölyesi düzenlendi — sihirli anahtar
-3. S12: Şövalye cesaret buldu — ikinci anahtar
-4. S15: Bilge Ejderha bilmecesi
-5. S19: Deniz Kızı'nın şarkısı geri geldi
-6. S21: Çocuğun kendi hikâyesi kitaba yazıldı
-7. S22: Peri göz kırpıyor — büyü gerçekti!
-
-## GÜVENLİK KURALLARI:
-- Korku/şiddet YOK (kötü karakter YOK, ejderhalar SEVİMLİ)
-- Telif haklı karakter KULLANMA
-- Çocuk TEK BAŞINA (aile yok)
-- Pozitif, büyülü, hayal gücü odaklı atmosfer
-
-Hikayeyi {page_count} sayfaya yaz. Her sayfa 2-4 cümle (40-80 kelime).
+## KURALLAR
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 22 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- AI Görüntü (scene_description) promptlarını (İngilizce) yazarken "standing still" veya "looking at camera" KULLANMA. Aksiyon belirt (örn: "Child leaping over fluffy clouds", "Child decoding symbols on a candy door").
+- Hayvanların korkunçluğu YOK, ejderhalar çok sempatik ve küçücük olmalıdır.
 """
 
 # ============================================================================
@@ -198,90 +127,79 @@ Hikayeyi {page_count} sayfaya yaz. Her sayfa 2-4 cümle (40-80 kelime).
 # ============================================================================
 
 FAIRY_CULTURAL_ELEMENTS = {
-    "location": "Magical Fairy Tale World (fantasy realm inside a book)",
-    "story_archetypes": [
-        "Brave Knight (lost armor, finds inner courage)",
-        "Wise Dragon (old, bespectacled, riddle-loving)",
-        "Dwarf Craftsmen (workshop, tools, recipes)",
-        "Mermaid (singing, enchanted voice)",
-        "Story Fairy (book-winged, wise guide)",
-        "Flying Books (sentient, golden pages)",
+    "location": "A Magical Dreamland with Floating Islands",
+    "historic_site": "Fairy Tale Kingdom",
+    "major_elements": [
+        "A magical golden Dream Key",
+        "Giant flying islands and bouncy cloud bridges",
+        "A sweet Candy Forest and a pristine Crystal Lake",
+        "A magnificent ancient Fairy Tale Tree"
     ],
-    "atmosphere": "Enchanted, dreamy, warm, storybook illustration, magical glow",
-    "color_palette": "lavender, rose gold, mint green, pearl white, soft gold, crystal blue",
-    "values": ["Reading", "Imagination", "Courage", "Self-expression", "Empathy"],
+    "atmosphere": "Dreamy, highly creative, bright, enchanting, puzzle-driven",
+    "values": ["Imagination", "Problem-solving", "Kindness", "Friendship"],
+    "sensitivity_rules": [
+        "NO scary monsters, NO dark magic",
+        "The mystery relies on exploration, light-logic, and sensory play",
+        "Child acts as a whimsical explorer saving the magical balance"
+    ]
 }
 
 # ============================================================================
 # CUSTOM INPUTS
 # ============================================================================
 
-FAIRY_CUSTOM_INPUTS = [
-    {
-        "key": "favorite_character",
-        "label": "En Sevdiği Masal Kahramanı",
-        "type": "select",
-        "options": ["Cesur Şövalye", "Bilge Ejderha", "Deniz Kızı", "Cüce Ustalar", "Hikâye Perisi"],
-        "default": "Bilge Ejderha",
-        "required": False,
-        "help_text": "Hikayede çocuğun en çok vakit geçireceği karakter",
-    },
-    {
-        "key": "fairy_mission",
-        "label": "Masal Görevi",
-        "type": "select",
-        "options": ["Karışan Hikâyeleri Düzelt", "Kayıp Şarkıyı Bul", "Kristal Kaleyi Koru", "Ejderha Bilmecesini Çöz"],
-        "default": "Karışan Hikâyeleri Düzelt",
-        "required": False,
-        "help_text": "Hikayenin ana macera görevi",
-    },
-]
+FAIRY_CUSTOM_INPUTS: list[dict] = []
 
 # ============================================================================
 # DATABASE FUNCTION
 # ============================================================================
 
-
 async def create_fairy_tale_scenario():
-    """Masal Dünyası senaryosunu oluşturur veya günceller."""
-
+    """Masal Dünyası senaryosunu Rüya Anahtarı gizemiyle günceller veya oluşturur."""
     async with async_session_factory() as db:
         result = await db.execute(
             select(Scenario).where(
-                (Scenario.theme_key == "fairy_tale_world")
+                (Scenario.theme_key == "fairy_tale")
+                | (Scenario.theme_key == "fairy_tale_world")
                 | (Scenario.name.ilike("%Masal D%"))
             )
         )
         scenario = result.scalar_one_or_none()
 
         if not scenario:
-            scenario = Scenario(id=uuid.uuid4())
+            scenario = Scenario(id=uuid.uuid4(), name="Masal Dünyası: Rüya Anahtarı", is_active=True)
             db.add(scenario)
 
-        scenario.name = "Masal Dünyası Macerası"
+        # Meta Bilgiler
+        scenario.name = "Masal Dünyası: Rüya Anahtarı"
         scenario.thumbnail_url = ""
         scenario.description = (
-            "Eski bir masal kitabının içine çekilip büyülü bir dünyada maceraya atıl! "
-            "Cesur Şövalye, Bilge Ejderha, Cüce Ustalar ve Deniz Kızı ile birlikte "
-            "karışan hikâyeleri düzelt ve kendi hikâyeni yaz!"
+            "Sihirli kapıdan geçme zamanı! Okuduğu eski kitaptan düşen gizemli 'Rüya Anahtarı' ile "
+            "uçan adalar ve şeker ormanlarıyla dolu Masal Dünyası'na geçen kahramanımız, "
+            "solmakta olan Büyük Masal Ağacı'nı kurtarmak için harika bir göreve çıkıyor."
         )
         scenario.theme_key = "fairy_tale_world"
+        
+        # Kapaklar ve Promplar
         scenario.cover_prompt_template = FAIRY_COVER_PROMPT
         scenario.page_prompt_template = FAIRY_PAGE_PROMPT
         scenario.story_prompt_tr = FAIRY_STORY_PROMPT_TR
+        
+        # Kıyafet Sistemi
         scenario.outfit_girl = OUTFIT_GIRL
         scenario.outfit_boy = OUTFIT_BOY
+        
+        # Kültürel & Pazarlama Verileri
         scenario.cultural_elements = FAIRY_CULTURAL_ELEMENTS
         scenario.custom_inputs_schema = FAIRY_CUSTOM_INPUTS
-        scenario.marketing_badge = "YENİ! Büyülü Macera"
+        scenario.marketing_badge = "Büyülü Macera"
         scenario.age_range = "4-8"
-        scenario.tagline = "Hikâyelerin kalbine yolculuk!"
+        scenario.tagline = "Anahtarı çevir, Masal Ağacı'nın ışığını geri getir!"
         scenario.is_active = True
         scenario.display_order = 18
 
         await db.commit()
-        print(f"Masal Dünyası scenario created/updated: {scenario.id}")
-
+        print(f"Masal Dünyası 'Rüya Anahtarı' scenario created/updated: {scenario.id}")
 
 if __name__ == "__main__":
     asyncio.run(create_fairy_tale_scenario())

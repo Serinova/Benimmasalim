@@ -104,46 +104,54 @@ async def payment_webhook(
         return {"received": True}
 
     # ── Sunucu tarafı doğrulama: İyzico API'ye geri çağır ──────────────────
+    # Token yoksa doğrulama yapılamaz — güvenli tarafta kal, işleme
+    if not token:
+        logger.warning(
+            "IYZICO_WEBHOOK_MISSING_TOKEN — doğrulama yapılamadı, bildirimi reddediliyor",
+            conversation_id=conversation_id,
+            payment_id=payment_id,
+        )
+        return {"received": True}
+
     # Token varsa checkout form token ile ödemeyi iyzico'dan doğrula.
     # Bu adım olmadan webhook bildirimine güvenemeyiz.
-    if token:
-        try:
-            import iyzipay
+    try:
+        import iyzipay
 
-            iyzico_options = get_iyzico_options()
-            verify_result_raw = iyzipay.CheckoutForm().retrieve(
-                {"locale": "tr", "conversationId": conversation_id, "token": token},
-                iyzico_options,
-            )
-            verify_result = _json.loads(verify_result_raw.read().decode("utf-8"))
+        iyzico_options = get_iyzico_options()
+        verify_result_raw = iyzipay.CheckoutForm().retrieve(
+            {"locale": "tr", "conversationId": conversation_id, "token": token},
+            iyzico_options,
+        )
+        verify_result = _json.loads(verify_result_raw.read().decode("utf-8"))
 
-            if verify_result.get("status") != "success":
-                logger.warning(
-                    "WEBHOOK_IYZICO_VERIFY_FAILED",
-                    conversation_id=conversation_id,
-                    iyzico_error=verify_result.get("errorMessage"),
-                )
-                return {"received": True}
-
-            # Doğrulanmış verileri iyzico'dan al
-            payment_status = verify_result.get("paymentStatus", payment_status)
-            payment_id     = verify_result.get("paymentId", payment_id)
-            webhook_amount = verify_result.get("paidPrice", webhook_amount)
-
-            logger.info(
-                "WEBHOOK_IYZICO_VERIFIED",
+        if verify_result.get("status") != "success":
+            logger.warning(
+                "WEBHOOK_IYZICO_VERIFY_FAILED",
                 conversation_id=conversation_id,
-                payment_status=payment_status,
-                payment_id=payment_id,
+                iyzico_error=verify_result.get("errorMessage"),
             )
-        except Exception as verify_exc:
-            logger.error(
-                "WEBHOOK_IYZICO_VERIFY_ERROR",
-                conversation_id=conversation_id,
-                error=str(verify_exc),
-            )
-            # Doğrulama başarısız olursa güvenli tarafta kal — işleme
             return {"received": True}
+
+        # Doğrulanmış verileri iyzico'dan al
+        payment_status = verify_result.get("paymentStatus", payment_status)
+        payment_id     = verify_result.get("paymentId", payment_id)
+        webhook_amount = verify_result.get("paidPrice", webhook_amount)
+
+        logger.info(
+            "WEBHOOK_IYZICO_VERIFIED",
+            conversation_id=conversation_id,
+            payment_status=payment_status,
+            payment_id=payment_id,
+        )
+    except Exception as verify_exc:
+        logger.error(
+            "WEBHOOK_IYZICO_VERIFY_ERROR",
+            conversation_id=conversation_id,
+            error=str(verify_exc),
+        )
+        # Doğrulama başarısız olursa güvenli tarafta kal — işleme
+        return {"received": True}
 
     # Lock the order row to prevent race with verify-iyzico
     from app.services.order_state_machine import get_order_for_update

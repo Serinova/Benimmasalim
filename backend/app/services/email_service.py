@@ -186,45 +186,46 @@ class EmailService:
         recipient_name: str,
         child_name: str,
         story_title: str,
-        story_pages: list[dict[str, Any]],
+        story_pages: list[dict[str, Any]],  # kept for API compat, not embedded in email
         confirmation_url: str,
         product_price: float | None = None,
     ) -> bool:
-        """Send story preview email with confirmation button."""
+        """Send book-ready notification email with confirmation button.
+
+        Images are NOT embedded — the confirmation page on the website shows all images.
+        This keeps email size small (<20KB) and deliverable by all providers.
+        """
         actual_recipient = self._get_recipient(recipient_email)
 
-        msg = MIMEMultipart("related")
-        msg["Subject"] = _sanitize_header(f"🎉 {child_name} için Özel Hikaye: {story_title}")
+        # Simple MIMEMultipart/alternative (no related/attachments needed)
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = _sanitize_header(f"🎉 {child_name} için Kitabınız Hazır!")
         msg["From"] = f"Benim Masalım <{self.sender_email}>"
         msg["To"] = actual_recipient
 
-        msg_alternative = MIMEMultipart("alternative")
-        msg.attach(msg_alternative)
-
         text_content = (
             f"Merhaba {recipient_name},\n\n"
-            f'{child_name} için hazırlanan "{story_title}" hikayesi hazır!\n\n'
-            f"Hikayeyi onaylamak ve siparişi tamamlamak için aşağıdaki linke tıklayın:\n"
+            f'{child_name} için hazırlanan "{story_title}" kitabı hazır!\n\n'
+            f"Tüm sayfaları incelemek ve siparişi onaylamak için aşağıdaki linke tıklayın:\n"
             f"{confirmation_url}\n\n"
             "Bu link 48 saat geçerlidir.\n\n---\nBenim Masalım\n"
         )
-        msg_alternative.attach(MIMEText(text_content, "plain", "utf-8"))
+        msg.attach(MIMEText(text_content, "plain", "utf-8"))
 
         html_content = self._build_story_html_with_confirmation(
             recipient_name=recipient_name,
             child_name=child_name,
             story_title=story_title,
-            story_pages=story_pages,
             confirmation_url=confirmation_url,
             product_price=product_price,
         )
-        msg_alternative.attach(MIMEText(html_content, "html", "utf-8"))
+        msg.attach(MIMEText(html_content, "html", "utf-8"))
 
-        self._attach_images(msg, story_pages)
+        # No image attachments — website shows all images
         self._send_with_retry(actual_recipient, msg)
 
         logger.info(
-            "Story email with confirmation sent",
+            "Story confirmation email sent (no image attachments)",
             recipient_domain=actual_recipient.rsplit("@", 1)[-1] if "@" in actual_recipient else "***",
         )
         return True
@@ -417,12 +418,12 @@ class EmailService:
         recipient_name: str,
         child_name: str,
         story_title: str,
-        story_pages: list[dict[str, Any]],
         confirmation_url: str,
         product_price: float | None = None,
     ) -> str:
-        """Build HTML email with confirmation button.
+        """Build lightweight HTML email with confirmation button.
 
+        No images embedded — website shows all images.
         All user-supplied strings are HTML-escaped to prevent injection.
         """
         safe_title = _esc(story_title)
@@ -430,50 +431,11 @@ class EmailService:
         safe_recipient = _esc(recipient_name)
         safe_confirm_url = _esc(confirmation_url)
 
-        pages_html = ""
-        for page in story_pages:
-            page_num = page.get("page_number", 0)
-            image_url = page.get("image_url")
-            has_base64 = page.get("image_base64") is not None
-
-            image_html = ""
-            if image_url:
-                safe_url = _esc(image_url)
-                alt_text = "Karşılama Sayfası" if page_num == "dedication" else f"Sayfa {page_num}"
-                image_html = (
-                    '<div style="text-align: center; margin-bottom: 10px;">'
-                    f'<img src="{safe_url}" alt="{_esc(str(alt_text))}" '
-                    'style="max-width: 100%; height: auto; border-radius: 8px;"></div>'
-                )
-            elif has_base64:
-                image_html = (
-                    '<div style="text-align: center; margin-bottom: 10px;">'
-                    f'<img src="cid:page{page_num}" alt="Sayfa {page_num}" '
-                    'style="max-width: 100%; height: auto; border-radius: 8px;"></div>'
-                )
-
-            if page_num == "dedication":
-                pages_html += (
-                    '<div style="margin-bottom: 15px; padding: 15px; background: #fff5e6; '
-                    'border-radius: 8px; border: 2px solid #fbbf24;">'
-                    '<p style="color: #92400e; font-size: 12px; font-weight: bold; margin: 0 0 8px 0;">'
-                    f"💝 KARŞILAMA SAYFASI</p>{image_html}</div>"
-                )
-                continue
-
-            page_label = "KAPAK" if page_num == 0 else f"SAYFA {page_num}"
-            pages_html += (
-                '<div style="margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 8px;">'
-                '<p style="color: #667eea; font-size: 11px; font-weight: bold; '
-                f'margin: 0 0 8px 0;">{page_label}</p>'
-                f"{image_html}</div>"
-            )
-
         price_html = ""
         if product_price:
             price_html = (
-                '<p style="font-size: 18px; margin: 10px 0;">'
-                f"<strong>Toplam: {_esc(str(product_price))} TL</strong></p>"
+                '<p style="font-size: 15px; color: #374151; margin: 0 0 20px 0;">'
+                f"Sipariş tutarı: <strong>{_esc(str(product_price))} TL</strong></p>"
             )
 
         return (
@@ -481,38 +443,83 @@ class EmailService:
             '<meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
             "</head>"
-            '<body style="font-family: \'Segoe UI\', Arial, sans-serif; '
-            'max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">'
-            '<div style="text-align: center; margin-bottom: 20px;">'
-            '<h2 style="color: #667eea; margin: 0;">✨ Benim Masalım ✨</h2></div>'
-            f'<p style="font-size: 16px; color: #333;">Merhaba <strong>{safe_recipient}</strong>,</p>'
-            '<p style="font-size: 16px; color: #333;">'
-            f"<strong>{safe_child}</strong> için hazırlanan özel hikaye hazır!</p>"
-            '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); '
-            'color: white; padding: 20px; text-align: center; border-radius: 12px; margin: 20px 0;">'
-            f'<h1 style="font-size: 22px; margin: 0 0 10px 0;">{safe_title}</h1>'
-            '<p style="font-size: 13px; margin: 0; opacity: 0.9;">'
-            f"{safe_child} için özel olarak hazırlandı</p></div>"
-            f"{pages_html}"
-            '<div style="background: #f0fdf4; border: 2px solid #22c55e; padding: 25px; '
-            'border-radius: 12px; margin: 25px 0; text-align: center;">'
-            '<h3 style="color: #166534; margin: 0 0 15px 0;">Hikayeyi Beğendiniz mi?</h3>'
-            '<p style="color: #166534; font-size: 14px; margin: 0 0 15px 0;">'
-            "Siparişi onaylamak için aşağıdaki butona tıklayın.</p>"
-            f"{price_html}"
+            '<body style="font-family: \'Segoe UI\', Tahoma, Arial, sans-serif; '
+            'background-color: #f3f4f6; margin: 0; padding: 30px 16px;">'
+            # Wrapper
+            '<div style="max-width: 580px; margin: 0 auto; background: #ffffff; '
+            'border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">'
+            # Header
+            '<div style="background-color: #7c3aed; background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); '
+            'padding: 32px 24px; text-align: center;">'
+            '<p style="color: rgba(255,255,255,0.85); font-size: 13px; margin: 0 0 6px 0; '
+            'letter-spacing: 2px; text-transform: uppercase;">✨ Benim Masalım ✨</p>'
+            f'<h1 style="color: #ffffff; font-size: 24px; margin: 0; line-height: 1.3;">'
+            f'{safe_child} İçin Kitabınız Hazır! 🎉</h1>'
+            '</div>'
+            # Body
+            '<div style="padding: 32px 24px;">'
+            f'<p style="font-size: 16px; color: #111827; margin: 0 0 8px 0;">'
+            f'Merhaba <strong>{safe_recipient}</strong>,</p>'
+            f'<p style="font-size: 15px; color: #374151; margin: 0 0 24px 0;">'
+            f'<strong>{safe_child}</strong> için özel olarak hazırlanan '
+            f'<em>"{safe_title}"</em> kitabı tamamlandı!</p>'
+            # Book card
+            '<div style="background: #faf5ff; border: 2px solid #e9d5ff; border-radius: 12px; '
+            'padding: 20px; margin-bottom: 24px; text-align: center;">'
+            '<p style="font-size: 13px; color: #7c3aed; font-weight: 600; margin: 0 0 6px 0; '
+            'text-transform: uppercase; letter-spacing: 1px;">📖 Kitap Adı</p>'
+            f'<p style="font-size: 20px; font-weight: bold; color: #4c1d95; margin: 0;">'
+            f'{safe_title}</p>'
+            '</div>'
+            # AI notice box
+            '<div style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: 12px; '
+            'padding: 20px 24px; margin-bottom: 28px;">'
+            '<p style="font-size: 16px; font-weight: 700; color: #92400e; margin: 0 0 12px 0;">'
+            '⚠️ Lütfen Görselleri Onaylamadan Önce İnceleyin</p>'
+            '<p style="font-size: 14px; color: #78350f; margin: 0 0 10px 0; line-height: 1.6;">'
+            'Yapay zeka henüz çok yeni bir teknoloji; bazen istenmeyen veya beklediğinizden '
+            'farklı görseller çizebilir. Bu tamamen normaldir.</p>'
+            '<p style="font-size: 14px; color: #78350f; margin: 0 0 10px 0; line-height: 1.6;">'
+            '👉 <strong>Aşağıdaki butona tıklayıp tüm resimleri dikkatlice inceleyin.</strong><br>'
+            'Beğenmediğiniz bir resim varsa, resmin üzerine tıklayın ve '
+            '<strong>"Tekrar Çiz"</strong> butonuna basın — yeni resim hemen görünecektir.<br>'
+            '<strong>Toplam 4 resim için yeniden çizim hakkınız vardır.</strong></p>'
+            '<p style="font-size: 14px; color: #78350f; margin: 0; line-height: 1.6;">'
+            '✅ Onayınızın ardından sipariş baskıya alınacaktır.</p>'
+            '</div>'
+            # CTA
+            '<div style="text-align: center; margin-bottom: 28px;">'
+            f'{price_html}'
+            # Button — solid bgcolor for email clients that strip gradients
             f'<a href="{safe_confirm_url}" '
-            'style="display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); '
-            "color: white; padding: 15px 40px; border-radius: 8px; "
-            'text-decoration: none; font-weight: bold; font-size: 16px; '
-            'box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);">'
-            "✓ SİPARİŞİ ONAYLA</a>"
-            '<p style="color: #666; font-size: 12px; margin-top: 15px;">'
-            "Bu link 48 saat geçerlidir.</p></div>"
-            '<hr style="border: none; border-top: 1px solid #eee; margin: 25px 0;">'
-            '<div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">'
-            '<p style="color: #666; font-size: 13px; margin: 0;">'
-            "© 2026 Benim Masalım - Kişiselleştirilmiş Çocuk Hikayeleri</p></div>"
-            "</body></html>"
+            'style="display: inline-block; background-color: #16a34a; '
+            'background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); '
+            'color: #ffffff !important; padding: 18px 52px; border-radius: 10px; '
+            'text-decoration: none; font-weight: 700; font-size: 18px; '
+            'box-shadow: 0 4px 14px rgba(22,163,74,0.4); letter-spacing: 0.3px; '
+            'border: none; mso-padding-alt: 0;">'
+            '✓ KİTABI İNCELE ve ONAYLA'
+            '</a>'
+            '<p style="color: #9ca3af; font-size: 12px; margin-top: 14px;">'
+            '🔒 Bu link 48 saat geçerlidir.</p>'
+            '</div>'
+            # Help note
+            '<div style="background: #f9fafb; border-radius: 8px; padding: 14px 16px;">'
+            '<p style="font-size: 13px; color: #6b7280; margin: 0; text-align: center;">'
+            'Sorun yaşarsanız bize ulaşın: '
+            '<a href="mailto:destek@benimmasalim.com" style="color: #7c3aed; font-weight: 600;">'
+            'destek@benimmasalim.com</a>'
+            '</p>'
+            '</div>'
+            '</div>'
+            # Footer
+            '<div style="background: #f9fafb; padding: 16px 24px; text-align: center; '
+            'border-top: 1px solid #e5e7eb;">'
+            '<p style="color: #9ca3af; font-size: 12px; margin: 0;">'
+            '© 2026 Benim Masalım – Kişiselleştirilmiş Çocuk Kitapları</p>'
+            '</div>'
+            '</div>'
+            '</body></html>'
         )
 
     @staticmethod

@@ -21,10 +21,11 @@ if TYPE_CHECKING:
 
 MM_TO_INCH = 25.4
 DEFAULT_DPI = 300
-DEFAULT_AI_MAX_SIZE = 1024  # Most AI APIs limit to 1024px
+DEFAULT_AI_MAX_SIZE = 2048  # Nano Banana 2 supports native 2K generation
 
 # Yatay A4 (297×210 mm) oranı ≈1.414. Kitap yatay A4 ise üretim bu oranda.
-DEFAULT_GENERATION_A4_LANDSCAPE = (1024, 724)  # width, height (1024/724 ≈ 1.414)
+# Nano Banana 2 ile 2K native üretim — 4x yerine 2x upscale yeterli.
+DEFAULT_GENERATION_A4_LANDSCAPE = (2048, 1448)  # width, height (2048/1448 ≈ 1.414)
 
 # Kitap baskı formatı: yatay A4 (mm). Tüm varsayılanlar ve "şablon dikeyse yine yatay kullan" bu değere dayanır.
 A4_LANDSCAPE_WIDTH_MM = 297.0
@@ -364,17 +365,24 @@ def calculate_aspect_ratio(width_mm: float, height_mm: float) -> str:
     return f"{ratio_w}:{ratio_h}"
 
 
-def resize_to_target(image: Image.Image, target_width: int, target_height: int) -> Image.Image:
+def resize_to_target(
+    image: Image.Image,
+    target_width: int,
+    target_height: int,
+    is_cover: bool = False,
+) -> Image.Image:
     """
     Crop-to-fill + resize: oranı koruyarak hedef boyuta getir.
 
-    Kaynak ve hedef oranı farklıysa ortadan kırpar (stretch YAPMAZ).
-    Böylece dikey görsel yatay hedefe çekildiğinde içerik bozulmaz.
+    Kaynak ve hedef oranı farklıysa kırpar (stretch YAPMAZ).
+    is_cover=True ise kapak için üstten kırpma yapılmaz (başlık korunur),
+    fazla yükseklik alttan alınır.
 
     Args:
         image: PIL Image object
         target_width: Target width in pixels
         target_height: Target height in pixels
+        is_cover: Kapak görseli mi? True ise alttan kırpar.
 
     Returns:
         Resized PIL Image with exact target dimensions
@@ -401,14 +409,18 @@ def resize_to_target(image: Image.Image, target_width: int, target_height: int) 
 
     # Crop-to-fill: büyük boyutu kırp, küçük boyutu koru
     if src_ratio > tgt_ratio:
-        # Kaynak daha geniş → genişlikten kırp
+        # Kaynak daha geniş → genişlikten kırp (merkez)
         new_w = int(src_h * tgt_ratio)
         offset = (src_w - new_w) // 2
         image = image.crop((offset, 0, offset + new_w, src_h))
     else:
         # Kaynak daha uzun → yükseklikten kırp
         new_h = int(src_w / tgt_ratio)
-        offset = (src_h - new_h) // 2
+        if is_cover:
+            # Kapak: üstten kırpma YOK — Gemini title'ı üste koyar; alttan kırp
+            offset = src_h - new_h
+        else:
+            offset = (src_h - new_h) // 2  # iç sayfa: merkez
         image = image.crop((0, offset, src_w, offset + new_h))
 
     return image.resize((target_width, target_height), PILImage.Resampling.LANCZOS)
@@ -420,6 +432,7 @@ def resize_image_bytes_to_target(
     target_height: int,
     output_format: str = "PNG",
     dpi: int = DEFAULT_DPI,
+    is_cover: bool = False,
 ) -> bytes:
     """
     Resize image bytes to exact target dimensions with correct DPI metadata.
@@ -448,7 +461,7 @@ def resize_image_bytes_to_target(
     original_size = img.size
     logger.info(f"Resizing image from {original_size} to ({target_width}, {target_height})")
 
-    resized = resize_to_target(img, target_width, target_height)
+    resized = resize_to_target(img, target_width, target_height, is_cover=is_cover)
     logger.info(f"Resized image size: {resized.size}")
 
     output = BytesIO()

@@ -1,8 +1,8 @@
 """Try Before You Buy - Trial Service.
 
 Implements staged generation:
-- Phase 1: Generate full story + 3 preview images (FREE)
-- Phase 2: After payment, generate remaining 13 images
+- Phase 1: Generate full story + preview images (FREE, 2 story pages shown)
+- Phase 2: After payment, generate remaining pages (all pages not yet generated)
 
 This reduces Fal.ai costs for non-paying users while capturing high-quality leads.
 """
@@ -160,6 +160,21 @@ class TrialService:
             return None
 
         trial.story_title = story_title
+
+        # ── COVER TEXT GUARD ──────────────────────────────────────────────
+        # Ensure story_pages[0] (cover, page_number=0) ALWAYS carries the
+        # story title — not the first story paragraph which Gemini sometimes
+        # places there.  Also ensure page_type is set for all pages.
+        for sp in story_pages:
+            if not isinstance(sp, dict):
+                continue
+            pn = sp.get("page_number")
+            if pn == 0:
+                sp["text"] = story_title or sp.get("text", "")
+                sp["page_type"] = sp.get("page_type") or "cover"
+            elif not sp.get("page_type"):
+                sp["page_type"] = "inner"
+
         trial.story_pages = story_pages
         trial.generated_prompts_cache = {
             "style_id": style_id,
@@ -253,6 +268,14 @@ class TrialService:
             Created StoryPreview instance
         """
         import secrets
+
+        # ── COVER TEXT GUARD ──────────────────────────────────────────────
+        # Cover page (page_number=0) must carry the story TITLE.
+        for _sp in story_pages:
+            if isinstance(_sp, dict) and _sp.get("page_number") == 0:
+                _sp["text"] = story_title or _sp.get("text", "")
+                _sp["page_type"] = _sp.get("page_type") or "cover"
+                break
 
         trial = StoryPreview(
             # Token for URL access
@@ -373,7 +396,7 @@ class TrialService:
         return trial
 
     # =========================================================================
-    # PHASE 2: Completion (PAID - remaining 13 images)
+    # PHASE 2: Completion (PAID - remaining pages, dynamic count per product)
     # =========================================================================
 
     async def get_cached_prompts(self, trial_id: uuid.UUID) -> list[dict] | None:
@@ -393,7 +416,11 @@ class TrialService:
 
     async def get_remaining_prompts(self, trial_id: uuid.UUID) -> list[dict]:
         """
-        Get prompts for pages 4-16 (remaining 13 images to generate).
+        Get prompts for all pages not yet generated (ödeme sonrası kalan sayfalar).
+
+        Ürün yapılandırmasına göre dinamiktir:
+        - 22 sayfalık kitapta 2 preview üretildiyse → 20 iç sayfa + arka kapak döner
+        - Sayfa sayısı hardcoded değil, page_images'da eksik olan tüm sayfalar hesaplanır
 
         Returns:
             List of prompt dicts for pages not yet generated

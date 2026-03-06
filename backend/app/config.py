@@ -91,7 +91,7 @@ class Settings(BaseSettings):
     # Payment (Iyzico)
     iyzico_api_key: str = ""
     iyzico_secret_key: str = ""
-    iyzico_base_url: str = "https://sandbox-api.iyzipay.com"
+    iyzico_base_url: str = "https://api.iyzipay.com"
 
     # JWT Auth
     jwt_secret_key: str = Field(..., min_length=32)
@@ -247,11 +247,11 @@ class Settings(BaseSettings):
         if not self.webhook_secret:
             warn.append("WEBHOOK_SECRET is empty — webhook signature verification will fail")
 
-        # ── Payment (WARNING) ─────────────────────────────────────
+        # ── Payment (FATAL in production) ─────────────────────────────────
         if "sandbox" in self.iyzico_base_url:
-            warn.append(
-                f"IYZICO_BASE_URL is sandbox ({self.iyzico_base_url}) — "
-                "real payments will NOT be collected!"
+            fatal.append(
+                f"IYZICO_BASE_URL sandbox modunda ({self.iyzico_base_url}) — "
+                "gerçek ödemeler tahsil edilmeyecek! IYZICO_BASE_URL=https://api.iyzipay.com olarak ayarlayın."
             )
         if not self.iyzico_api_key or not self.iyzico_secret_key:
             warn.append("IYZICO_API_KEY / IYZICO_SECRET_KEY is empty — payments disabled")

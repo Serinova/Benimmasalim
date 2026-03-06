@@ -302,6 +302,15 @@ async def generate_preview_from_story(
             original_title=request.story_title,
         )
 
+        # ── COVER TEXT GUARD ──────────────────────────────────────────────
+        # Cover page (page_number=0) must carry the story TITLE, not story
+        # text.  Frontend may send the wrong text for page 0.
+        for sp in story_pages:
+            if isinstance(sp, dict) and sp.get("page_number") == 0:
+                sp["text"] = det_title
+                sp["page_type"] = sp.get("page_type") or "cover"
+                break
+
         # Resolve style_id for cache (Phase 2 remaining images need it)
         _resolved_style_id: str | None = None
         _resolved_vs = await _resolve_visual_style_from_db(db, request.visual_style_name)
@@ -693,9 +702,8 @@ async def complete_trial(
                 "COMPLETE_TRIAL_PAYMENT_REF_CHECK",
                 trial_id=request.trial_id,
                 stored_starts_with_iyzico=stored_ref.startswith("iyzico_paid:"),
-                provided_token_prefix=provided_token[:15] if provided_token else "EMPTY",
-                stored_token_prefix=stored_token[:15] if stored_token else "EMPTY",
                 tokens_match=provided_token == stored_token,
+                # NOTE: Token içeriği güvenlik nedeniyle loglanmıyor
             )
             
             if not stored_ref.startswith("iyzico_paid:"):
@@ -1022,7 +1030,7 @@ async def generate_remaining_images_background(
     child_photo_url: str = "",
     clothing_description: str = "",
 ):
-    """Background task to generate remaining 13 images after payment.
+    """Background task to generate remaining pages after payment (dynamic count per product).
 
     Guarded by _TRIAL_GEN_SEMAPHORE to avoid competing with order tasks.
     """

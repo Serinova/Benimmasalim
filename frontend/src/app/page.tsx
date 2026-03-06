@@ -14,8 +14,8 @@ import CTABand from "@/components/landing/CTABand";
 import Footer from "@/components/landing/Footer";
 import { getHomepageSections, findSection, getProducts, getScenarios } from "@/lib/homepage";
 
-/* ─── Force dynamic rendering (homepage fetches from API at request time) ── */
-export const dynamic = "force-dynamic";
+/* ─── ISR: revalidate every 60 seconds ─────────────────────────────────── */
+export const revalidate = 60;
 
 /* ─── Page-level SEO metadata ─────────────────────────────────────── */
 
@@ -64,14 +64,17 @@ function OrganizationJsonLd() {
     "@type": "Organization",
     name: "Benim Masalım",
     url: "https://www.benimmasalim.com.tr",
-    logo: "https://www.benimmasalim.com.tr/favicon.svg",
+    logo: "https://www.benimmasalim.com.tr/logo.png",
     description: "Yapay zeka destekli kişiye özel çocuk kitabı platformu. Çocuğunuzun adıyla masal oluşturun.",
-    sameAs: [],
+    sameAs: [
+      "https://www.instagram.com/benimmasalim",
+    ],
   };
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
 }
 
-function ProductJsonLd() {
+function ProductJsonLd({ basePrice }: { basePrice?: number }) {
+  const price = basePrice ?? 299;
   const data = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -80,12 +83,12 @@ function ProductJsonLd() {
     brand: { "@type": "Brand", name: "Benim Masalım" },
     offers: {
       "@type": "Offer",
-      url: "https://www.benimmasalim.com.tr/create",
+      url: "https://www.benimmasalim.com.tr/create-v2",
       priceCurrency: "TRY",
+      price: price.toString(),
       availability: "https://schema.org/InStock",
       seller: { "@type": "Organization", name: "Benim Masalım" },
     },
-    aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "150" },
   };
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
 }
@@ -126,10 +129,14 @@ export default async function HomePage() {
   const faqSection = s("FAQ");
   const faqItems: FAQItem[] = (faqSection?.data?.items as FAQItem[] | undefined) ?? DEFAULT_FAQ_ITEMS;
 
+  // Get base price for Product JSON-LD from real product data
+  const mainProduct = products.storyBooks[0];
+  const basePrice = mainProduct?.discounted_price ?? mainProduct?.base_price;
+
   return (
     <>
       <OrganizationJsonLd />
-      <ProductJsonLd />
+      <ProductJsonLd basePrice={basePrice} />
       <FAQPageJsonLd items={faqItems} />
 
       <a

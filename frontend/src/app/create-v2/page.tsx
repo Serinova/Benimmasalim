@@ -79,6 +79,16 @@ function CreatePageInner() {
   const preselectedScenarioId = searchParams.get("scenario") ?? "";
   const { toast } = useToast();
   const _paymentCallbackHandled = useRef(false);
+  const pollAbortRef = useRef<{ current: boolean } | null>(null);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollAbortRef.current) {
+        pollAbortRef.current.current = true;
+      }
+    };
+  }, []);
 
   /* ── Draft state (persisted to sessionStorage) ── */
   const {
@@ -219,21 +229,27 @@ function CreatePageInner() {
     _paymentCallbackHandled.current = true;
 
     if (paymentStatus === "success" && callbackTrialId && iyzicoToken) {
-      const storedTrialToken = sessionStorage.getItem("pending_trial_token") || sp.get("tt") || undefined;
-      const storedName = sessionStorage.getItem("pending_parent_name") || "";
-      const storedEmail = sessionStorage.getItem("pending_parent_email") || "";
-      const storedPhone = sessionStorage.getItem("pending_parent_phone") || "";
-      const storedDedication = sessionStorage.getItem("pending_dedication_note") || "";
-      const storedHasAudio = sessionStorage.getItem("pending_has_audio") === "true";
-      const storedAudioType = (sessionStorage.getItem("pending_audio_type") || "system") as "system" | "cloned";
-      const storedVoiceId = sessionStorage.getItem("pending_audio_voice_id") || "";
-      const storedHasColoringBook = sessionStorage.getItem("pending_has_coloring_book") === "true";
-      const storedPromoCode = sessionStorage.getItem("pending_promo_code") || undefined;
+      // Read all pending state from the consolidated storage object
+      let pending: Record<string, unknown> = {};
+      try {
+        const raw = sessionStorage.getItem("pending_payment_v2");
+        if (raw) pending = JSON.parse(raw) as Record<string, unknown>;
+      } catch { /* ignore */ }
+
+      const storedTrialToken = (pending.trial_token as string | undefined) || sp.get("tt") || undefined;
+      const storedName = (pending.parent_name as string | undefined) || "";
+      const storedEmail = (pending.parent_email as string | undefined) || "";
+      const storedPhone = (pending.parent_phone as string | undefined) || "";
+      const storedDedication = (pending.dedication_note as string | undefined) || "";
+      const storedHasAudio = pending.has_audio === true;
+      const storedAudioType = ((pending.audio_type as string | undefined) || "system") as "system" | "cloned";
+      const storedVoiceId = (pending.audio_voice_id as string | undefined) || "";
+      const storedHasColoringBook = pending.has_coloring_book === true;
+      const storedPromoCode = (pending.promo_code as string | undefined) || undefined;
 
       let storedBilling: BillingDataPayload | null = null;
       try {
-        const raw = sessionStorage.getItem("pending_billing");
-        if (raw) storedBilling = toBillingPayload(JSON.parse(raw) as BillingFormData);
+        if (pending.billing) storedBilling = toBillingPayload(pending.billing as BillingFormData);
       } catch { /* ignore */ }
 
       setSubmittingOrder(true);
@@ -258,13 +274,7 @@ function CreatePageInner() {
           }, storedTrialToken);
 
           if (data.success) {
-            const pendingKeys = [
-              "pending_trial_id", "pending_trial_token", "pending_parent_name",
-              "pending_parent_email", "pending_parent_phone", "pending_dedication_note",
-              "pending_has_audio", "pending_audio_type", "pending_audio_voice_id",
-              "pending_has_coloring_book", "pending_promo_code", "pending_billing",
-            ];
-            pendingKeys.forEach(k => sessionStorage.removeItem(k));
+            sessionStorage.removeItem("pending_payment_v2");
             setCompletedOrderId(data.order_id || null);
             goToStep(6);
           } else {
@@ -424,10 +434,16 @@ function CreatePageInner() {
   }, [childPhoto, compressImageToBase64, draft, visualStyles, selectedScenarioObj, selectedProductObj, contactInfo, leadUserId, merge, goToStep, toast]);
 
   const pollPreviewStatus = useCallback(async (id: string, token?: string) => {
-    const POLL_MS = 6000; // Match POLLING_INTERVAL_MS from constants
+    const POLL_MS = 6000;
+    const aborted = { current: false };
+    // Store abort ref on the component instance so cleanup can stop polling
+    pollAbortRef.current = aborted;
+
     const poll = async () => {
+      if (aborted.current) return;
       try {
         const status = await getTrialStatus(id, token);
+        if (aborted.current) return;
         if (status.generation_progress) {
           setField("generationProgress", status.generation_progress);
         }
@@ -438,7 +454,7 @@ function CreatePageInner() {
         }
         if (status.is_preview_ready) {
           const preview = await getTrialPreview(id, token);
-          if (preview.success && preview.preview_images) {
+          if (!aborted.current && preview.success && preview.preview_images) {
             setField("previewImages", preview.preview_images);
           }
           setPreviewLoading(false);
@@ -446,8 +462,10 @@ function CreatePageInner() {
         }
         setTimeout(poll, POLL_MS);
       } catch {
-        setPreviewLoading(false);
-        setPreviewError("Bağlantı hatası. Lütfen tekrar deneyin.");
+        if (!aborted.current) {
+          setPreviewLoading(false);
+          setPreviewError("Bağlantı hatası. Lütfen tekrar deneyin.");
+        }
       }
     };
     await poll();
@@ -458,8 +476,6 @@ function CreatePageInner() {
     const sh = draft.shipping;
     const promoCode = draft.promoCode.trim();
     const billingPayload = toBillingPayload(draft.billing);
-
-    sessionStorage.setItem("pending_billing", JSON.stringify(draft.billing));
 
     if (!draft.trialId) {
       toast({ title: "Hata", description: "Önce hikayenizi oluşturun.", variant: "destructive" });
@@ -489,18 +505,22 @@ function CreatePageInner() {
           goToStep(6);
         } else throw new Error("Sipariş tamamlanamadı.");
       } else {
-        sessionStorage.setItem("pending_trial_id", draft.trialId);
-        sessionStorage.setItem("pending_trial_token", draft.trialToken || "");
-        sessionStorage.setItem("pending_parent_name", sh.fullName);
-        sessionStorage.setItem("pending_parent_email", sh.email);
-        sessionStorage.setItem("pending_parent_phone", sh.phone || "");
-        sessionStorage.setItem("pending_dedication_note", draft.dedicationNote || "");
-        sessionStorage.setItem("pending_has_audio", String(draft.hasAudioBook));
-        sessionStorage.setItem("pending_audio_type", draft.audioType);
-        sessionStorage.setItem("pending_audio_voice_id", draft.clonedVoiceId);
-        sessionStorage.setItem("pending_has_coloring_book", String(draft.hasColoringBook));
-        if (promoCode) sessionStorage.setItem("pending_promo_code", promoCode);
-        else sessionStorage.removeItem("pending_promo_code");
+        // Store all pending payment state as a single atomic JSON object
+        const pendingPayment = {
+          trial_id: draft.trialId,
+          trial_token: draft.trialToken || "",
+          parent_name: sh.fullName,
+          parent_email: sh.email,
+          parent_phone: sh.phone || "",
+          dedication_note: draft.dedicationNote || "",
+          has_audio: draft.hasAudioBook,
+          audio_type: draft.audioType,
+          audio_voice_id: draft.clonedVoiceId,
+          has_coloring_book: draft.hasColoringBook,
+          promo_code: promoCode || "",
+          billing: draft.billing,
+        };
+        sessionStorage.setItem("pending_payment_v2", JSON.stringify(pendingPayment));
 
         const pData = await createTrialPayment(
           draft.trialId,

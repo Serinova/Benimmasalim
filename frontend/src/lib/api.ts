@@ -20,7 +20,7 @@ function resolveApiBaseUrl(): string {
       host.includes("run.app") ||
       host.includes("vercel.app")
     ) {
-      return "https://benimmasalim-backend-pl5vhpeiya-ew.a.run.app/api/v1";
+      return "https://benimmasalim-backend-554846094227.europe-west1.run.app/api/v1";
     }
   }
 

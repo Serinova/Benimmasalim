@@ -7,6 +7,7 @@ from app.prompt.templates import (
     DEFAULT_COVER_TEMPLATE,
     DEFAULT_INNER_TEMPLATE,
     LIKENESS_HINT,
+    NO_FAMILY_BANNED_WORDS_TR,  # noqa: F401
     SHARPNESS,
 )
 

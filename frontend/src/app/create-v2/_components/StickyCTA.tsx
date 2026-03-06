@@ -26,8 +26,9 @@ export default function StickyCTA({
     <motion.div
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-100 px-3 sm:px-4 py-2.5 sm:py-3"
-      style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom))" }}
+      transition={{ duration: 0.2 }}
+      className="fixed bottom-0 left-0 right-0 z-[60] border-t border-slate-100 bg-white/95 px-3 py-2.5 backdrop-blur-md sm:px-4 sm:py-3"
+      style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}
     >
       <div className="mx-auto max-w-lg space-y-1.5">
         {extraContent}
@@ -36,7 +37,7 @@ export default function StickyCTA({
             <button
               type="button"
               onClick={onSecondary}
-              className="h-11 sm:h-12 px-3 sm:px-5 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm flex items-center transition-colors hover:bg-gray-50 active:bg-gray-100"
+              className="flex h-11 items-center rounded-xl border-2 border-slate-200 px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 active:bg-slate-100 sm:h-12 sm:px-5"
             >
               {secondaryLabel}
             </button>
@@ -46,18 +47,21 @@ export default function StickyCTA({
             whileTap={!primaryDisabled && !primaryLoading ? { scale: 0.97 } : undefined}
             onClick={onPrimary}
             disabled={primaryDisabled || primaryLoading}
+            aria-busy={primaryLoading}
             className={`
-              h-11 sm:h-12 flex-1 rounded-xl font-bold text-sm sm:text-base shadow-lg shadow-purple-200
-              flex items-center justify-center gap-2 transition-all
+              flex h-11 flex-1 items-center justify-center gap-2 rounded-xl font-bold text-sm shadow-lg transition-all sm:h-12 sm:text-base
               ${
                 primaryDisabled || primaryLoading
-                  ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
-                  : "bg-gradient-to-r from-purple-600 to-pink-500 text-white"
+                  ? "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none"
+                  : "bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-purple-200 hover:from-purple-700 hover:to-pink-600"
               }
             `}
           >
             {primaryLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                <span className="sr-only">İşleniyor…</span>
+              </>
             ) : (
               primaryLabel
             )}

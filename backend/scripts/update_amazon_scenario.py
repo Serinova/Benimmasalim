@@ -1,365 +1,204 @@
 """
-Amazon Ormanları Keşfediyorum Senaryosu - Master Prompt Güncellemesi
-
-Bu script, Amazon Ormanları Keşfediyorum senaryosunu profesyonel, tutarlı ve
-biyolojik çeşitlilik odaklı prompt'larla günceller.
-
-Çalıştırma:
-    cd backend
-    python -m scripts.update_amazon_scenario
+Amazon Ormanları Macerası — Hayvan İzleri, Gizem, Indiana Jones Tarzı
+=========================================================================================
+- Kitap adı: [Çocuk adı]'ın Amazon'un Gizli Çağrısı (alt başlık yok)
+- Ormanda yankılanan "tık tık" sinyalinin izini hayvanların yardımıyla sürme macerası
+- Yerler: Amazon sağanağı, dev ağaçlar, nehir, liana köprüleri, sık bitki örtüsü
+- Kıyafet: Indiana Jones tarzı gezgin kıyafeti, kız ve erkek için zorunlu ve her sayfada aynı tutarlı (kıyafet kilidi)
+- Kurguyu bozabilecek kullanıcı seçenekleri yok (custom_inputs boş)
 """
 
 import asyncio
-import json
+import os
+import sys
 
-from sqlalchemy import select, update
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from sqlalchemy import select
 from app.core.database import async_session_factory
-from app.models.scenario import Scenario
+from app.models import Scenario
 
-
-# =============================================================================
-# AMAZON ORMANLARI KEŞFEDİYORUM - MASTER PROMPT TEMPLATES
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# KAPAK PROMPT TEMPLATE (Style-Agnostic)
-# -----------------------------------------------------------------------------
+# ============================================================================
+# MODULAR PROMPT COMPONENTS (AI DIRECTOR - PASS 2)
+# ============================================================================
 
 AMAZON_COVER_PROMPT = (
     "An {child_age}-year-old {child_gender} named {child_name} "
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
-    "Towering kapok trees with buttress roots, emerald canopy. "
-    "Scarlet macaws flying, toucan perched. Winding brown river. "
-    "Golden sunlight shafts (god rays), hanging lianas, orchids. "
-    "Wide shot: child 25%, rainforest 75%. Epic biodiversity."
+    "Child pushing through hanging lianas and dense layered tropical jungle foliage, colossal ancient trees draped in vines and bromeliads. "
+    "Winding Amazon river glimmering in the distance, exotic scarlet macaws and toucans in flight among the canopy. "
+    "Dramatic god-rays of golden sunlight piercing through the dense canopy, volumetric jungle mist, glistening dew on giant emerald leaves. "
+    "Eye-level adventure shot: child 25% foreground, immersive jungle depth 75%. "
+    "Vibrant tropical palette: deep emerald greens, golden light shafts, rich earth browns, pops of scarlet and turquoise."
 )
 
 AMAZON_PAGE_PROMPT = (
     "An {child_age}-year-old {child_gender} named {child_name} "
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
-    "Elements: [Kapok trees 40m+, buttress roots / Birds: scarlet macaws, toucans / "
-    "River: pink dolphins, capybaras / Forest: sloths, howler monkeys, "
-    "poison dart frogs, morpho butterflies / Jaguar: distant, majestic]. "
-    "Lianas, orchids, ferns. Dappled sunlight, misty. "
-    "Emerald, scarlet, electric blue, golden amber."
+    "Elements: [Amazon rainforest, dense jungle, winding river, mist, sun rays through canopy, hanging vines, exotic wildlife, vibrant colors]. "
+    "Cinematic action lighting, dynamic pose, detailed environment, depth of field. Wide angle, full body visible in action, child 30-40% of frame. No eye contact with camera. "
+    "Dangerous animals only in the distance, no direct contact, child remains safe. "
+    "Avoid: photorealistic, pasted face, collage, duplicate child, extra people (unless required by scene), text, watermark, logo, blurry, low quality. {STYLE}"
 )
 
-
-# -----------------------------------------------------------------------------
-# AI HİKAYE ÜRETİM PROMPTU (Gemini için - TR)
-# -----------------------------------------------------------------------------
-
-AMAZON_STORY_PROMPT_TR = """Amazon yağmur ormanlarında geçen, {child_name} adlı {child_age} yaşında bir çocuğun keşif macerası hikayesi yaz.
-
-⚠️ Çocuk TEK BAŞINA macerada (aile yok). Anne-baba-aile karakteri KULLANMA.
-
-🌳 KEŞİF DOPAMİNİ - BİYOÇEŞİTLİLİK MERDİVENİ:
-
-**BÖLÜM 1 - İLK KEŞİF** (Sayfa 1-4) [role: opening]:
-- Sayfa 1-2: Amazon'a varış, ilk izlenimler
-  Epic #1: Dev kapok ağacı kökler (devasa scale)
-  Emotion: Merak, heyecan
-- Sayfa 3-4: İlk hayvan karşılaşması
-  Dopamin ⭐⭐⭐ (başlangıç)
-
-**BÖLÜM 2 - MACAW SÜRÜSÜ** (Sayfa 5-8) [role: exploration]:
-- Sayfa 5-6: Scarlet macaw sürüsü
-  → Endişe: "Kayıp yavru macaw!"
-- Sayfa 7-8: Yuva bulma yardımı
-  → Epic #2: Renkli macaw uçuşu (sürü halinde)
-  → Başarı: Sürü birliği → Dopamin ⭐⭐⭐⭐
-  → DEĞER: Yardımlaşma
-
-**BÖLÜM 3 - NEHİR KEŞFİ** (Sayfa 9-12) [role: exploration]:
-- Sayfa 9-10: Nehirde yön kaybı
-  → Endişe: "Hangi yöne gitsem?"
-- Sayfa 11-12: Pembe yunus (boto) rehberlik
-  → Epic #3: Yunus dansı, nehir surfing
-  → Başarı: İletişim, güven → Dopamin ⭐⭐⭐⭐
-  → DEĞER: İletişim, dostluk
-
-**BÖLÜM 4 - TEMBEL ANI** (Sayfa 13-15) [role: climax]:
-- Sayfa 13-14: Üç parmaklı tembel ile tanışma
-  → Soru: "Neden bu kadar yavaş?"
-  → Epic #4: Tembelin dünyası - sabır, gözlem
-- Sayfa 15: Öğrenme anı
-  → Başarı: Herkesin kendi temposu var → Dopamin ⭐⭐⭐⭐⭐
-  → DEĞER: Sabır, farklılıklara saygı
-
-**BÖLÜM 5 - KARINCA EKİBİ** (Sayfa 16-18) [role: resolution]:
-- Sayfa 16-17: Yaprak kesici karıncalar
-  → Epic #5: Organize çalışma hattı
-  → Gözlem: Minicik ama organize!
-- Sayfa 18: İşbirliği anlaşılıyor
-  → Başarı: Birlikte güçlüyüz → Dopamin ⭐⭐⭐⭐
-  → DEĞER: İşbirliği, ekip çalışması
-
-**BÖLÜM 6 - JAGUAR CAMEO** (Sayfa 19-20) [role: resolution]:
-- Sayfa 19: Uzaktan jaguar görünüşü
-  → Epic #6: Ormanın kralı (saygılı mesafe)
-  → Endişe: "Tehlikeli mi?" → Hayır, ormanın koruyucusu!
-- Sayfa 20: Saygı anlaşılıyor
-  → Dopamin ⭐⭐⭐
-  → DEĞER: Her canlının rolü var
-
-**BÖLÜM 7 - DÖNÜŞ VE KORUMA BİLİNCİ** (Sayfa 21-22) [role: conclusion]:
-- Sayfa 21: Günbatımı canopy görünümü
-  → Tüm orman panoramik
-- Sayfa 22: Dönüş ve söz
-  → "Bu ormanı koruyacağım"
-  → Dopamin: Sürdürülebilir tatmin
-  → DEĞER: Doğayı koruma sorumluluğu
-
-⚡ KEŞİF→ÖĞRENME DÖNGÜLERİ (4 Kritik):
-
-**Döngü 1 - Macaw sürüsü** (5-8):
-- Endişe: "Kayıp yavru! Sürüsünü bulamaz"
-- Eylem: Yuva arama, yardım
-- Başarı: Sürü birliği → Dopamin ⭐⭐⭐⭐
-
-**Döngü 2 - Pembe yunus** (10-12):
-- Endişe: "Nehirde kayboldum"
-- Eylem: Yunus ile iletişim
-- Başarı: Rehberlik, güven → Dopamin ⭐⭐⭐⭐
-
-**Döngü 3 - Tembel** (14-15):
-- Soru: "Neden bu kadar yavaş?"
-- Gözlem: Sabır, herkesin temposu farklı
-- Öğrenme: Farklılıklara saygı → Dopamin ⭐⭐⭐⭐⭐
-
-**Döngü 4 - Karıncalar** (17-18):
-- Gözlem: "Minicikler ama organize!"
-- Keşif: İşbirliği gücü
-- Başarı: Ekip çalışması → Dopamin ⭐⭐⭐⭐
-
-HİKAYE YAPISI (Biyoçeşitlilik Keşfi):
-
-HAYVANLAR VE ÖĞRETİLER:
-1. **Scarlet macaw sürüsü** → Yardımlaşma, dayanışma
-2. **Pembe nehir yunusu (boto)** → İletişim, rehberlik
-3. **Üç parmaklı tembel** → Sabır, herkesin kendi hızı
-4. **Yaprak kesici karıncalar** → İşbirliği, organize çalışma
-5. **Jaguar (uzaktan)** → Saygı, ormanın dengesi
-
-EK HAYVANLAR (sahne zenginliği):
-- Toucan, kapybara, morfo kelebek, zehirli ok kurbağası (renkli)
-- Morpho butterfly cloud (mavi patlama) - görsel şölen
-
-MİNİ BİLGİLER (hikayeye doğal yerleştir):
-- Her hayvan karşılaşmasında 1 kısa bilgi
-- Örnek: "{child_name} nehir yunusunun sıçradığını görünce mutlu oldu. Pembe yunuslar dünyanın tek tatlı su yunusuydu!"
-
-DEĞERLER:
-- Yardımlaşma ve empati (macaw)
-- İletişim ve dostluk (yunus)
-- Sabır ve farklılıklara saygı (tembel)
-- İşbirliği (karıncalar)
-- Biyolojik çeşitlilik
-- Ormanı koruma sorumluluğu
-
-TON:
-- Merak uyandırıcı, keşif odaklı
-- Eğitici ama didaktik değil
-- Şiddetsiz, güvenli, pozitif
-
-YASAKLAR:
-- Korku, şiddet, gore yok
-- Yılan saldırısı yok
-- Kaybolma travması yok
-- Jaguar tehlikeli DEĞİL (uzak, saygılı)
-- Hayvan zararı yok
-
-Hikayeyi {page_count} sayfaya yaz. Her sayfa 2-4 cümle (40-80 kelime). 
-Vurgulanmak istenen değer: {value_name}. Dopamini yönet, keşif heyecanı yarat."""
-
-
-# -----------------------------------------------------------------------------
-# KIYAFET TASARIMLARI (Scenario-Specific)
-# -----------------------------------------------------------------------------
+# ============================================================================
+# OUTFIT — Indiana Jones Tarzı Kıyafet Kilidi (Sabit ve Zorunlu)
+# ============================================================================
 
 OUTFIT_GIRL = (
-    "khaki canvas explorer vest with four front pockets over light sage green breathable cotton shirt, "
-    "dark olive cargo shorts with zippered pockets reaching knees, sturdy brown leather hiking boots, "
-    "small silver binoculars around neck, wide-brim khaki fabric hat with mosquito net rolled up. "
-    "EXACTLY the same outfit on every page — same khaki vest, same green shirt, same olive shorts, same brown boots."
+    "khaki explorer shirt, fitted brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat, subtle woven bracelet charm. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest. "
+    "Same child character, same outfit, consistent face and hair across all pages."
 )
 
 OUTFIT_BOY = (
-    "olive green cotton explorer shirt with rolled-up sleeves and chest pocket, "
-    "dark khaki cargo pants with zippered side pockets, sturdy dark brown leather hiking boots, "
-    "tan canvas backpack with water bottle in side pocket, wide-brim brown explorer hat with chin strap. "
-    "EXACTLY the same outfit on every page — same olive shirt, same khaki pants, same brown boots, same explorer hat."
+    "khaki explorer shirt, brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest. "
+    "Same child character, same outfit, consistent face and hair across all pages."
 )
 
+# ============================================================================
+# STORY BLUEPRINT — Hayvanlarla İpuçları Takibi Temalı Kurgu (PURE AUTHOR - PASS 1)
+# ============================================================================
 
-# -----------------------------------------------------------------------------
-# KÜLTÜREL ELEMENTLER (JSON)
-# -----------------------------------------------------------------------------
+AMAZON_STORY_PROMPT_TR = """
+# AMAZON'UN GİZLİ ÇAĞRISI: GİZEMLİ MACERA
+
+## YAPI: {child_name} Indiana Jones tarzı kıyafetleriyle, katıldığı güvenli Amazon ormanı kampında tuhaf bir "tık tık" sinyali/mesajı alır. Şiddet içermeyen bu macerada, çocuğumuz vahşi hayvanların uzaktan verdikleri görsel/hareket ipuçlarını birbirine bağlayarak kayıp ve yalnız bir hayvan yavrusuna ulaşır. Heyecanlı, koşturmacalı ama hayvan tehlikesi/korkusu olmayan (her tehlikeli hayvan güvenli mesafededir), biyolojik çeşitlilik ipucu dolu bir keşif öyküsü yaz.
+
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Amazon'un Gizli Çağrısı" olmalı. Alt başlık EKLEME.
+
+**STİL & TON:** 
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. Dili akıcı, ritimli ve 5-10 yaş aralığında merak uyandırıcı olmalıdır. 
+- Her sayfa sonunda küçük bir merak kırıntısı bırak. 
+- Bilgi yığını yapma; hayvanların özelliklerini, çocuğun ipucu ve harita ögesi olarak hissetmesine yardımcı olarak entegre et.
+
+---
+
+### Bölüm 1 — Gizemli Ritim (Sayfa 1-3)
+- Sayfa 1: {child_name} ormanın her köşesinden inanılmaz bitki kokuları ve kuş ıslıkları yükselen, yemyeşil güvenli Amazon kampına büyük bir heyecanla adım atar. Tam o an dev ağaçların arasından "tık tık... tık!" diye ritmik, garip bir sinyal duyar.
+- Sayfa 2: Başını kaldırıp dikkatle dinlediğinde o tok ritmin bir hayvanın adımı değil, sanki uzaklardan gelen zekice bir ısrar mesajı olduğunu anlar. Yanındaki deri çantasını düzeltirken kendi kendine fısıldar: "Bu bir işaret olabilir mi?"
+- Sayfa 3: Kamptaki yaşlı rehber gülümseyerek "Ormanda hiçbir ses nedensiz değildir, her fısıltı sana bir şey anlatır" der. Tık-tık seslerinin geldiği kalın lianaların (sarmaşık) sarktığı yola doğru cesaretle yürüme kararı alır.
+
+### Bölüm 2 — Nehir ve Çamur İzleri (Sayfa 4-6)
+- Sayfa 4: Gizemli sesi takip ederken ulaştığı çamurlu nehrin pembeleşen sularında, muazzam bir pembe nehir yunusu (boto) hava almak için aniden sıçrar. Yunus suyun belli bir akış yönünü gösterircesine neşeyle burnunu savurup kaybolur, rota bellidir!
+- Sayfa 5: Suyun işaret ettiği yöne yürürken sinyal sesi artık çok daha güçlü gelmeye başlar fakat çocuk duraksar. Yumuşak çamurun üzerinde yüzlerce farklı karmaşık iz birbirine girmiştir, acaba doğru yol hangisidir?
+- Sayfa 6: O anda dev yaprakların arasından yavaşça çıkan tonton bir kapibara, karmaşayı hiç umursamadan ormanın en net ve sakin ayak izlerini toprağa çıkarak sakince karşıya geçer. Çocuk anlar: "Onun gibi sakin olmalı, karışıklıktaki net izleri okumalıyım."
+
+### Bölüm 3 — Desenin Sırrı (Sayfa 7-10)
+- Sayfa 7: Çamur izi bittiği anda dev ağaçların en tepesinden koca gagalı bir tukan yüksek bir edayla bağırır. Renkli tukan bilerek mi yaptı bilinmez ama büyük, parlak lekeli bir meyveyi çocuğun hemen önüne ormana düşürüverir.
+- Sayfa 8: Meyveninki sıradan bir leke değildir, çocuğumuz yaprağın ışığındaki bu lekelerde az önce duyduğu ritmin "şeklini" görür gibi olur: Üç nokta ve bir çizgi! Ama ses asıl başka yönden ona gelmektedir.
+- Sayfa 9: Dikkatle o yöne baktığında, uzak bir yaprağın üzerinde göz alıcı parlaklıkta çok ufak bir zehirli ok kurbağası parıldar. Çocuk kurbağadaki uyarıcı desenlerin, meyvedeki sırayla tamamen aynı olduğunu görüp, "Bu işaret bana hem yolu hem de dokunmadan uzaktan durmayı öğretiyor" der.
+- Sayfa 10: Kurbağanın gösterdiği yöndeki üç leke-bir çizgi şeklindeki ağaç kökünü geçerken zihnine kaydettiği kod işe yaramıştır. Ama ses bir anda yön değiştirmiş ve "tık-tık-tık... zzz!" diye yepyeni ve daha hızlı bir sinyale dönüşmüştür.
+
+### Bölüm 4 — Ormanın Rehberleri (Sayfa 11-14)
+- Sayfa 11: Zemin birden canlanmış gibi harekenlenince, yaprak kesen devasa karıncaların kendilerinden büyük yapraklarla çizgi gibi muazzam bir otoban kurduklarını görür. "İşte benim canlı ve hareketli haritam," diyerek karınca hattını sessizce izlemeye başlar.
+- Sayfa 12: Bu canlı hat onu, oldukça derin görünen ıslak bir dereciğin üzerine gerilmiş o ufacık ve sallantılı liana (sarmaşık) köprüsüne getirir. Kalbi güm güm atarak dengede kalmaya odaklanıp rüzgarda dikkatle karşıya geçer.
+- Sayfa 13: Köprüyü aştığında yukardaki dallardan birinde ters asılı, çok sevimli "üç parmaklı bir tembel hayvan" ona adeta yavaş adımlarla ileriyi işaret ediyordur. Kahramanımız bir ağaç köküne çıkıp tembel hayvan gibi "yüksekten, paniksiz bakmanın" yeni bir daha gizli yolu açtığını fark eder.
+- Sayfa 14: Yol çok karanlıklaşınca uzakların pusunda beliren ulu bir Jaguarın güçlü sesi ve yalnızca göz kamaştırıcı ince silüeti geçer. Kahramanımız ona güvenli bir saygı mesafesinden bakar, rehberinin sözünü hatırlar; ormanın gizemli korkusu değil, sadece dikkatli olunması gereken kalbidir.
+
+### Bölüm 5 — Sinyalin Kaynağı (Sayfa 15-18)
+- Sayfa 15: Jaguarın süzüldüğü aralıktan güneş ışıkları vurunca, tık-tık sesi birden kesilir ve onun yerini çok daha cılız, ince bir "cıvıltı" andıran ses alır. Çocuğun kalbine bu sesin bir sinyal değil, çaresiz bir 'yardım çağrısı' olduğu hissi doğar!
+- Sayfa 16: İlerideki o kocaman, iç içe geçmiş yaprak kümesinin arasına indiğinde, korkuyla titreşen ve sürüsünden ayrılmış minicik bir yavru tukan bulur. Baştan beri ormanda yankılanan o ritmik sinyal, tamamen savunmasız bu minik yavruyu kurtarma çağrısıdır.
+- Sayfa 17: Yavruyu daha da korkutmamak için Indiana Jones bilgeliğiyle elini çok yavaşça uzatır ve yavru güvende olduğunu anlayınca çocuğun çantasının dış kayışına atlayıverir. Yavru uzaklardaki kocaman çiçekli gür bir çalıya doğru hüzünle "cıvk" diyerek bakmaktadır.
+- Sayfa 18: Çocuğumuz hemen aklındaki yapbozu kurar; karıncaların döndüğü yön ile kurbağadaki üç noktalı çiçeğin deseni o dev çalılıkları işaret etmektedir. Vakit kaybetmeden patikayı aşar ve çalıların arkasındaki o tertemiz büyük yeşil düzlüğe varır.
+
+### Bölüm 6 — Tamamlanma (Sayfa 19-21)
+- Sayfa 19: Düzlüğün bittiği aydınlık nehir kenarında, yetişkin dev tukan sürüsü telaş içinde tur atmaktadır (Güvenli, zarar vermeyen atmosfer). Yavru kuş inanılmaz bir sevinçle anında kanat çırparak oraya, güvenle ailesinin dallarına döner kavuşur.
+- Sayfa 20: Tam o an arkasından usulca kamp rehberi yetişir ve büyük bir gururla "Ormanı dinlemeyi harika başardın!" der. Amazonun gizemli yeşilliğinde yankılanan o acı dolu çağrı tamamen susmuş, yerini huzurlu bir nehir şırıltısına bırakmıştır.
+- Sayfa 21: Yere bakınca tukan tüyleriyle kaplı ufak pırıl pırıl, kırmızı bir tohum görür, onu kocaman bir anı olarak şapkasına takar. Kahramanımız gülümser, "Amazon’un sırları hiçbir zaman bitmez..." Acaba yarınki sinyal nerede yankılanacaktır?
+
+---
+
+## KURALLAR
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 21 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- AI Görüntü (scene_description) promptlarını (İngilizce) yazarken "standing still" veya "looking at camera" KULLANMA. Aksiyon belirt (örn: "Child creeping slowly behind capybara tracks", "Child balancing carefully across hanging liana bridge").
+- Bu hikaye tehlikeli saldırılar veya korku dolu sahneler içermemelidir; hayvanlar (jaguar vb.) sadece uzakta, bir tablo veya silüet gibi, saygı duyulacak figürlerdir.
+"""
+
+# ============================================================================
+# CULTURAL ELEMENTS
+# ============================================================================
 
 AMAZON_CULTURAL_ELEMENTS = {
-    "primary_landmarks": [
-        "giant kapok trees with buttress roots",
-        "winding tributary rivers",
-        "multi-layered rainforest canopy",
-        "flooded forest (igapó)",
-        "massive strangler figs"
+    "location": "Amazon Rainforest, dense jungle",
+    "historic_site": "Wilderness ecosystem",
+    "major_elements": [
+        "Kapok trees, hanging lianas, dense ferns",
+        "Winding brown river, misty golden sun rays",
+        "Pink river dolphins, sloths, poison dart frogs, toucans",
+        "Leafcutter ant trails, capybara tracks",
     ],
-    "fauna_diversity": [
-        "scarlet macaws (pairs)",
-        "pink river dolphins",
-        "three-toed sloths",
-        "toucans",
-        "leafcutter ants",
-        "poison dart frogs",
-        "morpho butterflies",
-        "capybaras"
-    ],
-    "flora_diversity": [
-        "kapok/ceiba trees",
-        "bromeliads and orchids",
-        "hanging lianas",
-        "strangler figs",
-        "dense ferns",
-        "moss-covered bark"
-    ],
-    "color_palette": "deep emerald green, vibrant scarlet, electric blue, golden amber, jade, warm brown",
-    "atmosphere": "lush, humid, biodiverse, ancient, mystical",
-    "time_periods": ["filtered morning light", "dappled midday", "golden afternoon", "misty dawn"],
-    "educational_themes": ["biodiversity", "ecosystem layers", "animal behavior", "conservation"]
+    "atmosphere": "Lush, adventurous, exotic, safely wild, biodiverse",
+    "values": ["Empathy", "Observation", "Respect for Nature", "Resilience"],
+    "sensitivity_rules": [
+        "NO aggressive animal encounters",
+        "Dangerous animals (like jaguars) only far away or as silhouettes",
+        "Child remains safe throughout the journey",
+        "Action and ecology focus"
+    ]
 }
 
+# ============================================================================
+# CUSTOM INPUTS
+# ============================================================================
 
-# -----------------------------------------------------------------------------
-# ÖZEL GİRİŞ ALANLARI (Custom Inputs)
-# -----------------------------------------------------------------------------
+AMAZON_CUSTOM_INPUTS: list[dict] = []
 
-AMAZON_CUSTOM_INPUTS = [
-    {
-        "key": "favorite_animal",
-        "label": "En Sevdiği Hayvan",
-        "type": "select",
-        "options": [
-            "Renkli Papağan (Macaw)",
-            "Pembe Nehir Yunusu",
-            "Ağaç Tembeli",
-            "Toucan (Gagalı Kuş)",
-            "Mavi Kelebek"
-        ],
-        "default": "Renkli Papağan (Macaw)",
-        "required": False,
-        "help_text": "Hikayede çocuğun en çok vakit geçireceği hayvan arkadaş"
-    },
-    {
-        "key": "helper_tool",
-        "label": "Yardım Aracı",
-        "type": "select",
-        "options": [
-            "Harita ve Pusula",
-            "Dürbün ve Not Defteri",
-            "Su Matarası",
-            "Sihirli Fener"
-        ],
-        "default": "Dürbün ve Not Defteri",
-        "required": False,
-        "help_text": "Ormanda keşif yaparken kullanacağı özel araç"
-    },
-    {
-        "key": "jungle_mission",
-        "label": "Orman Görevi",
-        "type": "select",
-        "options": [
-            "Kayıp Yavruyu Sürüsüne Ulaştır",
-            "Gizli Su Kaynağını Keşfet",
-            "Dev Ağacın Sırrını Çöz",
-            "Orman Haritasını Tamamla"
-        ],
-        "default": "Kayıp Yavruyu Sürüsüne Ulaştır",
-        "required": False,
-        "help_text": "Hikayenin ana macera görevi"
-    }
-]
-
+# ============================================================================
+# DATABASE UPDATE
+# ============================================================================
 
 async def update_amazon_scenario():
-    """Amazon Ormanları Keşfediyorum senaryosunu master prompt'larla güncelle veya oluştur."""
-    
-    print("\n" + "="*60)
-    print("AMAZON ORMANLARI KEŞFEDİYORUM SENARYO GÜNCELLEMESİ")
-    print("="*60 + "\n")
-    
+    """Amazon senaryosunu yeni Hayvan İzleri ve Gizemli Sinyal Şablonuna göre günceller."""
     async with async_session_factory() as db:
-        # Mevcut senaryoyu bul
         result = await db.execute(
-            select(Scenario).where(Scenario.name.ilike("%Amazon%Ormanlar%"))
+            select(Scenario).where(
+                (Scenario.theme_key == "amazon")
+                | (Scenario.theme_key == "amazon_rainforest")
+                | (Scenario.name.ilike("%Amazon%"))
+            )
         )
         scenario = result.scalar_one_or_none()
-        
+
         if not scenario:
-            print("[INFO] 'Amazon Ormanları Keşfediyorum' senaryosu bulunamadı. Yeni oluşturuluyor...")
-            scenario = Scenario(
-                name="Amazon Ormanları Keşfediyorum",
-                is_active=True
-            )
+            scenario = Scenario(name="Amazon'un Gizli Çağrısı", is_active=True)
+            scenario.theme_key = "amazon"
             db.add(scenario)
-        else:
-            print(f"[OK] Senaryo bulundu: {scenario.name} (ID: {scenario.id})")
+
+        # Meta Bilgiler
+        scenario.name = "Amazon'un Gizli Çağrısı"
+        scenario.description = (
+            "Indiana Jones ruhuyla efsanevi bir ekoloji macerası! "
+            "Amazon ormanlarında duyduğu gizemli bir sinyalin peşinden koşan kahramanımızın, "
+            "egzotik hayvanların bıraktığı şeffaf izleri birleştirerek yalnız bir yavruyu "
+            "kurtarma serüveni."
+        )
+        scenario.theme_key = "amazon"
         
-        # Güncelleme yap
-        scenario.description = "Dünyanın en zengin ekosistemi Amazon yağmur ormanlarında büyülü bir keşif! Renkli papağanlar, pembe nehir yunusları, ağaç tembelleri ve dev kapok ağaçları arasında biyolojik çeşitliliği keşfet. Yardımlaşma ve doğayı koruma değerlerini öğren."
+        # Kapaklar ve Promplar
         scenario.cover_prompt_template = AMAZON_COVER_PROMPT
         scenario.page_prompt_template = AMAZON_PAGE_PROMPT
         scenario.story_prompt_tr = AMAZON_STORY_PROMPT_TR
-        scenario.ai_prompt_template = None  # V2 story_prompt_tr kullanıyor
-        scenario.location_en = "Amazon Rainforest"
-        scenario.theme_key = "amazon_rainforest"
-        scenario.cultural_elements = AMAZON_CULTURAL_ELEMENTS
-        scenario.custom_inputs_schema = AMAZON_CUSTOM_INPUTS
+        
+        # Kıyafet Sistemi
         scenario.outfit_girl = OUTFIT_GIRL
         scenario.outfit_boy = OUTFIT_BOY
-        scenario.default_page_count = 22
-        scenario.display_order = 12
         
-        await db.commit()
-        await db.refresh(scenario)
-        
-        print("\n[OK] GÜNCELLEME TAMAMLANDI!\n")
-        print("-"*60)
-        print("Güncellenen alanlar:")
-        print(f"   - ID: {scenario.id}")
-        print(f"   - name: {scenario.name}")
-        print(f"   - description: {len(scenario.description)} karakter")
-        print(f"   - cover_prompt_template: {len(AMAZON_COVER_PROMPT)} karakter")
-        print(f"   - page_prompt_template: {len(AMAZON_PAGE_PROMPT)} karakter")
-        print(f"   - story_prompt_tr: {len(AMAZON_STORY_PROMPT_TR)} karakter")
-        print("   - location_en: Amazon Rainforest")
-        print("   - theme_key: amazon_rainforest")
-        print(f"   - cultural_elements: {len(json.dumps(AMAZON_CULTURAL_ELEMENTS))} karakter (JSON)")
-        print(f"   - custom_inputs_schema: {len(AMAZON_CUSTOM_INPUTS)} özel alan")
-        print(f"   - outfit_girl: {len(OUTFIT_GIRL)} karakter")
-        print(f"   - outfit_boy: {len(OUTFIT_BOY)} karakter")
-        print(f"   - default_page_count: {scenario.default_page_count}")
-        print(f"   - display_order: {scenario.display_order}")
-        print("-"*60)
-        
-        # Preview
-        print("\nKAPAK PROMPT ÖNİZLEME (ilk 500 karakter):")
-        print("-"*60)
-        print(AMAZON_COVER_PROMPT[:500] + "...")
-        
-        print("\nSAYFA PROMPT ÖNİZLEME (ilk 500 karakter):")
-        print("-"*60)
-        print(AMAZON_PAGE_PROMPT[:500] + "...")
-        
-        print("\nSTORY_PROMPT_TR ÖNİZLEME (ilk 400 karakter):")
-        print("-"*60)
-        print(AMAZON_STORY_PROMPT_TR[:400] + "...")
-        
-        print("\n" + "="*60)
-        print("Amazon Ormanları Keşfediyorum artık master-level prompt'lara sahip!")
-        print("="*60 + "\n")
+        # Kültürel & Pazarlama Verileri
+        scenario.cultural_elements = AMAZON_CULTURAL_ELEMENTS
+        scenario.custom_inputs_schema = AMAZON_CUSTOM_INPUTS
+        scenario.marketing_badge = "Doğa ve Gizem"
+        scenario.age_range = "5-10"
+        scenario.tagline = "Ormanı dinle, hayvanların sırrını çöz!"
+        scenario.is_active = True
 
+        await db.commit()
+        print(f"Amazon 'Gizli Çağrı' scenario updated seamlessly: {scenario.id}")
 
 if __name__ == "__main__":
     asyncio.run(update_amazon_scenario())

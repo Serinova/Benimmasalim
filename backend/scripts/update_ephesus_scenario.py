@@ -1,355 +1,192 @@
 """
-YENİ SİSTEM: Efes Antik Kenti Macerası Scenario Update
-======================================================
-ESKİ sistem TAMAMEN SİLİNDİ - SIFIRDAN yazıldı!
-
-Ocean/Dinosaur/Galata/Çatalhöyük standardına uygun:
-- Modular prompt (500 char limit)
-- Story blueprint (Antik Kent Keşfi + Tarih İhtişamı Dopamini)
-- Educational focus (3000+ yıllık Roma-Yunan uygarlığı!)
+Efes Antik Kenti — Zaman Yolculuğu, Macera, Indiana Jones Tarzı
+==========================================================================
+- Kitap adı: [Çocuk adı]'ın Zaman Kapısı: Efes (alt başlık yok)
+- Zaman yolculuğu ile Antik Efes devrinde sorun (su kemeri) çözme macerası
+- Celsus Kütüphanesi, Curetes Caddesi, Su Kemerleri
+- Kıyafet: Indiana Jones tarzı gezgin kıyafeti, kız ve erkek için zorunlu ve her sayfada aynı tutarlı (kıyafet kilidi)
+- Kurguyu bozabilecek kullanıcı seçenekleri yok (custom_inputs boş)
 """
 
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy import select, update
-from sqlalchemy.orm import sessionmaker
-from app.models import Scenario
 import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from sqlalchemy import select
+from app.core.database import async_session_factory
+from app.models import Scenario
 
 # ============================================================================
-# MODULAR PROMPT COMPONENTS (500 char limit!)
+# MODULAR PROMPT COMPONENTS (AI DIRECTOR - PASS 2)
 # ============================================================================
 
-EPHESUS_COVER_PROMPT = """Ephesus ancient city scene: {scene_description}.
-Child in foreground, magnificent Ephesus ruins in background.
-Celsus Library facade (iconic columns and statues), marble street visible.
-3000-year-old Greco-Roman archaeological site.
-Turkish Aegean landscape, ancient city atmosphere.
-Wide shot: child 30%, ancient ruins 70%.
-Epic historical scale, educational atmosphere.
-UNESCO World Heritage site."""
+EPHESUS_COVER_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Magnificent Library of Celsus facade with tall weathered Corinthian columns, intricate carved marble reliefs, a glowing magical time-rift portal shimmering between the ancient pillars. "
+    "Golden hour Aegean sunlight casting long warm shadows across sun-bleached marble, soft volumetric haze drifting through the columns, warm rim lighting on the child. "
+    "Low-angle hero shot: child 25% foreground, towering 3000-year-old Greco-Roman architecture 75%. "
+    "Rich warm palette: honey gold light, ivory marble, terracotta accents, deep azure sky. UNESCO atmosphere."
+)
 
-EPHESUS_PAGE_PROMPT = """Ephesus ancient city scene: {scene_description}.
-Elements: [Celsus Library: grand facade, columns, statues / Theater: massive 25,000-seat amphitheater / Marble street: Curetes Street, columns / Terrace houses: Roman mosaics, frescoes / Temple ruins: Artemis Temple remains / Agora: ancient marketplace].
-Ancient colors: white marble, weathered stone.
-Grand, majestic, educational atmosphere.
-Greco-Roman civilization glory."""
+EPHESUS_PAGE_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Elements: [Ancient Ephesus ruins, bustling ancient Roman market, marble columns, ancient aqueducts, stone mechanisms]. "
+    "Cinematic action lighting, dynamic pose, detailed environment, depth of field. Wide angle, full body visible in action, child 30-40% of frame. No eye contact with camera."
+)
 
 # ============================================================================
-# STORY BLUEPRINT (Antik Kent Keşfi + Tarih İhtişamı Dopamini)
+# OUTFIT — Indiana Jones Tarzı Kıyafet Kilidi (Sabit ve Zorunlu)
+# ============================================================================
+
+OUTFIT_GIRL = (
+    "khaki explorer shirt, fitted brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat, subtle woven bracelet charm. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest."
+)
+
+OUTFIT_BOY = (
+    "khaki explorer shirt, brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest."
+)
+
+# ============================================================================
+# STORY BLUEPRINT — Zaman Yolculuğu ve Mühendislik Macerası (PURE AUTHOR - PASS 1)
 # ============================================================================
 
 EPHESUS_STORY_PROMPT_TR = """
-# ANTİK KENT KEŞFİ DOPAMİN YÖNETİMİ - EFES ANTİK KENTİ MACERASI
+# EFES'İN ZAMAN KAPISI: ANTİK MACERA
 
-## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
+## YAPI: {child_name} Indiana Jones tarzı kıyafetleriyle Efes Antik Kenti'nde eski bir taşı bularak zaman yolculuğu yapar ve Roma dönemindeki Efes'te gerçek bir mekanik problemi (su kemeri) çözer. Heyecan, gizem, küçük kovalamacalar ve adrenalin içerir. Korkutucu veya kanlı DEĞİL, tempolu.
 
-Bu antik kent keşif hikayesi, çocuğa **tarih**, **bilim**, **sanat** ve **uygarlık** değerlerini öğretir.
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Zaman Kapısı: Efes" olmalı. Alt başlık EKLEME.
 
-🏛️ **EFES**: Antik Çağ'ın en önemli kentlerinden (3000+ yıl!), UNESCO Dünya Mirası!
-
----
-
-### BÖLÜM 1 - GİRİŞ: EFES'E VARIŞ (1-4)
-- {child_name}, İzmir'in Selçuk ilçesinde, Efes Antik Kenti'ne varıyor
-- İlk bakış: Mermer sütunlar, antik yollar, tarihin ihtişamı
-- Heyecan: "3000 yıl önce burada insanlar yaşamış!"
-- **Değer**: Tarih, merak, saygı
-
-**Sayfa içeriği**:
-- S1: Efes'e varış, antik kent girişi
-- S2: Mermer sütunları görme, ilk hayranlık
-- S3: Antik yollar, "Roma döneminden kalma!"
-- S4: "3000 yıl önce!" hayranlığı ✓ **İLK HAYRANLIK**
+**STİL & TON:** 
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. 
+- Dili akıcı, ritimli ve 5-10 yaş aralığında merak uyandırıcı olmalıdır. 
+- Bilgi yığını yapma; Efes'i yaşanılan maceranın epik donanımı olarak kullan.
+- Her sayfa veya bölüm sonunda hafif bir merak (cliffhanger) hissi bırak.
 
 ---
 
-### BÖLÜM 2 - CELSUS KÜTÜPHANESİ: BİLİM MERKEZİ (5-9)
-**[BİLİM KEŞFİ DÖNGÜSÜ #1]**
-- **Muhteşem Cephe**: İki katlı, heybetli sütunlar, heykeller
-- **12.000 Kitap**: Antik Çağ'ın en büyük kütüphanelerinden!
-- **Mimari**: İyonik ve Korint sütunları, mükemmel oran
-- **Bilim Merkezi**: Bilim insanları, filozoflar burada buluşurmuş
+### Bölüm 1 — Gizemli Keşif (Sayfa 1-3)
+- Sayfa 1: {child_name} kütüphanede (veya harabelerde) gezerken çöpte tuhaf, çatlak ekranlı eski bir 'tablet/taş' görür. "Bunu kim atar ki?" diye düşünerek taşı dikkatle alır.
+- Sayfa 2: Taşa dokununca hafif bir titreşim hisseder. Üzerinde anlaşılmaz antik semboller parlamaya başlar. Kalbi hızla atarak taşı hemen çantasına saklar.
+- Sayfa 3: Efes Antik Kenti turu başlar. Sıcak Ege rüzgarı esmekte, mermer taş yollar ve dev sütunlar arasından yürünmektedir. Çantasındaki taş yeniden titremeye başlar.
 
-**EPİK AN #1**: 12.000 kitaplık dev kütüphane - antik bilim merkezi! ✓ **BİLİM ZİRVESİ #1**
+### Bölüm 2 — Zaman Kapısı (Sayfa 4-6)
+- Sayfa 4: Çocuğun dikkati Celsus Kütüphanesi yanındaki özel bir sütuna çekilir. Sütunun üzerinde tam elindeki taşın şekline uyan pürüzsüz bir boşluk fark eder. İçinde kararsızlık ve cesaret çarpışmaktadır.
+- Sayfa 5: Cesaretini toplar ve gizemli taşı yuvasına yerleştirir. Aniden göz kamaştırıcı bir ışık patlaması olur, zemin sarsılır ve yankılanan bir "Vızz!" sesi duyulur. Gözlerini kapatır. (Kısa cliffhanger)
+- Sayfa 6: Gözlerini açtığında turistler gitmiş; etrafta kalabalık bir antik Roma pazar yeri, tunik giymiş insanlar ve at arabaları vardır. Zaman tünelinden geçmiştir! Büyük bir şaşkınlıkla fısıldar: "Ben neredeyim?!"
 
-**Sayfa içeriği**:
-- S5: Celsus Kütüphanesi'ni görme, "Ne büyük!"
-- S6: İki katlı cephe, heybetli sütunlar
-- S7: Heykeller, antik sanat
-- S8: "12.000 kitap varmış!" ✓ **BİLİM KEŞİF ZİRVESİ**
-- S9: Antik bilim merkezi, filozoflar
+### Bölüm 3 — Kuruyan Çeşmeler (Sayfa 7-9)
+- Sayfa 7: Panik halindeki Romalı bir çırak koşarak gelir: "Su kemeri bozuldu! Şehrin çeşmeleri durdu!" diyerek etrafa bağırır. Maceranın ana problemi başlamıştır.
+- Sayfa 8: {child_name} ustaları takip eder. Kurumuş taş kanallarını inceler. Elindeki tabletteki sembollerin, su kanalının üzerindeki usta işaretleriyle benzerliğini fark eder.
+- Sayfa 9: Bir görevli "Yanlış taşı takarsak bütün sistem içeriden çöker!" der. Kahramanımız içgüdüsel olarak "Benim taşım bunu anlatıyor" hissine kapılır.
 
----
+### Bölüm 4 — Antik Bulmaca ve Kovalamaca (Sayfa 10-13)
+- Sayfa 10: Ana vanaya giden gizli kapakta ufak bir bulmaca vardır: 3 sütundaki sembolleri hizalaması gerekir. Zekasını konuşturup sembolleri titizlikle eşleştirir.
+- Sayfa 11: Eşleşme olunca gizli bir bakım tüneli büyük bir gıcırtıyla açılır. Tünel fener ışıklarıyla kaplıdır. Ancak birden arkasında taşı isteyen şüpheli birilerinin ayak sesleri duyulur!
+- Sayfa 12: Kovalama anı: Dar geçitte tavandan tozlar dökülür ve kapı yavaşça kapanmaktadır. {child_name} son anda çeviklikle altından kayarak geçer, çantası sallanır ve taş umutla parlar.
+- Sayfa 13: Tünel dehlizinin sonunda paslı, sıkışmış devasa su vanası mekanizmasını bulur. Sistemi serbest bırakmak için o küçük ellerden çok daha fazla güç gerekmektedir.
 
-### BÖLÜM 3 - BÜYÜK TİYATRO: 25.000 KİŞİLİK DEV (10-14)
-**[MİMARİ HAYRANLIK DÖNGÜSÜ #2]**
-- **Dev Tiyatro**: 25.000 kişi kapasiteli! (Antik Çağ'ın en büyüklerinden)
-- **Akustik Mucize**: Sahneden en üst sıraya ses ulaşıyor!
-- **Basamaklar**: 66 sıra, dağın yamacına oyulmuş
-- **Tiyatro Kültürü**: Drama, müzik, halk toplantıları
+### Bölüm 5 — Mühendislik ve Başarı (Sayfa 14-17)
+- Sayfa 14: Antik bir usta peşinden yetişir ve "Bunu tek kişi çeviremez" der. Kahramanımız etraftaki kalaslar ve halatlarla hızlıca bir 'kaldıraç' planı kurar.
+- Sayfa 15: Plan tıkır tıkır işler, vana döner ve "şşşş!" diye suların gürlemesi duyulur. Ancak o sırada yeni bir çatlak açılır; su yanlış kanala kaçmaktadır!
+- Sayfa 16: Hızlı karar anı. Suyun akışını ana kanala yönlendirecek olan 'kilit taşı' eksiktir. Kendi çantasındaki taşı çıkarıp kanalın yuvasına tutar.
+- Sayfa 17: Taşı yerine bir yapboz parçası gibi oturtur. Suyun akışı efsanevi bir şekilde düzelir. Yeryüzünden, meydandaki insanlardan büyük bir alkış kopar.
 
-**EPİK AN #2**: 25.000 kişilik dev tiyatro - mimari mucize! ✓ **MİMARİ ZİRVESİ #2**
-
-**Sayfa içeriği**:
-- S10: Büyük Tiyatro'yu görme, "Devasa!"
-- S11: 66 sıra basamak, dağa oyulmuş
-- S12: "25.000 kişi! İnanılmaz!" ✓ **MİMARİ HAYRANLIK ZİRVESİ**
-- S13: Akustik mucize, sahne
-- S14: Antik tiyatro kültürü, drama sanatı
-
----
-
-### BÖLÜM 4 - MERMER SOKAKLAR: CURETES CADDESİ (15-18)
-**[İHTİŞAM KEŞFİ DÖNGÜSÜ #3]**
-- **Curetes Caddesi**: Ana cadde, mermerden döşenmiş
-- **Sütunlar**: Yüksek sütunlar caddeyi süslüyor
-- **Heykeller**: Tanrı ve tanrıça heykelleri
-- **Mozaikler**: Yol kenarında eski mozaikler
-
-**EPİK AN #3**: Sütunlarla süslü mermer cadde - Roma ihtişamı! ✓ **İHTİŞAM ZİRVESİ #3**
-
-**Sayfa içeriği**:
-- S15: Curetes Caddesi'ne girme
-- S16: Yüksek sütunlar, "Hala ayakta!" ✓ **İHTİŞAM KEŞFİ ZİRVESİ**
-- S17: Mermer yollar, antik taşlar
-- S18: Heykeller ve mozaikler
+### Bölüm 6 — İz Bırakmak ve Günümüze Dönüş (Sayfa 18-21)
+- Sayfa 18: Pazar yerine gürül gürül su gelir. Antik insanlar şaşkındır: "Bu küçük yabancı başardı!". Herkes minnettar bakışlarla onu izler.
+- Sayfa 19: Romalı bir yazıcı bu anı kil tablete kazımak ister. Kahramanımız utangaçça gülerken yanlışlıkla orada günümüze de uzanacak küçük, gizli bir sembol (iz) bırakır.
+- Sayfa 20: Çantasındaki taş tekrar hızla titreşmeye ve ışık saçmaya başlar: Geri dönme vakti! Arkasındaki gizemli adam onu yakalamak üzeredir, kapıya doğru hızla koşar (Sprint).
+- Sayfa 21: Taşı sütundan çekip alır, her yer bembeyaz olur. Günümüze döndüğünde Efes yine turistik, sessiz halindedir. Ama avucunun içinde eski çağdan kalma küçük bir hatıra işareti kalmıştır. Derin bir merak uyanır: "Acaba taş bir gün yine titreyecek mi?"
 
 ---
 
-### BÖLÜM 5 - ROMA YAŞAMI: TERAS EVLER VE MOZAİKLER (19-20)
-**[SANAT DÖNGÜSÜ #4]**
-- **Teras Evler**: Zengin Romalıların evleri
-- **Mozaikler**: Renkli taş mozaikler, mitolojik sahneler
-- **Freskler**: Duvar resimleri, 2000 yıllık!
-- **Lüks Yaşam**: Roma'nın zengin yaşamı
-
-**EPİK AN #4**: 2000 yıllık mozaikler - Roma sanatı! ✓ **SANAT ZİRVESİ #4**
-
-**Sayfa içeriği**:
-- S19: Teras evlere girme, mozaikler
-- S20: "El emeği, 2000 yıllık!" ✓ **SANAT DORUĞU**
-
----
-
-### BÖLÜM 6 - FİNAL: TARİHİN İHTİŞAMI VE UYGARLIK MİRASI (21-22)
-**[TARİH DORUĞU - FİNAL]**
-- **Artemis Tapınağı**: Dünya'nın 7 Harikasından biri (kalıntıları)
-- **Uygarlık**: Yunan, Roma, Bizans medeniyetleri
-- **UNESCO**: Dünya Mirası koruma
-- **Mesaj**: "Büyük uygarlıklar böyle yaşamış!"
-
-**EPİK AN #5**: Tarihin ihtişamı, uygarlık mirası! ✓ **TARİH DORUĞU**
-
-**Sayfa içeriği**:
-- S21: Artemis Tapınağı kalıntıları, 7 Harika
-- S22: Uygarlık mirası, "Tarih yaşıyor!"
-
----
-
-## DOPAMIN ZİRVELERİ:
-1. **Sayfa 4**: 3000 yıl önce hayranlığı (İLK HAYRANLIK)
-2. **Sayfa 8**: Celsus Kütüphanesi - 12.000 kitap (BİLİM ZİRVESİ)
-3. **Sayfa 12**: Büyük Tiyatro - 25.000 kişi (MİMARİ ZİRVESİ)
-4. **Sayfa 16**: Curetes Caddesi sütunları (İHTİŞAM ZİRVESİ)
-5. **Sayfa 20**: Mozaikler ve freskler (SANAT ZİRVESİ)
-6. **Sayfa 22**: Artemis Tapınağı - 7 Harika (TARİH DORUĞU)
-
----
-
-## DEĞERLER:
-- **TARİH**: 3000+ yıllık miras, Yunan-Roma-Bizans uygarlığı
-- **BİLİM**: Celsus Kütüphanesi, 12.000 kitap, bilim merkezi
-- **SANAT**: Tiyatro, mozaikler, freskler, heykeller, mimari
-- **UYGARLIK**: Antik Çağ'ın en gelişmiş ve önemli kenti
-
----
-
-## EĞİTİM ODAKLARI:
-- **Yunan-Roma Dönemi**: MÖ 10. yüzyıl - MS 15. yüzyıl
-- **Celsus Kütüphanesi**: Antik dünyanın 3. büyük kütüphanesi (12.000 kitap)
-- **Büyük Tiyatro**: 25.000 kişi kapasiteli, akustik mucize
-- **Artemis Tapınağı**: Dünya'nın 7 Harikasından biri
-- **UNESCO**: Dünya Mirası koruma bilinci
-
----
-
-## CUSTOM INPUTS:
-- {favorite_monument}: Çocuğun en sevdiği anıt (örn: Celsus Kütüphanesi, Büyük Tiyatro, Mermer Sokaklar, Mozaikler)
-- Bu öğe sayfa 15-17 arasında vurgulanacak
-
----
-
-## NOT:
-Her sayfa {scene_description} ile dinamik olarak hikayeye entegre edilir.
-Çocuk her sayfada TARİH ve UYGARLIK keşfeder, 3000 yıllık Roma-Yunan ihtişamını yaşar!
-Eğitici, ihtişamlı, bilimsel!
+## KURALLAR
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 21 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- AI Görüntü (scene_description) promptlarını (İngilizce) yazarken "standing still" veya "looking at camera" KULLANMA. Aksiyon belirt (örn: "Child sliding under a heavy stone door", "Child pulling a complex rope lever mechanism").
 """
-
-# ============================================================================
-# OUTFIT DEFINITIONS
-# ============================================================================
-
-OUTFIT_GIRL = """Casual ancient site visit outfit for Aegean sun.
-Comfortable t-shirt or casual top, practical pants or shorts.
-Wide-brimmed sun hat or baseball cap for strong Aegean sun protection.
-Comfortable walking shoes or sneakers (marble paths!).
-Small backpack with water bottle and sunscreen.
-Age-appropriate, practical for outdoor archaeological site exploration.
-Light colors recommended for hot weather."""
-
-OUTFIT_BOY = """Casual ancient site visit outfit for Aegean sun.
-Comfortable t-shirt, practical shorts or pants.
-Baseball cap or sun hat for strong Aegean sun protection.
-Comfortable walking shoes or sneakers (marble paths!).
-Small backpack with water bottle and sunscreen.
-Age-appropriate, practical for outdoor archaeological site exploration.
-Light colors recommended for hot weather."""
 
 # ============================================================================
 # CULTURAL ELEMENTS
 # ============================================================================
 
 EPHESUS_CULTURAL_ELEMENTS = {
-    "location": "Izmir, Turkey (Selçuk district)",
-    "historic_site": "Ephesus Ancient City, 3000+ years old (10th century BC - 15th century AD)",
+    "location": "Ephesus Ancient City, Selçuk, Izmir, Turkey",
     "unesco": "UNESCO World Heritage Site",
-    "civilizations": ["Ancient Greek", "Roman Empire", "Byzantine"],
-    "significance": "One of the most important cities of the ancient world",
     "major_monuments": [
-        "Celsus Library (12,000 scrolls, 3rd largest in ancient world)",
-        "Great Theater (25,000 capacity, largest in Asia Minor)",
+        "Celsus Library (12,000 scrolls, two-story facade)",
+        "Great Theater (25,000 capacity, carved into hillside)",
         "Curetes Street (marble colonnaded street)",
-        "Terrace Houses (Roman luxury homes with mosaics)",
-        "Temple of Artemis ruins (one of Seven Wonders of Ancient World)",
-        "Agora (ancient marketplace)"
+        "Ancient Water Aqueducts and Fountains",
     ],
-    "architecture": [
-        "Greco-Roman temples and theaters",
-        "Marble streets and columns",
-        "Two-story library facade",
-        "Amphitheater carved into hillside",
-        "Mosaic floors and frescoes"
-    ],
-    "cultural_aspects": [
-        "Theater and drama culture",
-        "Library and knowledge center",
-        "Roman bath culture",
-        "Marketplace and commerce",
-        "Religious temples"
-    ],
-    "atmosphere": "Grand, majestic, educational, ancient civilization glory",
-    "educational_focus": [
-        "Greco-Roman civilization",
-        "Ancient library system (12,000 scrolls!)",
-        "Theater acoustics and architecture",
-        "Roman mosaic art",
-        "Seven Wonders of Ancient World (Artemis Temple)",
-        "UNESCO preservation"
-    ],
-    "values": ["History appreciation", "Science and knowledge", "Art and architecture", "Civilization awareness"],
-    "unique_features": [
-        "Celsus Library facade (iconic ancient architecture)",
-        "25,000-seat theater with perfect acoustics",
-        "Marble streets still visible after 2000 years",
-        "Connection to Seven Wonders (Artemis Temple)"
-    ]
+    "atmosphere": "Ancient, mysterious, action-packed, time-travel, Greco-Roman civilization",
+    "values": ["Courage", "Problem Solving", "Engineering", "Historical awareness"],
 }
 
 # ============================================================================
-# CUSTOM INPUTS
+# CUSTOM INPUTS — Kurguyu bozmayacak şekilde boş
 # ============================================================================
 
-EPHESUS_CUSTOM_INPUTS = {
-    "favorite_monument": {
-        "type": "select",
-        "label_tr": "En sevdiğin anıt hangisi?",
-        "label_en": "What's your favorite monument?",
-        "options": [
-            {"value": "celsus_library", "label_tr": "Celsus Kütüphanesi (12.000 kitap!)", "label_en": "Celsus Library (12,000 scrolls!)"},
-            {"value": "great_theater", "label_tr": "Büyük Tiyatro (25.000 kişi!)", "label_en": "Great Theater (25,000 seats!)"},
-            {"value": "marble_street", "label_tr": "Mermer Sokaklar", "label_en": "Marble Streets"},
-            {"value": "mosaics", "label_tr": "Roma Mozaikleri", "label_en": "Roman Mosaics"},
-            {"value": "artemis_temple", "label_tr": "Artemis Tapınağı (7 Harika!)", "label_en": "Artemis Temple (7 Wonders!)"}
-        ],
-        "default": "celsus_library",
-        "usage": "Emphasized in pages 15-17 (discovery peak)"
-    }
-}
+EPHESUS_CUSTOM_INPUTS: list[dict] = []
 
 # ============================================================================
-# DATABASE UPDATE FUNCTION
+# DATABASE UPDATE
 # ============================================================================
 
 async def update_ephesus_scenario():
-    """EFES ANTİK KENTİ senaryosunu YENİ SİSTEM ile günceller."""
-    
-    db_url = os.getenv("DATABASE_URL")
-    if not db_url:
-        raise ValueError("DATABASE_URL environment variable not set")
-    
-    engine = create_async_engine(db_url, echo=True)
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    
-    async with async_session() as session:
-        # Find Ephesus scenario
-        result = await session.execute(
+    """Efes Antik Kenti senaryosunu Zaman Kapısı kurgusuyla günceller."""
+    async with async_session_factory() as db:
+        result = await db.execute(
             select(Scenario).where(
-                (Scenario.theme_key == "ephesus_ancient_city") |
-                (Scenario.name.ilike("%Efes%")) |
-                (Scenario.name.ilike("%Ephesus%"))
+                (Scenario.theme_key == "ephesus")
+                | (Scenario.theme_key == "ephesus_ancient_city")
+                | (Scenario.name.ilike("%Efes%"))
             )
         )
         scenario = result.scalar_one_or_none()
-        
-        if not scenario:
-            print("❌ Efes scenario not found!")
-            return
-        
-        print(f"\n✅ Found scenario: {scenario.name} (ID: {scenario.id})")
-        
-        # Verify prompt lengths
-        print(f"\n📏 PROMPT LENGTHS:")
-        print(f"   Cover: {len(EPHESUS_COVER_PROMPT)} chars (max 500)")
-        print(f"   Page: {len(EPHESUS_PAGE_PROMPT)} chars (max 500)")
-        print(f"   Story: {len(EPHESUS_STORY_PROMPT_TR)} chars")
-        
-        if len(EPHESUS_COVER_PROMPT) > 500 or len(EPHESUS_PAGE_PROMPT) > 500:
-            print("❌ HATA: Prompt 500 karakteri aşıyor!")
-            return
-        
-        # Update scenario
-        await session.execute(
-            update(Scenario)
-            .where(Scenario.id == scenario.id)
-            .values(
-                cover_prompt_template=EPHESUS_COVER_PROMPT,
-                page_prompt_template=EPHESUS_PAGE_PROMPT,
-                story_prompt_tr=EPHESUS_STORY_PROMPT_TR,
-                outfit_girl=OUTFIT_GIRL,
-                outfit_boy=OUTFIT_BOY,
-                cultural_elements=EPHESUS_CULTURAL_ELEMENTS,
-                custom_inputs_schema=EPHESUS_CUSTOM_INPUTS,
-                description="3000 yıllık Roma-Yunan ihtişamına yolculuk! Celsus Kütüphanesi (12.000 kitap!), 25.000 kişilik Büyük Tiyatro, mermer sokaklar ve mozaiklerle Efes Antik Kenti'ni keşfet. UNESCO Dünya Mirası'nda antik uygarlık macerası!",
-                marketing_badge="YENİ! Antik Kent Macerası",
-                age_range="7-10",
-                tagline="Roma ihtişamını keşfet!"
-            )
-        )
-        
-        await session.commit()
-        
-        print("\n✅ EFES ANTİK KENTİ scenario updated successfully!")
-        print("   - Modular prompts: DONE")
-        print("   - Story blueprint: DONE")
-        print("   - Educational focus: DONE")
-        print("   - Outfit (Aegean sun protection): DONE")
-        print("   - Cultural elements: DONE")
-        print("   - Custom inputs: DONE")
 
-# ============================================================================
-# MAIN
-# ============================================================================
+        if not scenario:
+            scenario = Scenario(name="Efes'in Zaman Kapısı", is_active=True)
+            scenario.theme_key = "ephesus"
+            db.add(scenario)
+
+        # Meta Bilgiler
+        scenario.name = "Efes'in Zaman Kapısı"
+        scenario.description = (
+            "Indiana Jones tarzı bir antik macera! Kütüphanede bulduğu gizemli tablet ile "
+            "Efes'in antik çağlarına zaman yolculuğu yapan çocuğun, bozulan taş su kemerini "
+            "aşmasını ve şehri kurtarmasını anlatan heyecanlı bir serüven."
+        )
+        scenario.theme_key = "ephesus"
+        
+        # Kapaklar ve Promplar
+        scenario.cover_prompt_template = EPHESUS_COVER_PROMPT
+        scenario.page_prompt_template = EPHESUS_PAGE_PROMPT
+        scenario.story_prompt_tr = EPHESUS_STORY_PROMPT_TR
+        
+        # Kıyafet Sistemi
+        scenario.outfit_girl = OUTFIT_GIRL
+        scenario.outfit_boy = OUTFIT_BOY
+        
+        # Kültürel & Pazarlama Verileri
+        scenario.cultural_elements = EPHESUS_CULTURAL_ELEMENTS
+        scenario.custom_inputs_schema = EPHESUS_CUSTOM_INPUTS
+        scenario.marketing_badge = "Zaman Yolculuğu"
+        scenario.age_range = "5-10"
+        scenario.tagline = "Gizemli tabletle antik çağlara ışınlan!"
+        scenario.is_active = True
+
+        await db.commit()
+        print(f"Efes 'Zaman Kapısı' scenario updated seamlessly: {scenario.id}")
 
 if __name__ == "__main__":
     asyncio.run(update_ephesus_scenario())

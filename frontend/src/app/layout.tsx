@@ -1,18 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
-};
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/toaster";
 
-const GA_ID = "G-M76XHJLF85";
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-M76XHJLF85";
 
 const inter = Inter({ subsets: ["latin"] });
 const playfair = Playfair_Display({
@@ -21,13 +14,25 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: "#7c3aed",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.benimmasalim.com.tr"),
   title: {
     default: "Benim Masalım – Kişiye Özel Çocuk Kitabı",
     template: "%s | Benim Masalım",
   },
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg", apple: "/favicon.svg" },
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/apple-touch-icon.png",
+  },
   description:
     "Yapay zeka destekli, çocuğunuzun adı ve fotoğrafıyla kişiselleştirilmiş masal kitapları oluşturun. Hediye çocuk kitabı için ideal.",
   keywords: [
@@ -63,19 +68,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="tr" suppressHydrationWarning>
       <head>
-        {/* Google Analytics 4 */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="ga4-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_ID}');
-          `}
-        </Script>
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_ID}');
+              `}
+            </Script>
+          </>
+        )}
       </head>
       <body className={`${inter.className} ${playfair.variable}`}>
         <Providers>

@@ -285,20 +285,26 @@ async def generate_remaining_pages(
     page_images = preview.page_images or {}
     numeric_keys = [k for k in page_images if k.isdigit()]
     num_images = len(numeric_keys)
+    _email_sent = "TRIAL_APPROVAL_EMAIL_SENT" in (preview.admin_notes or "")
 
-    if num_images >= num_pages:
-        return {"success": True, "message": "Tüm sayfaların görseli zaten mevcut", "missing": 0}
+    if num_images >= num_pages and _email_sent:
+        return {"success": True, "message": "Tüm sayfaların görseli zaten mevcut ve email gönderildi", "missing": 0}
 
-    missing = num_pages - num_images
+    missing = max(0, num_pages - num_images)
 
     # Reset status to PROCESSING so worker can process it
     if preview.status in ("QUEUE_FAILED", "FAILED", "PREVIEW_GENERATED", "COMPLETING"):
         preview.status = "PROCESSING"
-        preview.admin_notes = (
-            (preview.admin_notes or "")
-            + f"\n\nAdmin tarafindan yeniden tetiklendi ({admin.email})"
-        )
-        await db.commit()
+
+    # If all images exist but email was not sent, keep PENDING status so worker sends email
+    if num_images >= num_pages and not _email_sent and preview.status == "PENDING":
+        pass  # Keep PENDING; worker will detect _is_full_retry and only send email/PDF
+
+    preview.admin_notes = (
+        (preview.admin_notes or "")
+        + f"\n\nAdmin tarafindan yeniden tetiklendi ({admin.email})"
+    )
+    await db.commit()
 
     try:
         from app.workers.enqueue import enqueue_remaining_pages
@@ -613,6 +619,12 @@ async def generate_book_from_preview(
                     child_name=preview.child_name or "",
                     story_title=getattr(preview, "story_title", "") or "",
                 )
+                # Placeholder/senaryo description sızıntısı varsa intro metnini kullanma
+                if _text and (
+                    "[çocuk adı]" in _text.lower() or "[cocuk adi]" in _text.lower()
+                    or "kitap adı:" in _text.lower() or "kitap adi:" in _text.lower()
+                ):
+                    _text = None
                 if _text:
                     _cfg = build_template_config(_ded_tpl_shared) if _ded_tpl_shared else {}
                     _b64 = PageComposer().compose_dedication_page(text=_text, template_config=_cfg, dpi=300)

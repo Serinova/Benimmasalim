@@ -1192,7 +1192,7 @@ class PDFService:
         # ── Layout: top-down ────────────────────────────────────────────────────
         y_pos = page_height - margin - 5 * mm
 
-        # ── Logo (üstte ortalanmış) ───────────────────────────────────────────────
+        # ── Logo (üstte ortalanmış — altına beyaz arka plan ile belirginleştirildi) ──
         import os as _os
         from reportlab.lib.utils import ImageReader as _IR2
         try:
@@ -1201,7 +1201,7 @@ class PDFService:
         except ImportError:
             _pil_available = False
 
-        _logo_h_pt = 32.0 * mm  # biraz daha büyük — daha belirgin
+        _logo_h_pt = 45.0 * mm  # Çok daha belirgin ve büyük
         _logo_rendered = False
 
         _logo_candidates = [
@@ -1218,54 +1218,55 @@ class PDFService:
                         _aspect = _lw / _lh
                         _logo_w_pt = _logo_h_pt * _aspect
 
-                        # Arka plan rengiyle composite et → JPEG olarak kaydet
-                        # Böylece mask="auto"'nun soluklaştırma sorunu olmaz
-                        if not _image_background_used:
-                            # Gradient başlangıç rengi (bg_start değişkeni mevcut)
-                            try:
-                                _bg_r = int(bg_start.red * 255)
-                                _bg_g = int(bg_start.green * 255)
-                                _bg_b = int(bg_start.blue * 255)
-                            except Exception:
-                                _bg_r, _bg_g, _bg_b = 253, 246, 236
-                        else:
-                            _bg_r, _bg_g, _bg_b = 15, 10, 30  # koyu arka plan
-
-                        _bg_layer = _PILImg2.new("RGBA", (_lw, _lh), (_bg_r, _bg_g, _bg_b, 255))
-                        _bg_layer.paste(_logo_pil, mask=_logo_pil.split()[3])  # alpha channel ile
-                        _composited = _bg_layer.convert("RGB")
-
-                        _logo_buf = _io.BytesIO()
-                        _composited.save(_logo_buf, format="JPEG", quality=95)
-                        _logo_buf.seek(0)
-
                         _logo_x = (page_width - _logo_w_pt) / 2
                         _logo_y = y_pos - _logo_h_pt
+
+                        # Logo altına beyaz yarı-saydam arka plan çiz (logo boyama/gradient ile karışmasın)
+                        _logo_bg_pad = 4 * mm  # logo etrafında boşluk
+                        c.saveState()
+                        c.setFillColor(_RLColor(1, 1, 1, alpha=0.85))
+                        c.roundRect(
+                            _logo_x - _logo_bg_pad,
+                            _logo_y - _logo_bg_pad,
+                            _logo_w_pt + 2 * _logo_bg_pad,
+                            _logo_h_pt + 2 * _logo_bg_pad,
+                            3 * mm,
+                            fill=1, stroke=0,
+                        )
+                        c.restoreState()
+
+                        # Doğrudan PNG dosya yolunu veriyoruz, ReportLab mask="auto" ile transparanlığı muazzam işler.
                         c.drawImage(
-                            _IR2(_logo_buf),
+                            _lpath,
                             _logo_x, _logo_y,
                             width=_logo_w_pt, height=_logo_h_pt,
                             preserveAspectRatio=True,
+                            mask="auto",
                         )
                     else:
-                        # PIL yoksa direkt binary yükle (boyut 1:1 varsay)
+                        # PIL yoksa da direkt bas
                         _aspect = 1.0
                         _logo_w_pt = _logo_h_pt * _aspect
-                        _logo_buf = _io.BytesIO()
-                        with open(_lpath, "rb") as _lf:
-                            _logo_buf.write(_lf.read())
-                        _logo_buf.seek(0)
                         _logo_x = (page_width - _logo_w_pt) / 2
                         _logo_y = y_pos - _logo_h_pt
+                        # Beyaz arka plan
+                        c.saveState()
+                        c.setFillColor(_RLColor(1, 1, 1, alpha=0.85))
+                        c.roundRect(
+                            _logo_x - 4 * mm, _logo_y - 4 * mm,
+                            _logo_w_pt + 8 * mm, _logo_h_pt + 8 * mm,
+                            3 * mm, fill=1, stroke=0,
+                        )
+                        c.restoreState()
                         c.drawImage(
-                            _IR2(_logo_buf),
+                            _lpath,
                             _logo_x, _logo_y,
                             width=_logo_w_pt, height=_logo_h_pt,
                             preserveAspectRatio=True,
                             mask="auto",
                         )
 
-                    y_pos -= _logo_h_pt + 3 * mm
+                    y_pos -= _logo_h_pt + 5 * mm
                     _logo_rendered = True
                     logger.info("BACK_COVER_LOGO_RENDERED", path=_lpath)
                     break

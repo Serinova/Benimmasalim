@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CreditCard,
@@ -29,6 +29,22 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { API_BASE_URL } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
+
+/** Isolated cart timer — prevents full CheckoutStep re-render on every tick */
+function CartTimer() {
+  const [seconds, setSeconds] = useState(15 * 60);
+  useEffect(() => {
+    const interval = setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(interval);
+  }, []);
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return (
+    <p className="font-mono font-medium text-amber-600">
+      {mins}:{secs.toString().padStart(2, "0")}
+    </p>
+  );
+}
 
 interface CheckoutStepProps {
   childName: string;
@@ -120,7 +136,7 @@ function SuccessCelebration({
   storyTitle: string;
   onNewOrder: () => void;
 }) {
-  const particles = 80;
+  const particles = 30;
   const colors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6", "#ec4899"];
 
   return (
@@ -316,7 +332,6 @@ export default function CheckoutStep({
 }: CheckoutStepProps) {
 
   const [stage, setStage] = useState<CheckoutStage>("shipping");
-  const [cartTimer, setCartTimer] = useState(15 * 60);
 
   // Shipping form state — pre-fill from contactInfo if available
   const [shipping, setShipping] = useState<ShippingInfo>({
@@ -365,13 +380,7 @@ export default function CheckoutStep({
   const [promoLoading, setPromoLoading] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<PromoResult | null>(null);
 
-  // Cart timer countdown
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCartTimer((prev) => Math.max(0, prev - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const _cartTimerIsolated = true;
 
   // Saved addresses for quick selection
   const [savedAddresses, setSavedAddresses] = useState<Array<{
@@ -421,7 +430,6 @@ export default function CheckoutStep({
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
-
   // Calculate totals (with promo and coloring book)
   const shippingCost = 0;
   const coloringBookCost = hasColoringBook ? Number(coloringBookPrice || 0) : 0;
@@ -430,8 +438,8 @@ export default function CheckoutStep({
   const totalPrice = Math.max(rawTotal - discountAmount, 0);
   const isFreeOrder = totalPrice === 0 && appliedPromo?.valid;
 
-  // Estimated delivery date
-  const getEstimatedDelivery = () => {
+  // Estimated delivery date — memoized, only computed once
+  const estimatedDelivery = useMemo(() => {
     const date = new Date();
     let daysAdded = 0;
     while (daysAdded < 3) {
@@ -446,7 +454,7 @@ export default function CheckoutStep({
       day: "numeric",
       month: "long",
     });
-  };
+  }, []);
 
   // Validate shipping
   const isShippingValid =
@@ -457,7 +465,7 @@ export default function CheckoutStep({
     shipping.city.length > 1;
 
   // Handle form submission — card data is collected on iyzico side (PCI compliant)
-  const isBillingValid = (() => {
+  const isBillingValid = useMemo(() => {
     if (billing.billingType === "corporate") {
       if (!billing.companyName.trim()) return false;
       if (!billing.taxId.trim()) return false;
@@ -470,7 +478,7 @@ export default function CheckoutStep({
       if (billing.tcNo && !/^\d{11}$/.test(billing.tcNo)) return false;
     }
     return true;
-  })();
+  }, [billing, shipping.fullName]);
 
   const handleSubmit = () => {
     const promoCodeToSend = appliedPromo?.valid ? appliedPromo.promo_summary?.code ?? null : null;
@@ -593,8 +601,29 @@ export default function CheckoutStep({
 
         {/* Main Content */}
         <div className="grid gap-5 lg:grid-cols-5">
+          {/* Right Column - Order Summary (shown first on mobile) */}
+          <div className="order-first lg:order-last lg:col-span-2">
+            <div className="lg:hidden">
+              {/* Compact order summary for mobile */}
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm font-semibold text-slate-700">Sipariş Özeti</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Toplam</span>
+                  <span className="text-base font-bold text-purple-600">
+                    {new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 0 }).format(totalPrice)}
+                  </span>
+                </div>
+                {appliedPromo?.valid && (
+                  <p className="mt-1 text-xs font-medium text-emerald-600">
+                    ✓ Promosyon uygulandı
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Left Column - Form */}
-          <div className="lg:col-span-3">
+          <div className="order-last lg:order-first lg:col-span-3">
             <AnimatePresence mode="wait">
               {/* Shipping Form */}
               {stage === "shipping" && (
@@ -1214,8 +1243,8 @@ export default function CheckoutStep({
             </AnimatePresence>
           </div>
 
-          {/* Right Column - Order Summary (Sticky) */}
-          <div className="lg:col-span-2">
+          {/* Right Column - Order Summary (Sticky desktop, hidden on mobile — shown above) */}
+          <div className="hidden lg:col-span-2 lg:block">
             <div className="sticky top-4 space-y-4">
               {/* Book Preview */}
               <motion.div
@@ -1226,6 +1255,7 @@ export default function CheckoutStep({
               >
                 <div className="relative mb-4 aspect-[1.414/1] overflow-hidden rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 shadow-lg">
                   {coverImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={coverImageUrl} alt="Kitap Kapağı" className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-200 via-pink-100 to-orange-100">
@@ -1382,7 +1412,7 @@ export default function CheckoutStep({
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Tahmini Teslimat</p>
-                    <p className="font-medium text-green-600">{getEstimatedDelivery()}</p>
+                    <p className="font-medium text-green-600">{estimatedDelivery}</p>
                   </div>
                 </div>
 
@@ -1402,7 +1432,7 @@ export default function CheckoutStep({
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Sepet rezervasyonu</p>
-                    <p className="font-mono font-medium text-amber-600">{formatTimer(cartTimer)}</p>
+                    <CartTimer />
                   </div>
                 </div>
               </motion.div>

@@ -137,13 +137,13 @@ export function ProductionTab({
             {/* Story pages */}
             {detail.story_pages
               ?.filter((p: StoryPageContent) => p.page_type !== "backcover")
-              .map((page: StoryPageContent) => {
+              .map((page: StoryPageContent, idx: number) => {
               const pn = page.page_number ?? 0;
               const pageKey = String(pn);
               const url = pageImageUrl(pageKey);
               return (
                 <PageThumb
-                  key={pageKey}
+                  key={`page-${pn}-${idx}`}
                   pageKey={pageKey}
                   label={pn === 0 ? "0 (Kapak)" : `${pn}`}
                   url={url}

@@ -64,7 +64,6 @@ steps:
       - '--image=europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/worker:latest'
       - '--region=europe-west1'
       - '--platform=managed'
-      - '--no-traffic'
       - '--min-instances=1'
       - '--max-instances=5'
       - '--cpu=2'

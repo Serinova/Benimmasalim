@@ -210,6 +210,7 @@ async def generate_back_cover_image(
     clothing_description: str,
     style_modifier: str,
     face_ref_url: str | None,
+    original_photo_url: str = "",
     face_embedding: object,
     true_cfg_override: float | None,
     start_step_override: int | None,
@@ -270,6 +271,7 @@ async def generate_back_cover_image(
         skip_compose=False,
         precomposed_negative="",
         reference_embedding=face_embedding,
+        original_photo_url=original_photo_url,
     )
     image_url = result[0] if isinstance(result, tuple) else result
 

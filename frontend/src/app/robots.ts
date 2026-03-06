@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/api/", "/auth/"],
+        disallow: ["/admin", "/api/", "/auth/", "/account"],
       },
     ],
     sitemap: "https://www.benimmasalim.com.tr/sitemap.xml",

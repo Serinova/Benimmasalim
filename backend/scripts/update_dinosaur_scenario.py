@@ -1,473 +1,205 @@
 """
-Dinozorlar Macerası: Zaman Yolculuğu Senaryosu - Master Prompt Güncellemesi
-
-Bu script, Dinozorlar Macerası senaryosunu profesyonel, tutarlı ve
-paleontoloji odaklı prompt'larla ekler/günceller.
-
-Çalıştırma:
-    cd backend
-    python -m scripts.update_dinosaur_scenario
+Dinozorlar Alemi: Kayıp Yuva — Güvenli Macera, Pusula Gizemi, Indiana Jones Tarzı
+=============================================================================================
+- Kitap adı: [Çocuk adı]'ın Dinozorlar Alemi: Kayıp Yuva (alt başlık yok)
+- Bir müzede bulunan fosil pusula ile dinozorlar çağına geçerek fırtınada kalmış yavruyu yuvasına götürme macerası
+- Yerler: Müze dev iskelet altı, dev eğrelti ormanı, bataklık kenarı, kanyon, taşlı nehir
+- Kıyafet: Indiana Jones tarzı gezgin kıyafeti, kız ve erkek için zorunlu ve her sayfada aynı tutarlı (kıyafet kilidi)
+- Kurguyu bozabilecek kullanıcı seçenekleri yok (custom_inputs boş)
 """
 
 import asyncio
-import json
+import os
+import sys
 
-from sqlalchemy import select, update
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from sqlalchemy import select
 from app.core.database import async_session_factory
-from app.models.scenario import Scenario
+from app.models import Scenario
 
-
-# =============================================================================
-# DİNOZORLAR MACERASI - MASTER PROMPT TEMPLATES
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# KAPAK PROMPT TEMPLATE (Modular - Pipeline-Friendly: ~380 char)
-# -----------------------------------------------------------------------------
+# ============================================================================
+# MODULAR PROMPT COMPONENTS (AI DIRECTOR - PASS 2)
+# ============================================================================
 
 DINOSAUR_COVER_PROMPT = (
     "An {child_age}-year-old {child_gender} named {child_name} "
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
-    "MASSIVE T-Rex (12m) in background (majestic, not threatening). "
-    "Triceratops herd grazing. GIANT Brachiosaurus (25m) reaching clouds. "
-    "Pteranodon flock flying. Child TINY in vast prehistoric world. "
-    "Giant tree ferns, golden sunlight, volcanic mountains. "
-    "Time portal glowing blue."
+    "Child holding a small glowing fossil compass emitting warm pulsing amber light from ancient stone carvings. "
+    "Background: colossal prehistoric tree ferns with massive fronds, a dramatic stormy sky with billowing dark clouds and lightning flashes, "
+    "majestic dinosaur silhouettes — a long-necked Brachiosaurus and a horned Triceratops — visible through swirling mist in the valley below. "
+    "Dramatic cinematic backlighting from the stormy sky, volumetric mist weaving through the giant ferns, warm compass glow illuminating the child's face. "
+    "Low-angle epic shot: child 30% foreground, immersive prehistoric wilderness 70%. "
+    "Prehistoric palette: deep jungle greens, stormy slate grey, warm amber compass glow, misty lavender distance."
 )
 
 DINOSAUR_PAGE_PROMPT = (
     "An {child_age}-year-old {child_gender} named {child_name} "
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
-    "Dinosaurs: [T-Rex 12m: majestic / Triceratops 9m: 3 horns / "
-    "Brachiosaurus 25m: neck reaching clouds / Velociraptor 2m: feathered pack / "
-    "Pteranodon 7m wingspan: flying]. "
-    "Giant ferns, cycads, volcanic mountains. Golden sun, misty. "
-    "Child TINY, dinosaurs GIGANTIC."
+    "Elements: [prehistoric dinosaur valley, giant tree ferns, mist, dramatic cloudy sky, volcanic rocks, winding river, muddy trail]. "
+    "Cinematic action lighting, dynamic pose, detailed environment, depth of field. Wide angle, full body visible in action, child 30-40% of frame. No eye contact with camera. "
+    "Large predators only in the far distance, no direct contact, child remains safe. Friendly dinosaurs are majestic and peaceful. "
+    "Avoid: photorealistic, pasted face, collage, duplicate child, extra people (unless required by scene), text, watermark, logo, blurry, low quality. {STYLE}"
 )
 
-
-# -----------------------------------------------------------------------------
-# AI HİKAYE ÜRETİM PROMPTU (Gemini için - TR) - Dopamin Yönetimi Blueprint
-# -----------------------------------------------------------------------------
-
-DINOSAUR_STORY_PROMPT_TR = """Sen {child_name} isimli {child_age} yaşında bir çocuğun ZAMAN MAKİNESİ ile 65 milyon yıl öncesine, DİNOZORLAR ÇAĞINA yaptığı EPİK MACERA yazıyorsun.
-
-⚠️ Çocuk TEK BAŞINA macerada (aile yok). Anne-baba-aile karakteri KULLANMA.
-
-🧠 DOPAMİN YÖNETİMİ - HEYECAN MERDİVENİ:
-
-**BÖLÜM 1 - ANTİSİPASYON** (Sayfa 1-4) [role: opening]:
-- Sayfa 1: Zaman makinesi aktif → "Ne göreceğim?" (merak)
-- Sayfa 2: İlk dinozor görünüşü → ŞOK! ("DEVASA Brachio!")
-  → Dopamin #1: ⭐⭐⭐ (ilk hayranlık)
-- Sayfa 3-4: Prehistorik dünya, Ptero uçuyor
-  → Emotion: Merak→Şok→Hayranlık
-
-**BÖLÜM 2 - İLK ÖDÜL** (Sayfa 5-7) [role: exploration]:
-- Sayfa 5: Trike sürüsü → Endişe ("Üç boynuz! Tehlikeli mi?")
-- Sayfa 6: Yavru Trike tanışma → Rahatlama
-- Sayfa 7: Lider Trike boynuzlarına binme → BAŞARI!
-  → Dopamin #2: ⭐⭐⭐⭐ (ilk binme başarısı)
-  → Emotion: Endişe→Rahatlama→Sevinç
-
-**BÖLÜM 3 - YENİ ZORLUK** (Sayfa 8-10) [role: exploration→crisis]:
-- Sayfa 8: Sürü panik (uzaktan T-Rex kükremesi) → Endişe
-- Sayfa 9: Velociraptor sürüsü çıkıyor → KORKU ARTIYOR
-- Sayfa 10: Raptorlar yaklaşıyor → "Avcılar!"
-  → Dopamin: Düşüş (yeni tehdit)
-  → Emotion: Rahatlık→Endişe→Korku
-
-**BÖLÜM 4 - ORTA ÖDÜLLER** (Sayfa 11-13) [role: resolution]:
-- Sayfa 11: Raptor lideri göz göze → İletişim, zeka
-  → Dopamin #3: ⭐⭐⭐ (alliance)
-- Sayfa 12: Raptor sürüsü kabul ediyor → İTTİFAK!
-- Sayfa 13: Brachio'ya tırmanma → 20m yükseklik!
-  → Dopamin #4: ⭐⭐⭐⭐⭐ (yüksek heyecan)
-  → Emotion: İletişim→İttifak→Epic heyecan
-
-**BÖLÜM 5 - BÜYÜK KRİZ** (Sayfa 14-16) [role: crisis→climax]:
-- Sayfa 14: T-Rex yaralı, tuzakta → "12 METRE! Kral!"
-  → Endişe MAX: "Kurtarmalı mıyım? Tehlikeli değil mi?"
-- Sayfa 15: Yaklaşma cesareti → KRİTİK AN
-  → "Kalbim çok hızlı atıyor ama... yardıma ihtiyacı var"
-- Sayfa 16: T-Rex'e dokunma, kurtarma → EYLEM
-  → Dopamin: En düşük→yükselmeye başlıyor
-
-**BÖLÜM 6 - EPİK DORUK** (Sayfa 17-19) [role: climax]:
-- Sayfa 17: Kurtarma başarılı → T-Rex ayağa kalkıyor!
-  → Dopamin #5: ⭐⭐⭐⭐⭐ (epic başarı)
-- Sayfa 18: T-Rex başını eğiyor → SAYGININ DORUĞI
-  → Dopamin #6: ⭐⭐⭐⭐⭐⭐ (MAX! Dinozor kralı saygısı!)
-  → "Kral bana teşekkür ediyor!"
-- Sayfa 19: Ptero ile victory flight → ZİRVE!
-  → Dopamin #7: ⭐⭐⭐⭐⭐ (zafer turu)
-  → Emotion: Başarı→Saygı→Zafer→Tatmin
-
-**BÖLÜM 7 - TATMIN** (Sayfa 20-22) [role: conclusion]:
-- Sayfa 20: Tüm dinozorlar toplanıyor → HERO
-- Sayfa 21: Veda töreni (Brachio, Trike, Raptor, Ptero, T-Rex kükreyerek)
-- Sayfa 22: Zaman makinesine dönüş → "Asla unutmayacağım"
-  → Dopamin: Sürdürülebilir mutluluk
-  → Emotion: Gurur→Duygusallık→Tatmin
-
-⚡ ENDİŞE→BAŞARI DÖNGÜLERİ (4 Kritik):
-
-**Döngü 1 - Trike (Sayfa 5-7):**
-- Endişe: "Üç boynuz! Saldırır mı?" 
-- Çözüm: Yavru oyuncu, sürü nazik
-- Başarı: Lidere binme → Dopamin ⭐⭐⭐⭐
-
-**Döngü 2 - Raptor (Sayfa 9-12):**
-- Endişe MAX: "Hızlı avcılar! Tüyleri diken diken!"
-- Çözüm: Göz teması, zeka, respect
-- Başarı: Alliance → Dopamin ⭐⭐⭐⭐
-
-**Döngü 3 - Brachio (Sayfa 13):**
-- Endişe: "25 metre! Çok yüksek, düşer miyim?"
-- Eylem: Dikkatli tırmanma
-- Başarı: Bulutlara değme → Dopamin ⭐⭐⭐⭐⭐
-
-**Döngü 4 - T-Rex KRAL (Sayfa 14-18) - EN UZUN, EN YÜKSEK:**
-- Endişe MAX: "Kral! 12m! Yaralı ama... en güçlüsü!"
-- Cesaret: "Yardım etmeliyim" (sayfa 15-16)
-- Kurtarma: Tuzaktan çıkarma (sayfa 17)
-- Epic ödül: Baş eğme (sayfa 18)
-- Dopamin: ⭐⭐⭐⭐⭐⭐ (MAX!)
-
-🦖 HİKAYE YAPISI (Devasa Dinozorlarla Epik Macera):
-
-AÇILIŞ - Zaman Yolculuğu:
-- Zaman makinesi ile geçmişe yolculuk, dinozor dünyasına ilk varış
-- İlk karşılaşma: DEVASA bir Brachiosaurus gökyüzüne uzanıyor, çocuk karşılaştırma yapıyor
-- Pteranodon sürüsü başın üstünde uçuyor, kanat sesleri duyuluyor
-
-OLAY TETİKLEYİCİ - Büyük Tehlike:
-- Triceratops sürüsü panik halinde koşuyor - büyük tehlike yaklaşıyor!
-- Sürünün liderinin boynuzunda yaralanma var, yardıma ihtiyacı var
-- VEYA: Dev bir T-Rex yaralı ve tuzağa düşmüş, kurtarılması gerekiyor
-- VEYA: Brachiosaurus sürüsü bataklıkta mahsur kalmış, köprü yapılması lazım
-
-GELİŞME - Devasa Dinozorlarla Bağ Kurma:
-
-**1. BRACHIOSAURUS'A BINME SAHNESİ:**
-- Çocuk dev Brachiosaurus'un bacağına tırmanır
-- 20 metre yüksekte, sırtında yolculuk yapar
-- Gökyüzü manzarası, ağaç tepelerini elleriyle dokunur
-- Brachiosaurus nazik devdir, çocuğu güvenle taşır
-- Bu yüksekten tehlikeyi görür: T-Rex yaklaşıyor!
-
-**2. PTERANODON İLE UÇUŞ SAHNESİ:**
-- Dev Pteranodon (7 metre kanat açıklığı) çocuğu omuzlarından tutar
-- Gökyüzünde süzülme, dağların üzerinde uçuş
-- Kuşbakışı dinozor sürülerini görür
-- Rüzgar yüzünde, bulutlara dokunur
-- Heyecan verici iniş: kayalıklara güvenli landing
-
-**3. TRICERATOPS SÜRÜSÜYLE YOLCULUK:**
-- Çocuk lider Triceratops'un boynuzları arasına oturur
-- Sürü lideri olarak ilerler, 50 Triceratops etrafında
-- Güçlü, heybetli yürüyüş - yer sallanıyor
-- Sürü çocuğu koruyucu sarıyor
-
-**4. VELOCIRAPTOR SÜRÜSÜYLE İTTİFAK:**
-- Tüylü, zeki Velociraptor lideri ile göz göze gelir
-- Çocuk onlara saygı gösterir, yardım ister
-- Velociraptor sürüsü iz takip eder, çocuğa yol gösterir
-- Hızlı koşu sahnesi: Velociraptor sürüsünün arkasında
-
-**5. T-REX KRAL KARŞILAŞMASI (EPİK DORUK):**
-- 12 metre uzunluğunda, devasa T-Rex ortaya çıkar
-- İLK: Korkutucu, heybetli, yer sallanıyor
-- SONRA: Yaralı veya tuzakta, yardıma ihtiyacı var
-- Çocuk cesaretle yaklaşır, onu kurtarmayı başarır
-- T-Rex minnetle başını eğer - çocuğu dinozor kralı olarak tanır
-- T-Rex güvenli mesafeden kükreyerek selamlar - dostluk göstergesi
-
-KAPANIŞ - Kahramanlık ve Vedalaşma:
-- Tüm dinozor türleri çocuğu çevreler: Kahraman olarak tanınır
-- Brachiosaurus, Triceratops sürüsü, Pteranodon'lar, hatta uzaktan T-Rex
-- Epik veda sahnesi: Her dinozor türü kendi dilinde vedalaşır
-- Zaman makinesine dönüş, "Asla unutmayacağım" anı
-- Gelecekte bu dostluğu her zaman hatırlayacak
-
-⚡ HEYECracker VERICI AKSIYON SAHNELERI (MUTLAŞim):
-
-1. **Yüksek Tempolu Koşu**: Velociraptor sürüsüyle orman içinde hızlı koşma
-2. **Binme Macerası**: Brachiosaurus sırtında yüksek yolculuk
-3. **Uçuş Deneyimi**: Pteranodon ile gökyüzünde süzülme
-4. **Epik Karşılaşma**: T-Rex ile yüz yüze gelme (saygılı, heyecanlı)
-5. **Sürü Lideriği**: Triceratops sürüsüyle toplu yürüyüş
-6. **Kurtarma Operasyonu**: Yaralı dev dinozoru kurtarma
-7. **Güven Anı**: T-Rex'in başını çocuğa doğru eğmesi (nazik, güven)
-
-🦕 DİNOZOR BOYUT ve KORKUTUCULUK YÖNETİMİ:
-
-**DEVASA Ama GÜVENLİ:**
-- Dinozorlar GERÇEKÇİ boyutlarda: Brachiosaurus 25m, T-Rex 12m
-- İLK karşılaşma: Heybetli, büyük, çocuk ufacık kalır
-- SONRA: Dinozorlar nazik, dostane, koruyucu
-- Boyut farkı SÜREKLİ vurgulanır: "T-Rex'in tek dişi senin boyundan büyüktü!"
-- Ama aksiyon VAR: Binme, uçma, kurtarma, liderlik
-
-**T-REX KRAL SAHNESI:**
-- Uzaktan görünüş: Korkutucu, heybetli, güçlü
-- Yerdeki sarsıntı hissedilir
-- Derin kükreme sesi
-- Ama: Çocuğa ZARARA VERMİYOR
-- Kurtarıldıktan/yardım edildikten sonra: Başını eğer, minnetle bakar
-- Final: Kükreyerek selam verir (dostluk, saygı)
-
-📚 DİNOZOR BİLGİLERİ (Hikayeye Doğal Entegre):
-
-- T-Rex: Kretase'nin en büyük yırtıcısı, 12m uzunluk, 6 ton ağırlık, kısa ön kollar ama güçlü bacaklar
-- Triceratops: 3 boynuz (savunma için), sürü halinde yaşar, 9m uzunluk, otobur
-- Brachiosaurus: En uzun boyunlu (25m), ön bacaklar arka bacaklardan uzun, ağaç tepesi yiyicisi
-- Velociraptor: Tüylü vücut, zeki avcı, 2m uzunluk, sürü halinde avlanır, sıcakkanlı
-- Pteranodon: Uçan sürüngen (dinozor değil!), 7m kanat açıklığı, kemikler hafif ve içi boş
-
-💎 ANA DEĞER: CESARET ve SAYGI
-- Büyük ve bilinmeyen karşısında cesaretli olmak
-- Dev yaratıklara saygı göstermek
-- Yardım elini uzatma cesareti
-- Farklı olana korku değil merak
-- Dostluk her boyutta mümkün
-
-🎬 TON ve ATMOSFER:
-- **EPİK MACERA** ağırlıklı
-- Sinematik, geniş açılar, dramatik anlar
-- Tempo YÜKSEK: Aksiyon → Keşif → Aksiyon
-- Duygusal doruk noktaları: T-Rex'in başını eğmesi, veda sahnesi
-- Yaşa uygun dil ({child_age} yaş), ama HEYECAN dolu
-
-⛔ YASAKLAR (Çocuk Güvenliği):
-- Dinozor saldırısı YOK (T-Rex bile saldırmaz)
-- Kan, yara detayı, şiddet sahnesi YOK
-- Avlanma detayları YOK (sadece bahsedilebilir)
-- Ölüm, fosil oluşumu travmatik anlatım YOK
-- Terkedilme, kaybolma travması YOK
-- Korku maksimum 10 saniye (hemen geçer, güven gelir)
-
-📖 SAYFA DAĞILIMI:
-Hikayeyi {page_count} sayfaya yaz. Her sayfa 3-5 cümle (60-100 kelime).
-İlk 2 sayfa: Zaman yolculuğu + ilk karşılaşma
-Orta sayfalar: Her dinozor türüyle aksiyon sahnesi (binme, uçma, liderlik)
-Son 3 sayfa: T-Rex epik sahne + Veda + Dönüş
-
-🎯 CUSTOM INPUT KULLANIMI:
-- {favorite_dinosaur}: Bu dinozora EN FAZLA zaman ayır, en özel bağ
-- {time_machine_type}: Hikaye başında ve sonunda bahset
-- {discovery_goal}: Ana görev olarak entegre et (ama aksiyon odaklı)
-
-✨ ÖZEL TALİMATLAR:
-- Her sayfada EN AZ 1 dinozor GÖRÜNÜR olmalı
-- Binme/uçma/liderlik sahneleri MUTLAKa olmalı
-- T-Rex sahnesi EPİK, unutulmaz, duygusal (korku değil saygı)
-- Veda sahnesi TÜM dinozor türlerini içermeli
-- Çocuk HER ZAMAN AKTİF rol alır (izlemez, YAPAR)"""
-
-
-# -----------------------------------------------------------------------------
-# KIYAFET TASARIMLARI (Scenario-Specific)
-# -----------------------------------------------------------------------------
+# ============================================================================
+# OUTFIT — Indiana Jones Tarzı Kıyafet Kilidi (Sabit ve Zorunlu)
+# ============================================================================
 
 OUTFIT_GIRL = (
-    "silver-gray nylon explorer jumpsuit with glowing blue LED trim lines along arms and legs, "
-    "protective black knee pads with small holographic time display, "
-    "dark gray high-tech hiking boots with blue LED lights on sides, "
-    "transparent time-traveler goggles pushed up on forehead with blue frames, "
-    "black utility belt with glowing blue time crystal remote control. "
-    "EXACTLY the same outfit on every page — same silver jumpsuit with blue trim, same goggles, same gray boots."
+    "khaki explorer shirt, fitted brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat, subtle woven bracelet charm. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest. "
+    "Same child character, same outfit, consistent face and hair across all pages."
 )
 
 OUTFIT_BOY = (
-    "dark navy blue nylon time-traveler jacket with metallic silver shoulder pads, "
-    "dark gray cargo pants with zippered tech pockets and black knee guards, "
-    "sturdy dark brown ankle-high boots with orange grip soles, "
-    "digital compass watch on left wrist with blue holographic display, "
-    "dark gray canvas backpack with visible glowing blue time crystal inside. "
-    "EXACTLY the same outfit on every page — same navy jacket with silver shoulders, same gray pants, same brown boots."
+    "khaki explorer shirt, brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest. "
+    "Same child character, same outfit, consistent face and hair across all pages."
 )
 
+# ============================================================================
+# STORY BLUEPRINT — Fosil Pusula ve Yavru Kurtarma Macerası (PURE AUTHOR - PASS 1)
+# ============================================================================
 
-# -----------------------------------------------------------------------------
-# KÜLTÜREL ELEMENTLER (JSON)
-# -----------------------------------------------------------------------------
+DINOSAUR_STORY_PROMPT_TR = """
+# DİNOZORLAR ALEMİ: KAYIP YUVA
+
+## YAPI: {child_name} Indiana Jones tarzı explorer kıyafetleriyle müzede gezerken gizemli bir fosil pusula bularak kendini Dinozorlar Alemi'nde bulur. Amacı fırtına çıkmak üzereyken ailesini kaybetmiş minik, sevimli bir dinozor yavrusunu yuvaya güvenle teslim etmektir. Şiddet, kan veya travma yoktur. Etraftaki iri dinozorlar sadece yol gösterici (Triceratops, Stegosaurus) veya arka plan unsurlarıdır (T. rex uzakta). Heyecanlı, koşturmacalı ve bulmaca çözmeli bir macera yazılıdır.
+
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Dinozorlar Alemi: Kayıp Yuva" olmalı. Alt başlık EKLEME.
+
+**STİL & TON:** 
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. Dili akıcı, ritimli ve heyecanlıdır. Yaş grubu 5-10 için basit ve nettir.
+- Kan, şiddet, saldırı KESİNLİKLE YOK. Yırtıcılardan sadece hızlanmak için uzaktan bahsedilebilir ama direkt tehlike oluşturmazlar.
+
+---
+
+### Bölüm 1 — Fosil Pusula (Sayfa 1-3)
+- Sayfa 1: {child_name} tatil gününde devasa fosillerin sergilendiği görkemli doğa tarihi müzesinde ilgiyle gezmektedir. O koskocaman iskeletin hemen ayağının dibinde soluk mavi bir ışıkla parlayan garip, yuvarlak bir "fosil pusula" görür.
+- Sayfa 2: Merakına yenilip yerden o pusulayı eline aldığı anda, cihaz "vızır vızır" dönerek titremeye başlar. Bir an için müzenin duvarlarındaki tüm orman resimleri canlanmış gibi hareket eder!
+- Sayfa 3: Müzenin ışıkları gider; etrafı ağır bir sis basıp rüzgâr eser ve çocuğumuz gözlerini açtığında kendini beton zemin yerine gökyüzüne değen dev eğrelti otlarıyla dolu antik bir ormanda bulur.
+
+### Bölüm 4 — Kayıp Yavru (Sayfa 4-6)
+- Sayfa 4: Uzaklardan pes ve güçlü kükremeler duyulurken çocuğun ayaklarının altındaki toprak bile hafifçe ritmik olarak titremektedir. Ama o hiç panik yapmaz, havalı şapkasını düzeltir ve "Sakin ol... Indiana Jones keşif modu devrede!" diyerek ormana adım atar.
+- Sayfa 5: Az ilerideki dev çalılıkların titremesiyle bitkilerin arasından minicik, kafası kalkanlı, çok şirin ama ürkmüş bir dinozor yavrusu fırlar. Yavrucuk koca gözleriyle çocuğa bakıp ürkek, incecik bir ses çıkarır: "Piip!"
+- Sayfa 6: Kahramanımız başını kaldırıp gökyüzüne bakar, simsiyah fırtına bulutları hızla toplanmaya ve dev yapraklar havada uçuşmaya başlamıştır. Bu minik yavru, kopacak fırtınadan önce yuvasına ulaştırılmak zorundadır!
+
+### Bölüm 7 — Triceratops'un Rehberliği (Sayfa 7-9)
+- Sayfa 7: İkili bir süre gittikten sonra uzak ve güvenli tepede, zararsız bir Triceratops (üç boynuzlu dinozor) süzülerek geçer. O koca canlının yere bıraktığı sert ve kocaman ayak izleri, bataklığın içine doğru en güvenli yolu gösterir gibidir.
+- Sayfa 8: Çocuk yavruyla beraber dev ayak izlerini dikkatle takip ederek fokurdayan çamurlu bir antik bataklığın kenarına varır. Yanlış bir adım atıp kayarsa o yoğun çamura tamamen saplanma tehlikesi vardır!
+- Sayfa 9: Tam o an bataklığın içindeki Stegosaurus'un sırtındaki kocaman sert plakalara benzeyen eski sağlam taşları fark eder. Kahramanımız bir kurbağa çevikliğiyle o sert taşlara seke seke basarak bataklığı tamamen kuru ayaklarla aşmayı başarır.
+
+### Bölüm 10 — Gökyüzünün Haritası (Sayfa 10-12)
+- Sayfa 10: Ormanın derinliğinde yavru aniden pıt diye durup, ince boynunu uzatıp kulağını sağ tarafa dikkatle diker. Çok çok uzaklardan bir Parasaurolophus’un yankılı ve borazan gibi çağrısı duyulur; sanki o ses yavruya "Bu tarafa gelin" diyordur.
+- Sayfa 11: Karşılarına ağaç kökleriyle ayrılmış iki dev patika çıkınca çocuğumuz hangisinin doğru olabileceğini düşünmeye başlar. Tam çıkmaza gireceklerken elindeki fosil pusula deli gibi titremeye ve ışık saçmaya başlar!
+- Sayfa 12: Pusulanın oku gökyüzüne, oradaki dev şelale yönüne uzanan bir ağacın taç noktasını işaret eder. Çok geçmeden koca süzülen kanatlarıyla uçan bir Pteranodon o noktadan geçerek rotalarının doğruluğunu müjdeler.
+
+### Bölüm 13 — Rüzgar Vadisi ve Kaçış (Sayfa 13-15)
+- Sayfa 13: Sükunetle devam eden yolculuk birden iki tarafı sarp kayalık olan ve karanlık, dar bir geçide çıkar. Fırtına tam da burada ciddileşip rüzgar korkunç bir fısıltıyla kanyona dolmaya başlar.
+- Sayfa 14: Kötü şans yakalarını bırakmaz ve şimşek yüzünden çatırtıyla devrilen devasa bir ağaç tüm o dar kanyon çıkışını bir kalenin kapısı gibi kapatır. Çocuğumuz hemen çantasını açıp o sağlam keşif ipini çıkararak mükemmel bir üstten aşırtma tırmanışı planlar ve beraberce yukarı çıkarlar.
+- Sayfa 15: Geçidin en üst noktasına varıp tırmanışı bitirdiklerinde çok uzak vadinin sisleri içerisinde büyük şöhretin, T. rex'in ürkütücü ve saygıdeğer siluetini ile adımlarını hissederler. Çocuk zekice fısıldar: “Yakınlaşmadan hızlıca ormana dalalım!”
+
+### Bölüm 16 — Nehirdeki Atılım (Sayfa 16-18)
+- Sayfa 16: Çalılıkların arasında koştururken yavrucuk çılgın gibi sevinç gösterileri yapar, çünkü ailesinin sıcak yuva kokusunu sonunda alabilmiştir. Fakat bu kavuşmadan önce önlerinde çağlayarak akan gürül gürül bir dinozor vadisi nehri durmaktadır.
+- Sayfa 17: Maceracımız elindeki ipi bele bağlayıp nehrin sığ yerlerindeki kocaman kaya parçalarını santim santim hesaplayarak harika bir sekiş planlayıp kendi yolunu çizer. Her büyük ve cesur atlayışında minik de "piip!" diye sevinerek ondan güç alarak kayalara seker.
+- Sayfa 18: Islak taşlardan sekip yemyeşil karşı kıyıya, büyük vadinin o geniş ve bereketli açıklığına ulaşırlar. Vadinin sükunet dolu tepesinden, bu serüvende onlara iz bırakan bütün Triceratops (üç boynuzlu) sürüsü neşeyle ama uzaktan onları izlemektedir.
+
+### Bölüm 19 — Müzeye Dönüş (Sayfa 19-21)
+- Sayfa 19: O esnada küçük yavrunun endişeli koca anne ve babası koşarak çıkar gelip ve gözyaşlarına boğulurcasına miniklerine sarılır. Tam da fırtına dinip, ilk kocaman yağmur damlaları düşerken herkesin güvende olması müthiş bir rahatlamadır.
+- Sayfa 20: Koruyucu o muazzam dev ana dinozor, kahramanımıza bakıp ona içten, nazikçe başını eğip en derin “Teşekkür” niyetinde mırıldanır. İşi biten cesur pusula anında kıvılcımlar saçarak uyanıp çocuğa tek bir şeyi haykırır: “Görevin Bitti, Dönüş Zamanı!”
+- Sayfa 21: Çocuğumuz pusulayı sımsıkı kavramasıyla göz kamaştıran dev mavi bir ışık halkası patlar ve çocuk kendini o sessiz, huzurlu müzede buluverir. Elini usulca açtığında, o sihirli pusula yerini taşlaşmış küçücük bir dinozor pati izine bırakmıştır. Şapkasını düzeltirken kıkırdar: "Pusula bir gün yine bana dönecek mi acaba?"
+
+---
+
+## KURALLAR
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 21 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- AI Görüntü (scene_description) promptlarını (İngilizce) yazarken "standing still" veya "looking at camera" KULLANMA. Aksiyon belirt (örn: "Child leaping accurately across big river stones", "Child examining prehistoric footprints in the mud").
+- Şiddet veya kan kesinlikle olmamalı, büyük tehlike ve yırtıcılar yalnızca siluet/tempo unsuru olarak çok uzakta bırakılmalıdır.
+"""
+
+# ============================================================================
+# CULTURAL ELEMENTS
+# ============================================================================
 
 DINOSAUR_CULTURAL_ELEMENTS = {
-    "dinosaur_species": [
-        "T-Rex (Tyrannosaurus Rex) - distant observation only",
-        "Triceratops - friendly herbivore",
-        "Brachiosaurus - gentle giant",
-        "Velociraptor - curious pack",
-        "Pteranodon - flying reptile",
-        "Ankylosaurus (background)",
-        "Stegosaurus (background)"
+    "location": "Prehistoric Dinosaur Valley, Late Cretaceous period",
+    "historic_site": "Ancient Wilderness",
+    "major_elements": [
+        "Giant tree ferns, misty dramatic skies",
+        "Glowing fossil compass artifact",
+        "Triceratops, Stegosaurus, Parasaurolophus, Pteranodon",
+        "Swamps, rocky canyons, rushing ancient river",
     ],
-    "prehistoric_environment": [
-        "giant tree fern forests (10+ meters)",
-        "cycad palm groves",
-        "ginkgo trees with fan-shaped leaves",
-        "wide river deltas with muddy banks",
-        "open plains with dinosaur herds",
-        "volcanic mountains (distant, safe)",
-        "prehistoric moss and ground ferns"
-    ],
-    "time_period": "Late Cretaceous (65 million years ago)",
-    "color_palette": "earthy brown, mossy green, volcanic gray, amber orange, rust red, prehistoric blue-green",
-    "atmosphere": "prehistoric, ancient, mysterious, adventurous, epic scale, time-travel wonder",
-    "lighting_options": [
-        "bright tropical sun with sharp shadows",
-        "golden hour glow across plains",
-        "misty morning filtered light",
-        "dramatic side-lighting for scale"
-    ],
-    "educational_themes": [
-        "dinosaur anatomy and behavior",
-        "prehistoric ecosystems",
-        "paleontology basics",
-        "time periods and extinction",
-        "natural history"
-    ],
-    "time_travel_elements": [
-        "glowing portal with blue energy",
-        "sleek time capsule",
-        "holographic displays",
-        "futuristic technology mixed with prehistoric setting"
+    "atmosphere": "Epic, safely wild, prehistoric, time-travel mystery, courageous",
+    "values": ["Courage", "Responsibility", "Compassion", "Nimbleness"],
+    "sensitivity_rules": [
+        "NO aggressive predator encounters",
+        "Dangerous predators like T-Rex are only seen far in the distance",
+        "Child is a protector and problem solver",
+        "Emphasis on rescuing a lost baby dinosaur"
     ]
 }
 
+# ============================================================================
+# CUSTOM INPUTS
+# ============================================================================
 
-# -----------------------------------------------------------------------------
-# ÖZEL GİRİŞ ALANLARI (Custom Inputs)
-# -----------------------------------------------------------------------------
+DINOSAUR_CUSTOM_INPUTS: list[dict] = []
 
-DINOSAUR_CUSTOM_INPUTS = [
-    {
-        "key": "favorite_dinosaur",
-        "label": "En Sevdiği Dinozor",
-        "type": "select",
-        "options": [
-            "T-Rex (Kral Dinozor)",
-            "Triceratops (Üç Boynuzlu)",
-            "Brachiosaurus (Uzun Boyunlu)",
-            "Velociraptor (Hızlı ve Zeki)",
-            "Pteranodon (Uçan Sürüngen)"
-        ],
-        "default": "Triceratops (Üç Boynuzlu)",
-        "required": False,
-        "help_text": "Hikayede çocuğun en çok vakit geçireceği dinozor türü"
-    },
-    {
-        "key": "time_machine_type",
-        "label": "Zaman Makinesi Türü",
-        "type": "select",
-        "options": [
-            "Işıldayan Kapsül",
-            "Mavi Portal",
-            "Işınlanma Cihazı",
-            "Uçan Zaman Aracı"
-        ],
-        "default": "Işıldayan Kapsül",
-        "required": False,
-        "help_text": "Çocuğun geçmişe gidiş yöntemi"
-    },
-    {
-        "key": "discovery_goal",
-        "label": "Keşif Amacı",
-        "type": "select",
-        "options": [
-            "Kayıp Yavruyu Sürüsüne Ulaştır",
-            "Dinozor Fotoğrafları Çek",
-            "Prehistorik Bitki Örnekleri Topla",
-            "Dinozor İzlerini Takip Et"
-        ],
-        "default": "Kayıp Yavruyu Sürüsüne Ulaştır",
-        "required": False,
-        "help_text": "Hikayenin ana macera görevi"
-    }
-]
-
+# ============================================================================
+# DATABASE UPDATE
+# ============================================================================
 
 async def update_dinosaur_scenario():
-    """Dinozorlar Macerası senaryosunu master prompt'larla güncelle veya oluştur."""
-    
-    print("\n" + "="*60)
-    print("DİNOZORLAR MACERASI: ZAMAN YOLCULUĞU SENARYO GÜNCELLEMESİ")
-    print("="*60 + "\n")
-    
+    """Dinozorlar Alemi senaryosunu yeni Fosil Pusula - Kayıp Yuva Şablonuna göre günceller."""
     async with async_session_factory() as db:
-        # Mevcut senaryoyu bul
         result = await db.execute(
-            select(Scenario).where(Scenario.name.ilike("%Dinozor%"))
+            select(Scenario).where(
+                (Scenario.theme_key == "dinosaur")
+                | (Scenario.theme_key == "dinosaur_time_travel")
+                | (Scenario.name.ilike("%Dinozor%"))
+            )
         )
         scenario = result.scalar_one_or_none()
-        
+
         if not scenario:
-            print("[INFO] 'Dinozorlar Macerası' senaryosu bulunamadı. Yeni oluşturuluyor...")
-            scenario = Scenario(
-                name="Dinozorlar Macerası: Zaman Yolculuğu",
-                is_active=True
-            )
+            scenario = Scenario(name="Dinozorlar Alemi: Kayıp Yuva", is_active=True)
+            scenario.theme_key = "dinosaur"
             db.add(scenario)
-        else:
-            print(f"[OK] Senaryo bulundu: {scenario.name} (ID: {scenario.id})")
+
+        # Meta Bilgiler
+        scenario.name = "Dinozorlar Alemi: Kayıp Yuva"
+        scenario.description = (
+            "Bulduğu sihirli fosil pusula ile zamanda yolculuk yapan maceracımız, "
+            "yaklaşan büyük fırtınadan önce kayıp bir dinozor yavrusunu yepyeni devasa ormanlarda "
+            "ipuçları bularak ailesine ulaştırmaya çalışıyor!"
+        )
+        scenario.theme_key = "dinosaur"
         
-        # Güncelleme yap
-        scenario.description = "Zaman makinesi ile 65 milyon yıl öncesine gidip T-Rex, Triceratops, Brachiosaurus ve daha fazlasıyla tanış! Kayıp yavru dinozorun sürüsünü bul ve prehistorik dünyanın sırlarını keşfet. Aksiyon dolu bir macera!"
+        # Kapaklar ve Promplar
         scenario.cover_prompt_template = DINOSAUR_COVER_PROMPT
         scenario.page_prompt_template = DINOSAUR_PAGE_PROMPT
         scenario.story_prompt_tr = DINOSAUR_STORY_PROMPT_TR
-        scenario.ai_prompt_template = None  # V3 story_prompt_tr kullanıyor
-        scenario.location_en = "Cretaceous Period"
-        scenario.theme_key = "dinosaur_time_travel"
-        scenario.cultural_elements = DINOSAUR_CULTURAL_ELEMENTS
-        scenario.custom_inputs_schema = DINOSAUR_CUSTOM_INPUTS
+        
+        # Kıyafet Sistemi
         scenario.outfit_girl = OUTFIT_GIRL
         scenario.outfit_boy = OUTFIT_BOY
-        scenario.default_page_count = 22
-        scenario.display_order = 13
         
-        await db.commit()
-        await db.refresh(scenario)
-        
-        print("\n[OK] GÜNCELLEME TAMAMLANDI!\n")
-        print("-"*60)
-        print("Güncellenen alanlar:")
-        print(f"   - ID: {scenario.id}")
-        print(f"   - name: {scenario.name}")
-        print(f"   - description: {len(scenario.description)} karakter")
-        print(f"   - cover_prompt_template: {len(DINOSAUR_COVER_PROMPT)} karakter")
-        print(f"   - page_prompt_template: {len(DINOSAUR_PAGE_PROMPT)} karakter")
-        print(f"   - story_prompt_tr: {len(DINOSAUR_STORY_PROMPT_TR)} karakter")
-        print("   - location_en: Cretaceous Period")
-        print("   - theme_key: dinosaur_time_travel")
-        print(f"   - cultural_elements: {len(json.dumps(DINOSAUR_CULTURAL_ELEMENTS))} karakter (JSON)")
-        print(f"   - custom_inputs_schema: {len(DINOSAUR_CUSTOM_INPUTS)} özel alan")
-        print(f"   - outfit_girl: {len(OUTFIT_GIRL)} karakter")
-        print(f"   - outfit_boy: {len(OUTFIT_BOY)} karakter")
-        print(f"   - default_page_count: {scenario.default_page_count}")
-        print(f"   - display_order: {scenario.display_order}")
-        print("-"*60)
-        
-        # Preview
-        print("\nKAPAK PROMPT ÖNİZLEME (ilk 500 karakter):")
-        print("-"*60)
-        print(DINOSAUR_COVER_PROMPT[:500] + "...")
-        
-        print("\nSAYFA PROMPT ÖNİZLEME (ilk 500 karakter):")
-        print("-"*60)
-        print(DINOSAUR_PAGE_PROMPT[:500] + "...")
-        
-        print("\nSTORY_PROMPT_TR ÖNİZLEME (ilk 400 karakter):")
-        print("-"*60)
-        print(DINOSAUR_STORY_PROMPT_TR[:400] + "...")
-        
-        print("\n" + "="*60)
-        print("Dinozorlar Macerası artık master-level prompt'lara sahip!")
-        print("="*60 + "\n")
+        # Kültürel & Pazarlama Verileri
+        scenario.cultural_elements = DINOSAUR_CULTURAL_ELEMENTS
+        scenario.custom_inputs_schema = DINOSAUR_CUSTOM_INPUTS
+        scenario.marketing_badge = "Zaman Yolculuğu"
+        scenario.age_range = "5-10"
+        scenario.tagline = "Fosil pusulanı takip et, yavruyu devasa dünyaya aldırış etmeden ailesine yetiştir!"
+        scenario.is_active = True
 
+        await db.commit()
+        print(f"Dinozorlar 'Kayıp Yuva' scenario updated seamlessly: {scenario.id}")
 
 if __name__ == "__main__":
     asyncio.run(update_dinosaur_scenario())

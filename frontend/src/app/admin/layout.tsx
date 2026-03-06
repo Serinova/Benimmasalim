@@ -118,7 +118,7 @@ const navigation: NavGroup[] = [
         icon: <FileStack className="h-5 w-5" />,
       },
       {
-        name: "Arka Kapak",
+        name: "İç Kapak Arkası",
         href: "/admin/back-cover",
         icon: <FileStack className="h-5 w-5" />,
       },
@@ -374,7 +374,7 @@ function Header() {
       "learning-outcomes": "Kazanımlar",
       "visual-styles": "Görsel Stiller",
       config: "Baskı Şablonları",
-      "back-cover": "Arka Kapak",
+      "back-cover": "İç Kapak Arkası",
       orders: "Siparişler",
       "promo-codes": "Kupon Kodları",
       "abandoned-trials": "Terk Edilen Denemeler",

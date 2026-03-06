@@ -52,6 +52,24 @@ const nextConfig = {
     ];
   },
 
+  async redirects() {
+    return [
+      // Redirect bare domain to www (canonical)
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "benimmasalim.com.tr" }],
+        destination: "https://www.benimmasalim.com.tr/:path*",
+        permanent: true,
+      },
+      // Redirect /create legacy route to /create-v2
+      {
+        source: "/create",
+        destination: "/create-v2",
+        permanent: true,
+      },
+    ];
+  },
+
   async rewrites() {
     return [
       { source: "/favicon.ico", destination: "/favicon.svg" },
@@ -80,7 +98,7 @@ const nextConfig = {
     ],
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   experimental: {
     serverActions: {

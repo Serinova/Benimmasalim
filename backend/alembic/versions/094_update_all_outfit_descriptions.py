@@ -128,9 +128,10 @@ OUTFIT_UPDATES = [
         "name_contains": "Sultanahmet",
         "outfit_girl": (
             "soft white cotton long-sleeve modest dress reaching ankles with delicate blue floral embroidery on hem, "
-            "white cotton hijab headscarf covering hair neatly, comfortable cream flat shoes, "
+            "PROPERLY WRAPPED white hijab: fabric wraps FULLY around head and neck — NO hair visible, NO neck visible, "
+            "fabric drapes softly over shoulders (modern proper hijab wrap, NOT a loose veil), comfortable cream flat shoes, "
             "small white shoulder bag with blue strap. "
-            "EXACTLY the same outfit on every page — same white dress with blue embroidery, same white hijab."
+            "EXACTLY the same outfit on every page — same white dress with blue embroidery, same properly wrapped white hijab."
         ),
         "outfit_boy": (
             "clean white cotton long-sleeve shirt, light beige cotton loose-fitting pants, "
@@ -143,9 +144,10 @@ OUTFIT_UPDATES = [
         "name_contains": "Kudüs",
         "outfit_girl": (
             "soft ivory white cotton long-sleeve modest dress reaching ankles, "
-            "white cotton hijab headscarf covering hair completely with neat edges, "
+            "PROPERLY WRAPPED white hijab: fabric wraps FULLY around head and neck — NO hair visible, NO neck visible, "
+            "fabric drapes softly over shoulders and chest (modern proper hijab wrap, NOT a loose veil, NOT fabric on top of head only), "
             "comfortable light beige flat sandals, small white cotton drawstring bag. "
-            "EXACTLY the same outfit on every page — same ivory dress, same white hijab, same beige sandals."
+            "EXACTLY the same outfit on every page — same ivory dress, same properly wrapped white hijab, same beige sandals."
         ),
         "outfit_boy": (
             "clean white cotton knee-length kurta tunic shirt, "
@@ -271,10 +273,11 @@ OUTFIT_UPDATES = [
         "name_contains": "Umre",
         "outfit_girl": (
             "pure white cotton modest long-sleeve dress reaching ankles with no patterns or decorations, "
-            "white cotton hijab headscarf covering hair completely with simple neat edges, "
+            "PROPERLY WRAPPED white hijab: fabric wraps FULLY around the head and neck — NO hair visible, NO neck visible, "
+            "fabric drapes softly over shoulders and chest, neat folds (modern proper hijab wrap style, NOT a loose veil, NOT fabric merely on top of head). "
             "comfortable beige leather flat sandals, small white cotton drawstring backpack. "
             "Simple and clean appearance inspired by ihram purity, no jewelry. "
-            "EXACTLY the same outfit on every page — same pure white dress, same white hijab, same beige sandals."
+            "EXACTLY the same outfit on every page — same pure white dress, same properly wrapped white hijab, same beige sandals."
         ),
         "outfit_boy": (
             "pure white cotton knee-length kurta tunic with no patterns or decorations, "

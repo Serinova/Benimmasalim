@@ -205,7 +205,7 @@ async def forgot_password(
             logger.exception("Redis unavailable for password reset")
             raise HTTPException(status_code=503, detail="Servis geçici olarak kullanılamıyor")
 
-        reset_url = f"{settings.frontend_url}/auth/reset-password?token={token}&email={body.email}"
+        reset_url = f"{settings.frontend_url}/auth/reset-password?token={token}"
         try:
             from app.services.email_service import email_service
             await email_service.send_password_reset_email_async(

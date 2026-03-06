@@ -128,16 +128,19 @@ export function AccountOrderDetailSheet({
   onOpenChange,
 }: AccountOrderDetailSheetProps) {
   const [order, setOrder] = React.useState<OrderDetail | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
 
   const loadDetail = useCallback(async () => {
     if (!orderId) return;
     setLoading(true);
+    setError(null);
     try {
       const data = await getOrderDetail(orderId, "pages,timeline");
       setOrder(data);
     } catch {
       setOrder(null);
+      setError("Sipariş detayları yüklenemedi.");
     } finally {
       setLoading(false);
     }
@@ -145,7 +148,7 @@ export function AccountOrderDetailSheet({
 
   useEffect(() => {
     if (open && orderId) loadDetail();
-    else if (!open) setOrder(null);
+    else if (!open) { setOrder(null); setError(null); }
   }, [open, orderId, loadDetail]);
 
   if (!orderId) return null;
@@ -162,6 +165,13 @@ export function AccountOrderDetailSheet({
               <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
               <span className="text-sm text-slate-500">Yükleniyor...</span>
             </div>
+          </div>
+        ) : error ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+            <p className="text-sm text-slate-600">{error}</p>
+            <Button size="sm" variant="outline" onClick={loadDetail}>
+              Tekrar Dene
+            </Button>
           </div>
         ) : order ? (
           <div className="flex h-full flex-col">

@@ -5,7 +5,6 @@ import { CreditCard } from "lucide-react";
 import FormField from "../ui/FormField";
 import TrustBadges from "../ui/TrustBadges";
 import StickyCTA from "../StickyCTA";
-import OrderSummaryCard from "../OrderSummaryCard";
 import PromoCodeInput from "../ui/PromoCodeInput";
 import type { BillingFormData, PromoResult } from "../../_hooks/useOrderDraft";
 import type { PriceBreakdown } from "../../_lib/pricing";
@@ -60,7 +59,10 @@ export default function PaymentStep({
     validateTaxId(billing.taxId).valid
   );
 
-  const tcNoValid = validateTcNo(billing.tcNo).valid;
+  // TC No is optional for individuals — empty string is valid
+  const tcNoValid = billing.tcNo
+    ? validateTcNo(billing.tcNo).valid
+    : !isCorporate; // empty is OK for individuals
   const canSubmit = termsAccepted && corporateValid && tcNoValid;
 
   return (
@@ -200,45 +202,11 @@ export default function PaymentStep({
               />
               <span className="text-xs text-gray-600 leading-relaxed">
                 <a href="/terms" target="_blank" className="text-purple-600 underline">Kullanım koşullarını</a> ve{" "}
-                <a href="/privacy" target="_blank" className="text-purple-600 underline">mesafeli satış sözleşmesini</a> okudum, kabul ediyorum.
+                <a href="/distance-sales" target="_blank" className="text-purple-600 underline">mesafeli satış sözleşmesini</a> okudum, kabul ediyorum.
               </span>
             </label>
           </div>
-
-          <TrustBadges />
-        </div>
-
-        {/* Right: Order summary (desktop) */}
-        <div className="hidden lg:block w-80 flex-shrink-0">
-          <div className="sticky top-24">
-            <OrderSummaryCard
-              childName={childName}
-              storyTitle={storyTitle}
-              productName={productName}
-              breakdown={breakdown}
-              promoSlot={
-                <PromoCodeInput
-                  onApply={onPromoApply}
-                  onClear={onPromoClear}
-                  loading={promoLoading}
-                  appliedCode={promoResult?.valid ? (promoResult.promo_summary?.code || promoCode) : null}
-                  discountAmount={promoResult?.discount_amount || 0}
-                  error={promoResult && !promoResult.valid ? (promoResult.reason || "Geçersiz kupon") : null}
-                />
-              }
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile order summary */}
-      <OrderSummaryCard
-        childName={childName}
-        storyTitle={storyTitle}
-        productName={productName}
-        breakdown={breakdown}
-        variant="bottom-sheet"
-        promoSlot={
+          {/* Promo code */}
           <PromoCodeInput
             onApply={onPromoApply}
             onClear={onPromoClear}
@@ -247,8 +215,10 @@ export default function PaymentStep({
             discountAmount={promoResult?.discount_amount || 0}
             error={promoResult && !promoResult.valid ? (promoResult.reason || "Geçersiz kupon") : null}
           />
-        }
-      />
+
+          <TrustBadges />
+        </div>
+      </div>
 
       <StickyCTA
         primaryLabel={

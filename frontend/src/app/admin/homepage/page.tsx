@@ -18,7 +18,6 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Eye,
   Save,
-  GripVertical,
   ChevronDown,
   ChevronUp,
   LayoutDashboard,
@@ -483,12 +482,20 @@ function ShowcaseBookEditor({
 
 function SectionCard({
   section,
+  isFirst,
+  isLast,
   onUpdate,
   onToggleVisibility,
+  onMoveUp,
+  onMoveDown,
 }: {
   section: HomepageSection;
+  isFirst: boolean;
+  isLast: boolean;
   onUpdate: (id: string, payload: Partial<HomepageSection>) => Promise<void>;
   onToggleVisibility: (id: string) => Promise<void>;
+  onMoveUp: (id: string) => Promise<void>;
+  onMoveDown: (id: string) => Promise<void>;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [localTitle, setLocalTitle] = useState(section.title ?? "");
@@ -527,7 +534,27 @@ function SectionCard({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <GripVertical className="h-4 w-4 cursor-grab text-slate-400" />
+            {/* Up / Down reorder buttons */}
+            <div className="flex flex-col gap-0.5">
+              <button
+                onClick={() => onMoveUp(section.id)}
+                disabled={isFirst}
+                className="flex h-6 w-6 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-30"
+                title="Yukarı taşı"
+                aria-label="Yukarı taşı"
+              >
+                <ChevronUp className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => onMoveDown(section.id)}
+                disabled={isLast}
+                className="flex h-6 w-6 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-30"
+                title="Aşağı taşı"
+                aria-label="Aşağı taşı"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </div>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
               {meta.icon}
             </div>
@@ -563,9 +590,10 @@ function SectionCard({
               size="icon"
               onClick={() => setIsExpanded(!isExpanded)}
               aria-label={isExpanded ? "Kapat" : "Düzenle"}
+              className={isExpanded ? "bg-slate-100" : ""}
             >
               {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="h-4 w-4 rotate-0" />
               ) : (
                 <ChevronDown className="h-4 w-4" />
               )}
@@ -721,6 +749,71 @@ export default function AdminHomepagePage() {
     }
   };
 
+  // Optimistic reorder: swap sort_order values between two adjacent sections
+  const handleMoveUp = async (id: string) => {
+    const idx = sections.findIndex((s) => s.id === id);
+    if (idx <= 0) return;
+    const current = sections[idx];
+    const prev = sections[idx - 1];
+    // Optimistic UI update
+    setSections((prev_sections) => {
+      const updated = [...prev_sections];
+      updated[idx] = { ...current, sort_order: prev.sort_order };
+      updated[idx - 1] = { ...prev, sort_order: current.sort_order };
+      return updated.sort((a, b) => a.sort_order - b.sort_order);
+    });
+    try {
+      await Promise.all([
+        fetch(`${API_BASE_URL}/admin/homepage/${current.id}`, {
+          method: "PATCH",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ sort_order: prev.sort_order }),
+        }),
+        fetch(`${API_BASE_URL}/admin/homepage/${prev.id}`, {
+          method: "PATCH",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ sort_order: current.sort_order }),
+        }),
+      ]);
+    } catch {
+      // Revert on error
+      await fetchSections();
+      toast({ title: "Hata", description: "Sıralama değiştirilemedi", variant: "destructive" });
+    }
+  };
+
+  const handleMoveDown = async (id: string) => {
+    const idx = sections.findIndex((s) => s.id === id);
+    if (idx < 0 || idx >= sections.length - 1) return;
+    const current = sections[idx];
+    const next = sections[idx + 1];
+    // Optimistic UI update
+    setSections((prev_sections) => {
+      const updated = [...prev_sections];
+      updated[idx] = { ...current, sort_order: next.sort_order };
+      updated[idx + 1] = { ...next, sort_order: current.sort_order };
+      return updated.sort((a, b) => a.sort_order - b.sort_order);
+    });
+    try {
+      await Promise.all([
+        fetch(`${API_BASE_URL}/admin/homepage/${current.id}`, {
+          method: "PATCH",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ sort_order: next.sort_order }),
+        }),
+        fetch(`${API_BASE_URL}/admin/homepage/${next.id}`, {
+          method: "PATCH",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ sort_order: current.sort_order }),
+        }),
+      ]);
+    } catch {
+      // Revert on error
+      await fetchSections();
+      toast({ title: "Hata", description: "Sıralama değiştirilemedi", variant: "destructive" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -755,12 +848,16 @@ export default function AdminHomepagePage() {
 
       {/* Section list */}
       <div className="space-y-3">
-        {sections.map((section) => (
+        {sections.map((section, idx) => (
           <SectionCard
             key={section.id}
             section={section}
+            isFirst={idx === 0}
+            isLast={idx === sections.length - 1}
             onUpdate={handleUpdate}
             onToggleVisibility={handleToggleVisibility}
+            onMoveUp={handleMoveUp}
+            onMoveDown={handleMoveDown}
           />
         ))}
       </div>

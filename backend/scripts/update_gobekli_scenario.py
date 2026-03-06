@@ -20,14 +20,18 @@ import os
 # MODULAR PROMPT COMPONENTS (500 char limit!)
 # ============================================================================
 
-GOBEKLI_COVER_PROMPT = """Gobekli Tepe archaeological site scene: {scene_description}.
-Child in foreground, ancient Gobekli Tepe megalithic temple in background.
-12,000-year-old stone pillars with T-shaped monoliths.
-World's oldest temple complex, pre-dating Stonehenge by 6000 years.
-Sanliurfa landscape, archaeological excavation site.
-Wide shot: child 30%, ancient megaliths 70%.
-Epic prehistoric scale, time-travel atmosphere.
-UNESCO World Heritage site."""
+GOBEKLI_COVER_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Ancient Gobekli Tepe archaeological site: massive 5-meter-tall T-shaped megalithic stone pillars arranged in circular temple formations, "
+    "intricate animal relief carvings of lions, foxes and serpents on weathered limestone surfaces, 12000-year-old UNESCO World Heritage site. "
+    "Dramatic golden hour light raking across the ancient stone textures, long warm shadows from the towering monoliths, "
+    "soft volumetric dust haze drifting across the Sanliurfa steppe landscape. "
+    "Low-angle epic shot: child 30% foreground looking up in wonder, massive prehistoric megaliths 70%. "
+    "Archaeological palette: warm sandstone gold, weathered grey limestone, burnt sienna earth, amber sunset glow."
+)
+
 
 GOBEKLI_PAGE_PROMPT = """Gobekli Tepe scene: {scene_description}.
 Elements: [T-pillars: massive T-shaped stone monoliths (5m tall) / Animal carvings: lions, foxes, snakes, birds relief / Stone circles: circular temple structures / Excavation: archaeological layers, 12,000 years / Megaliths: limestone pillars, prehistoric engineering].

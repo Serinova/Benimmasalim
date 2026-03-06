@@ -38,6 +38,7 @@ import {
   BookOpen,
   Loader2,
 } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
@@ -244,7 +245,7 @@ function OutcomeCard({
         }}
       >
         {outcome.icon_url ? (
-          <img src={outcome.icon_url} alt="" className="h-7 w-7" />
+          <Image src={outcome.icon_url} alt="" width={28} height={28} className="h-7 w-7" unoptimized />
         ) : (
           <CategoryIcon className={`h-6 w-6 ${isSelected ? "text-white" : "text-gray-600"}`} />
         )}
@@ -319,7 +320,7 @@ const SelectedPills = forwardRef<
             }}
           >
             {outcome.icon_url ? (
-              <img src={outcome.icon_url} alt="" className="h-4 w-4" />
+              <Image src={outcome.icon_url} alt="" width={16} height={16} className="h-4 w-4" unoptimized />
             ) : (
               <CategoryIcon className="h-4 w-4" style={{ color: borderColor }} />
             )}

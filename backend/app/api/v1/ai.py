@@ -109,7 +109,7 @@ async def test_fal_image_generation(request: TestFalImageRequest, admin: AdminUs
 
         from app.services.ai.face_service import resolve_face_reference
         from app.services.storage_service import storage_service as _ss_ai
-        _effective_face_url, _face_embedding = await resolve_face_reference(
+        _effective_face_url, _original_photo_url_ai, _face_embedding = await resolve_face_reference(
             request.face_photo_url or "", _ss_ai
         )
 
@@ -124,6 +124,7 @@ async def test_fal_image_generation(request: TestFalImageRequest, admin: AdminUs
             is_cover=_is_cover,
             page_number=request.page_number,
             reference_embedding=_face_embedding,
+            original_photo_url=_original_photo_url_ai,
         )
         image_url = result[0] if isinstance(result, tuple) else result
         logger.info(

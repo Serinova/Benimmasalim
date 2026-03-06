@@ -8,8 +8,9 @@ import platform
 import subprocess
 from typing import Any
 
+import numpy as np
 import structlog
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from app.models.book_template import PageTemplate
 from app.utils.resolution_calc import (
@@ -326,28 +327,40 @@ FONT_PATHS_WIN = {
 
 
 def effective_page_dimensions_mm(
-    page_width_mm: float, page_height_mm: float
+    page_width_mm: float | None, page_height_mm: float | None
 ) -> tuple[float, float]:
-    """Kitap yatay A4: boyutlar dikeyse (w < h) yatay A4'e çevir."""
-    if page_width_mm < page_height_mm:
+    """Kitap yatay A4: boyutlar dikeyse (w < h) yatay A4'e çevir.
+
+    None veya sıfır değer gelirse A4 yatay varsayılan kullanılır.
+    """
+    w = float(page_width_mm) if page_width_mm else A4_LANDSCAPE_WIDTH_MM
+    h = float(page_height_mm) if page_height_mm else A4_LANDSCAPE_HEIGHT_MM
+    if w < h:
         return A4_LANDSCAPE_WIDTH_MM, A4_LANDSCAPE_HEIGHT_MM
-    return page_width_mm, page_height_mm
+    return w, h
 
 
 # ---------------------------------------------------------------------------
 # Otomatik kenar tespiti: AI görselleri bazen beyaz/siyah çerçeve ekler.
 # Sabit overscan yetersiz kalabilir; her görsel için adaptif kırpma uygula.
 # ---------------------------------------------------------------------------
-def _auto_trim_borders(img: Image.Image, tolerance: int = 25, min_strip_px: int = 3) -> Image.Image:
+def _auto_trim_borders(
+    img: Image.Image,
+    tolerance: int = 25,
+    min_strip_px: int = 3,
+    max_trim_fraction: float = 0.08,
+) -> Image.Image:
     """AI görsellerindeki uniform-renk kenarları tespit edip kırpar.
 
-    tolerance: Piksel değerleri arasında kabul edilen max fark (0-255).
+    tolerance: Piksel std sapması bu değerin altındaysa kenar sayılır (0-255).
+               Düşük değer = sadece gerçek düz renk kenarları kırpılır.
     min_strip_px: Bu kadardan az kırpılacak kenar varsa dokunma.
+    max_trim_fraction: Her kenardan kesilebilecek maksimum oran (0.0-1.0).
+                       Gerçek içeriğin yanlışlıkla kırpılmasını önler.
     """
     arr = np.array(img)
     h, w = arr.shape[:2]
 
-    # Her kenardan ortalama rengi hesapla ve uniform mu kontrol et
     def _is_uniform_row(row_idx: int) -> bool:
         row = arr[row_idx].astype(np.float32)
         return bool(np.all(np.std(row, axis=0) < tolerance))
@@ -382,6 +395,14 @@ def _auto_trim_borders(img: Image.Image, tolerance: int = 25, min_strip_px: int 
         left = 0
     if (w - right) < min_strip_px:
         right = w
+
+    # Maksimum kırpma oranı — içeriğin yanlışlıkla silinmesini önle
+    max_v = int(h * max_trim_fraction)
+    max_s = int(w * max_trim_fraction)
+    top = min(top, max_v)
+    bottom = max(bottom, h - max_v)
+    left = min(left, max_s)
+    right = max(right, w - max_s)
 
     if top == 0 and bottom == h and left == 0 and right == w:
         return img  # Kenar yok

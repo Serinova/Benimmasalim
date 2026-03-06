@@ -1,9 +1,8 @@
 steps:
+  # 1) Build image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
-      - '--target'
-      - 'runner'
       - '-t'
       - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/frontend:latest'
       - '--build-arg'
@@ -11,6 +10,44 @@ steps:
       - '--build-arg'
       - 'NEXT_PUBLIC_API_URL=https://benimmasalim-backend-pl5vhpeiya-ew.a.run.app/api/v1'
       - '.'
+
+  # 2) Push image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/frontend:latest'
+
+  # 3) Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'benimmasalim-frontend'
+      - '--image=europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/frontend:latest'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--quiet'
+
+  # 4) Eski revision'ları temizle — son 5 dışındakileri sil
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        revisions=$(gcloud run revisions list \
+          --service benimmasalim-frontend \
+          --region europe-west1 \
+          --format "value(name)" \
+          --sort-by "~creationTimestamp" | tail -n +6)
+        if [ -n "$revisions" ]; then
+          echo "$revisions" | xargs -I{} gcloud run revisions delete {} \
+            --region europe-west1 --quiet
+          echo "Eski revision'lar temizlendi."
+        else
+          echo "Temizlenecek revision yok."
+        fi
+
 images:
   - 'europe-west1-docker.pkg.dev/gen-lang-client-0784096400/benimmasalim/frontend:latest'
 timeout: '1200s'

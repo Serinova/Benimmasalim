@@ -27,29 +27,29 @@ export default function HowItWorks({ title, subtitle, data }: HowItWorksProps) {
   const steps = (data?.steps ?? DEFAULT_STEPS) as StepData[];
 
   return (
-    <section id="nasil-calisir" className="scroll-mt-20 py-20">
+    <section id="nasil-calisir" className="scroll-mt-20 bg-white py-20 md:py-28">
       <div className="container">
         <div className="mx-auto mb-16 max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{heading}</h2>
-          <p className="mt-4 text-lg text-muted-foreground">{sub}</p>
+          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">{heading}</h2>
+          <p className="mt-4 text-lg text-slate-500">{sub}</p>
         </div>
 
         <div className="relative mx-auto max-w-4xl">
-          <div className="absolute left-1/2 top-12 hidden h-0.5 w-[60%] -translate-x-1/2 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 md:block" />
+          <div className="absolute left-1/2 top-12 hidden h-0.5 w-[60%] -translate-x-1/2 bg-gradient-to-r from-purple-100 via-purple-300 to-purple-100 md:block" aria-hidden="true" />
 
-          <div className="grid gap-8 md:grid-cols-3 md:gap-12">
+          <div className="grid gap-10 md:grid-cols-3 md:gap-12">
             {steps.map((step) => {
               const Icon = ICON_MAP[step.icon] ?? UserPlus;
               return (
                 <div key={step.number} className="relative flex flex-col items-center text-center">
-                  <div className="relative mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 ring-4 ring-background">
-                    <Icon className="h-8 w-8 text-primary" />
-                    <span className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  <div className="relative mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-purple-50 ring-4 ring-white shadow-sm">
+                    <Icon className="h-8 w-8 text-purple-600" aria-hidden="true" />
+                    <span className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-500 text-xs font-bold text-white shadow">
                       {step.number}
                     </span>
                   </div>
-                  <h3 className="mb-2 text-xl font-semibold">{step.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{step.description}</p>
+                  <h3 className="mb-2 text-xl font-bold text-slate-900">{step.title}</h3>
+                  <p className="text-sm leading-relaxed text-slate-500">{step.description}</p>
                 </div>
               );
             })}

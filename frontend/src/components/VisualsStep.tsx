@@ -15,6 +15,7 @@ import {
     Settings2,
     Loader2,
 } from "lucide-react";
+import Image from "next/image";
 import type { VisualStyle } from "@/lib/api";
 
 interface VisualsStepProps {
@@ -130,6 +131,7 @@ export default function VisualsStep({
                     ) : (
                         <div className="flex items-start gap-3 sm:gap-4">
                             <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden border-2 border-purple-200 shadow-sm">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={photoPreview} alt="Yüklenen fotoğraf" className="w-full h-full object-cover" />
                                 {isAnalyzing && (
                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -257,9 +259,9 @@ export default function VisualsStep({
                                             ${isSelected ? "ring-2 ring-purple-500 shadow-lg shadow-purple-100" : "border border-gray-100 shadow-sm"}
                                         `}
                                     >
-                                        <div className="relative aspect-[4/3] bg-gradient-to-br from-purple-100 to-pink-100">
+                                        <div className="relative aspect-[4/3] bg-gradient-to-br from-purple-100 to-pink-100 overflow-hidden">
                                             {style.thumbnail_url ? (
-                                                <img src={style.thumbnail_url} alt={displayName} loading="lazy" className="h-full w-full object-cover" />
+                                                <Image src={style.thumbnail_url} alt={displayName} fill loading="lazy" className="object-cover" sizes="(max-width: 640px) 50vw, 33vw" />
                                             ) : (
                                                 <div className="h-full w-full flex items-center justify-center text-3xl">🎨</div>
                                             )}
@@ -305,9 +307,9 @@ export default function VisualsStep({
                                         `}
                                         style={{ scrollSnapAlign: "start" }}
                                     >
-                                        <div className="relative h-28 bg-gradient-to-br from-purple-100 to-pink-100">
+                                        <div className="relative h-28 bg-gradient-to-br from-purple-100 to-pink-100 overflow-hidden">
                                             {style.thumbnail_url ? (
-                                                <img src={style.thumbnail_url} alt={displayName} loading="lazy" className="h-full w-full object-cover" />
+                                                <Image src={style.thumbnail_url} alt={displayName} fill loading="lazy" className="object-cover" sizes="(max-width: 640px) 50vw, 33vw" />
                                             ) : (
                                                 <div className="h-full w-full flex items-center justify-center text-3xl">🎨</div>
                                             )}
