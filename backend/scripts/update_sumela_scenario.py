@@ -1,356 +1,203 @@
 """
-YENİ SİSTEM: Sümela Manastırı Macerası Scenario Update
-======================================================
-ESKİ sistem TAMAMEN SİLİNDİ - SIFIRDAN yazıldı!
-
-Ocean/Dinosaur/Galata standardına uygun:
-- Modular prompt (500 char limit)
-- Story blueprint (Dağ Keşfi + Tarih Dopamini)
-- Kültürel hassasiyet (Kudüs standardı - dini figür YOK!)
+Sümela Macerası — Zaman Yolculuğu, Gizem, Indiana Jones Tarzı
+=========================================================================================
+- Kitap adı: [Çocuk adı]'ın Kayıp Mührü: Sümela (alt başlık yok)
+- Gizemli bir madalyonla manastırın geçmişine (zaman yolculuğu) gidip kayıp el yazmasını kurtarma macerası
+- Yerler: Altındere Vadisi, orman, şelale, taş basamaklar, kayaya oyulmuş gizli geçitler
+- Kıyafet: Indiana Jones tarzı gezgin kıyafeti, kız ve erkek için zorunlu ve her sayfada aynı tutarlı (kıyafet kilidi)
+- Kültürel hassasiyet: dini figür YOK, atmosferik taş mimari odaklı, nötr/gizemli
+- Kurguyu bozabilecek kullanıcı seçenekleri yok (custom_inputs boş)
 """
 
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy import select, update
-from sqlalchemy.orm import sessionmaker
-from app.models import Scenario
 import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from sqlalchemy import select
+from app.core.database import async_session_factory
+from app.models import Scenario
 
 # ============================================================================
-# MODULAR PROMPT COMPONENTS (500 char limit!)
+# MODULAR PROMPT COMPONENTS (AI DIRECTOR - PASS 2)
 # ============================================================================
 
-SUMELA_COVER_PROMPT = """Trabzon Sumela Monastery scene: {scene_description}.
-Child in foreground, historic Sumela Monastery carved into cliff face in background.
-1200m altitude, perched on steep rock wall.
-Lush green Altındere Valley forest below, waterfalls visible.
-Mountain atmosphere, mist.
-Wide shot: child 25%, monastery and nature 75%.
-Epic scale: tiny child, massive cliff and monastery.
-Historic, adventurous atmosphere."""
+SUMELA_COVER_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Sumela Monastery carved into a sheer vertical cliff face at 1200m altitude, ancient Byzantine stone arches and terraces clinging to weathered grey rock. "
+    "Lush misty Altindere Valley pine forest blanketing the mountainside below, volumetric fog drifting through the treetops. "
+    "Child holding an ancient bronze amulet/medallion with warm golden glow, epic cinematic light trails emanating from the artifact. "
+    "Dramatic low-angle shot: child 30% foreground, towering monastery cliff and misty mountains 70%. "
+    "Moody adventure palette: deep forest greens, slate grey rock, warm bronze glow, ethereal white mist."
+)
 
-SUMELA_PAGE_PROMPT = """Sumela Monastery scene: {scene_description}.
-Elements: [Monastery: carved into cliff (1200m), Byzantine frescoes (distant), stone arches / Cliff: steep rock face, dramatic height / Forest: lush green Altındere Valley, pine trees / Waterfalls: cascading water, mist / Mountain: peaks, clouds, fresh air / Path: stone steps climbing up].
-Nature colors: green forest, gray rock, white mist.
-Epic scale, adventurous.
-NO religious figures, architecture and nature focus only."""
+SUMELA_PAGE_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Elements: [Sumela Monastery interiors, stone stairs, misty forest mountains, cliffside architecture, fresco walls, candlelight, ancient monastery vibe]. "
+    "Cinematic action lighting, dynamic pose, detailed environment, depth of field. Wide angle, full body visible in action, child 30-40% of frame. No eye contact with camera. "
+    "Avoid: photorealistic, pasted face, collage, duplicate child, extra people (unless required by scene), text, watermark, logo, blurry, low quality. {STYLE}"
+)
 
 # ============================================================================
-# STORY BLUEPRINT (Dağ Keşfi + Tarih Dopamini)
+# OUTFIT — Indiana Jones Tarzı Kıyafet Kilidi (Sabit ve Zorunlu)
+# ============================================================================
+
+OUTFIT_GIRL = (
+    "khaki explorer shirt, fitted brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat, subtle woven bracelet charm. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest. "
+    "Same child character, same outfit, consistent face and hair across all pages."
+)
+
+OUTFIT_BOY = (
+    "khaki explorer shirt, brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest. "
+    "Same child character, same outfit, consistent face and hair across all pages."
+)
+
+# ============================================================================
+# STORY BLUEPRINT — Gizem ve Bulmaca Temalı Zaman Yolculuğu (PURE AUTHOR - PASS 1)
 # ============================================================================
 
 SUMELA_STORY_PROMPT_TR = """
-# DAĞ KEŞFİ DOPAMİN YÖNETİMİ - SÜMELA MANASTIRI MACERASI
+# SÜMELA'NIN KAYIP MÜHRÜ: GİZEMLİ MACERA
 
-## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
+## YAPI: {child_name} Indiana Jones tarzı kıyafetleriyle, bulduğu eski bir madalyon/amulet aracılığıyla Sümela Manastırı'nın geçmişine zaman yolculuğu yapar ve kayıp bir el yazmasını/kitabı kurtarmak için zeka dolu bir bulmaca serüvenine atılır. Heyecanlı, gizem dolu, takip hissi veren ama korkutucu/şiddet içermeyen, rüzgar ve sise dayalı atmosferik bir kurgu sür.
 
-Bu dağ ve tarih keşif hikayesi, çocuğa **cesaret**, **tarih**, **doğa** ve **keşif** değerlerini öğretir.
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Kayıp Mührü: Sümela" olmalı. Alt başlık EKLEME.
 
-⚠️ **KÜLTÜREL HASSASİYET KURALLARI (KUDÜS STANDARDI)**:
-- ❌ Dini figür tasvirleri YOK (İsa, Meryem, azizler YOK!)
-- ❌ İbadet detayları YOK
-- ✅ TARİHİ MİMARİ ve DOĞA odaklı
-- ✅ KÜLTÜREL MİRAS perspektifi
-- ✅ Freskler uzaktan, sanat olarak (figür detayı YOK!)
-
----
-
-### BÖLÜM 1 - GİRİŞ: ALTINDERe VADİSİ (1-4)
-- {child_name}, Trabzon'un yemyeşil Altındere Vadisi'ne varıyor
-- Dağ havasında, orman sesleri
-- İlk bakış: Kayalarda bir manastır! (1200m yükseklikte!)
-- Heyecan: "Çok yüksekte! Nasıl çıkacağız?"
-- **Değer**: Cesaret, merak
-
-**Sayfa içeriği**:
-- S1: Altındere Vadisi'ne varış, yeşil orman
-- S2: Dağ havasını soluma, kuş sesleri
-- S3: Manastırı uzaktan görme, "Kayaya oyulmuş!"
-- S4: Macera başlıyor, heyecan ✓ **İLK HEYECAN**
+**STİL & TON:** 
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. Dili akıcı, ritimli ve 5-10 yaş aralığında merak uyandırıcı olmalıdır. 
+- Her sayfada küçük bir merak kırıntısı (cliffhanger/gerilim ipucu) bırak.
+- Bilgi yığını yapma; manastırın dik yamacı, taşı, rüzgarı, dar koridorları zorluk öğesi olsun.
+- KÜLTÜREL HASSASİYET: Dini/politik bir tartışmaya veya ibadet detayına asla girme. Haç, ikon vb. detaylara odaklanma. Mekanı etkileyici, antik bir taştan labirent (mimari gizem) gibi tarafsız ver.
 
 ---
 
-### BÖLÜM 2 - ORMAN KEŞFİ: YEŞİL YÜRÜYÜŞ VE ŞELALE (5-9)
-**[DOĞA KEŞFİ DÖNGÜSÜ #1]**
-- **Orman Yürüyüşü**: Yeşil çam ormanı, temiz hava
-- **Şelale**: Çağlayan su, serinlik, doğa sesleri
-- **Doğa**: Ağaçlar, çiçekler, kelebekler
-- **Yol**: Taş patika, yukarı doğru
+### Bölüm 1 — Gizemli Madalyon (Sayfa 1-3)
+- Sayfa 1: Ziyaretçi merkezindeki hediyelik eşya dükkanının "kayıp eşya" kutusunda, {child_name} eski, ağır bir bronz madalyon bulur. Elini attığı an madalyon derinden, sanki bir kalp atışı gibi "tık" diye atar.
+- Sayfa 2: Tozunu sildiğinde üzerinde parlayan üç sembol görür: kanatlarını açmış bir kartal, antik bir anahtar ve gizemli bir spiral. "Bunu sahibine mi vermeliyim?" diye düşünerek taşı çantasına saklar.
+- Sayfa 3: Sümela Manastırı'na uzanan dik taş yola adım attığında rüzgar sertleşir ve beyaz sis etrafını sarar. Çantasındaki madalyondan incecik ama ısrarcı bir çınlama sesi yükselmektedir.
 
-**EPİK AN #1**: Şelalenin güzelliği, doğa ile buluşma!
+### Bölüm 2 — Zaman Kapısı (Sayfa 4-6)
+- Sayfa 4: Sümela'nın içine girdiğinde, kimsenin dikkat etmediği silik bir duvar resminin (fresk) yanında küçük, yuvarlak ve tuhaf bir oyuk fark eder. Oyuğun şekli çantasındaki madalyonla baştan sona aynıdır!
+- Sayfa 5: Nefesini tutar ve madalyonu oyuğa yerleştirir. Vadideki rüzgar bir anda kesilir, ardından sağır edici bir "Vuuuş!" sesiyle manastırın taşları arasından sızan göz kamaştırıcı bir ışık seli patlar.
+- Sayfa 6: Işık dağılıp gözlerini açtığında turistler yoktur; manastırın eski, geçmiş dönemindedir. Etrafta mum ışıklarında telaşla dolanan insanlar vardır. Biri umutsuzca feryat eder: "Kayıp el yazması yok olursa tüm bilgimiz biter!"
 
-**Sayfa içeriği**:
-- S5: Orman yürüyüşü başlıyor, yeşillik
-- S6: Çam ağaçları, temiz hava
-- S7: Şelaleyi keşfetme, "Ne güzel!" ✓ **DOĞA ZİRVESİ #1**
-- S8: Su sesleri, serinlik
-- S9: Yukarı yol devam ediyor, cesaret
+### Bölüm 3 — İpuçlarının Peşinde (Sayfa 7-10)
+- Sayfa 7: {child_name} hiç tereddüt etmeden yardıma karar verir. Madalyonundaki ilk ipucunu kullanır: spiral işareti. Gözleri duvarları tararken taş köşedeki aynı spiral oymayı bulur.
+- Sayfa 8: Spiral oymayı izlediğinde kimsenin bilmediği, taş merdivenlere açılan karanlık ve dar bir koridora girer. Koridorda esen rüzgar sanki ona fısıltıyla yön gösteriyor gibidir.
+- Sayfa 9: Karşısına üzerinde üç sembol bulunan ağır bir kapı çıkar: kartal, anahtar ve spiral. Doğru sırayı bulamazsa kapının ebediyen kilitlenebileceği korkutucu bir sessizlik "klik" sesiyle uyarısını yapar.
+- Sayfa 10: Etrafı dikkatlice inceler: duvarda yüksekte bir kartal motifi, tam ortada spiral çiziği, aşağıda ise anahtar izi vardır. "Yüksekte uçan, ortada dönen, aşağıyı açan..." diyerek sıralamayı başarıyla çözer.
 
----
+### Bölüm 4 — Gizemli Takip (Sayfa 11-14)
+- Sayfa 11: Kapı büyük bir gıcırtıyla açılır ve gizli bir depo odasına girer; raflarda yüzlerce kap dizilidir, zeminde ise çok eski bir mühür izi parlar. Ama aranan gizemli el yazması burada değildir!
+- Sayfa 12: Dikkatle dinlerken, damlaların ritmik olarak aktığı ufak bir taş oluk fark eder. "Su... bu ses başka bir yere, daha derine gidiyor olmalı!" diyerek su izini takip eder.
+- Sayfa 13: İlerledikçe loş ortamda sis yoğunlaşır; ensesinde belli belirsiz ve sadece gölgeden ibaret ürkütücü olmayan ama gizemli birinin onu takip ettiği hissine kapılır. Hızlı adımlarla çatlak taşların üzerinden atlar.
+- Sayfa 14: Karşısına korkunç uçurumu gören, iki kayayı bağlayan köprü benzeri çok dar bir geçit çıkar. Çantasının kayışından destek alıp rüzgara karşı amansız bir adrenalinle o daracık dengede adım adım geçer.
 
-### BÖLÜM 3 - TIRMANMA: TAŞ BASAMAKLAR VE YÜKSEKLİK (10-14)
-**[CESARET DÖNGÜSÜ #2]**
-- **Kaygı**: Çok yüksek! Dik taş basamaklar
-- **Aksiyon**: Adım adım tırmanma, nefes nefese
-- **Manzara**: Her basamakta yeni bir manzara
-- **Başarı**: Yorgun ama devam, cesaret!
+### Bölüm 5 — Bulmacanın Sonu (Sayfa 15-18)
+- Sayfa 15: Geçidin sonundaki gizli odanın ortasında devasa eski bir tahta sandık durmaktadır. Sandığın kapağında büyük bir anahtar deliği vardır ancak etrafta bir anahtar gözükmez.
+- Sayfa 16: Çantasındaki madalyonun "anahtar" sembolü güçlüce parlayınca {child_name} duvarda dikkat çekmeyen çıkıntıyı görür. O taşa var gücüyle bastırdığında taşın içinden zekice gizlenmiş gerçek anahtar çıkar.
+- Sayfa 17: Sandığı büyük bir heyecanla açar; el yazması oradadır ama tüm sayfaları kopmuş ve sırası tamamen karışmıştır! Zaman akıp giderken acilen o sayfaları düzgün sıraya koyması gereken bir hız bulmacasına girişir.
+- Sayfa 18: Sayfaların kenarlarındaki ufacık kartal ve spiral dizilimlerinden mantığı kavrar ve kitabı kusursuz sıraya dizer. Tamamlandığı anda el yazması hafifçe altın sarısı bir toz saçar.
 
-**EPİK AN #2**: Tırmanış zaferi, yüksekliğe cesaret!
-
-**Sayfa içeriği**:
-- S10: Taş basamaklar başlıyor, dik yokuş
-- S11: Yükseklik artıyor, aşağı bakmak
-- S12: Yorgunluk ama devam, cesaret ✓ **CESARET ZİRVESİ #2**
-- S13: Neredeyse tepede, son çaba
-- S14: Manastıra ulaşma! ✓ **BAŞARI!**
-
----
-
-### BÖLÜM 4 - MANASTIR DORUĞU: KAYA OYMA MİMARİ (15-18)
-**[TARİHİ KEŞİF DÖNGÜSÜ #3]**
-- **Mimari**: Kayaya oyulmuş, 1200m yükseklikte
-- **Tarih**: MS 386 yılından beri (1600+ yıl!)
-- **Freskler**: Uzaktan sanat eserleri (figür detayı YOK!)
-- **Bizans**: Taş işçiliği, kemerler, odalar
-
-**EPİK AN #3**: Kayaya oyulmuş tarihi mucize! ✓ **TARİHİ HAYRANLIK ZİRVESİ**
-
-**Sayfa içeriği**:
-- S15: Manastırın girişi, taş kapı
-- S16: Kayaya oyulmuş odalar, "İnanılmaz!" ✓ **TARİH ZİRVESİ #3**
-- S17: Freskler (uzaktan, sanat olarak - figür YOK!)
-- S18: Bizans taş işçiliği, kemerler
+### Bölüm 6 — Geri Dönüş (Sayfa 19-21)
+- Sayfa 19: El yazmasını ait olduğu kişilere ulaştırdığında herkes büyük bir nefes alır; minnettar bir yazıcı, tarihe geçmesi için çocuğun eline küçük bir mühür izi basar. Kahraman artık görevini yapmış, dönme zamanının geldiğini hissetmiştir.
+- Sayfa 20: Göğsündeki madalyon kor gibi ısınmaya ve tanıdık ışığını vermeye başlar: Dönüş kapısı açılmaktadır! Ancak dışarıdaki rüzgar fırtınaya dönüşmüş, kapı kapanmak üzeredir.
+- Sayfa 21: Manastır boyunca koşarak gizli yuvayı bulur, madalyonun sembollerini tam yuvasında çevirince büyük bir flaş patlar. Sis dağılıp günümüze döndüğünde etrafında doar sadece turistler vardır; ama avucunda, binlerce yıl öncesinden kalan gerçek bir mühür izi yadigardır... "Bu mühür... bir gün yeniden parlayacak mı?"
 
 ---
 
-### BÖLÜM 5 - DAĞ PANORAMASI: 1200M MANZARA (19-20)
-**[DOĞA DORUĞU DÖNGÜSÜ #4]**
-- **Manzara**: Altındere Vadisi, yeşil orman aşağıda
-- **Yükseklik**: 1200m rakım, bulutlara yakın
-- **Dağlar**: Etrafta dağ sıraları, zirveler
-- **Huzur**: Dağ havasında huzur, başarı tatmini
-
-**EPİK AN #4**: Bulutların arasında, dağ zirvesinde!
-
-**Sayfa içeriği**:
-- S19: Dağ manzarası, vadi aşağıda
-- S20: Bulutlara yakın, "Zirvedeyiz!" ✓ **DOĞA DORUĞU #4**
-
----
-
-### BÖLÜM 6 - FİNAL: DOĞA VE TARİH BULUŞMASI (21-22)
-**[DUYGU DORUĞU - FİNAL]**
-- **Birleşim**: Doğa ve tarih bir arada
-- **Öğrenme**: 1600 yıllık tarih, doğanın güzelliği
-- **Dönüş**: Kalbe dolan cesaret ve bilgi
-- **Mesaj**: "Tarih ve doğa ne kadar değerli!"
-
-**EPİK AN #5**: Tarihin doğa ile buluşması! ✓ **FİNAL DORUĞU**
-
-**Sayfa içeriği**:
-- S21: Doğa ve tarih buluşması, son bakış
-- S22: Veda, dönüş, kalbe dolan deneyim
-
----
-
-## DOPAMIN ZİRVELERİ:
-1. **Sayfa 7**: Şelale keşfi (DOĞA)
-2. **Sayfa 12**: Tırmanış cesaret (BAŞARI)
-3. **Sayfa 14**: Manastıra ulaşma (ZAFERİ)
-4. **Sayfa 16**: Kaya oyma mimari (TARİH ZİRVESİ)
-5. **Sayfa 20**: 1200m manzara (DOĞA DORUĞU)
-6. **Sayfa 22**: Doğa-tarih birleşimi (FİNAL)
-
----
-
-## DEĞERLER:
-- **CESARET**: Yüksekliğe tırmanma, zorlukları aşma
-- **TARİH**: 1600+ yıllık miras, Bizans dönemi, kültürel miras
-- **DOĞA**: Orman, şelale, dağ güzelliği, doğayı koruma
-- **KEŞİF**: Kültürel ve doğal keşif, öğrenme
-
----
-
-## GÜVENLİK VE HASSASİYET KURALLARI:
-- ❌ Dini figür tasvirleri YOK (İsa, Meryem, azizler)
-- ❌ İbadet detayları YOK
-- ✅ TARİHİ MİMARİ odaklı (kaya oyma, taş işçiliği)
-- ✅ DOĞA odaklı (orman, şelale, dağ)
-- ✅ Freskler UZAKTAN, sanat olarak (figür detayı YOK!)
-- ✅ KÜLTÜREL MİRAS perspektifi
-- ✅ Tırmanış GÜVENLİ (rehberli, korunaklı)
-
----
-
-## CUSTOM INPUTS:
-- {favorite_element}: Çocuğun en sevdiği unsur (örn: Şelale, Kaya Oyma, Dağ Manzarası, Orman)
-- Bu öğe sayfa 16-18 arasında vurgulanacak
-
----
-
-## NOT:
-Her sayfa {scene_description} ile dinamik olarak hikayeye entegre edilir.
-Çocuk her sayfada DOĞA ve TARİH keşfeder, DİNİ FİGÜR YOK!
-KUDÜS hassasiyet kuralları AYNIDIR!
+## KURALLAR
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 21 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- AI Görüntü (scene_description) promptlarını (İngilizce) yazarken "standing still" veya "looking at camera" KULLANMA. Aksiyon belirt (örn: "Child leaping over cracked stone bridge", "Child turning ancient dial on a door").
 """
-
-# ============================================================================
-# OUTFIT DEFINITIONS
-# ============================================================================
-
-OUTFIT_GIRL = """Outdoor mountain hiking outfit for Sumela Monastery adventure.
-Comfortable sporty t-shirt or athletic top, hiking pants (khaki or dark colors).
-Sturdy hiking boots with ankle support.
-Sun hat or baseball cap for mountain sun.
-Small backpack with water bottle and essentials.
-Light jacket tied around waist (mountain weather).
-Practical for climbing steep stone steps, comfortable for mountain trekking.
-Age-appropriate, safe for outdoor adventure."""
-
-OUTFIT_BOY = """Outdoor mountain hiking outfit for Sumela Monastery adventure.
-Sporty t-shirt or athletic shirt, hiking pants or cargo pants.
-Sturdy hiking boots with ankle support.
-Baseball cap or sun hat for mountain sun.
-Small backpack with water bottle and essentials.
-Light jacket tied around waist (mountain weather).
-Practical for climbing steep stone steps, comfortable for mountain trekking.
-Age-appropriate, safe for outdoor adventure."""
 
 # ============================================================================
 # CULTURAL ELEMENTS
 # ============================================================================
 
 SUMELA_CULTURAL_ELEMENTS = {
-    "location": "Trabzon, Turkey (Altındere Valley, Maçka)",
-    "historic_site": "Sumela Monastery, founded 386 AD (1600+ years old)",
-    "altitude": "1200m above sea level, carved into cliff face",
-    "architecture": "Byzantine rock-carved monastery",
+    "location": "Sümela Manastırı, Altındere Vadisi, Maçka, Trabzon, Turkey",
+    "historic_site": "Sumela Monastery, founded 386 AD (1600+ years), carved into cliff at 1200m",
     "natural_features": [
-        "Altındere Valley forest",
-        "Waterfalls and streams",
-        "Mountain peaks and clouds",
-        "Pine trees and lush greenery",
-        "Mountain atmosphere and fresh air"
+        "Altındere Valley forest, pine trees",
+        "Stone path, steep stone steps, mist and rain",
+        "Mountain peaks, deep valley drops",
     ],
-    "monastery_features": [
-        "Carved into cliff face",
-        "Stone arches and rooms",
-        "Byzantine frescoes (distant, art only - NO figure details!)",
-        "Rock craftsmanship",
-        "Dramatic cliff location"
-    ],
-    "atmosphere": "Adventurous, historic, natural beauty, peaceful mountain air",
-    "educational_focus": [
-        "Byzantine architecture",
-        "Rock carving techniques",
-        "Historical preservation (1600+ years)",
-        "Mountain ecology",
-        "Cultural heritage"
-    ],
-    "values": ["Courage", "History appreciation", "Nature preservation", "Exploration"],
+    "architecture": "Byzantine rock-carved monastery — stone arches, terraces, hidden rooms, ancient labyrinths",
     "sensitivity_rules": [
-        "NO religious figure depictions (Jesus, Mary, saints)",
+        "NO religious figure depictions",
         "NO worship details",
-        "Frescoes shown from distance only (art perspective, NO figure details)",
-        "Architecture and nature focus",
-        "Cultural heritage perspective"
-    ]
+        "Architecture and mystery focus",
+    ],
+    "atmosphere": "Adventurous, mysterious, hidden passages, time-travel, ancient monastery",
+    "values": ["Courage", "Intelligence", "Puzzle Solving", "Discovery"],
 }
 
 # ============================================================================
-# CUSTOM INPUTS
+# CUSTOM INPUTS — Kurguyu bozmayacak şekilde boş
 # ============================================================================
 
-SUMELA_CUSTOM_INPUTS = {
-    "favorite_element": {
-        "type": "select",
-        "label_tr": "En sevdiğin unsur hangisi?",
-        "label_en": "What's your favorite element?",
-        "options": [
-            {"value": "waterfall", "label_tr": "Şelale", "label_en": "Waterfall"},
-            {"value": "rock_carving", "label_tr": "Kaya Oyma Mimari", "label_en": "Rock Carving Architecture"},
-            {"value": "mountain_view", "label_tr": "Dağ Manzarası", "label_en": "Mountain View"},
-            {"value": "forest", "label_tr": "Yeşil Orman", "label_en": "Green Forest"},
-            {"value": "climbing", "label_tr": "Tırmanış Macerası", "label_en": "Climbing Adventure"}
-        ],
-        "default": "rock_carving",
-        "usage": "Emphasized in pages 16-18 (monastery discovery)"
-    }
-}
+SUMELA_CUSTOM_INPUTS: list[dict] = []
 
 # ============================================================================
-# DATABASE UPDATE FUNCTION
+# DATABASE UPDATE
 # ============================================================================
 
 async def update_sumela_scenario():
-    """SÜMELA MANASTIRI senaryosunu YENİ SİSTEM ile günceller."""
-    
-    db_url = os.getenv("DATABASE_URL")
-    if not db_url:
-        raise ValueError("DATABASE_URL environment variable not set")
-    
-    engine = create_async_engine(db_url, echo=True)
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    
-    async with async_session() as session:
-        # Find Sumela scenario
-        result = await session.execute(
+    """Sümela senaryosunu gizemli Zaman Yolculuğu kurgusuyla günceller."""
+    async with async_session_factory() as db:
+        result = await db.execute(
             select(Scenario).where(
-                (Scenario.theme_key == "sumela_monastery_trabzon") |
-                (Scenario.name.ilike("%Sümela%")) |
-                (Scenario.name.ilike("%Sumela%"))
+                (Scenario.theme_key == "sumela")
+                | (Scenario.theme_key == "sumela_monastery_trabzon")
+                | (Scenario.name.ilike("%Sümela%"))
+                | (Scenario.name.ilike("%Sumela%"))
             )
         )
         scenario = result.scalar_one_or_none()
-        
-        if not scenario:
-            print("❌ Sümela scenario not found!")
-            return
-        
-        print(f"\n✅ Found scenario: {scenario.name} (ID: {scenario.id})")
-        
-        # Verify prompt lengths
-        print(f"\n📏 PROMPT LENGTHS:")
-        print(f"   Cover: {len(SUMELA_COVER_PROMPT)} chars (max 500)")
-        print(f"   Page: {len(SUMELA_PAGE_PROMPT)} chars (max 500)")
-        print(f"   Story: {len(SUMELA_STORY_PROMPT_TR)} chars")
-        
-        if len(SUMELA_COVER_PROMPT) > 500 or len(SUMELA_PAGE_PROMPT) > 500:
-            print("❌ HATA: Prompt 500 karakteri aşıyor!")
-            return
-        
-        # Update scenario
-        await session.execute(
-            update(Scenario)
-            .where(Scenario.id == scenario.id)
-            .values(
-                cover_prompt_template=SUMELA_COVER_PROMPT,
-                page_prompt_template=SUMELA_PAGE_PROMPT,
-                story_prompt_tr=SUMELA_STORY_PROMPT_TR,
-                outfit_girl=OUTFIT_GIRL,
-                outfit_boy=OUTFIT_BOY,
-                cultural_elements=SUMELA_CULTURAL_ELEMENTS,
-                custom_inputs_schema=SUMELA_CUSTOM_INPUTS,
-                description="Trabzon'un büyülü Sümela Manastırı'na dağ macerası! 1200m yükseklikte kayaya oyulmuş tarihi manastırı keşfet, şelaleler ve yeşil ormanlarla dolu Altındere Vadisi'nde doğa ve tarihi birlikte öğren!",
-                marketing_badge="YENİ! Dağ Macerası",
-                age_range="7-10",
-                tagline="Sümela'da dağ ve tarih keşfi!"
-            )
-        )
-        
-        await session.commit()
-        
-        print("\n✅ SÜMELA MANASTIRI scenario updated successfully!")
-        print("   - Modular prompts: DONE")
-        print("   - Story blueprint: DONE")
-        print("   - Cultural sensitivity rules: DONE")
-        print("   - Outfit (mountain gear): DONE")
-        print("   - Cultural elements: DONE")
-        print("   - Custom inputs: DONE")
 
-# ============================================================================
-# MAIN
-# ============================================================================
+        if not scenario:
+            scenario = Scenario(name="Sümela'nın Kayıp Mührü", is_active=True)
+            scenario.theme_key = "sumela"
+            db.add(scenario)
+
+        # Meta Bilgiler
+        scenario.name = "Sümela'nın Kayıp Mührü"
+        scenario.description = (
+            "Indiana Jones tarzı efsanevi bir manastır macerası! Gizemli bir madalyonla "
+            "Sümela'nın geçmişine ışınlanan çocuğun, gizli geçitleri ve şifreleri "
+            "aşarak kayıp el yazmasını bulma serüveni."
+        )
+        scenario.theme_key = "sumela"
+        
+        # Kapaklar ve Promplar
+        scenario.cover_prompt_template = SUMELA_COVER_PROMPT
+        scenario.page_prompt_template = SUMELA_PAGE_PROMPT
+        scenario.story_prompt_tr = SUMELA_STORY_PROMPT_TR
+        
+        # Kıyafet Sistemi
+        scenario.outfit_girl = OUTFIT_GIRL
+        scenario.outfit_boy = OUTFIT_BOY
+        
+        # Kültürel & Pazarlama Verileri
+        scenario.cultural_elements = SUMELA_CULTURAL_ELEMENTS
+        scenario.custom_inputs_schema = SUMELA_CUSTOM_INPUTS
+        scenario.marketing_badge = "Gizemli Macera"
+        scenario.age_range = "5-10"
+        scenario.tagline = "Sırlarla dolu Sümela'nın şifrelerini çöz!"
+        scenario.is_active = True
+
+        await db.commit()
+        print(f"Sumela 'Kayıp Mühür' scenario updated seamlessly: {scenario.id}")
 
 if __name__ == "__main__":
     asyncio.run(update_sumela_scenario())

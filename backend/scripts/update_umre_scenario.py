@@ -1,12 +1,12 @@
 """
-Umre Yolculuğu: Kutsal Topraklarda — Düzeltilmiş
-==================================================
-- Modular prompt (500 char limit, tüm placeholder'lar mevcut)
-- Hikaye: Umre ibadet sırasına göre (İhram → Tavaf → Sa'y → Zemzem → Tıraş)
-- Çocuğun iç dünyası: Her ibadetin manevi anlamı ile iç savaşları birleşiyor
-- Outfit: update_all_outfits.py standardı (EXACTLY lock phrase)
-- custom_inputs_schema: list formatı
-- Yüz benzerliği: CHARACTER block önce
+Kutsal Topraklara Ziyaret — Umre senaryosu
+==========================================
+- Kitap adı: {child_name}'ın Kutsal Topraklara Ziyareti
+- Kafile ile yolculuk (dede/nine değil). Uçak sahnesi yok.
+- Havalimanında ihram hazırlığı → Cidde varışı → Kabeye doğru ihramla yürüyüş Lebbeyk → Kabe ilk görüş (duaların kabulü vurgusu) → Tavaf 3 sayfa → Sa'y 2 sayfa → Saç kesme 1 → Mekke kubbeli mescit 2 → Medine yolculuğu → Mescid-i Nebevi, Uhud, Hendek 1'er → Eve dönüş.
+- Erkekler: ihramda baş açık; saç kesilene kadar ihram. Sonrası takke (saç 0'a vurulmaz, sadece kesilir; kel çizilmez). Kızlar: hicap.
+- Metin sayfaya sığacak kadar KISA: sayfa başı 1-3 cümle (25-50 kelime). Kurguyu bozma.
+- Kullanıcıya seçenek sunulmaz (custom_inputs boş/fixed).
 """
 
 import asyncio
@@ -28,11 +28,12 @@ UMRE_COVER_PROMPT = (
     "An {child_age}-year-old {child_gender} named {child_name} "
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
-    "Masjid al-Haram and black Kaaba with golden Kiswah in distance. "
-    "White marble courtyard, golden minarets, grand domes. "
-    "Peaceful pilgrims in white ihram (distant, no faces). "
-    "Golden spiritual light. Wide shot: child 20%, architecture 80%. "
-    "NO Prophet/angel depictions."
+    "Standing in the grand white marble courtyard before the magnificent black Kaaba draped in ornate golden Kiswah calligraphy embroidery. "
+    "Towering golden minarets and grand Ottoman domes rising against a deep twilight sky, peaceful distant pilgrims in white ihram (small, no faces). "
+    "Warm reverent golden light reflecting off polished marble, soft ambient glow from the minarets, gentle volumetric light around the Kaaba. "
+    "Slightly low-angle shot: child 20% foreground, sacred architecture 80%. "
+    "Sacred palette: pure white marble, deep black and gold Kiswah, warm amber glow, emerald green accents. "
+    "NO airplanes, NO airport, NO glowing lights, NO magic, NO fairies, NO Prophet/angel depictions."
 )
 
 UMRE_PAGE_PROMPT = (
@@ -40,10 +41,9 @@ UMRE_PAGE_PROMPT = (
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
     "Locations: [Kaaba: black with golden Kiswah, white marble courtyard / "
-    "Safa-Marwa: marble corridor, green-lit zone / "
-    "Masjid Nabawi: green dome, date palms / Zemzem: marble, blessed water]. "
-    "Islamic geometric patterns, calligraphy (decorative). "
-    "Golden light, reverent. NO Prophet depictions."
+    "Safa-Marwa: marble corridor / Masjid Nabawi: green dome / Zemzem: marble]. "
+    "Islamic geometric patterns, calligraphy. "
+    "Reverent and realistic. NO glowing lights, NO magic, NO fairies, NO Prophet depictions."
 )
 
 # ============================================================================
@@ -52,173 +52,94 @@ UMRE_PAGE_PROMPT = (
 
 OUTFIT_GIRL = (
     "pure white cotton modest long-sleeve dress reaching ankles with no patterns or decorations, "
-    "white cotton hijab headscarf covering hair completely with simple neat edges, "
+    "PROPERLY WRAPPED white hijab: fabric wraps FULLY around the head and neck — NO hair visible, NO neck visible, "
+    "fabric drapes softly over shoulders and chest, neat pin-free folds, same style as a modern proper hijab wrap (NOT a loose veil, NOT a hood, NOT fabric merely draped on top of head). "
     "comfortable beige leather flat sandals, small white cotton drawstring backpack. "
     "Simple and clean appearance inspired by ihram purity, no jewelry. "
-    "EXACTLY the same outfit on every page — same pure white dress, same white hijab, same beige sandals."
+    "EXACTLY the same outfit on every page — same pure white dress, same properly wrapped white hijab, same beige sandals."
 )
 
 OUTFIT_BOY = (
     "pure white cotton knee-length kurta tunic with no patterns or decorations, "
-    "white knit taqiyah prayer cap on head, light beige loose-fitting cotton pants, "
+    "small round white knitted taqiyah skull-cap sitting snugly on top of the head "
+    "(NOT a turban, NOT a wrapped cloth, NOT a keffiyeh, NOT a hood — ONLY a small round knitted cap), "
+    "light beige loose-fitting cotton pants, "
     "comfortable tan leather sandals, small white cotton drawstring backpack. "
     "Simple and clean appearance inspired by ihram purity. "
-    "EXACTLY the same outfit on every page — same white kurta, same white taqiyah, same beige pants."
+    "EXACTLY the same outfit on every page — same white kurta, same small round white taqiyah cap, same beige pants, same sandals."
 )
 
 # ============================================================================
-# STORY BLUEPRINT (Umre İbadet Sırasına Göre)
+# STORY BLUEPRINT — Kısa, sayfaya sığan, kafile ile, uçak yok
 # ============================================================================
 
 UMRE_STORY_PROMPT_TR = """
-# UMRE YOLCULUĞU — KUTSAL TOPRAKLARDA MANEVİ KEŞİF
+# KUTSAL TOPRAKLARA ZİYARET — UMRE
 
-## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
+## YAPI: {child_name} KAFİLE İLE UMRE YAPIYOR. UÇAK SAHNESİ YOK.
 
-Bu hikaye bir manevi yolculuk. {child_name}, büyükleriyle birlikte umre
-yapmaya gidiyor. Her ibadet adımında çocuğun İÇ DÜNYASI'ndaki bir
-duyguyla yüzleşmesi ve o ibadetin manevi anlamıyla dönüşmesi anlatılır.
+**KRİTİK — METİN UZUNLUĞU:** Her sayfa MUTLAKA kısa olsun; sayfaya sığmalı. Her sayfa 1-3 cümle, toplam 25-50 kelime. Daha uzun yazma; kurguyu bozmadan %30 kısa tut.
 
-⚠️ ÖNEMLİ KURALLAR:
-- Umre ibadeti DOĞRU SIRAYLA yapılmalı: İhram → Telbiye → Tavaf → Sa'y → Zemzem → Tıraş
-- Çocuk büyükleriyle birlikte (anne-baba-aile KARAKTERİ gösterilmez, sadece "yanındaki büyükler" olarak bahsedilir)
-- Anne-baba yüzü, kıyafeti, fiziksel özellikleri ASLA tarif edilmez
-- Her ibadette çocuğun bir İÇ SAVAŞI var → ibadet onu dönüştürüyor
-- Vaaz edici DEĞİL, YAŞAYARAK öğrenme
-- Hz. Muhammed, peygamberler, melekler GÖRSELLEŞTİRİLMEZ (sadece hikâye anlatımı)
-- Namaz/ibadet close-up YOK, yüzler detaylı gösterilmez
-- Korku/baskı/travma YOK
-- Saygılı, huzurlu, duygusal ton
+**KIYAFET:** Erkekler ihrama girince 2 parça dikişsiz beyaz bez, BAŞ AÇIK (takke yok). Saç kesilene kadar ihramda. Saç kesildikten sonra takke (saç SADECE kesilir, tıraş/0'a vurma YOK; erkek kel çizilmez). Kızlar hicap giyer.
+
+**AKIŞ:** Havalimanı → ihram hazırlığı ve giriş → (Cidde varışı sonrası) Kabeye doğru ihramla yürüyüş, Lebbeyk sesleri → Kabe ilk görüş (ilk görüşte duaların kabulü dileği vurgula) → Tavaf 3 sayfa → Sa'y 2 sayfa → Saç kesme 1 sayfa → Mekke'deki kubbeli mescide ziyaret 2 sayfa → Medine yolculuğu → Mescid-i Nebevi (Resulullah hakkında bilgi, hissiyat) → Uhud tepesi 1 sayfa → Hendek Savaşı 1 sayfa → Eve dönüş.
 
 ---
 
-### BÖLÜM 1 — HAZIRLIK: İHRAMA GİRİŞ (Sayfa 1-4)
-Havaalanında heyecan. Büyükleriyle kutsal topraklara gidiş. Mikat'a
-yaklaşırken ihrama giriş — beyaz, sade, dikişsiz kıyafet.
-**İÇ SAVAŞ: KİBİR / GÖSTERİŞ** — Çocuk güzel kıyafetlerini çıkarmak
-istemiyor. "Neden herkes aynı giyiniyor?"
-**DÖNÜŞÜM**: İhram = eşitlik. Zengin-fakir, büyük-küçük fark yok.
-"Allah'ın önünde herkes eşit." Çocuk beyazın sadeliğinde huzur buluyor.
-- S1: Havaalanı heyecanı, büyükleriyle yolculuk
-- S2: Mikat'a yaklaşma, ihram hazırlığı
-- S3: İhrama giriş — "Neden herkes aynı?" ✓ İÇ SAVAŞ
-- S4: "Allah'ın önünde herkes eşit" — huzur ✓ İLK FARKINDALIK
-**Değer**: Tevazu, eşitlik, sadelik
+### Sayfa 1-2: Havalimanı, kafile, ihram hazırlığı
+- {child_name} kafile ile havalimanında buluşuyor. Heyecanlı. Uçak sahnesi YOK.
+- İhrama hazırlanıyorlar: beyaz, dikişsiz 2 parça bez. Niyet, telbiye. Baş açık kalacak (erkekler için).
+
+### Sayfa 3: Cidde varışı, Kabeye doğru yürüyüş
+- Cidde'ye varıldı. Kabeye doğru ihramlı yürüyüş. "Lebbeyk Allahümme Lebbeyk" sesleri her yerde.
+
+### Sayfa 4-5: Kabe ilk görüş
+- Mescid-i Haram'a adım. Kabe ilk kez görülüyor. Gözyaşları, huşu.
+- İlk görüşte edilen duaların kabul edildiği inancı vurgula. {child_name} içinden ne dilerse kalbiyle orada.
+
+### Sayfa 6-8: Tavaf (3 sayfa)
+- Tavafa başlama — Hacerülesved, 7 tur. İhramda, baş açık.
+- Tavafın anlamı: Kabe etrafında birlikte dönmek, tek yürek. Kısa vurgu.
+- Tavaf bitişi. Makam-ı İbrahim, Zemzem bir yudum.
+
+### Sayfa 9-10: Sa'y (2 sayfa)
+- Safa'dan Merve'ye 7 gidiş-geliş başlıyor. Hz. Hacer'in hikâyesi kısaca.
+- Sa'y bitişi. Yoruldu ama tamamladı.
+
+### Sayfa 11: Saç kesme
+- Saç kesiliyor (tıraş değil, sadece kesim). İhramdan çıkış. Yenilenme, huzur. Sebebi ve hissiyatı kısa. Metinde "tıraş", "0'a vurma", "kel" GEÇMESİN.
+- KRİTİK: Kız çocuğun saçını SADECE KADIN keser (anne, teyze, abla veya kadın kuaför). Erkek berber kızın saçına dokunmaz. Erkek çocuğun saçını erkek berber keser. Hikâyede ve sahne tasvirinde buna uygun yaz (kız ise kadın karakteri saç keserken göster).
+
+### Sayfa 12-13: Mekke — kubbeli mescit ziyareti (2 sayfa)
+- Mekke'deki kubbeli mescide ziyaret. Tarih, maneviyat.
+- Orada anlatılanlar, {child_name}'ın hissettiği huzur. 2 sayfa toplam.
+
+### Sayfa 14: Medine yolculuğu
+- Medine'ye yolculuk. Yeşil kubbe uzaktan. Artık takke (erkek). Kızlar hicap.
+
+### Sayfa 15: Mescid-i Nebevi, Resulullah
+- Mescid-i Nebevi. Yeşil kubbe. Resulullah (sav) hakkında bilgi, saygı, hissiyat. Görselleştirme yok, sadece anlatım.
+
+### Sayfa 16: Uhud tepesi
+- Uhud tepesi ziyareti. Tarihî önemi kısaca, bir sayfa.
+
+### Sayfa 17: Hendek Savaşı
+- Hendek (Ahzab) hatırası. Bir sayfa vurgu.
+
+### Sayfa 18+: Eve dönüş ve kapanış
+- Eve dönüş. "Kutsal topraklar beni değiştirdi." Kısa, duygusal kapanış. Kalan sayfa sayısına göre 1-2 sayfa.
 
 ---
 
-### BÖLÜM 2 — TELBİYE VE İLK GÖRÜŞ: KABE (Sayfa 5-8)
-Telbiye okuyarak Mekke'ye giriş: "Lebbeyk Allahümme Lebbeyk..."
-(Buyur Allah'ım, emrindeyim!) Mescid-i Haram'a ilk adım.
-Ve Kabe... İlk görüş anı. Gözyaşları.
-**İÇ SAVAŞ: SABIR / ACELECİLİK** — Çocuk hemen Kabe'ye koşmak istiyor.
-**DÖNÜŞÜM**: Telbiye = teslimiyet. "Acele etme, her adım bir dua."
-Yavaşça, huşu içinde yaklaşma. Kabe'yi görünce kalbinin durduğunu hissediyor.
-- S5: Telbiye okuyarak yürüyüş — "Lebbeyk..."
-- S6: Mescid-i Haram'a giriş — devasa avlu
-- S7: KABE'Yİ İLK GÖRÜŞ — gözyaşları! ✓ DORUK DUYGU
-- S8: "Kalbim durdu..." — huşu, hayranlık
-**Değer**: Teslimiyet, huşu, sabır
+## GÖRSEL KURALLAR
+- Sayfa 1-2: Henüz ihram yok veya hazırlık (erkekte baş açık).
+- Sayfa 3-10: İHRAM — 2 parça beyaz bez, BAŞ AÇIK (takke yok).
+- Sayfa 11: Saç kesme anı (sadece kesim; tıraş/kel YOK). Kız çocuk varsa saçını KADIN keser (anne/teyze/kadın kuaför); erkek berber kızın saçına dokunmaz. Erkek çocukta erkek berber olabilir.
+- Sayfa 12-22: Takke (erkek), normal saç — kel çizilmez. Kızlar hicap.
+- Peygamber/melek görseli YOK. Vaaz yok, yaşayarak anlat.
+- İlk sayfa [Sayfa 1] ile başla. Uçak, kabin, uçuş sahnesi ÇİZME.
 
----
-
-### BÖLÜM 3 — TAVAF: KABE'NİN ETRAFINDA 7 TUR (Sayfa 9-12)
-Hacerülesved köşesinden başlayarak Kabe'nin etrafında 7 tur.
-Binlerce insan birlikte dönüyor — farklı ülkeler, farklı diller,
-tek yürek. Yanındaki büyüğün elini tutarak yürüyor.
-**İÇ SAVAŞ: BENCİLLİK / BEN-MERKEZCİLİK** — "Neden herkes aynı
-yöne dönüyor? Ben farklı gitmek istiyorum."
-**DÖNÜŞÜM**: Tavaf = birlik. Herkes aynı merkeze yöneliyor.
-"Tek başıma değilim, hepimiz biriz." Çocuk kalabalığın içinde
-birlik hissediyor, kalbinde sıcaklık.
-- S9: Tavafa başlama — Hacerülesved köşesi
-- S10: 7 tur — binlerce insan, farklı diller, tek yürek
-- S11: "Neden hep aynı yöne?" → "Hepimiz biriz" ✓ BİRLİK ZİRVESİ
-- S12: Makam-ı İbrahim'de dua — huzur
-**Değer**: Birlik, topluluk, bencillikten kurtulma
-
----
-
-### BÖLÜM 4 — SA'Y: SAFA VE MERVE ARASI 7 GİDİŞ-GELİŞ (Sayfa 13-16)
-Safa Tepesi'nden Merve Tepesi'ne 7 kez gidip gelme. Yanındaki büyük, Hz. Hacer'in
-hikâyesini anlatıyor: "Oğlu İsmail susuzluktan ağlıyordu. Hacer
-çaresizce iki tepe arasında koştu. 7 kez. Vazgeçmedi."
-**İÇ SAVAŞ: UMUTSUZLUK / VAZGEÇME** — Çocuk yoruluyor. "Çok uzun,
-bitiyor mu?" Ayakları ağrıyor.
-**DÖNÜŞÜM**: Sa'y = umut ve sebat. Hz. Hacer vazgeçmedi, su bulundu.
-"Vazgeçmediğinde mucize gelir." Çocuk son turda güç buluyor.
-- S13: Safa Tepesi'nden başlama — uzun koridor
-- S14: Hz. Hacer'in hikâyesi — büyük anlatıyor ✓ DUYGU
-- S15: Yorgunluk — "Bitiyor mu?" Yeşil ışıklı bölgede hızlanma ✓ İÇ SAVAŞ
-- S16: Son tur — "Vazgeçmediğinde mucize gelir!" ✓ SEBAT ZİRVESİ
-**Değer**: Sebat, umut, vazgeçmeme
-
----
-
-### BÖLÜM 5 — ZEMZEM: KUTSAL SU (Sayfa 17-18)
-Sa'y'dan sonra Zemzem suyu içme. Hz. İsmail'in ayağının dibinden
-fışkıran mucizevi su — binlerce yıldır akıyor.
-**İÇ SAVAŞ: NANKÖRLÜK / ŞÜKRETMEME** — Çocuk her şeyi doğal
-karşılıyor, "su işte."
-**DÖNÜŞÜM**: Zemzem = şükür. "Bu su binlerce yıldır Hz. Hacer'in
-duasıyla akıyor. Her yudum bir nimet." İlk yudum — ferahlık,
-gözlerinde minnet.
-- S17: Zemzem suyu — "Binlerce yıldır akıyor!"
-- S18: İlk yudum — ferahlık, minnet, şükür ✓ ŞÜKÜR ZİRVESİ
-**Değer**: Şükür, nimet bilinci
-
----
-
-### BÖLÜM 6 — MEDİNE: YEŞİL KUBBE VE HUZUR (Sayfa 19-21)
-Medine'ye yolculuk. Mescid-i Nebevi, yeşil kubbe, hurma ağaçları.
-Huzurlu atmosfer. Hz. Muhammed'in mescidi (hikâye olarak anlatılır).
-**İÇ SAVAŞ: GÜRÜLTÜ / İÇ HUZURSUZLUK** — Çocuğun zihni hep meşgul,
-düşünceler durmak bilmiyor.
-**DÖNÜŞÜM**: Medine = huzur. Yeşil kubbenin altında sessizlik.
-"Bazen susmak en güçlü duadır." Çocuk ilk kez gerçek iç huzuru
-hissediyor.
-- S19: Medine'ye varış — hurma ağaçları, sıcak karşılama
-- S20: Mescid-i Nebevi — yeşil kubbe, huzur ✓ HUZUR ZİRVESİ
-- S21: Sessizlik anı — "İç huzur buldum"
-**Değer**: İç huzur, tefekkür, sakinlik
-
----
-
-### BÖLÜM 7 — FİNAL: DÖNÜŞ VE YENİ BEN (Sayfa 22)
-Saç kesme/tıraş ile ihramdan çıkış — yenilenme sembolü.
-Eve dönüş. Çocuk değişmiş: daha sabırlı, daha şükredici, daha
-mütevazı. "Ben aynı ben değilim. Umre beni değiştirdi."
-Sevdikleriyle sarılma, minnet.
-- S22: Saç kesme — yenilenme. Eve dönüş, yeni ben ✓ DÖNÜŞÜM DORUĞU
-**Değer**: Manevi dönüşüm, yenilenme, minnet
-
----
-
-## İÇ SAVAŞ → DÖNÜŞÜM HARİTASI:
-1. İhram: Kibir/gösteriş → Tevazu ve eşitlik
-2. Telbiye/Kabe: Sabırsızlık/acelecilik → Teslimiyet ve huşu
-3. Tavaf: Bencillik → Birlik ve topluluk
-4. Sa'y: Umutsuzluk/vazgeçme → Sebat ve umut
-5. Zemzem: Nankörlük → Şükür ve nimet bilinci
-6. Medine: İç huzursuzluk → Huzur ve tefekkür
-7. Tıraş/Dönüş: Eski ben → Yeni, dönüşmüş ben
-
-## DOPAMIN ZİRVELERİ:
-1. S4: İhram — eşitlik farkındalığı
-2. S7: Kabe ilk görüş — gözyaşları (doruk duygu)
-3. S11: Tavaf — birlik hissi
-4. S16: Sa'y son tur — sebat zaferi
-5. S18: Zemzem — şükür
-6. S20: Medine — iç huzur
-7. S22: Dönüşüm — yeni ben
-
-## GÜVENLİK KURALLARI:
-- Peygamber/melek görseli YOK
-- İbadet close-up YOK
-- Yüzler detaylı gösterilmez
-- Korku/baskı/travma YOK
-- Mezhep ayrımcılığı YOK
-- Vaaz edici DEĞİL, yaşayarak öğrenme
+Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime). Kısa tut; sayfaya sığsın.
 """
 
 # ============================================================================
@@ -234,7 +155,7 @@ UMRE_CULTURAL_ELEMENTS = {
         "3. Tawaf (7 circuits around Kaaba, counterclockwise)",
         "4. Sa'y (7 walks between Safa and Marwa hills)",
         "5. Zamzam water (blessed spring water)",
-        "6. Halq/Taqsir (hair cutting — renewal symbol)",
+        "6. Saç kesme (hair cutting — renewal symbol; trim only, no shave)",
     ],
     "holy_sites": [
         "Kaaba and Masjid al-Haram (Mecca)",
@@ -248,38 +169,10 @@ UMRE_CULTURAL_ELEMENTS = {
 }
 
 # ============================================================================
-# CUSTOM INPUTS (list formatı — frontend uyumlu)
+# CUSTOM INPUTS — Umre için seçenek sunulmaz, direkt sabit senaryo
 # ============================================================================
 
-UMRE_CUSTOM_INPUTS = [
-    {
-        "key": "favorite_location",
-        "label": "En Merak Ettiği Yer",
-        "type": "select",
-        "options": ["Kabe ve Mescid-i Haram", "Mescid-i Nebevi (Medine)", "Safa-Marwa Tepeleri", "Zemzem Suyu"],
-        "default": "Kabe ve Mescid-i Haram",
-        "required": False,
-        "help_text": "Hikayede çocuğun en çok vakit geçireceği yer",
-    },
-    {
-        "key": "travel_with",
-        "label": "Kimle Gidiyor",
-        "type": "select",
-        "options": ["Büyükleriyle", "Geniş grupla", "Dede/Nine ile"],
-        "default": "Büyükleriyle",
-        "required": False,
-        "help_text": "Umre yolculuğuna kiminle gittiği",
-    },
-    {
-        "key": "special_dua",
-        "label": "Özel Dua Konusu",
-        "type": "select",
-        "options": ["Sevdiklerinin sağlığı için", "Bilgi ve başarı için", "Dünya barışı için", "Tüm insanlık için"],
-        "default": "Sevdiklerinin sağlığı için",
-        "required": False,
-        "help_text": "Çocuğun özel olarak ettiği dua",
-    },
-]
+UMRE_CUSTOM_INPUTS: list[dict] = []
 
 # ============================================================================
 # DATABASE UPDATE FUNCTION
@@ -299,13 +192,14 @@ async def update_umre_scenario():
         scenario = result.scalar_one_or_none()
 
         if not scenario:
-            scenario = Scenario(name="Umre Yolculuğu: Kutsal Topraklarda", is_active=True)
+            scenario = Scenario(name="Kutsal Topraklara Ziyareti", is_active=True)
             db.add(scenario)
 
+        scenario.name = "Kutsal Topraklara Ziyareti"
         scenario.description = (
-            "Büyükleriyle birlikte Mekke ve Medine'ye manevi bir yolculuk! "
-            "Kabe'yi görme, tavaf, Safa-Marwa, Zemzem, yeşil kubbe. "
-            "Saygı, tevazu ve şükür dolu bir deneyim."
+            "Kafile ile Mekke ve Medine'ye umre ziyareti. "
+            "Kabe ilk görüş, tavaf, Sa'y, saç kesme, Mescid-i Nebevi, Uhud, Hendek. "
+            "Kitap adı: [Çocuk adı]'ın Kutsal Topraklara Ziyareti."
         )
         scenario.theme_key = "umre_pilgrimage"
         scenario.cover_prompt_template = UMRE_COVER_PROMPT

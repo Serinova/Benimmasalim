@@ -34,7 +34,8 @@ export function AccountTrialDetailSheet({
   if (!trial) return null;
 
   const statusLabel = STATUS_LABELS[trial.status] || trial.status;
-  const createUrl = `/create-v2?trialId=${trial.id}&token=${trial.confirmation_token}`;
+  // Pass trialId via URL param only (no confirmation_token in URL to prevent Referer leak)
+  const createUrl = `/create-v2?trialId=${trial.id}`;
 
   const handleDevamEt = () => {
     onOpenChange(false);
@@ -114,11 +115,12 @@ export function AccountTrialDetailSheet({
                 </h3>
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {Object.entries(trial.preview_images).slice(0, 6).map(([key, url]) => (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       key={key}
                       src={url}
                       alt={`Sayfa ${key}`}
-                      className="h-24 w-auto rounded-lg object-cover border"
+                      className="h-20 w-16 shrink-0 rounded-lg border object-cover"
                     />
                   ))}
                 </div>

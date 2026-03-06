@@ -15,6 +15,7 @@ Sub-mixins (inherited automatically):
 from __future__ import annotations
 
 import json
+import time
 from typing import TYPE_CHECKING
 
 import httpx
@@ -222,12 +223,17 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 else:
                     pages = []
 
-                # Retry if too few pages and retries remain
-                if len(pages) < page_count and attempt < max_retries - 1:
+                # Count only inner pages (exclude page 0 which is a cover placeholder)
+                _inner_pages = [
+                    p for p in pages
+                    if int(p.get("page", -1) if str(p.get("page", -1)).lstrip("-").isdigit() else -1) != 0
+                ]
+                if len(_inner_pages) < page_count and attempt < max_retries - 1:
                     logger.warning(
                         "PASS-1: Page count mismatch, retrying",
                         expected=page_count,
-                        got=len(pages),
+                        got_total=len(pages),
+                        got_inner=len(_inner_pages),
                         attempt=attempt + 1,
                     )
                     await _asyncio_pg.sleep(base_wait * (attempt + 1))
@@ -618,7 +624,7 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 blueprint=blueprint,
                 character_bible=character_bible,
                 visual_style=visual_style,
-                location_key=location_key,
+                location_key=location_display_name,
                 value_visual_motif=value_visual_motif,
                 likeness_hint=_likeness,
                 has_pulid=_has_child_photo,
@@ -734,7 +740,7 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
         cover_scene, _cover_flux_prompt, cover_negative = build_cover_prompt(
             character_bible=character_bible,
             visual_style=visual_style,
-            location_key=location_key,
+            location_key=location_display_name,
             location_constraints=getattr(scenario, "location_constraints", "") or "",
             story_title=title,
             blueprint=blueprint,
@@ -819,9 +825,13 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
             text_tr = page_data.get("text_tr", "")
             image_prompt_en = page_data.get("image_prompt_en", "")
             _llm_neg = (page_data.get("negative_prompt_en") or "").strip()
-            # Merge LLM negative with the proper full negative (LLM output is minimal)
-            if _llm_neg and _llm_neg not in _base_inner_negative:
-                negative_prompt_en = f"{_base_inner_negative}, {_llm_neg}"
+            _base_tokens = {t.strip().lower() for t in _base_inner_negative.split(",") if t.strip()}
+            _new_tokens = [
+                t.strip() for t in _llm_neg.split(",")
+                if t.strip() and t.strip().lower() not in _base_tokens
+            ] if _llm_neg else []
+            if _new_tokens:
+                negative_prompt_en = f"{_base_inner_negative}, {', '.join(_new_tokens)}"
             else:
                 negative_prompt_en = _base_inner_negative
 
@@ -890,7 +900,7 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
             _bc_scene, _bc_flux_prompt, _bc_negative = build_back_cover_prompt(
                 character_bible=character_bible,
                 visual_style=visual_style,
-                location_key=location_key,
+                location_key=location_display_name,
                 story_title=title,
                 blueprint=blueprint,
                 value_visual_motif=value_visual_motif,
@@ -934,12 +944,57 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
         # (cover is page 0 and added separately in STEP 1, not counted in LLM page_count).
         front_matter_count = sum(1 for p in final_pages if p.page_type == "front_matter")
         expected_inner = page_count  # LLM writes exactly page_count inner pages (1..N)
-        if inner_count != expected_inner:
+        if inner_count < expected_inner:
+            _missing = expected_inner - inner_count
             logger.warning(
-                "V3 inner page count mismatch",
+                "V3 inner page count SHORT — padding missing pages",
                 expected=expected_inner,
                 actual=inner_count,
-                front_matter=front_matter_count,  # beklenen: 0
+                missing=_missing,
+                front_matter=front_matter_count,
+            )
+            _existing_inner_nums = sorted(
+                p.page_number for p in final_pages if p.page_type == "inner"
+            )
+            _next_num = (_existing_inner_nums[-1] + 1) if _existing_inner_nums else 1
+            bp_pages_list = blueprint.get("pages", [])
+            for _mi in range(_missing):
+                _pad_num = _next_num + _mi
+                _bp_idx = _pad_num - 1
+                _bp = bp_pages_list[_bp_idx] if _bp_idx < len(bp_pages_list) else {}
+                _pad_text = _bp.get("scene_goal", "Macera devam ediyor.")
+                _pad_idx = len(final_pages)
+                story_pages.append(PageContent(
+                    page_number=_pad_num,
+                    text=_pad_text,
+                    scene_description="",
+                ))
+                final_pages.append(FinalPageContent(
+                    page_number=_pad_num,
+                    text=_pad_text,
+                    scene_description="",
+                    visual_prompt="",
+                    negative_prompt=_base_inner_negative,
+                    v3_composed=True,
+                    v3_enhancement_skipped=True,
+                    page_type="inner",
+                    page_index=_pad_idx,
+                    story_page_number=_pad_num,
+                    composer_version="v3",
+                    pipeline_version="v3",
+                ))
+                inner_count += 1
+            logger.info(
+                "V3 inner pages padded to target",
+                final_inner_count=inner_count,
+                expected=expected_inner,
+            )
+        elif inner_count > expected_inner:
+            logger.warning(
+                "V3 inner page count EXCESS (not trimming)",
+                expected=expected_inner,
+                actual=inner_count,
+                front_matter=front_matter_count,
             )
 
         story_response = StoryResponse(title=title, pages=story_pages)
@@ -1324,6 +1379,17 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 original_title=_raw_title,
                 new_title=new_title,
             )
+
+        # ==================== SCENARIO-SPECIFIC FIXED BOOK TITLES ====================
+        _theme = (getattr(scenario, "theme_key", None) or "").strip().lower()
+        _sc_name = (getattr(scenario, "name", "") or "").strip().lower()
+        _suffix = _get_possessive_suffix(child_name)
+        if _theme == "umre_pilgrimage" or "kutsal topraklara" in _sc_name:
+            story_response.title = f"{child_name}'{_suffix} Kutsal Topraklara Ziyareti"
+            logger.info("Umre title enforced", title=story_response.title)
+        elif _theme == "gobeklitepe" or "göbeklitepe" in _sc_name:
+            story_response.title = f"{child_name}'{_suffix} Göbeklitepe Macerası"
+            logger.info("Göbeklitepe title enforced", title=story_response.title)
 
         # ==================== TITLE TURKISH NORMALIZATION ====================
         # AI bazen İngilizce yer adları kullanıyor — Türkçe'ye çevir

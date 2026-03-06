@@ -241,7 +241,24 @@ async def process_preview_background_inner(
 
             from app.services.ai.face_service import resolve_face_reference
             from app.services.storage_service import storage_service as _ss_ord
-            _face_ref_url, _face_embedding = await resolve_face_reference(child_photo_url, _ss_ord)
+            _face_ref_url, _original_photo_url, _face_embedding = await resolve_face_reference(child_photo_url, _ss_ord)
+
+            # AI Director for preview pages
+            _preview_char_desc = ""
+            if _face_ref_url:
+                try:
+                    from app.services.ai.face_analyzer_service import get_face_analyzer
+                    _fa_prev = get_face_analyzer()
+                    _preview_char_desc = await _fa_prev.analyze_for_ai_director(
+                        image_source=_face_ref_url,
+                        child_name=getattr(preview, "child_name", "") or "",
+                        child_age=request_data.get("child_age") or getattr(preview, "child_age", None) or 7,
+                        child_gender=child_gender,
+                    )
+                    logger.info("PREVIEW_CHAR_DESC_GENERATED", preview_id=preview_id, desc=_preview_char_desc[:50])
+                except Exception as _cd_err:
+                    logger.warning("Failed to generate character description for preview", error=str(_cd_err))
+
             if not child_photo_url:
                 logger.warning(
                     "child_photo_url missing, PuLID disabled for remaining pages",
@@ -387,6 +404,8 @@ async def process_preview_background_inner(
                                 skip_compose=_is_v3,
                                 precomposed_negative=page.get("negative_prompt", "") if _is_v3 else "",
                                 reference_embedding=_face_embedding,
+                                original_photo_url=_original_photo_url,
+                                character_description=_preview_char_desc,
                             )
                             image_url = result[0] if isinstance(result, tuple) else result
                             _debug_info: dict = {}
@@ -826,7 +845,23 @@ async def process_remaining_pages_inner(preview_id: str) -> None:
 
             from app.services.ai.face_service import resolve_face_reference
             from app.services.storage_service import storage_service as _ss_rem_ord
-            _face_ref_url_rem, _face_embedding_rem = await resolve_face_reference(child_photo_url, _ss_rem_ord)
+            _face_ref_url_rem, _original_photo_url_rem, _face_embedding_rem = await resolve_face_reference(child_photo_url, _ss_rem_ord)
+
+            # AI Director for remaining pages
+            _rem_char_desc = ""
+            if _face_ref_url_rem:
+                try:
+                    from app.services.ai.face_analyzer_service import get_face_analyzer
+                    _fa_rem = get_face_analyzer()
+                    _rem_char_desc = await _fa_rem.analyze_for_ai_director(
+                        image_source=_face_ref_url_rem,
+                        child_name=getattr(preview, "child_name", "") or "",
+                        child_age=getattr(preview, "child_age", None) or 7,
+                        child_gender=child_gender,
+                    )
+                    logger.info("REMAINING_PAGES_CHAR_DESC_GENERATED", preview_id=preview_id, desc=_rem_char_desc[:50])
+                except Exception as _cd_err:
+                    logger.warning("Failed to generate character description for remaining pages", error=str(_cd_err))
 
             # Stil: önce cache'teki style_id (sızıntı yok), yoksa visual_style_name ile tam eşleşme
             from app.models.visual_style import VisualStyle
@@ -1023,6 +1058,8 @@ async def process_remaining_pages_inner(preview_id: str) -> None:
                                 skip_compose=_is_v3_rem,
                                 precomposed_negative=page.get("negative_prompt", "") if _is_v3_rem else "",
                                 reference_embedding=_face_embedding_rem,
+                                original_photo_url=_original_photo_url_rem,
+                                character_description=_rem_char_desc,
                             )
                             image_url = result[0] if isinstance(result, tuple) else result
                             _debug_info: dict = {}
@@ -1381,6 +1418,56 @@ async def process_remaining_pages_inner(preview_id: str) -> None:
                     # Audio QR URL
                     _pdf_audio_url = getattr(preview, "audio_file_url", None)
 
+                    # QR kodu düzeltmesi: audio_file_url yoksa ama has_audio_book true ise
+                    # sesli kitabı oluşturup QR kodunun eklenmesini sağla
+                    if not _pdf_audio_url and getattr(preview, "has_audio_book", False):
+                        try:
+                            from app.services.ai.elevenlabs_service import ElevenLabsService
+                            from app.services.storage_service import StorageService as _AudioStorage
+
+                            _audio_storage = _AudioStorage()
+                            _elevenlabs = ElevenLabsService()
+
+                            _full_text = ""
+                            for _sp in (preview.story_pages or []):
+                                if isinstance(_sp, dict) and _sp.get("text"):
+                                    _full_text += _sp["text"] + "\n\n"
+
+                            if _full_text.strip():
+                                _audio_type = getattr(preview, "audio_type", "system")
+                                _audio_voice_id = getattr(preview, "audio_voice_id", None)
+
+                                if _audio_type == "cloned" and _audio_voice_id:
+                                    _audio_bytes = await _elevenlabs.text_to_speech(
+                                        text=_full_text,
+                                        voice_id=_audio_voice_id,
+                                    )
+                                else:
+                                    _audio_bytes = await _elevenlabs.text_to_speech(
+                                        text=_full_text,
+                                        voice_type="female",
+                                    )
+
+                                _audio_gcs_url = _audio_storage.upload_audio(
+                                    audio_bytes=_audio_bytes,
+                                    order_id=str(preview.id),
+                                    filename="audiobook.mp3",
+                                )
+                                preview.audio_file_url = _audio_gcs_url
+                                await db.commit()
+                                _pdf_audio_url = _audio_gcs_url
+                                logger.info(
+                                    "PREVIEW_AUDIO_GENERATED_FOR_QR",
+                                    preview_id=preview_id,
+                                    audio_url=_audio_gcs_url[:80] if _audio_gcs_url else "",
+                                )
+                        except Exception as _audio_err:
+                            logger.warning(
+                                "PREVIEW_AUDIO_GENERATION_FAILED (QR will be missing)",
+                                preview_id=preview_id,
+                                error=str(_audio_err),
+                            )
+
                     # Collect all image URLs for PDF
                     # NOTE: page_images contains ALREADY-COMPOSED URLs (text overlay applied).
                     all_images = preview.page_images or {}
@@ -1414,6 +1501,7 @@ async def process_remaining_pages_inner(preview_id: str) -> None:
                             _inner_pages.append(_p)
 
                     _inner_tpl_cfg = build_template_config(_pdf_inner) if _pdf_inner else {}
+                    _back_cover_img_url = getattr(preview, "back_cover_image_url", None)
                     pdf_data = {
                         "story_title": preview.story_title,
                         "child_name": preview.child_name,
@@ -1421,6 +1509,7 @@ async def process_remaining_pages_inner(preview_id: str) -> None:
                         "cover_image_url": _cover_url,
                         "dedication_image_base64": _pdf_ded_b64,
                         "back_cover_config": _pdf_back_cover,
+                        "back_cover_image_url": _back_cover_img_url,
                         "audio_qr_url": _pdf_audio_url,
                         "page_width_mm": _pdf_page_w,
                         "page_height_mm": _pdf_page_h,

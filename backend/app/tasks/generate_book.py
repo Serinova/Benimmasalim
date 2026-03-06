@@ -427,6 +427,7 @@ async def generate_full_book(order_id: str) -> dict:
                         precomposed_negative=_final_negative_text,
                         reference_embedding=_face_embedding,
                         original_photo_url=_original_photo_url,
+                        character_description=character_description,
                     )
                     image_url = result[0] if isinstance(result, tuple) else result
 
@@ -563,16 +564,83 @@ async def generate_full_book(order_id: str) -> dict:
         # Kapak önce, sonra hikaye sayfaları (page_number sırasına göre) gelsin.
         generated_pages.sort(key=lambda p: (0 if p.get("is_cover") else 1, p.get("page_number", 999)))
         try:
-            pdf_bytes = await pdf_service.generate_book_pdf(
-                order=order,
-                product=product,
-                pages=generated_pages,
-                audio_qr_url=audio_qr_url,
-                back_cover_config=back_cover_config,
-                dedication_image_base64=dedication_image_base64,
-                intro_image_base64=intro_image_base64,
-                back_cover_image_url=back_cover_image_url,
-            )
+            # Build template_config from inner_template (same as admin_pdf_service)
+            from starlette.concurrency import run_in_threadpool as _run_in_threadpool
+
+            _page_width_mm = 297.0
+            _page_height_mm = 210.0
+            _bleed_mm = 3.0
+            if inner_template:
+                _tw, _th = inner_template.page_width_mm, inner_template.page_height_mm
+                if _tw < _th:
+                    _page_width_mm, _page_height_mm = A4_LANDSCAPE_WIDTH_MM, A4_LANDSCAPE_HEIGHT_MM
+                else:
+                    _page_width_mm, _page_height_mm = _tw, _th
+                _bleed_mm = inner_template.bleed_mm
+
+            _template_config: dict = {
+                "page_width_mm": _page_width_mm,
+                "page_height_mm": _page_height_mm,
+                "bleed_mm": _bleed_mm,
+                "image_x_percent": 0.0,
+                "image_y_percent": 0.0,
+                "image_width_percent": 100.0,
+                "image_height_percent": 70.0,
+                "text_x_percent": 5.0,
+                "text_y_percent": 72.0,
+                "text_width_percent": 90.0,
+                "text_height_percent": 25.0,
+                "text_position": "bottom",
+                "text_align": "center",
+                "font_family": "Arial",
+                "font_size_pt": 16,
+                "font_color": "#333333",
+                "background_color": "#FFFFFF",
+            }
+            if inner_template:
+                _template_config.update({
+                    "image_x_percent": inner_template.image_x_percent or 0.0,
+                    "image_y_percent": inner_template.image_y_percent or 0.0,
+                    "image_width_percent": inner_template.image_width_percent or 100.0,
+                    "image_height_percent": inner_template.image_height_percent or 70.0,
+                    "text_x_percent": inner_template.text_x_percent or 5.0,
+                    "text_y_percent": inner_template.text_y_percent or 72.0,
+                    "text_width_percent": inner_template.text_width_percent or 90.0,
+                    "text_height_percent": inner_template.text_height_percent or 25.0,
+                    "text_position": inner_template.text_position or "bottom",
+                    "text_align": inner_template.text_align or "center",
+                    "font_family": inner_template.font_family or "Arial",
+                    "font_size_pt": inner_template.font_size_pt or 16,
+                    "font_color": inner_template.font_color or "#333333",
+                    "background_color": inner_template.background_color or "#FFFFFF",
+                })
+
+            # Separate cover from story pages
+            _cover_url = None
+            _story_pages_for_pdf = []
+            for _gp in generated_pages:
+                if _gp.get("is_cover"):
+                    _cover_url = _gp.get("image_url")
+                else:
+                    _story_pages_for_pdf.append(_gp)
+
+            _pdf_data = {
+                "child_name": order.child_name,
+                "story_pages": _story_pages_for_pdf,
+                "cover_image_url": _cover_url,
+                "dedication_image_base64": dedication_image_base64,
+                "intro_image_base64": intro_image_base64,
+                "back_cover_config": back_cover_config,
+                "back_cover_image_url": back_cover_image_url,
+                "audio_qr_url": audio_qr_url,
+                "page_width_mm": _page_width_mm,
+                "page_height_mm": _page_height_mm,
+                "bleed_mm": _bleed_mm,
+                "template_config": _template_config,
+                "images_precomposed": False,
+            }
+
+            pdf_bytes = await _run_in_threadpool(pdf_service.generate_book_pdf_from_preview, _pdf_data)
 
             pdf_url = storage.upload_pdf(pdf_bytes=pdf_bytes, order_id=str(order.id))
             order.final_pdf_url = pdf_url

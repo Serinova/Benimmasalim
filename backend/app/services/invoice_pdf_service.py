@@ -79,9 +79,9 @@ class _PreviewBillingAdapter:
             billing_company_name=bd.get("billing_company_name"),
             billing_tax_id=bd.get("billing_tax_id"),
             billing_tax_office=bd.get("billing_tax_office"),
-            billing_tc_no=bd.get("billing_tc_no"),
-            billing_address=bd.get("billing_address"),
-            shipping_address=None,
+            billing_tc_no=bd.get("billing_tc_no") or bd.get("tc_no") or bd.get("identityNumber"),
+            billing_address=bd.get("billing_address") or bd.get("shipping_address"),
+            shipping_address=bd.get("shipping_address") or bd.get("billing_address"),
             has_audio_book=bool(getattr(preview, "has_audio_book", False)),
             is_coloring_book=bool(getattr(preview, "has_coloring_book", False)),
             subtotal_amount=price,
@@ -217,7 +217,17 @@ def _build_invoice_pdf(
     if order.billing_full_name:
         c.drawString(25 * mm, y, f"Ad Soyad: {order.billing_full_name}")
         y -= 5 * mm
+    addr = getattr(order, "billing_address", None) or getattr(order, "shipping_address", None)
     billing_tc_no = getattr(order, "billing_tc_no", None)
+    
+    if not billing_tc_no and isinstance(addr, dict):
+        billing_tc_no = addr.get("identityNumber") or addr.get("identity_number") or addr.get("tc_no") or addr.get("tcNo")
+
+    if not billing_tc_no and billing_type == "individual":
+        tax_id = getattr(order, "billing_tax_id", None)
+        if tax_id and len(str(tax_id).strip()) == 11:
+            billing_tc_no = str(tax_id).strip()
+
     if billing_type == "individual" and billing_tc_no:
         c.drawString(25 * mm, y, f"T.C. Kimlik No: {billing_tc_no}")
         y -= 5 * mm
@@ -228,16 +238,25 @@ def _build_invoice_pdf(
         c.drawString(25 * mm, y, f"Telefon: {order.billing_phone}")
         y -= 5 * mm
 
-    addr = order.billing_address or order.shipping_address
-    if addr and isinstance(addr, dict):
-        # billing_address may use "address" or "address_line" depending on source
-        addr_line = addr.get("address_line") or addr.get("address", "")
-        district = addr.get("district", "")
-        city = addr.get("city", "")
-        parts = [p for p in [addr_line, district, city] if p]
-        if parts:
-            c.drawString(25 * mm, y, f"Adres: {', '.join(parts)}")
+    if addr:
+        address_text = ""
+        if isinstance(addr, dict):
+            addr_line = addr.get("address_line") or addr.get("address", "")
+            district = addr.get("district", "")
+            city = addr.get("city", "")
+            parts = [p for p in [addr_line, district, city] if p]
+            if parts:
+                address_text = ", ".join(parts)
+        elif isinstance(addr, str):
+            address_text = addr
+            
+        if address_text:
+            from textwrap import wrap
+            c.drawString(25 * mm, y, "Adres:")
             y -= 5 * mm
+            for line in wrap(address_text, width=70):
+                c.drawString(25 * mm, y, line)
+                y -= 5 * mm
 
     y -= 5 * mm
 

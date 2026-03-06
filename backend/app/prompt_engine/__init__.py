@@ -428,7 +428,8 @@ def validate_story_output(*args, **kwargs) -> StoryValidationReport:
 
 
 def apply_all_fixes(*args, **kwargs):
-    return args[0] if args else None
+    pages = args[0] if args else []
+    return (pages, [])
 
 
 def build_blueprint_task_prompt(*args, **kwargs) -> str:
@@ -506,6 +507,7 @@ Tam olarak {page_count} sayfa üret. JSON array formatında:
 {"5" if value_message_tr else "4"}. Sayfa 1 hikayenin GİRİŞ sahnesini içerir (kapak/karşılama sayfalarından SONRAKİ ilk hikaye sayfası)
 {"6" if value_message_tr else "5"}. Son sayfa ({page_count}) için mutlu bir kapanış yaz
 
+⛔ page 0 DÖNDÜRME! Kapak sayfası (page 0) SİSTEM tarafından ayrıca üretilir. Sen SADECE page 1'den page {page_count}'e kadar üret.
 TAM OLARAK {page_count} SAYFA ÜRET. Daha az veya fazla sayfa YASAK."""
     else:
         output_format = f"""### ÇIKTI FORMATI
@@ -530,6 +532,7 @@ Tam olarak {page_count} sayfa üret. JSON array formatında:
 7. Sayfa 1 hikayenin GİRİŞ sahnesini içerir (kapak/karşılama sayfalarından SONRAKİ ilk hikaye sayfası)
 8. Son sayfa ({page_count}) için mutlu bir kapanış yaz
 
+⛔ page 0 DÖNDÜRME! Kapak sayfası (page 0) SİSTEM tarafından ayrıca üretilir. Sen SADECE page 1'den page {page_count}'e kadar üret.
 TAM OLARAK {page_count} SAYFA ÜRET. Daha az veya fazla sayfa YASAK."""
 
     return f"""## GÖREV: Hikaye Sayfaları Üret

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Package, Users, Settings, LogOut, Plus, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { Package, Users, Settings, LogOut, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
@@ -48,49 +49,56 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 
   if (!authChecked) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <Loader2 className="h-6 w-6 animate-spin text-purple-500" aria-label="Yükleniyor" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <meta name="robots" content="noindex, nofollow" />
+    <div className="min-h-screen bg-slate-50">
       {/* Top header */}
       <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-purple-600" />
-            <span className="text-base font-bold text-purple-800 hidden sm:inline">Benim Masalım</span>
+          <Link href="/" className="flex items-center gap-2.5" aria-label="Ana Sayfa — Benim Masalım">
+            <Image
+              src="/logo.png"
+              alt="Benim Masalım"
+              width={44}
+              height={44}
+              className="h-11 w-11 object-contain"
+            />
+            <span className="hidden text-base font-bold text-slate-900 sm:inline">
+              Benim <span className="text-primary">Masalım</span>
+            </span>
           </Link>
 
           <div className="flex items-center gap-2">
             {userName && (
-              <span className="text-sm text-gray-600 hidden sm:inline">
-                Merhaba, <strong>{userName.split(" ")[0]}</strong>
+              <span className="hidden text-sm text-slate-600 sm:inline">
+                Merhaba, <strong className="font-semibold">{userName.split(" ")[0]}</strong>
               </span>
             )}
             <Link href="/create-v2">
-              <Button size="sm" className="h-8 rounded-lg bg-purple-600 text-xs hover:bg-purple-700">
-                <Plus className="mr-1 h-3 w-3" />
+              <Button size="sm" className="h-9 gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-500 text-xs text-white hover:from-purple-700 hover:to-pink-600">
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 Yeni Kitap
               </Button>
             </Link>
             <button
               onClick={handleLogout}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-              title="Çıkış Yap"
+              aria-label="Çıkış Yap"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-400"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Tab navigation */}
-      <nav className="sticky top-14 z-20 border-b bg-white">
-        <div className="mx-auto flex max-w-5xl gap-0 overflow-x-auto px-4">
+      {/* Tab navigation — desktop/tablet only; mobile uses bottom nav */}
+      <nav className="sticky top-14 z-20 hidden border-b bg-white sm:block" aria-label="Hesap menüsü">
+        <div className="mx-auto flex max-w-5xl gap-0 overflow-x-auto scrollbar-none px-4">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href, item.exact);
@@ -98,15 +106,14 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
               <Link
                 key={item.href}
                 href={item.href}
-                aria-label={item.label}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+                className={`flex h-12 items-center gap-1.5 whitespace-nowrap border-b-2 px-4 text-sm font-medium transition-colors ${
                   active
                     ? "border-purple-600 text-purple-700"
-                    : "border-transparent text-gray-500 hover:border-gray-200 hover:text-gray-700"
+                    : "border-transparent text-slate-500 hover:border-slate-200 hover:text-slate-700"
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-4 w-4" aria-hidden="true" />
                 {item.label}
               </Link>
             );
@@ -114,12 +121,21 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
         </div>
       </nav>
 
-      {/* Content */}
-      <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      {/* Content — bottom padding for mobile nav */}
+      <main
+        className="mx-auto max-w-5xl px-4 py-6"
+        style={{ paddingBottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
+      >
+        {children}
+      </main>
 
-      {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 border-t bg-white sm:hidden">
-        <div className="flex justify-around py-2">
+      {/* Mobile bottom nav — 44px tap targets */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-30 border-t bg-white sm:hidden"
+        aria-label="Mobil hesap menüsü"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        <div className="flex justify-around">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href, item.exact);
@@ -129,11 +145,11 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                 href={item.href}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs ${
-                  active ? "text-purple-600" : "text-gray-400"
+                className={`flex min-h-[3rem] flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium transition-colors ${
+                  active ? "text-purple-600" : "text-slate-400 hover:text-slate-600"
                 }`}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-5 w-5" aria-hidden="true" />
                 {item.label}
               </Link>
             );

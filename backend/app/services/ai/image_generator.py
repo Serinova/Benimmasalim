@@ -298,12 +298,12 @@ class GeminiImageGenerator(BaseImageGenerator):
 
 class GeminiFlashImageGenerator(BaseImageGenerator):
     """
-    Gemini 2.5 Flash Image ile görsel üretimi.
+    Gemini 3.1 Flash Image (Nano Banana 2) ile görsel üretimi.
 
-    Model: gemini-2.5-flash-image (yüksek kota limitleri)
+    Model: gemini-3.1-flash-image-preview (yüksek kota limitleri, 2K+ çözünürlük)
     """
 
-    FLASH_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent"
+    FLASH_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent"
 
     def __init__(self):
         self.api_key = settings.gemini_api_key
@@ -314,7 +314,7 @@ class GeminiFlashImageGenerator(BaseImageGenerator):
 
     @property
     def provider_name(self) -> str:
-        return "Gemini 2.5 Flash"
+        return "Gemini 3.1 Flash (Nano Banana 2)"
 
     @rate_limit_retry(service="gemini", max_attempts=4, timeout_attempts=2)
     async def generate(
@@ -341,7 +341,10 @@ class GeminiFlashImageGenerator(BaseImageGenerator):
             "responseModalities": ["TEXT", "IMAGE"],
         }
         if gemini_aspect:
-            gen_config["imageConfig"] = {"aspectRatio": gemini_aspect}
+            gen_config["imageConfig"] = {
+                "aspectRatio": gemini_aspect,
+                "imageSize": "2K",  # Nano Banana 2: native 2K resolution
+            }
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:

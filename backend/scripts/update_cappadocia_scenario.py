@@ -1,11 +1,11 @@
 """
-Kapadokya Macerası — Düzeltilmiş Güncelleme
-============================================
-- Modular prompt (500 char limit, tüm placeholder'lar mevcut)
-- Hikaye: Macera odaklı (balon + yeraltı + peri bacaları)
-- Outfit: update_all_outfits.py standardı (EXACTLY lock phrase)
-- custom_inputs_schema: list formatı (frontend uyumlu)
-- Yüz benzerliği: CHARACTER block önce
+Kapadokya Macerası — Rehberli gezi, macera, puzzle/zorluk
+==========================================================
+- Kitap adı: [Çocuk adı]'ın Kapadokya Macerası (alt başlık yok)
+- Rehber ile gezi; çocuk maceraya atılır, sır/bulmaca çözer, zorluklarla karşılaşır ve aşar
+- Peri bacaları (volkanik tüf, rüzgar/yağmur aşınması), Göreme, yeraltı, balon — kültürel yerler
+- Çok ütopikleştirmeden, maceraperest ama gerçekçi
+- Kurguyu bozabilecek kullanıcı seçenekleri kaldırıldı (custom_inputs boş)
 """
 
 import asyncio
@@ -26,10 +26,10 @@ CAPPADOCIA_COVER_PROMPT = (
     "An {child_age}-year-old {child_gender} named {child_name} "
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
-    "Iconic Cappadocia fairy chimneys in background, colorful hot air balloons in sky. "
-    "Goreme valley, volcanic tuff formations, golden sunrise light. "
-    "Wide shot: child 25%, fairy chimneys and balloons 75%. "
-    "Magical adventure atmosphere. UNESCO site."
+    "Towering Cappadocia fairy chimneys of eroded volcanic tuff with honeycomb cave textures, colorful hot air balloons drifting across a vast pink-orange sunrise sky. "
+    "Goreme valley panorama, soft volumetric morning mist rolling through the valleys, golden sunrise backlighting with warm rim light on the child. "
+    "Low-angle hero shot: child 25% foreground, sweeping fairy chimney landscape and balloons 75%. "
+    "Warm earth palette: rose gold sunrise, sandy ochre rocks, lavender sky, balloon jewel tones. UNESCO site."
 )
 
 CAPPADOCIA_PAGE_PROMPT = (
@@ -65,117 +65,57 @@ OUTFIT_BOY = (
 # ============================================================================
 
 CAPPADOCIA_STORY_PROMPT_TR = """
-# KAPADOKYA MACERASI — DOĞA MUCİZESİ KEŞFİ
+# KAPADOKYA MACERASI
 
-## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
+## YAPI: {child_name} REHBER İLE KAPADOKYA GEZİSİNDE. Çocuk maceraya atılır, sır/bulmaca çözer, zorluklarla karşılaşır ve onları aşar.
 
-Bu hikaye bir doğa ve tarih macerası. {child_name}, Kapadokya'da bir
-Peri Kızı (peri bacasından canlanan küçük ışıklı varlık) ile birlikte
-balonla gökyüzüne çıkar, yeraltı şehrine iner ve doğanın 60 milyon
-yıllık heykeltıraşlığını keşfeder.
+**BAŞLIK:** Kitap adı sadece "[Çocuk adı]'ın Kapadokya Macerası" olmalı. Alt başlık (Doğa Mucizesi Keşfi vb.) EKLEME.
 
-⚠️ ÖNEMLİ KURALLAR:
-- Bu bir MACERA hikayesi, gezi rehberi DEĞİL
-- Her bölümde çocuk AKTİF katılımcı
-- Endişe → Eylem → Başarı döngüsü her bölümde
-- Yardımcı karakter: Peri Kızı (peri bacasından canlanan ışıklı varlık)
-- Çocuk TEK BAŞINA macerada (aile yok)
-- Korku/şiddet YOK, büyülü ve heyecanlı
+**PERİ BACALARI (gerçekçi):** Volkanik tüf — Erciyes, Hasan Dağı, Güllüdağ'dan lav ve kül. Milyonlarca yıl rüzgar ve yağmurun aşındırmasıyla koni biçimli şekiller, şapka taşları. Ürgüp, Göreme vadisi. Büyülü varlık/peri YOK; doğa ve tarih var.
+
+**KURGU:** Rehber (insan, yetişkin — yüzü detaylı tarif etme) çocuğu Kapadokya'nın kültürel ve doğal yerlerinde gezdiriyor. Çocuk AKTİF: yol bulma, küçük bulmaca/ipucu çözme, karanlık veya dar yerde cesaret toplama, yorulup devam etme. Zorluklar gerçekçi. Her zorluğu AŞAR. Sihir, peri, ışıklı varlık YOK.
 
 ---
 
-### BÖLÜM 1 — GİRİŞ: PERİ BACALARI (Sayfa 1-4)
-{child_name} Göreme vadisinde yürürken garip kaya oluşumları görür.
-Bir peri bacasının tepesinden küçük bir ışık çıkıyor — Peri Kızı!
-"Bu kayalar 60 milyon yıl önce volkanla oluştu. Sana göstereyim!"
-- S1: Göreme vadisine varış, garip kayalar
-- S2: Peri bacaları — "Mantar gibi! Nasıl oluşmuş?"
-- S3: Peri Kızı ile tanışma — ışıklı küçük varlık
-- S4: "60 milyon yıllık doğa mucizesi!" ✓ İLK HAYRANLIK
-**Değer**: Doğa merakı, gözlem
+### Bölüm 1 — Varış, rehber, peri bacaları (Sayfa 1-4)
+- {child_name} Kapadokya'ya geliyor. Tur rehberi ile tanışıyor. Göreme vadisi, peri bacaları.
+- Rehber peri bacalarının nasıl oluştuğunu anlatıyor: volkanik tüf (Erciyes, Hasan Dağı), rüzgar ve yağmurla aşınma. Çocuk merakla dinliyor.
+- İlk zorluk: Peri bacaları arasında yol ayrımında hangi yöne gideceğini bulması gerekiyor (rehber ipucu veriyor). Çocuk çözüyor, yol buluyor. İlk başarı.
+
+### Bölüm 2 — Yeraltı şehri (Sayfa 5-9)
+- Yeraltı şehrine giriş. Dar tüneller, katlar. Rehber tarihi anlatıyor (binlerce yıl önce insanlar burada yaşamış).
+- Zorluk: Karanlık bir geçitte rehber "çıkışı bul" diye küçük görev veriyor (taşlardaki işaretler). {child_name} ipuçlarını birleştiriyor, çıkışı buluyor. Cesaret ve çözüm.
+- Odalar: mutfak, havalandırma. Tarih bilinci.
+
+### Bölüm 3 — Kaya kiliseler, freskler (Sayfa 10-13)
+- Göreme Açık Hava Müzesi. Kayaya oyulmuş kiliseler, eski resimler. Rehber kısaca anlatıyor.
+- Küçük bulmaca: Rehber duvardaki bir sembolü bulmasını istiyor; çocuk arar, bulur. Keşif sevinci.
+- Yoruluyor ama devam ediyor. "Biraz daha!" diye kendini motive ediyor.
+
+### Bölüm 4 — Balon turu (Sayfa 14-17)
+- Sabah erken sıcak hava balonu turu. Rehber ve grup ile. Yükseliş, gökyüzünden peri bacaları ve vadiler.
+- Hafif zorluk: İlk başta yükseklik heyecanı; nefes alıp sakinleşiyor, manzaraya odaklanıyor. Üstesinden gelme.
+- İniş, güvenli. "Yaptım!" gururu.
+
+### Bölüm 5 — Pembe vadi, son zorluk (Sayfa 18-20)
+- Pembe Vadi'de yürüyüş. Gün batımına doğru kayalar pembe, turuncu. Rehber doğanın renklerini anlatıyor.
+- Son meydan okuma: Uzun yürüyüşte "bitene kadar devam" — ayakları ağrıyor ama rehber teşvik ediyor, {child_name} bitiriyor. Sebat.
+- Tepeden Kapadokya manzarası. "Her zorluğu aştım." tatmini.
+
+### Bölüm 6 — Kapanış (Sayfa 21-22)
+- Gezinin sonu. Rehber tebrik ediyor: "Zorlukları aştın, sırları çözdün."
+- {child_name} eve dönüşe hazırlanıyor. Kısa ve duygusal kapanış.
 
 ---
 
-### BÖLÜM 2 — BALON MACERASI: GÖKYÜZÜ (Sayfa 5-9)
-Sabah erken, gün doğumu. Peri Kızı çocuğu sıcak hava balonuna
-götürüyor. Yavaşça göğe yükselme — etrafta yüzlerce renkli balon!
-Tepeden Kapadokya'nın tamamı görünüyor. Ama rüzgar sertleşiyor...
-- S5: Balona binme, ateş yakılıyor, heyecan
-- S6: Yavaşça yükselme — "Göğe çıkıyoruz!"
-- S7: Gökyüzünden manzara — peri bacaları, vadiler ✓ GÖKYÜZÜ ZİRVESİ
-- S8: Rüzgar sertleşiyor! "Düşecek miyiz?" ✓ ENDİŞE
-- S9: Peri Kızı rüzgarı yatıştırıyor, güvenli iniş ✓ BAŞARI
-**Değer**: Cesaret, güven, doğa saygısı
+## KURALLAR
+- Sihir, peri, ışıklı varlık YOK. Rehber = gerçek insan (yüz detayı verme).
+- Her bölümde en az bir küçük zorluk/görev ve çocuğun onu aşması.
+- Yerler gerçek: Göreme, peri bacaları, yeraltı şehri, kaya kiliseler, Pembe vadi, balon.
+- Korku/şiddet yok; gerilim hafif ve hep aşılır.
+- Kitap adı SADECE "[Çocuk adı]'ın Kapadokya Macerası". Alt başlık ekleme.
 
----
-
-### BÖLÜM 3 — YERALTI ŞEHRİ: DERİNKUYU (Sayfa 10-14)
-Peri Kızı çocuğu yeraltı şehrine götürüyor. Dar tüneller, 8 kat
-derinlik! Karanlık geçitler, ama Peri Kızı ışık saçıyor. Mutfak,
-depo, kilise — 2000 yıl önce insanlar burada yaşamış!
-- S10: Yeraltı şehrine giriş, dar tünel
-- S11: Aşağı inme — "8 kat derinlik!" ✓ MERAK
-- S12: Karanlık geçit — biraz korku, Peri Kızı ışık veriyor
-- S13: Odalar keşfi — mutfak, depo, havalandırma
-- S14: "2000 yıl önce burada yaşamışlar!" ✓ TARİH ZİRVESİ
-**Değer**: Cesaret, tarih bilinci
-
----
-
-### BÖLÜM 4 — KAYA KİLİSELER: 1000 YILLIK FRESKLER (Sayfa 15-17)
-Göreme Açık Hava Müzesi. Kayaya oyulmuş kiliseler, duvarlarda
-1000 yıllık resimler! Peri Kızı: "Bu resimleri yapanlar da senin
-gibi meraklıydı." Çocuk kendi resmini yapmaya çalışıyor.
-- S15: Kaya kiliselere giriş — "Tamamı kayadan oyulmuş!"
-- S16: 1000 yıllık freskler — "İnanılmaz!" ✓ SANAT ZİRVESİ
-- S17: Çocuk kendi resmini yapıyor — yaratıcılık
-**Değer**: Sanat, yaratıcılık, kültürel miras
-
----
-
-### BÖLÜM 5 — PEMBE VADİ: DOĞANIN RENKLERİ (Sayfa 18-19)
-Pembe Vadi'de yürüyüş. Gün batımında kayalar pembe, turuncu, altın
-rengi! Doğanın renk paleti. Peri Kızı: "Doğa en büyük sanatçı."
-- S18: Pembe Vadi — kayalar renk değiştiriyor
-- S19: Gün batımı renkleri — "Doğa en büyük sanatçı!" ✓ GÜZELLİK ZİRVESİ
-**Değer**: Doğa güzelliği, estetik
-
----
-
-### BÖLÜM 6 — GİZLİ MAĞARA: DOĞANIN SIRRI (Sayfa 20-21)
-Peri Kızı çocuğu gizli bir mağaraya götürüyor. İçeride volkanik
-tüf katmanları — 60 milyon yılın hikayesi duvarlarda yazılı!
-Her katman farklı renk, farklı dönem.
-- S20: Gizli mağara — volkanik katmanlar
-- S21: "60 milyon yılın hikayesi duvarlarda!" ✓ DORUK KEŞİF
-**Değer**: Jeoloji, bilimsel merak
-
----
-
-### BÖLÜM 7 — FİNAL: KAPADOKYA'NIN BÜYÜSÜ (Sayfa 22)
-Gün batımında peri bacalarının tepesinde oturma. Gökyüzünde son
-balonlar. Peri Kızı: "Doğa ve insan birlikte mucize yaratmış.
-Sen de bu mucizenin parçasısın." Peri Kızı kayaya geri dönüyor
-ama ışığı hâlâ parlıyor.
-- S22: Gün batımı, peri bacaları, gurur ✓ TATMIN DORUĞU
-**Değer**: Doğa bilinci, kültürel miras koruma
-
----
-
-## DOPAMIN ZİRVELERİ:
-1. S4: Peri Kızı ile tanışma — 60 milyon yıl
-2. S7: Balondan gökyüzü manzarası
-3. S9: Rüzgar tehlikesi atlatıldı
-4. S14: Yeraltı şehri — 2000 yıllık tarih
-5. S16: 1000 yıllık freskler
-6. S21: Gizli mağara — jeolojik sır
-7. S22: Gün batımı — tatmin
-
-## GÜVENLİK KURALLARI:
-- Korku/şiddet YOK
-- Yeraltı sahnesi korkutucu DEĞİL (Peri Kızı ışık veriyor)
-- Balon sahnesi güvenli (Peri Kızı koruyucu)
-- Pozitif, büyülü atmosfer
+Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve macera dolu.
 """
 
 # ============================================================================
@@ -199,29 +139,10 @@ CAPPADOCIA_CULTURAL_ELEMENTS = {
 }
 
 # ============================================================================
-# CUSTOM INPUTS (list formatı — frontend uyumlu)
+# CUSTOM INPUTS — Kurguyu bozabilecek seçenekler kaldırıldı (sabit senaryo)
 # ============================================================================
 
-CAPPADOCIA_CUSTOM_INPUTS = [
-    {
-        "key": "favorite_experience",
-        "label": "En Sevdiği Deneyim",
-        "type": "select",
-        "options": ["Balon Turu (Gökyüzü!)", "Peri Bacaları (Doğa!)", "Yeraltı Şehri (8 kat!)", "Kaya Kiliseler (Freskler!)", "Pembe Vadi"],
-        "default": "Balon Turu (Gökyüzü!)",
-        "required": False,
-        "help_text": "Hikayede çocuğun en çok heyecanlanacağı deneyim",
-    },
-    {
-        "key": "companion_name",
-        "label": "Peri Kızı'nın Adı",
-        "type": "select",
-        "options": ["Işıl", "Tüf", "Pırıl", "Kayra", "Baca"],
-        "default": "Işıl",
-        "required": False,
-        "help_text": "Peri bacasından canlanan ışıklı arkadaşın adı",
-    },
-]
+CAPPADOCIA_CUSTOM_INPUTS: list[dict] = []
 
 # ============================================================================
 # DATABASE UPDATE FUNCTION
@@ -249,10 +170,9 @@ async def update_cappadocia_scenario():
 
         scenario.name = "Kapadokya Macerası"
         scenario.description = (
-            "Kapadokya'nın büyülü dünyasına yolculuk! Peri bacaları "
-            "(60 milyon yıllık!), sıcak hava balonu turu, yeraltı şehri "
-            "keşfi (8 kat derinlik!) ve kaya kiliselerdeki 1000 yıllık "
-            "freskler. UNESCO Dünya Mirası'nda doğa mucizesi ve macera!"
+            "Rehber ile Kapadokya gezisi. Çocuk maceraya atılır, sır ve bulmaca çözer, "
+            "peri bacaları, yeraltı şehri, kaya kiliseler ve balon turunda zorluklarla "
+            "karşılaşır ve hepsini aşar. Kitap adı: [Çocuk adı]'ın Kapadokya Macerası."
         )
         scenario.cover_prompt_template = CAPPADOCIA_COVER_PROMPT
         scenario.page_prompt_template = CAPPADOCIA_PAGE_PROMPT

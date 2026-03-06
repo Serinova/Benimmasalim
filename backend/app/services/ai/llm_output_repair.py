@@ -221,6 +221,16 @@ def repair_blueprint(blueprint: dict, page_count: int) -> tuple[dict, list[str]]
             role = "adventure"
             page["role"] = role
 
+        # CRITICAL FIX: Page 1 must NEVER have the "dedication" role.
+        # Dedication/welcome pages are rendered by PDF templates (not AI story text).
+        # If the LLM assigns "dedication" to page 1, Gemini writes a short introductory
+        # text instead of the real story opening, making the book feel like it starts
+        # from page 2. Force page 1 to "arrival" to ensure the narrative starts here.
+        if pg_num == 1 and role == "dedication":
+            role = "arrival"
+            page["role"] = role
+            repairs.append("s1: role 'dedication' → 'arrival' (sayfa 1 hikaye başlangıcı olmalı)")
+
         if "act" not in page or page["act"] not in ("1", "2", "3", 1, 2, 3):
             page["act"] = _infer_act(pg_num, page_count, role)
             repairs.append(f"s{pg_num}: act atandı → {page['act']}")
@@ -287,8 +297,10 @@ def _make_blueprint_page_stub(
 
 
 def _role_for_position(page_num: int, total: int) -> str:
-    if page_num == 1:
-        return "dedication"
+    # NOTE: page_num=1 must NEVER be "dedication".
+    # Dedication/welcome pages are rendered by PDF templates, not AI story text.
+    # Assigning page 1 a "dedication" role caused Gemini to write intro text instead
+    # of the real story opening, making the book start from page 2.
     if page_num <= max(2, math.floor(total * 0.12)):
         return "arrival"
     if page_num >= total - max(1, math.floor(total * 0.08)) + 1:
@@ -330,6 +342,35 @@ def repair_pages(
     """
     repairs: list[str] = []
     bp_pages: list[dict] = blueprint.get("pages", [])
+
+    # ── Filter out page 0 (cover placeholder) from LLM output ──
+    # PASS-1 prompt asks for pages 1..page_count but LLM sometimes returns
+    # page 0 as well.  Keeping it causes off-by-one shifts (page 0 text
+    # lands on page 1, every subsequent page shifts, last page is trimmed).
+    _rescued_page0: dict | None = None
+    _filtered: list[dict] = []
+    for _p in pages:
+        _orig_num = _p.get("page", -1)
+        if isinstance(_orig_num, str) and _orig_num.isdigit():
+            _orig_num = int(_orig_num)
+        if _orig_num == 0:
+            _txt = (_p.get("text_tr") or "").strip()
+            if len(_txt) > 20:
+                _rescued_page0 = _p
+                repairs.append(f"page 0 hikaye metni kurtarıldı ({len(_txt)} kar)")
+            else:
+                repairs.append("page 0 (kapak placeholder) filtrelendi")
+            continue
+        _filtered.append(_p)
+    pages = _filtered
+
+    # Rescue page 0 text only if the remaining pages are short of target.
+    # If LLM returned page 0 + page 1..N where N == page_count, the story
+    # text is already complete in pages 1..N — inserting page 0 would push
+    # the last page out during trim.
+    if _rescued_page0 and len(pages) < page_count:
+        pages.insert(0, _rescued_page0)
+        repairs.append("Kurtarılan page 0 metni page 1 olarak eklendi (sayfa eksikliği)")
 
     # Trim excess
     if len(pages) > page_count:

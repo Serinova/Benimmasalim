@@ -88,15 +88,6 @@ export default function PreviewStep({
         isLoading={isLoading}
         generationProgress={generationProgress}
       />
-
-      {hasImages && !isLoading && (
-        <StickyCTA
-          primaryLabel="Harika! Devam Et"
-          onPrimary={onApprove}
-          secondaryLabel="← Geri"
-          onSecondary={onBack}
-        />
-      )}
     </div>
   );
 }

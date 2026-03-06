@@ -1,11 +1,11 @@
 """
-Göbeklitepe Macerası — Birleştirilmiş Güncelleme
-=================================================
-- Modular prompt (500 char limit, tüm placeholder'lar mevcut)
-- Hikaye: Macera odaklı (gezi rehberi DEĞİL)
-- Outfit: update_all_outfits.py standardı (EXACTLY lock phrase)
-- custom_inputs_schema: list formatı (frontend uyumlu)
-- Yüz benzerliği: CHARACTER block önce, fiziksel özellik yok
+Göbeklitepe Macerası — Arkadaşlarla, geçit ile zamanda yolculuk
+===============================================================
+- {child_name} ARKADAŞLARI ile Göbeklitepe'de gezer; rehber gezisi DEĞİL, macera.
+- Gizli bir geçit keşfederler → geçitten geçince 12.000 yıl öncesine giderler.
+- Orada izlerler, gizlenirler, avcı-toplayıcılara yardım ederler, bir sorun çözerler, tarihe dokunurlar → geri dönerler.
+- Kıyafet: arkeoloji saha kıyafeti (kız/erkek), hikayenin ruhuna uygun.
+- Aşağıdan seçilen "en sevdiği" öğe hikaye akışını çok değiştirmez; hafif vurgu.
 """
 
 import asyncio
@@ -45,138 +45,94 @@ GOBEKLITEPE_PAGE_PROMPT = (
 )
 
 # ============================================================================
-# OUTFIT DEFINITIONS (update_all_outfits.py standardı)
+# OUTFIT — Arkeoloji saha kıyafeti (kız/erkek), hikayenin ruhuna uygun
 # ============================================================================
 
 OUTFIT_GIRL = (
-    "sand-yellow cotton t-shirt with small compass emblem on chest, "
-    "light olive green cotton shorts reaching knees, tan brown leather sandals, "
-    "wide-brim straw sun hat with brown ribbon, small woven crossbody bag. "
-    "EXACTLY the same outfit on every page — same yellow shirt, same olive shorts, same straw hat."
+    "beige cotton field shirt with button-down collar and chest pocket, "
+    "olive green cargo pants with side pockets, tan leather ankle boots, "
+    "wide-brim sand-colored canvas sun hat, small khaki field bag crossbody. "
+    "EXACTLY the same outfit on every page — same beige shirt, same olive cargo pants, same sun hat."
 )
 
 OUTFIT_BOY = (
-    "burnt orange cotton polo shirt, "
-    "stone beige cargo shorts with button-flap pockets, dark brown leather sandals, "
-    "khaki bucket hat, small tan canvas satchel bag across body. "
-    "EXACTLY the same outfit on every page — same orange polo, same beige shorts, same bucket hat."
+    "stone beige safari-style shirt with flap pockets, "
+    "khaki cargo pants with button-flap pockets, brown leather work boots, "
+    "tan canvas explorer hat, small olive field satchel across body. "
+    "EXACTLY the same outfit on every page — same beige shirt, same khaki cargo, same explorer hat."
 )
 
 # ============================================================================
-# STORY BLUEPRINT (Macera odaklı)
+# STORY BLUEPRINT — Arkadaşlarla gezi, geçit keşfi, 12.000 yıl öncesine yolculuk
 # ============================================================================
 
 GOBEKLITEPE_STORY_PROMPT_TR = """
-# GÖBEKLİTEPE MACERASI — 12.000 YILLIK GİZEM
+# GÖBEKLİTEPE MACERASI — ARKADAŞLARLA, TARİHE DOKUNUŞ
 
-## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
+## YAPI: {child_name} ARKADAŞLARI İLE Göbeklitepe'de gezer. Rehber gezisi DEĞİL — macera. Gizli bir geçit keşfederler; geçitten geçince 12.000 yıl öncesine (Göbeklitepe'nin yaşandığı tarih) giderler. Orada izlerler, gizlenirler, avcı-toplayıcılara yardım ederler, bir sorun çözerler, tarihe dokunurlar; sonra geçitten geri dönüp bugüne gelirler.
 
-Bu hikaye bir arkeoloji macerası. {child_name}, Göbeklitepe'de dikilitaşlardan
-canlanan bir Bilge Tilki ile 12.000 yıl öncesinin gizemini çözer.
+**BAŞLIK:** Kitap adı sadece "[Çocuk adı]'ın Göbeklitepe Macerası" olmalı. Alt başlık EKLEME.
 
-⚠️ ÖNEMLİ KURALLAR:
-- Bu bir MACERA hikayesi, gezi rehberi DEĞİL
-- Her bölümde çocuk AKTİF katılımcı (gözlemci değil)
-- Endişe → Eylem → Başarı döngüsü her bölümde
-- Yardımcı karakter: Bilge Tilki (dikilitaştaki tilki kabartmasından canlanan)
-- Çocuk TEK BAŞINA macerada (aile yok)
-- Korku/şiddet/gore YOK, eğitici ve heyecanlı
-- Dini ritüel/ibadet sahnesi YOK
+**KURGU:** Çocuk AİLE ile değil ARKADAŞLARI (2-3 kişi, aynı yaş grubu) ile Göbeklitepe'ye gelir. Rehber yok; kendi keşifleri. Gezerken gizli bir geçit/mağara ağzı bulurlar. İçeri girince kendilerini 12.000 yıl öncesinde (avcı-toplayıcıların dikilitaşları inşa ettiği dönem) bulurlar. Orada: avcı-toplayıcıları izlerler, gizlenirler, onların bir sorununa (kayıp eşya, taş taşıma, ipucu bulma vb.) yardım ederler — "tarihe dokunurlar". Sonra aynı geçitten geri geçip bugüne dönerler. Macera odaklı; korku/şiddet yok.
+
+**EN SEVDİĞİ SEÇİMİ:** Aşağıdan seçilen öğe (T-sütunlar, hayvan kabartmaları vb.) hikayenin ana akışını DEĞİŞTİRMEZ. Sadece 1-2 sahnede hafif vurgu veya detay olarak geçebilir (örn. çocuğun en sevdiği hayvan kabartmada görünür). Ana olay: geçit → zaman yolculuğu → yardım → dönüş.
 
 ---
 
-### BÖLÜM 1 — GİRİŞ: GİZEMLİ DİKİLİTAŞLAR (Sayfa 1-4)
-{child_name} Şanlıurfa'da bir tepeye tırmanırken dev taş sütunlar görür.
-Bir dikilitaştaki tilki kabartması parlamaya başlar — Bilge Tilki canlanır!
-"12.000 yıllık bir gizem var, çözmeme yardım eder misin?"
-- S1: Harran Ovası'nda tepeye tırmanma, uzakta garip taşlar
-- S2: Dev T-şekilli dikilitaşlara yaklaşma, hayvan kabartmaları
-- S3: Tilki kabartması parlıyor, Bilge Tilki canlanıyor!
-- S4: "12.000 yıllık bir gizem!" — macera başlıyor ✓ İLK HEYECAN
-**Değer**: Merak, keşif cesareti
+### Bölüm 1 — Arkadaşlarla Göbeklitepe'de (Sayfa 1-4)
+- {child_name} arkadaşları ile Şanlıurfa'da, Göbeklitepe arkeolojik alanına gelir. Rehber değil, kendi başlarına geziyorlar.
+- Dev T-sütunları, hayvan kabartmalarını görüp heyecanlanırlar. "12.000 yıl önce insanlar bunları yapmış!"
+- Dolaşırken taşların arasında gizli bir geçit / mağara ağzı fark ederler. Merakla içeri bakarlar.
+- "İçeri girelim mi?" — cesaret toplayıp geçide girerler. ✓ MACERA BAŞLIYOR
 
 ---
 
-### BÖLÜM 2 — DAİRESEL TAPINAK: TAŞLARIN SIRRI (Sayfa 5-8)
-Bilge Tilki çocuğu dairesel taş yapıların içine götürür. Her dikilitaşta
-farklı hayvan kabartması — aslan, yılan, akbaba, akrep. "Bu hayvanlar
-bir mesaj veriyor, ama sırayı bulmamız lazım!"
-- S5: Dairesel taş yapıya giriş, iç içe halkalar
-- S6: Hayvan kabartmalarını inceleme — her biri farklı
-- S7: "Sırayı bulmamız lazım!" — bulmaca başlıyor ✓ ENDİŞE
-- S8: İlk ipucu bulundu — akbaba kabartması yukarı bakıyor
-**Değer**: Gözlem, analitik düşünme
+### Bölüm 2 — Geçit: 12.000 Yıl Öncesine (Sayfa 5-8)
+- Geçitte yürürler; ışık değişir, sesler farklılaşır. Çıktıklarında manzara değişmiştir: aynı tepe ama inşaat hâlinde, insanlar taş taşıyor, dikilitaşlar yükseliyor.
+- Şaşkınlık: "Zaman değişti! 12.000 yıl öncesindeyiz!" Avcı-toplayıcılar (deri/kürk kıyafet, taş aletler) görürler.
+- Gizlenirler, uzaktan izlerler. İnsanların birlikte çalıştığını, taşları nasıl kaldırdıklarını görürler.
+- Bir an onlara çok yaklaşan bir çocuk yaşında avcı-toplayıcı fark ederler; göz göze gelirler — ama kavga yok, merak var. ✓ ZAMAN YOLCULUĞU ZİRVESİ
 
 ---
 
-### BÖLÜM 3 — TAŞ OCAĞI: YARIM KALMIŞ DEV (Sayfa 9-12)
-Bilge Tilki çocuğu taş ocağına götürür. Devasa bir dikilitaş hâlâ ana
-kayaya bağlı — yarım kalmış! "Bunu yapmak için yüzlerce insan birlikte
-çalışmış. Tek başına yapılamaz!" Çocuk taş aletleri deniyor.
-- S9: Taş ocağına varış, yarım kalmış dev dikilitaş
-- S10: "Bu kadar büyük taşı nasıl kesmişler?" — hayranlık
-- S11: Taş aletleri deneme, çok zor! ✓ ZORLUK
-- S12: "Yüzlerce insan birlikte çalışmış!" — işbirliği dersi ✓ MİMARİ ZİRVESİ
-**Değer**: İşbirliği, azim, takım çalışması
+### Bölüm 3 — Gizlenmek ve İzlemek (Sayfa 9-12)
+- Taşların arkasında kalıp avcı-toplayıcıların günlük işlerini izlerler: taş yontma, ateş, basit barınak. "Tarihe dokunuyoruz."
+- Bir sorun olur: İnşaatta çalışanlardan birinin önemli bir taş aleti kaybolur veya bir ipucu bulunamaz. {child_name} ve arkadaşları — gizlendikleri yerden — ipucu görürler (örn. taşın nerede kaldığı).
+- Cesaret toplayıp (görünmeden veya hafif temasla) ipucu bırakırlar veya sorunu çözmelerine yardım ederler. Avcı-toplayıcılar memnun olur, çocuklar kendilerini iyi hisseder.
+- "Onlara yardım ettik! Tarihe dokunduk." ✓ YARDIM / TARİHE DOKUNUŞ ZİRVESİ
 
 ---
 
-### BÖLÜM 4 — GİZEMLİ SEMBOLLER: MESAJI ÇÖZMEK (Sayfa 13-16)
-Dikilitaşlardaki hayvan kabartmaları bir harita oluşturuyor! Çocuk
-Bilge Tilki'nin yardımıyla sembolleri birleştiriyor. Her hayvan bir yönü
-gösteriyor — tilki kuzeyi, akbaba gökyüzünü, yılan yeraltını...
-- S13: Sembolleri birleştirme fikri — "Bu bir harita!"
-- S14: Tilki = kuzey, akbaba = gökyüzü, yılan = yeraltı
-- S15: Haritayı takip etme, gizli bir geçit bulma ✓ KEŞİF HEYECANI
-- S16: "Mesajı çözüyoruz!" — bulmaca tamamlanıyor ✓ BULMACA ZİRVESİ
-**Değer**: Problem çözme, yaratıcı düşünme
+### Bölüm 4 — Dairesel Yapı ve Hayvan Kabartmaları (Sayfa 13-16)
+- Dairesel taş yapının etrafında dolaşırlar (gizlenerek). Hayvan kabartmaları: tilki, aslan, yılan, kuş. "Bunlar 12.000 yıl sonra hâlâ duracak."
+- Küçük bir macera: Bir avcı-toplayıcı çocuk onları fark eder; korku yok, merak. Belki el işaretiyle selamlaşırlar veya küçük bir hediye (taş, çiçek) paylaşırlar.
+- Geçidin nerede olduğunu hatırlayıp sessizce oraya doğru ilerlerler. "Geri dönme zamanı."
+- Geçide girerler; ışık ve ses tekrar değişir. ✓ DÖNÜŞE HAZIRLIK
 
 ---
 
-### BÖLÜM 5 — YERİN ALTINDA: GİZLİ ODA (Sayfa 17-19)
-Gizli geçit yeraltına iniyor. Karanlık ama Bilge Tilki'nin gözleri parlıyor
-ve yol gösteriyor. Bir oda — içinde hiç görülmemiş kabartmalar, taş
-figürinler ve obsidyen aletler!
-- S17: Yeraltı geçidine giriş, karanlık, biraz korku ✓ ENDİŞE
-- S18: Bilge Tilki yol gösteriyor, cesaret bulma
-- S19: Gizli oda! Hiç görülmemiş kabartmalar! ✓ DORUK KEŞİF
-**Değer**: Cesaret, güven
+### Bölüm 5 — Bugüne Dönüş (Sayfa 17-20)
+- Geçitten çıkınca her şey tekrar bugünkü hâline dönmüştür: aynı dikilitaşlar ama artık 12.000 yıl aşınmış, turist yolları.
+- Arkadaşları ile birbirlerine bakarlar: "Gerçek miydi?" "Evet — onlara yardım ettik." Gurur ve hayal.
+- Dikilitaşlara son bir kez bakarlar; hayvan kabartmalarını tanırlar. "Bunları yapan insanlara dokunduk."
+- Gün batımında alandan ayrılırlar. "En iyi macera buydu." ✓ TATMIN
 
 ---
 
-### BÖLÜM 6 — URFA ADAMI: İNSANLIĞIN İLK HEYKELİ (Sayfa 20-21)
-Gizli odada özel bir taş heykel — Urfa Adamı! Dünyanın en eski insan
-heykeli. Bilge Tilki: "12.000 yıl önce insanlar sanat yapıyordu,
-birlikte çalışıyordu, yıldızları izliyordu. İnsanlık hep meraklıydı."
-- S20: Urfa Adamı heykeli — "Dünyanın en eski insan heykeli!"
-- S21: Bilge Tilki'nin bilgeliği — "İnsanlık hep meraklıydı" ✓ BİLGELİK DORUĞU
-**Değer**: Tarih bilinci, insanlık mirası
+### Bölüm 6 — Kapanış (Sayfa 21-22)
+- Eve / kalacak yere dönüş yolunda konuşurlar: tarih, merak, yardım, arkadaşlık.
+- Kısa ve sıcak kapanış. "Göbeklitepe'yi unutmayacağız."
 
 ---
 
-### BÖLÜM 7 — FİNAL: DÖNÜŞ VE GURUR (Sayfa 22)
-Çocuk yerüstüne çıkar. Gün batımında dikilitaşlara bakar. Bilge Tilki
-tekrar kabartmaya dönüyor ama gülümsüyor. "Gizem çözüldü. Ama daha
-çok gizem var — merakını hiç kaybetme!"
-- S22: Gün batımı, dikilitaşlar, gurur ve şükran ✓ TATMIN DORUĞU
-**Değer**: Merak, bilimsel düşünme, kültürel miras koruma
+## KURALLAR
+- Rehber YOK. Arkadaşlarla kendi keşifleri.
+- Geçit → 12.000 yıl öncesi → izleme, gizlenme, yardım (bir sorun çözme) → geri dönüş. Ana akış bu.
+- Seçilen "en sevdiği" öğe sadece hafif vurgu; akışı bozmasın.
+- Korku/şiddet/gore YOK. Avcı-toplayıcılar tehdit değil, merak ve yardım objesi.
+- Kitap adı SADECE "[Çocuk adı]'ın Göbeklitepe Macerası". Alt başlık ekleme.
 
----
-
-## DOPAMIN ZİRVELERİ:
-1. S4: Bilge Tilki canlanıyor — macera başlıyor
-2. S8: İlk ipucu bulundu
-3. S12: Taş ocağı — işbirliği dersi
-4. S16: Bulmaca çözüldü — harita tamamlandı
-5. S19: Gizli oda keşfi — doruk
-6. S21: Urfa Adamı — bilgelik
-7. S22: Gurur ve dönüş
-
-## GÜVENLİK KURALLARI:
-- Korku/şiddet/gore YOK
-- Dini ritüel/ibadet YOK
-- Tehlikeli davranış teşviki YOK
-- Yeraltı sahnesi korkutucu DEĞİL, heyecanlı
+Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve macera dolu.
 """
 
 # ============================================================================
@@ -205,27 +161,23 @@ GOBEKLITEPE_CULTURAL_ELEMENTS = {
 }
 
 # ============================================================================
-# CUSTOM INPUTS (list formatı — frontend uyumlu)
+# CUSTOM INPUTS — Hafif; seçilen öğe hikaye akışını çok değiştirmez (sadece vurgu)
 # ============================================================================
 
 GOBEKLITEPE_CUSTOM_INPUTS = [
     {
-        "key": "favorite_animal",
-        "label": "En Sevdiği Dikilitaş Hayvanı",
+        "key": "favorite_element",
+        "label": "En Sevdiği Öğe",
         "type": "select",
-        "options": ["Tilki", "Aslan", "Yılan", "Akbaba", "Akrep"],
-        "default": "Tilki",
+        "options": [
+            "T-sütunlar (dev dikilitaşlar)",
+            "Hayvan kabartmaları (tilki, aslan, yılan, kuş)",
+            "Taş ocağı / inşaat",
+            "Dairesel tapınak yapısı",
+        ],
+        "default": "Hayvan kabartmaları (tilki, aslan, yılan, kuş)",
         "required": False,
-        "help_text": "Hikayede bu hayvan dikilitaştan canlanacak ve rehberlik edecek",
-    },
-    {
-        "key": "special_discovery",
-        "label": "Keşfetmek İstediği Şey",
-        "type": "select",
-        "options": ["Gizli Yeraltı Odası", "Kayıp Dikilitaş", "Antik Harita", "Sihirli Taş Figürini"],
-        "default": "Gizli Yeraltı Odası",
-        "required": False,
-        "help_text": "Hikayede çocuğun keşfedeceği büyük sır",
+        "help_text": "Hikayede sadece hafif vurgu olarak geçer; ana akış (geçit, zaman yolculuğu, yardım) değişmez.",
     },
 ]
 
@@ -253,10 +205,9 @@ async def create_gobeklitepe_scenario():
 
         scenario.name = "Göbeklitepe Macerası"
         scenario.description = (
-            "12.000 yıl öncesine yolculuk! Dünyanın EN ESKİ tapınağı "
-            "Göbeklitepe'yi keşfet. 5m yüksek T-sütunlar, hayvan kabartmaları "
-            "ve avcı-toplayıcıların mucizesi. UNESCO Dünya Mirası'nda "
-            "prehistorik keşif!"
+            "Arkadaşlarla Göbeklitepe'de gezerken gizli bir geçit keşfedersin. "
+            "Geçitten geçince 12.000 yıl öncesine gidersin; avcı-toplayıcılara "
+            "yardım eder, tarihe dokunursun, sonra geri dönersin."
         )
         scenario.theme_key = "gobeklitepe"
         scenario.cover_prompt_template = GOBEKLITEPE_COVER_PROMPT
@@ -266,9 +217,9 @@ async def create_gobeklitepe_scenario():
         scenario.outfit_boy = OUTFIT_BOY
         scenario.cultural_elements = GOBEKLITEPE_CULTURAL_ELEMENTS
         scenario.custom_inputs_schema = GOBEKLITEPE_CUSTOM_INPUTS
-        scenario.marketing_badge = "YENİ! Zaman Sıfır Noktası"
+        scenario.marketing_badge = "Arkadaşlarla Tarihe Dokunuş"
         scenario.age_range = "8-10"
-        scenario.tagline = "12.000 yıllık gizemi çöz!"
+        scenario.tagline = "Arkadaşlarla geçit keşfi, 12.000 yıl öncesine macera!"
         scenario.is_active = True
         scenario.display_order = 3
 

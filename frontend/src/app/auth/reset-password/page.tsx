@@ -21,8 +21,10 @@ const PASSWORD_RULES = [
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
-  const email = searchParams.get("email") || "";
+  // Güvenlik: Email URL'de taşınmıyor (phishing vektörü önlemek için)
+  // Kullanıcı email adresini form üzerinden kendisi giriyor
 
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -62,7 +64,7 @@ function ResetPasswordForm() {
     }
   };
 
-  if (!token || !email) {
+  if (!token) {
     return (
       <div className="text-center space-y-4">
         <h2 className="text-xl font-bold text-gray-900">Geçersiz Link</h2>
@@ -101,10 +103,24 @@ function ResetPasswordForm() {
     <>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Yeni Şifre Belirle</h2>
-        <p className="mt-1 text-sm text-gray-500">{email} için yeni şifrenizi girin.</p>
+        <p className="mt-1 text-sm text-gray-500">Email adresinizi ve yeni şifrenizi girin.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-xs font-medium text-gray-700">
+            Email Adresi
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="ornek@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="h-11 rounded-xl border-gray-200 bg-gray-50/50"
+          />
+        </div>
         <div className="space-y-1.5">
           <Label htmlFor="password" className="text-xs font-medium text-gray-700">
             Yeni Şifre

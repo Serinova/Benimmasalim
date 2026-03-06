@@ -107,8 +107,6 @@ export default function AccountPage() {
 
   useEffect(() => {
     fetchOrders();
-    getUserTrials().then(setTrials).catch(() => {});
-    getUserPaidTrials().then(setPaidTrials).catch(() => {});
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       setIsGuest(user.is_guest === true);
@@ -116,6 +114,12 @@ export default function AccountPage() {
       /* ignore */
     }
   }, [fetchOrders]);
+
+  // Fetch trials only once on mount — not on every filter/search change
+  useEffect(() => {
+    getUserTrials().then(setTrials).catch(() => {});
+    getUserPaidTrials().then(setPaidTrials).catch(() => {});
+  }, []);
 
   const orders = data?.items ?? [];
   const totalPages = data?.total_pages ?? 0;
@@ -143,8 +147,8 @@ export default function AccountPage() {
     searchMatches(t.child_name, t.story_title),
   );
   const filteredOrders = visibleOrders;
-  const combinedCount =
-    filteredTrials.length + filteredPaidTrials.length + filteredOrders.length;
+  // totalCount from paginated API + all local trials for accurate total
+  const combinedCount = totalCount + trials.length + paidTrials.length;
 
   const handleSelectOrder = (id: string) => {
     setSelectedTrial(null);
@@ -157,31 +161,19 @@ export default function AccountPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header - admin orders style */}
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/")}
-              className="rounded-lg"
-            >
-              ← Geri
-            </Button>
-            <h1 className="text-xl font-bold text-slate-800">Siparişlerim</h1>
-          </div>
-          <div className="text-sm text-slate-500">
-            {combinedCount} sipariş
-          </div>
-        </div>
-      </header>
+    <div>
+      {isGuest && (
+        <GuestConvertBanner onConverted={() => { setIsGuest(false); fetchOrders(); }} />
+      )}
 
-      <main className="mx-auto max-w-[1200px] space-y-4 px-4 py-4 sm:px-6">
-        {isGuest && (
-          <GuestConvertBanner onConverted={() => { setIsGuest(false); fetchOrders(); }} />
-        )}
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-slate-800">
+          Siparişlerim
+          {combinedCount > 0 && (
+            <span className="ml-2 text-sm font-normal text-slate-500">({combinedCount})</span>
+          )}
+        </h1>
+      </div>
 
         {/* Toolbar - filters + search */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -211,7 +203,6 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* Table - admin orders style */}
         <div className="overflow-hidden rounded-lg border bg-white">
           {loading ? (
             <div className="flex items-center justify-center py-16">
@@ -233,7 +224,7 @@ export default function AccountPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full min-w-[600px] text-left">
                 <thead>
                   <tr className="border-b bg-slate-50">
                     <th className="whitespace-nowrap px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
@@ -426,7 +417,6 @@ export default function AccountPage() {
             </div>
           )}
         </div>
-      </main>
 
       {/* Detail sheets */}
       <AccountOrderDetailSheet

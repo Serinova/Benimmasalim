@@ -184,9 +184,11 @@ class BackCoverConfig(Base, UUIDMixin, TimestampMixin):
     company_address: Mapped[str | None] = mapped_column(Text)
 
     # Colors and styling
-    background_color: Mapped[str] = mapped_column(String(20), default="#F8F4F0")
-    primary_color: Mapped[str] = mapped_column(String(20), default="#6B46C1")
-    text_color: Mapped[str] = mapped_column(String(20), default="#333333")
+    background_color: Mapped[str] = mapped_column(String(20), default="#FDF6EC")
+    background_gradient_end: Mapped[str] = mapped_column(String(20), default="#EDE4F8")
+    primary_color: Mapped[str] = mapped_column(String(20), default="#6B21A8")
+    accent_color: Mapped[str] = mapped_column(String(20), default="#F59E0B")
+    text_color: Mapped[str] = mapped_column(String(20), default="#2D1B4E")
 
     # QR Code settings
     qr_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -210,16 +212,21 @@ class BackCoverConfig(Base, UUIDMixin, TimestampMixin):
 
     # Additional text sections
     tagline: Mapped[str] = mapped_column(
-        String(300), default="Her çocuk kendi masalının kahramanı!"
+        String(300), default="Her çocuk kendi masalının kahramanıdır."
+    )
+    dedication_text: Mapped[str] = mapped_column(
+        Text,
+        default="Bu kitap, senin için; merakın, cesaretinle büyüyen ve hayal dünyasıyla sınırları zorlayan sen için...",
     )
     copyright_text: Mapped[str] = mapped_column(
-        String(300), default="© 2024 Benim Masalım. Tüm hakları saklıdır."
+        String(300), default="© 2025 Benim Masalım. Tüm hakları saklıdır."
     )
 
     # Decorative elements
     show_stars: Mapped[bool] = mapped_column(Boolean, default=True)
     show_border: Mapped[bool] = mapped_column(Boolean, default=True)
-    border_color: Mapped[str] = mapped_column(String(20), default="#E0D4F7")
+    border_color: Mapped[str] = mapped_column(String(20), default="#C4B5FD")
+    show_decorative_lines: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

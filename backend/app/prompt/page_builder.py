@@ -22,6 +22,29 @@ if TYPE_CHECKING:
 
 _GENDER_MAP = {"kız": "girl", "kiz": "girl", "female": "girl", "girl": "girl"}
 _BOY_SET = {"erkek", "boy", "male"}
+_HEAD_COVERING_KEYWORDS = ("hijab", "headscarf", "taqiyah", "takke", "head covering", "prayer cap")
+
+_IHRAM_STATE_KEYWORDS = (
+    "ihram garment", "in ihram", "dressed in ihram", "white ihram", "ihram cloth",
+    "two-piece white", "two piece white", "state of ihram", "ihram (sacred",
+    "ihram state", "other passengers", "ihram", "mikat",
+)
+# Sadece açık “tıraş” ifadeleri — “saç kesme”/taqsir kel yapmaz
+_HALQ_STATE_KEYWORDS = (
+    "hair has been shaved", "head shaved", "shaved head", "after shaving",
+    "hair shaved", "shaving area", "after his hair",
+    "newly shaved", "clean-shaved head", "tıraş edildi", "shaved bald",
+)
+
+
+def _detect_scene_ihram_state(scene_desc: str) -> str:
+    """Sahne metninden ihram/halq durumunu tespit eder."""
+    _lower = (scene_desc or "").lower()
+    if any(kw in _lower for kw in _HALQ_STATE_KEYWORDS):
+        return "halq"
+    if any(kw in _lower for kw in _IHRAM_STATE_KEYWORDS):
+        return "ihram"
+    return "normal"
 
 
 def build_page_prompt(
@@ -54,8 +77,34 @@ def build_page_prompt(
         from app.prompt.templates import get_default_clothing
         clothing = get_default_clothing(gender_en)
     
+    # Detect ihram/halq state from scene description
+    _ihram_state = _detect_scene_ihram_state(scene_description)
+
+    # Check for head covering
+    _clothing_lower = (clothing or "").lower()
+    _needs_head_cover = any(kw in _clothing_lower for kw in _HEAD_COVERING_KEYWORDS)
+
+    # İhram: only boys go bare-headed; girls keep hijab throughout Umrah
+    if _ihram_state == "ihram" and gender_en == "boy":
+        _needs_head_cover = False
+
     from app.prompt.templates import get_default_hair
-    hair = (ctx.hair_description or "").strip() or get_default_hair()
+    if _ihram_state == "ihram" and gender_en == "boy":
+        hair = "head completely uncovered and bare (NO taqiyah, NO hat — ihram requires bare head)"
+        clothing = (
+            "two-piece seamless white ihram garment: upper cloth (rida) draped over left shoulder, "
+            "lower cloth (izar) wrapped around waist — pure white, NO stitching, NO decoration. "
+            "Simple tan sandals. CRITICAL: NO taqiyah, NO prayer cap — head is BARE during ihram."
+        )
+    elif _ihram_state == "halq" and gender_en == "boy":
+        hair = "completely shaved bald head — smooth scalp, no hair at all (just completed halq ritual)"
+    elif _needs_head_cover:
+        if gender_en == "boy":
+            hair = "wearing a small round white knitted taqiyah skull-cap on top of the head"
+        else:
+            hair = "hair fully covered by a properly wrapped hijab headscarf"
+    else:
+        hair = (ctx.hair_description or "").strip() or get_default_hair()
 
     body = tpl.format(
         clothing_description=clothing,
@@ -77,13 +126,40 @@ def build_page_prompt(
 
     # 3. Character description lock (forensic hair/face/skin from photo analysis)
     if ctx.character_description:
-        parts.append(
-            f"CHARACTER IDENTITY LOCK — MAXIMUM FACIAL RESEMBLANCE REQUIRED: {ctx.character_description}. "
-            f"CRITICAL: Preserve EXACT facial features (eye shape, nose shape, mouth shape, face shape, eyebrow shape), "
-            f"EXACT hair color, EXACT hairstyle (length, texture, parting), and EXACT skin tone. "
-            f"The face MUST be instantly recognizable as the SAME child from the reference photo on EVERY page. "
-            f"DO NOT simplify, genericize, or cartoonize the facial features — maintain strong facial similarity."
-        )
+        if _ihram_state == "ihram" and gender_en == "boy":
+            parts.append(
+                f"CHARACTER IDENTITY LOCK — MAXIMUM FACIAL RESEMBLANCE REQUIRED: {ctx.character_description}. "
+                f"CRITICAL: Preserve EXACT facial features (eye shape, nose shape, mouth shape, face shape, eyebrow shape) and EXACT skin tone. "
+                f"HEAD LOCK — IHRAM: The boy's head MUST be COMPLETELY BARE — NO taqiyah, NO hat, NO head covering of any kind. "
+                f"The face MUST be instantly recognizable as the SAME child from the reference photo on EVERY page."
+            )
+        elif _ihram_state == "halq" and gender_en == "boy":
+            parts.append(
+                f"CHARACTER IDENTITY LOCK — MAXIMUM FACIAL RESEMBLANCE REQUIRED: {ctx.character_description}. "
+                f"CRITICAL: Preserve EXACT facial features (eye shape, nose shape, mouth shape, face shape, eyebrow shape) and EXACT skin tone. "
+                f"HEAD LOCK — POST-HALQ: The boy's head is COMPLETELY SHAVED BALD — smooth scalp, zero hair. This is the halq ritual. "
+                f"The face MUST be instantly recognizable as the SAME child from the reference photo on EVERY page."
+            )
+        elif _needs_head_cover:
+            if gender_en == "boy":
+                _head_lock = "HEAD COVERING LOCK: The boy wears ONLY a small round white knitted taqiyah skull-cap (NOT a turban, NOT a wrapped cloth, NOT a hood, NOT hijab, NOT headscarf — that is for girls)."
+            else:
+                _head_lock = "HEAD COVERING LOCK: The girl wears a properly wrapped hijab headscarf. Hair must NOT be visible."
+            parts.append(
+                f"CHARACTER IDENTITY LOCK — MAXIMUM FACIAL RESEMBLANCE REQUIRED: {ctx.character_description}. "
+                f"CRITICAL: Preserve EXACT facial features (eye shape, nose shape, mouth shape, face shape, eyebrow shape) and EXACT skin tone. "
+                f"{_head_lock} "
+                f"The face MUST be instantly recognizable as the SAME child from the reference photo on EVERY page. "
+                f"DO NOT simplify, genericize, or cartoonize the facial features — maintain strong facial similarity."
+            )
+        else:
+            parts.append(
+                f"CHARACTER IDENTITY LOCK — MAXIMUM FACIAL RESEMBLANCE REQUIRED: {ctx.character_description}. "
+                f"CRITICAL: Preserve EXACT facial features (eye shape, nose shape, mouth shape, face shape, eyebrow shape), "
+                f"EXACT hair color, EXACT hairstyle (length, texture, parting), and EXACT skin tone. "
+                f"The face MUST be instantly recognizable as the SAME child from the reference photo on EVERY page. "
+                f"DO NOT simplify, genericize, or cartoonize the facial features — maintain strong facial similarity."
+            )
 
     # 4. Character consistency locks (hair, clothing, gender)
     parts.append(BODY_PROPORTION)

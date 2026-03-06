@@ -1,329 +1,202 @@
 """
-YENİ SİSTEM: Galata Kulesi Macerası Scenario Update
-================================================
-ESKİ sistem TAMAMEN SİLİNDİ - SIFIRDAN yazıldı!
-
-Ocean/Dinosaur standardına uygun:
-- Modular prompt (500 char limit)
-- Story blueprint (Dopamine Management)
-- Cultural elements (Istanbul, tarih)
+Galata Macerası — Işık Haritası, Gizem, Indiana Jones Tarzı
+=========================================================================================
+- Kitap adı: [Çocuk adı]'ın Kayıp Işık Haritası: Galata (alt başlık yok)
+- Sürekli değişen dijital/aydınlık bir ışık haritası ile Galata sokaklarında kayıp eşya bulma macerası
+- Yerler: Galata Kulesi çevresi, dar sokaklar, renkli merdivenler, kediler, tramvay, banklar
+- Kıyafet: Indiana Jones tarzı gezgin kıyafeti, kız ve erkek için zorunlu ve her sayfada aynı tutarlı (kıyafet kilidi)
+- Kurguyu bozabilecek kullanıcı seçenekleri yok (custom_inputs boş)
 """
 
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy import select, update
-from sqlalchemy.orm import sessionmaker
-from app.models import Scenario
 import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from sqlalchemy import select
+from app.core.database import async_session_factory
+from app.models import Scenario
 
 # ============================================================================
-# MODULAR PROMPT COMPONENTS (500 char limit!)
+# MODULAR PROMPT COMPONENTS (AI DIRECTOR - PASS 2)
 # ============================================================================
 
-GALATA_COVER_PROMPT = """Istanbul Galata Tower scene: {scene_description}.
-Child in foreground, iconic medieval Galata Tower (67m stone tower, conical roof) in background.
-Bosphorus strait visible with ships, connecting Europe and Asia.
-Historic Galata neighborhood: cobblestone streets, old stone buildings, red tile roofs.
-Golden sunset over Istanbul cityscape.
-Wide shot: child 25%, tower and cityscape 75%.
-Historic, nostalgic atmosphere."""
+GALATA_COVER_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Child holding a tiny glowing brass mini-projector device aimed at the weathered cobblestone, intricate glowing golden light map lines materializing on the stone floor. "
+    "Iconic historic Galata Tower rising behind narrow Istanbul streets, warm amber-orange sunset sky, seagulls in flight above the rooftops. "
+    "Rich golden hour backlighting casting long cobblestone shadows, warm volumetric sunset haze, soft rim light on the child and the glowing device. "
+    "Dynamic street-level angle: child 30% foreground, tower and atmospheric streetscape 70%. "
+    "Istanbul evening palette: warm amber sunset, golden cobblestone, rich burgundy building facades, soft purple twilight sky."
+)
 
-GALATA_PAGE_PROMPT = """Istanbul Galata scene: {scene_description}.
-Elements: [Galata Tower: 67m medieval stone tower, conical roof, observation deck / Bosphorus: strait with ships, ferries, seagulls / Bridges: Galata Bridge, Golden Horn / Historic quarter: cobblestone streets, stone buildings, cafes / Tram: nostalgic red tram / Cityscape: minarets, domes, red roofs / Sunset: golden light over Bosphorus].
-Warm Istanbul colors: stone beige, red tile, blue strait.
-Historic, bustling, beautiful city."""
+GALATA_PAGE_PROMPT = (
+    "An {child_age}-year-old {child_gender} named {child_name} "
+    "with {hair_description}, wearing {clothing_description}. "
+    "{scene_description}. "
+    "Elements: [Galata Tower area, Istanbul, narrow cobblestone streets, steep colorful stairs, street cats, cozy cafes, warm sunset light, lively crowd, seagulls]. "
+    "Cinematic action lighting, dynamic pose, detailed environment, depth of field. Wide angle, full body visible in action, child 30-40% of frame. No eye contact with camera. "
+    "Avoid: photorealistic, pasted face, collage, duplicate child, extra people (unless required by scene), text, watermark, logo, blurry, low quality. {STYLE}"
+)
 
 # ============================================================================
-# STORY BLUEPRINT (Dopamine Management)
+# OUTFIT — Indiana Jones Tarzı Kıyafet Kilidi (Sabit ve Zorunlu)
+# ============================================================================
+
+OUTFIT_GIRL = (
+    "khaki explorer shirt, fitted brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat, subtle woven bracelet charm. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest. "
+    "Same child character, same outfit, consistent face and hair across all pages."
+)
+
+OUTFIT_BOY = (
+    "khaki explorer shirt, brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest. "
+    "Same child character, same outfit, consistent face and hair across all pages."
+)
+
+# ============================================================================
+# STORY BLUEPRINT — Işık Haritası ve Gizem Temalı Kurgu (PURE AUTHOR - PASS 1)
 # ============================================================================
 
 GALATA_STORY_PROMPT_TR = """
-# İSTANBUL KEŞFİ DOPAMIN YÖNETİMİ - GALATA KULESİ MACERASI
+# GALATA'NIN KAYIP IŞIK HARİTASI: GİZEMLİ MACERA
 
-## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
+## YAPI: {child_name} Indiana Jones tarzı kıyafetleriyle Galata sokaklarında gezerken bulduğu sokak sanatçısına ait sihirli/teknolojik bir "ışık dürbünü" sayesinde yerlere yansıyan haritayı takip ederek heyecanlı bir kayıp eşya arama macerasına atılır. Heyecanlı, koşturmacalı, zamanla (gün batımıyla) yarış hissi veren ama tamamen günümüzde geçen, tehlikesiz aile dostu bir kurgu sür. Tamamen günümüzde geçer, IŞINLANMA VE GEÇMİŞE GİTME YOKTUR.
 
-Bu İstanbul keşif hikayesi, çocuğa **tarih**, **cesaret**, **keşif** ve **güzellik** değerlerini öğretir.
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Kayıp Işık Haritası: Galata" olmalı. Alt başlık EKLEME.
 
----
-
-### BÖLÜM 1 - GİRİŞ: GALATA MAHALLESİ (1-4)
-- {child_name}, İstanbul'un tarihi Galata mahallesine varıyor
-- Taş sokaklar, eski binalar, kırmızı kiremitler
-- İlk bakış: Galata Kulesi göğe yükseliyor (67m)
-- Heyecan: "Çok yüksek! Çıkabilir miyim?"
-- **Değer**: Cesaret, tarihi merak
-
-**EPİK AN #0**: İlk bakışta 67m yükseklikte Galata Kulesi - tarihi ihtişam!
-
-**Sayfa içeriği**: 
-- S1: İstanbul'a varış, Galata mahallesi
-- S2: Tarihi sokakları keşfetme
-- S3: Galata Kulesi'ni ilk görme
-- S4: Kuleye yaklaşma, "Ne kadar yüksek!" ✓ **İLK HAYRANLIK ZİRVESİ**
+**STİL & TON:** 
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. Dili akıcı, ritimli ve 5-10 yaş aralığında merak uyandırıcı olmalıdır. 
+- Her sayfada küçük bir merak kırıntısı bırak. 
+- Bilgi yığını yapma; yokuşlar, sokak kedileri, renkli merdivenler, kafeler ve tramvaylar ipucu noktaları olsun.
+- Şiddet yok, korku yok. Sadece eğlenceli ve heyecanlı ipucu takibi var.
 
 ---
 
-### BÖLÜM 2 - TIRMANMA: MERDİVEN YOLCULUĞU (5-9)
-**[HEYECAN DÖNGÜSÜ #1]**
-- **Kaygı**: Dar spiral merdiven, yükseklik korkusu
-- **Aksiyon**: Adım adım tırmanma, pencerelerden manzara
-- **Başarı**: Her kat bir zafer!
+### Bölüm 1 — Işık Saçan Dürbün (Sayfa 1-3)
+- Sayfa 1: {child_name} güneş batarken kalabalık İstanbul Galata Kulesi çevresinde merakla gezinmektedir. Yanından hızla ve telaşla toparlanıp geçen bir sokak sanatçısının çantasından küçük bir nesne seker ve yere düşer.
+- Sayfa 2: Hemen eğilip alır; bu, çok farklı tasarlanmış, ucundan ışık saçan pirinç bir "mini ışık aparatı" yani dürbündür. Üzerindeki düğmeye yanlışlıkla basmasıyla yaldızlı taş zemine incecik, parlak çizgiler halinde bir harita yansımaya başlar!
+- Sayfa 3: O an az ileride sanatçının acı dolu sesini duyar: "Eyvah! Gözüm gibi baktığım en nadide sahnem için çok önemli o bilekliği düşürmüşüm!" Kahramanımız hiç tereddüt etmeden ışıklı aparattan yardım alarak ona yardım etmeye karar verir.
 
-**Sayfa içeriği**:
-- S5: Merdivenler başlıyor, dar ve spiral
-- S6: Yarı yol, pencereden ilk manzara
-- S7: Yorgunluk ama devam, cesaret
-- S8: Son katlar, neredeyse tepede
-- S9: Gözlem katına ulaşma! ✓ **BAŞARI ZİRVESİ #1**
+### Bölüm 4 — Kedi mi Harita mı? (Sayfa 4-6)
+- Sayfa 4: Taşların üstündeki parlak ışık haritası titreyerek çok dar, tarihi bir sokağı işaret eden bir ok oluşturur. Çocuk doğru yolda olduğunu hissederek o ince sokağa atılır ama rüzgarla birlikte harita sürekli titremektedir.
+- Sayfa 5: Dik yokuş olan renkli merdivenlere gelir, merdivenleri nefes nefese çıkarken ışık haritası birden kaybolur; durup aletin ayarlarıyla oynayınca harita üstteki başka bir taşa atlar.
+- Sayfa 6: O taşın üzerinde oturan uykucu bir sokak kedisi yüksek sesle mırıldanarak hızla yana doğru yön değiştirir; sanki ışık onu rahatsız etmiş de yolu o açmış gibidir! Çocuk "Bu kedi bana işareti veriyor olabilir mi?" diye kendi kendine gülümser.
 
----
+### Bölüm 7 — Yanlış Semboller (Sayfa 7-10)
+- Sayfa 7: Kedinin peşine takıldığı gökkuşağı rengindeki merdivenlerin tam köşesinde, yerde çok parlak bir parça görür... ancak yanına gittiğinde bu asıl obje değil, basit, parlayan bir kafe düğmesidir. Asıl parça nerededir?
+- Sayfa 8: Işık aparatı bu hatadan ders çıkarırcasına birden mod değiştirir ve yere üç farklı sembol çizer: koca bir yıldız, bir dalga ve bir dönen ok işareti. {child_name} etrafta asılı fenerlerde, duvar çizimlerinde ve tabelalarda bu desenleri fellik fellik arar.
+- Sayfa 9: Nihayet semboller sıcacık müzik yayılan bir kafenin eski tuğla duvarında eşleşir ve harita sağa doğru dönen keskin bir oktur. Son saniyede yanlış yokuşa sapmaktan kurtulup ok yönünde keskin bir dönüş yapar.
+- Sayfa 10: Sokak sanatçılarının, turistlerin dondurma kuyruklarının olduğu en kalabalık caddeye düşer ve bir anlığına ezilme, yön kaybetme korkusu yaşar. Ama sonra kafasındaki havalı fedorasını düzeltip tam bir Indiana Jones gibi bağırır: "Macera modu devrede!" 
 
-### BÖLÜM 3 - PANORAMA DORUĞU: 360° MANZARA (10-14)
-**[HAYRANLİK DÖNGÜSÜ #2]**
-- **Vay be!**: İstanbul panoraması, 360 derece manzara
-- **Boğaz**: Avrupa ve Asya kıtaları aynı karede
-- **Gemiler**: Boğaz'dan geçen dev gemiler, feribotlar, martılar
-- **Tarihi Siluet**: Camiler, minareler, kırmızı çatılar
+### Bölüm 11 — Raylar ve Ses Dalgaları (Sayfa 11-14)
+- Sayfa 11: Uzaktan nostaljik kırmızı bir tramvayın çan sesi duyulur; ışık haritası telaşla tam da tramvay raylarının kenarına doğru sürüklenir. Ama çocuk kuralları çok iyi biliyordur, "Raylara yaklaşmak tehlikeli!" diyerek güvenli kaldırımdan saniye saniye yolu takip eder.
+- Sayfa 12: Ara sokağa esen ani sert bir Haliç rüzgarıyla harita bozulup uzayıp giden tek bir çizgiye, ardından da yol ayrımında iki farklı renge bölünür! Hangisi doğru yoldur? Çocuğun saniyeler içinde karar vermesi gerekir.
+- Sayfa 13: Zekasını kurcalayıp haritayı dikkatle süzer; çizgilerden biri rüzgar estikçe "titrek" atarken diğeri tamamen "net ve sabit" bir ışık kaynağına sahiptir. Kahramanımız gözünü kırpmadan net çizgiyi seçer.
+- Sayfa 14: Hemen sokağın başında canlı keman çalan bir sokak müzisyeni vardır ve müzisyen notayı her değiştirdiğinde ışık haritası yön/tepki değiştirir. "Buldum," diye bağırır çocuk coşkuyla; "Ses frekansları haritayı yönetiyor!"
 
-**EPİK AN #1**: Boğaz'ın iki yakası - iki kıta arasında durmak!
+### Bölüm 15 — Hedefe Doğru (Sayfa 15-18)
+- Sayfa 15: Müzisyenin yanına koşup, "Lütfen, aynı notayı 3 saniye hiç değiştirmeden çalar mısınız?" diye rica eder. Müzisyen şaşırarak notaya bastığında, ışık haritası inanılmaz bir netleşmeyle tam hedefi kilitler!
+- Sayfa 16: Çarpıcı ışığın noktalandığı yer büyük bir heykeller satan hediyelik eşya arabasının en karanlık arka tekerleğinin içidir. Kahramanımız yere yatar, pür dikkat karanlığın içinde taşların arasına sıkışan objeye uzanır.
+- Sayfa 17: Tozlu taşlardan çeker alır: O can alıcı kayıptır, sanatçının eşsiz sahneleri için kullandığı deri işlemeli bilekliği dir! Ama nedense ışık aparatı henüz uyarı vermeyi bitirmemiştir, cihaz kırmızı ışıkta yanıp söner.
+- Sayfa 18: Çünkü bilekliğe ait olan o küçük toka/klips parçası çöpün arkasındaki küçük nostaljik bankın ayağının dibine yuvarlanmıştır! Aparatın çizdiği son bir ok sayesinde, kahramanımız banka koşup altına bakar.
 
-**Sayfa içeriği**:
-- S10: İlk panorama, çocuk şaşkın
-- S11: Boğaz'ı görme, gemiler
-- S12: Avrupa yakası, tarihi siluet
-- S13: Asya yakası, kıtalar arası geçiş
-- S14: 360° dönme, İstanbul'un tamamı ✓ **HAYRANLİK ZİRVESİ #2**
-
----
-
-### BÖLÜM 4 - BOĞAZ KEŞFİ: KÖPRÜLER VE GEMİLER (15-18)
-**[KEŞİF DÖNGÜSÜ #3]**
-- **Galata Köprüsü**: Tarihi köprü, balıkçılar, tekne
-- **Haliç**: Altın Haliç'in güzelliği
-- **Gemiler**: Dev yük gemileri, turist feribotları
-- **Martılar**: Özgürce uçan martılar
-
-**EPİK AN #2**: İki kıtayı birleştiren köprülerin ihtişamı!
-
-**Sayfa içeriği**:
-- S15: Galata Köprüsü'nü görme
-- S16: Boğaz'dan geçen gemiler ✓ **KEŞİF ZİRVESİ #3**
-- S17: Haliç'in güzelliği
-- S18: Martıların uçuşu, özgürlük hissi
+### Bölüm 19 — Geri Dönüş (Sayfa 19-21)
+- Sayfa 19: Klips de bulununca tam set eksiksiz tamamlanır; şimdi zamanla ve gün batımıyla yarış başlar. Çocuk elindeki değerleri sımsıkı sıkıp o dik merdivenlerden bir rüzgar kadar hızlı koşa koşa sanatçının standına geri döner.
+- Sayfa 20: Derin bir ah çeken sanatçı bilekliğine kavuşunca, paha biçilemez bir hazine bulmuş gibi sevinir ve ona kocaman teşekkür eder. Kahramanımızın kalbinde harika bir gizemi aydınlatmış olmanın, "Başardım!" demenin huzuru vardır.
+- Sayfa 21: Tam karanlık çökerken çocuğun elinde tuttuğu o ışık aparatı aydınlatıcı görevini bitirir, usulca taş zemine minicik parlak bir "ışık yıldızı" imzasını basıp kendi kendine söner. Çocuk gözden kaybolan yıldıza gülümser: "Belki de sokakların karanlığında bir gün beni bekleyen yepyeni ışıklı bir macera daha vardır..."
 
 ---
 
-### BÖLÜM 5 - TARİHİ MAHALLE: NOSTALJI (19-20)
-**[KÜLTÜREL KEŞİF DÖNGÜSÜ #4]**
-- **Aşağı İnme**: Kuleden inme, mahalle keşfi
-- **Taş Sokaklar**: Eski İstanbul dokusu
-- **Nostaljik Tram**: Kırmızı tramvay, tarihi taşımacılık
-- **Kafeler**: Kahve kokuları, sıcak atmosfer
-
-**Sayfa içeriği**:
-- S19: Kuleden inme, mahalle keşfi
-- S20: Nostaljik tram, taş sokaklar ✓ **KÜLTÜREL TATMIN #4**
-
----
-
-### BÖLÜM 6 - GÜNBATIMI: İSTANBUL'UN GÜZELLİĞİ (21-22)
-**[DUYGU DORUĞU - FİNAL]**
-- **Günbatımı**: Boğaz üzerinde altın ışık
-- **İstanbul Silueti**: Camiler, kuleler, köprüler altın renklerle
-- **Dönüş**: Kalbe dolan güzellik, öğrendikleri
-- **Mesaj**: "İstanbul dünya güzeli!"
-
-**EPİK AN #3**: Günbatımında İstanbul'un büyüsü! ✓ **DUYGU ZİRVESİ**
-
-**Sayfa içeriği**:
-- S21: Günbatımı, altın ışık
-- S22: Veda, dönüş, kalbe dolan güzellik
-
----
-
-## DOPAMIN ZİRVELERİ:
-1. **Sayfa 4**: İlk bakış - 67m yükseklik (İLK HAYRANLIK)
-2. **Sayfa 9**: Gözlem katına ulaşma (BAŞARI)
-3. **Sayfa 14**: 360° İstanbul panoraması (HAYRANLİK)
-4. **Sayfa 16**: Boğaz gemileri (KEŞİF)
-5. **Sayfa 20**: Nostaljik mahalle (KÜLTÜR)
-6. **Sayfa 22**: Günbatımı finali (DUYGU DORUĞU)
-
----
-
-## DEĞERLER:
-- **TARİH**: Kültürel miras, Galata Kulesi'nin hikayesi
-- **CESARET**: Yüksekliğe tırmanma, korkuyu yenme
-- **KEŞİF**: İstanbul'u keşfetme, iki kıta
-- **GÜZELLİK**: Şehrin estetiği, günbatımı
-
----
-
-## GÜVENLİK KURALLARI:
-- Tırmanma güvenli, yetişkin rehberliğinde
-- Yükseklikten düşme riski yok (korkuluklar var)
-- Pozitif, güvenli atmosfer
-
----
-
-## CUSTOM INPUTS:
-- {favorite_location}: Çocuğun en sevdiği yer (örn: Galata Köprüsü, Boğaz, Kule Tepesi)
-- Bu öğe sayfa 14-16 arasında vurgulanacak
-
----
-
-## NOT:
-Her sayfa {scene_description} ile dinamik olarak hikayeye entegre edilir.
-Çocuk her sayfada aktif rol alır, keşfeder, öğrenir.
+## KURALLAR
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 21 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- AI Görüntü (scene_description) promptlarını (İngilizce) yazarken "standing still" veya "looking at camera" KULLANMA. Aksiyon belirt (örn: "Child sprinting up steep colorful stairs", "Child examining light map glowing on cobblestone alley").
+- Bu hikaye geçmişte geçmez, IŞINLANMA, ZAMAN MAKİNESİ, BÜYÜ vs. ekleme. Teknolojik ve gizemlidir.
 """
-
-# ============================================================================
-# OUTFIT DEFINITIONS
-# ============================================================================
-
-OUTFIT_GIRL = """Modern casual outfit for Galata Tower visit.
-White or pastel t-shirt with Istanbul graphic, denim shorts or light pants, comfortable sneakers.
-Sun hat or baseball cap for Istanbul sun.
-Small backpack with water bottle.
-Practical for climbing stairs, comfortable for city exploration.
-Age-appropriate, modest, safe for historic site visit."""
-
-OUTFIT_BOY = """Modern casual outfit for Galata Tower visit.
-Graphic t-shirt (Istanbul theme or plain color), denim shorts or cargo pants, comfortable sneakers.
-Baseball cap or bucket hat for Istanbul sun.
-Small backpack with water bottle.
-Practical for climbing stairs, comfortable for city exploration.
-Age-appropriate, safe for historic site visit."""
 
 # ============================================================================
 # CULTURAL ELEMENTS
 # ============================================================================
 
 GALATA_CULTURAL_ELEMENTS = {
-    "location": "Istanbul, Turkey",
-    "historic_site": "Galata Tower (Galata Kulesi), built 1348",
-    "geography": "Bosphorus strait, connecting Europe and Asia",
-    "landmarks": [
-        "Galata Tower (67m medieval stone tower)",
-        "Galata Bridge (Galata Köprüsü)",
-        "Golden Horn (Haliç)",
-        "Bosphorus strait",
-        "Historic Galata neighborhood",
-        "Nostalgic red tram"
+    "location": "Galata Tower area, Istanbul, Turkey",
+    "historic_site": "Historic Peninsula surrounding Galata Tower",
+    "major_elements": [
+        "Narrow cobblestone streets, steep colorful stairs, cozy cafes",
+        "Lively crowd, street musicians, nostalgic red tram tracks",
+        "Street cats exploring the pathways, warm sunset light",
+        "A magical mini projector dropping light maps onto the pavement",
     ],
-    "cityscape": [
-        "Mosques and minarets",
-        "Red tile roofs",
-        "Stone buildings",
-        "Cobblestone streets"
-    ],
-    "marine_elements": [
-        "Ships and ferries",
-        "Seagulls",
-        "Fishing boats"
-    ],
-    "atmosphere": "Historic, nostalgic, beautiful city, sunset golden light",
-    "educational_focus": [
-        "Medieval architecture",
-        "Bosphorus geography",
-        "Europe-Asia connection",
-        "Istanbul history",
-        "Cultural heritage"
-    ],
-    "values": ["History", "Courage", "Exploration", "Beauty appreciation"]
+    "atmosphere": "Active, adventurous investigation, cozy evening, contemporary Istanbul",
+    "values": ["Helpfulness", "Observation", "Quick Thinking", "Determination"],
+    "sensitivity_rules": [
+        "Modern day setting, no historical time travel",
+        "Safe and friendly adventure, no villains",
+        "Action and deduction focus"
+    ]
 }
 
 # ============================================================================
 # CUSTOM INPUTS
 # ============================================================================
 
-GALATA_CUSTOM_INPUTS = {
-    "favorite_location": {
-        "type": "select",
-        "label_tr": "En sevdiğin İstanbul yeri hangisi?",
-        "label_en": "What's your favorite Istanbul spot?",
-        "options": [
-            {"value": "galata_tower", "label_tr": "Galata Kulesi", "label_en": "Galata Tower"},
-            {"value": "bosphorus", "label_tr": "Boğaz", "label_en": "Bosphorus"},
-            {"value": "galata_bridge", "label_tr": "Galata Köprüsü", "label_en": "Galata Bridge"},
-            {"value": "historic_quarter", "label_tr": "Tarihi Mahalle", "label_en": "Historic Quarter"},
-            {"value": "sunset_view", "label_tr": "Günbatımı Manzarası", "label_en": "Sunset View"}
-        ],
-        "default": "galata_tower",
-        "usage": "Emphasized in pages 14-16 (panorama view)"
-    }
-}
+GALATA_CUSTOM_INPUTS: list[dict] = []
 
 # ============================================================================
-# DATABASE UPDATE FUNCTION
+# DATABASE UPDATE
 # ============================================================================
 
 async def update_galata_scenario():
-    """GALATA KULESİ senaryosunu YENİ SİSTEM ile günceller."""
-    
-    db_url = os.getenv("DATABASE_URL")
-    if not db_url:
-        raise ValueError("DATABASE_URL environment variable not set")
-    
-    engine = create_async_engine(db_url, echo=True)
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    
-    async with async_session() as session:
-        # Find Galata scenario
-        result = await session.execute(
+    """Galata senaryosunu yeni Kayıp Işık Haritası Şehir Dedektifine göre günceller."""
+    async with async_session_factory() as db:
+        result = await db.execute(
             select(Scenario).where(
-                (Scenario.theme_key == "galata_tower_istanbul") |
-                (Scenario.name.ilike("%Galata%"))
+                (Scenario.theme_key == "galata")
+                | (Scenario.theme_key == "galata_tower_istanbul")
+                | (Scenario.name.ilike("%Galata%"))
             )
         )
         scenario = result.scalar_one_or_none()
-        
-        if not scenario:
-            print("❌ Galata scenario not found!")
-            return
-        
-        print(f"\n✅ Found scenario: {scenario.name} (ID: {scenario.id})")
-        
-        # Verify prompt lengths
-        print(f"\n📏 PROMPT LENGTHS:")
-        print(f"   Cover: {len(GALATA_COVER_PROMPT)} chars (max 500)")
-        print(f"   Page: {len(GALATA_PAGE_PROMPT)} chars (max 500)")
-        print(f"   Story: {len(GALATA_STORY_PROMPT_TR)} chars")
-        
-        if len(GALATA_COVER_PROMPT) > 500 or len(GALATA_PAGE_PROMPT) > 500:
-            print("❌ HATA: Prompt 500 karakteri aşıyor!")
-            return
-        
-        # Update scenario
-        await session.execute(
-            update(Scenario)
-            .where(Scenario.id == scenario.id)
-            .values(
-                cover_prompt_template=GALATA_COVER_PROMPT,
-                page_prompt_template=GALATA_PAGE_PROMPT,
-                story_prompt_tr=GALATA_STORY_PROMPT_TR,
-                outfit_girl=OUTFIT_GIRL,
-                outfit_boy=OUTFIT_BOY,
-                cultural_elements=GALATA_CULTURAL_ELEMENTS,
-                custom_inputs_schema=GALATA_CUSTOM_INPUTS,
-                description="İstanbul'un sembolü Galata Kulesi'ne tırmanma macerası. Boğaz'ın iki yakasını, tarihi mahalleleri ve İstanbul'un eşsiz güzelliğini keşfet!",
-                marketing_badge="YENİ! İstanbul Keşfi",
-                age_range="6-10",
-                tagline="Galata'dan İstanbul'u keşfet!"
-            )
-        )
-        
-        await session.commit()
-        
-        print("\n✅ GALATA KULESİ scenario updated successfully!")
-        print("   - Modular prompts: DONE")
-        print("   - Story blueprint: DONE")
-        print("   - Cultural elements: DONE")
-        print("   - Custom inputs: DONE")
 
-# ============================================================================
-# MAIN
-# ============================================================================
+        if not scenario:
+            scenario = Scenario(name="Galata'nın Kayıp Işık Haritası", is_active=True)
+            scenario.theme_key = "galata"
+            db.add(scenario)
+
+        # Meta Bilgiler
+        scenario.name = "Galata'nın Kayıp Işık Haritası"
+        scenario.description = (
+            "Indiana Jones ruhunu teknolojiyle birleştiren kusursuz bir modern zaman dedektifliği! "
+            "Kahramanımızın bulduğu gizemli mini bir projektör cihazının sokaklara yansıttığı ışıklı harita "
+            "ile Galata'nın sokaklarında koşarak eşyayı asıl sahibine yetiştirme mücadelesi."
+        )
+        scenario.theme_key = "galata"
+        
+        # Kapaklar ve Promplar
+        scenario.cover_prompt_template = GALATA_COVER_PROMPT
+        scenario.page_prompt_template = GALATA_PAGE_PROMPT
+        scenario.story_prompt_tr = GALATA_STORY_PROMPT_TR
+        
+        # Kıyafet Sistemi
+        scenario.outfit_girl = OUTFIT_GIRL
+        scenario.outfit_boy = OUTFIT_BOY
+        
+        # Kültürel & Pazarlama Verileri
+        scenario.cultural_elements = GALATA_CULTURAL_ELEMENTS
+        scenario.custom_inputs_schema = GALATA_CUSTOM_INPUTS
+        scenario.marketing_badge = "Şehir Macerası"
+        scenario.age_range = "5-10"
+        scenario.tagline = "Işık haritasını izle, nesneyi sen kurtar!"
+        scenario.is_active = True
+
+        await db.commit()
+        print(f"Galata 'Işık Haritası' scenario updated seamlessly: {scenario.id}")
 
 if __name__ == "__main__":
     asyncio.run(update_galata_scenario())

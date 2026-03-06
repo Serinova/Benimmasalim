@@ -1,0 +1,4 @@
+STYLE: 2D CHILDREN’S BOOK STYLE (Likeness-first, NOT big eyes) + NEGATIVE (copy/paste)
+DISPLAY_NAME: Klasik Hikaye Kitabı
+MODIFIER: 2D children's storybook illustration, classic picture-book style, vibrant cheerful colors, hand-painted warmth
+NEGATIVE: text overlay, logo, letters on image, head rotated, anime, manga, 3d render, CGI, big eyes, chibi, oversized head, wrong hair color, wrong skin color

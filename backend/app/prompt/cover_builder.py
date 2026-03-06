@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 _GENDER_MAP = {"kız": "girl", "kiz": "girl", "female": "girl", "girl": "girl"}
 _BOY_SET = {"erkek", "boy", "male"}
+_HEAD_COVERING_KEYWORDS = ("hijab", "headscarf", "taqiyah", "takke", "head covering", "prayer cap")
 
 
 def _resolve_gender(gender_str: str) -> str:
@@ -58,8 +59,18 @@ def build_cover_prompt(
         from app.prompt.templates import get_default_clothing
         clothing = get_default_clothing(gender_en)
     
+    # Check for head covering
+    _clothing_lower = (clothing or "").lower()
+    _needs_head_cover = any(kw in _clothing_lower for kw in _HEAD_COVERING_KEYWORDS)
+
     from app.prompt.templates import get_default_hair
-    hair = (ctx.hair_description or "").strip() or get_default_hair()
+    if _needs_head_cover:
+        if gender_en == "boy":
+            hair = "wearing a small round white knitted taqiyah skull-cap on top of the head"
+        else:
+            hair = "hair fully covered by a properly wrapped hijab headscarf"
+    else:
+        hair = (ctx.hair_description or "").strip() or get_default_hair()
 
     body = tpl.format(
         clothing_description=clothing,
@@ -82,13 +93,26 @@ def build_cover_prompt(
 
     # 3. Character description lock (forensic hair/face/skin from photo analysis)
     if ctx.character_description:
-        parts.append(
-            f"CHARACTER IDENTITY LOCK — MAXIMUM FACIAL RESEMBLANCE REQUIRED: {ctx.character_description}. "
-            f"CRITICAL: Preserve EXACT facial features (eye shape, nose shape, mouth shape, face shape, eyebrow shape), "
-            f"EXACT hair color, EXACT hairstyle (length, texture, parting), and EXACT skin tone. "
-            f"The face MUST be instantly recognizable as the SAME child from the reference photo on EVERY page. "
-            f"DO NOT simplify, genericize, or cartoonize the facial features — maintain strong facial similarity."
-        )
+        if _needs_head_cover:
+            if gender_en == "boy":
+                _head_lock = "HEAD COVERING LOCK: The boy wears ONLY a small round white knitted taqiyah skull-cap (NOT a turban, NOT a wrapped cloth, NOT a hood, NOT hijab, NOT headscarf — that is for girls)."
+            else:
+                _head_lock = "HEAD COVERING LOCK: The girl wears a properly wrapped hijab headscarf. Hair must NOT be visible."
+            parts.append(
+                f"CHARACTER IDENTITY LOCK — MAXIMUM FACIAL RESEMBLANCE REQUIRED: {ctx.character_description}. "
+                f"CRITICAL: Preserve EXACT facial features (eye shape, nose shape, mouth shape, face shape, eyebrow shape) and EXACT skin tone. "
+                f"{_head_lock} "
+                f"The face MUST be instantly recognizable as the SAME child from the reference photo on EVERY page. "
+                f"DO NOT simplify, genericize, or cartoonize the facial features — maintain strong facial similarity."
+            )
+        else:
+            parts.append(
+                f"CHARACTER IDENTITY LOCK — MAXIMUM FACIAL RESEMBLANCE REQUIRED: {ctx.character_description}. "
+                f"CRITICAL: Preserve EXACT facial features (eye shape, nose shape, mouth shape, face shape, eyebrow shape), "
+                f"EXACT hair color, EXACT hairstyle (length, texture, parting), and EXACT skin tone. "
+                f"The face MUST be instantly recognizable as the SAME child from the reference photo on EVERY page. "
+                f"DO NOT simplify, genericize, or cartoonize the facial features — maintain strong facial similarity."
+            )
 
     # 4. Character consistency locks
     parts.append(BODY_PROPORTION)
@@ -154,8 +178,18 @@ def build_back_cover_prompt(
         from app.prompt.templates import get_default_clothing
         clothing = get_default_clothing(gender_en)
 
+    # Check for head covering
+    _clothing_lower = (clothing or "").lower()
+    _needs_head_cover = any(kw in _clothing_lower for kw in _HEAD_COVERING_KEYWORDS)
+
     from app.prompt.templates import get_default_hair
-    hair = (ctx.hair_description or "").strip() or get_default_hair()
+    if _needs_head_cover:
+        if gender_en == "boy":
+            hair = "wearing a small round white knitted taqiyah skull-cap on top of the head"
+        else:
+            hair = "hair fully covered by a properly wrapped hijab headscarf"
+    else:
+        hair = (ctx.hair_description or "").strip() or get_default_hair()
 
     body = tpl.format(
         clothing_description=clothing,
@@ -173,10 +207,21 @@ def build_back_cover_prompt(
     parts.append(ctx.style.leading_prefix.strip())
 
     if ctx.character_description:
-        parts.append(
-            f"CHARACTER IDENTITY LOCK — {ctx.character_description} "
-            f"Preserve this exact hair color, hairstyle, and skin tone on every page."
-        )
+        if _needs_head_cover:
+            if gender_en == "boy":
+                _head_lock = "HEAD COVERING LOCK: The boy wears ONLY a small round white knitted taqiyah skull-cap (NOT a turban, NOT a wrapped cloth, NOT a hood, NOT hijab, NOT headscarf — that is for girls)."
+            else:
+                _head_lock = "HEAD COVERING LOCK: The girl wears a properly wrapped hijab headscarf. Hair must NOT be visible."
+            parts.append(
+                f"CHARACTER IDENTITY LOCK — {ctx.character_description} "
+                f"Preserve exact facial features and skin tone. "
+                f"{_head_lock}"
+            )
+        else:
+            parts.append(
+                f"CHARACTER IDENTITY LOCK — {ctx.character_description} "
+                f"Preserve this exact hair color, hairstyle, and skin tone on every page."
+            )
 
     parts.append(BODY_PROPORTION)
     if gender_en != "child":

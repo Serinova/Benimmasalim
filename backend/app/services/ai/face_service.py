@@ -238,20 +238,36 @@ async def prepare_face_reference(
 async def resolve_face_reference(
     photo_url: str,
     storage_service: "StorageService | None" = None,
-) -> tuple[str, list[float] | None]:
-    """High-level helper: prepare face reference and return (face_url, embedding).
+) -> tuple[str, str, list[float] | None]:
+    """High-level helper: prepare face reference and return (face_crop_url, original_photo_url, embedding).
 
     Wraps ``prepare_face_reference`` with graceful fallback + logging.
-    All 9 call-sites should use this instead of inlining the same try/except.
+
+    Returns:
+        3-tuple of (face_crop_url, original_photo_url, embedding).
+        - face_crop_url: kırpılmış yüz URL'si (veya orijinal, kırpma başarısızsa)
+        - original_photo_url: orijinal tam fotoğraf URL'si (kırpma yapıldıysa);
+          kırpma yapılmadıysa boş string (çift gönderimi engellemek için)
+        - embedding: 512-d yüz embedding'i veya None
     """
     effective_url = photo_url or ""
+    original_url = ""  # Kırpma yapıldığında orijinal fotoğrafı sakla
     embedding: list[float] | None = None
     if not photo_url:
-        return effective_url, embedding
+        return effective_url, original_url, embedding
     try:
         ref = await prepare_face_reference(photo_url, storage_service=storage_service)
         effective_url = ref.get("face_crop_url") or photo_url
         embedding = ref.get("face_embedding")
+        # Eğer yüz kırpma yapıldıysa, orijinal fotoğrafı da sakla
+        # Kırpma yapılmadıysa (effective == original), boş bırak — çift gönderim gereksiz
+        if effective_url != photo_url:
+            original_url = photo_url
+            logger.info(
+                "DUAL_PHOTO_REFERENCE_ENABLED",
+                face_crop_url_prefix=effective_url[:60],
+                original_url_prefix=photo_url[:60],
+            )
     except Exception as exc:
         logger.warning("resolve_face_reference failed, using original photo", error=str(exc))
-    return effective_url, embedding
+    return effective_url, original_url, embedding

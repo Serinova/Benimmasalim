@@ -1,4 +1,4 @@
-"""Image provider seçim testleri — routing doğruluğu ve Gemini 2.5 kullanım tespiti.
+"""Image provider seçim testleri — routing doğruluğu ve Gemini 3.1 (Nano Banana 2) kullanım tespiti.
 
 Hangi provider adı hangi generator sınıfını döndürüyor?
 GeminiConsistentImageService hangi modeli kullanıyor?
@@ -76,18 +76,18 @@ class TestModelEndpoints:
         assert "imagen-3.0-generate-002" in GeminiImageGenerator.IMAGEN_API_URL
 
     def test_flash_url_contains_flash_model(self):
-        """GeminiFlashImageGenerator Gemini 2.5 Flash Image modelini kullanıyor."""
-        assert "gemini-2.5-flash-image" in GeminiFlashImageGenerator.FLASH_API_URL
+        """GeminiFlashImageGenerator Gemini 3.1 Flash Image (Nano Banana 2) modelini kullanıyor."""
+        assert "gemini-3.1-flash-image-preview" in GeminiFlashImageGenerator.FLASH_API_URL
 
     def test_gemini_consistent_uses_flash_model(self):
-        """GeminiConsistentImageService gemini-2.5-flash-image modelini kullanıyor.
+        """GeminiConsistentImageService gemini-3.1-flash-image-preview (Nano Banana 2) modelini kullanıyor.
 
         NOT: Bu servis referans fotoğraf + prompt birleştirdiğinden
         Gemini multimodal endpoint kullanması beklenen davranış.
-        Imagen 3.0 referans görsel desteklemiyor.
+        Nano Banana 2 karakter tutarlılığında çok daha iyi.
         """
-        assert GEMINI_IMAGE_MODEL == "gemini-2.5-flash-image", (
-            "GeminiConsistentImageService 'gemini-2.5-flash-image' modeline bağlı"
+        assert GEMINI_IMAGE_MODEL == "gemini-3.1-flash-image-preview", (
+            "GeminiConsistentImageService 'gemini-3.1-flash-image-preview' modeline bağlı"
         )
 
     def test_gemini_consistent_api_url_matches_model(self):

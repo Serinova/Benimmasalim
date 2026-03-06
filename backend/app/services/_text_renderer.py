@@ -7,8 +7,15 @@ Split from page_composer.py for maintainability.
 
 from __future__ import annotations
 
+import numpy as np
 import structlog
 from PIL import Image, ImageDraw, ImageFont
+
+from app.services._page_helpers import (
+    _font_supports_turkish,
+    _resolve_font_path,
+    _text_needs_turkish,
+)
 
 logger = structlog.get_logger()
 

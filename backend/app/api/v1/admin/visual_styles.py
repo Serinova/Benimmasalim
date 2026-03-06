@@ -401,9 +401,24 @@ async def test_visual_style(
     guidance_scale_override = float(style.guidance_scale) if getattr(style, "guidance_scale", None) is not None else None
 
     from app.services.ai.face_service import resolve_face_reference
-    _effective_face_url, _face_embedding = await resolve_face_reference(
+    _effective_face_url, _original_photo_url_vs, _face_embedding = await resolve_face_reference(
         child_face_url, storage_service
     )
+
+    # AI Director for style test
+    _style_test_char_desc = ""
+    if _effective_face_url:
+        try:
+            from app.services.ai.face_analyzer_service import get_face_analyzer
+            _fa_style = get_face_analyzer()
+            _style_test_char_desc = await _fa_style.analyze_for_ai_director(
+                image_source=_effective_face_url,
+                child_name="Test Child",
+                child_age=7,
+                child_gender="",
+            )
+        except Exception:
+            pass
 
     try:
         out = await image_provider.generate_consistent_image(
@@ -428,6 +443,8 @@ async def test_visual_style(
             leading_prefix_override=getattr(style, "leading_prefix_override", None) or None,
             style_block_override=getattr(style, "style_block_override", None) or None,
             reference_embedding=_face_embedding,
+            original_photo_url=_original_photo_url_vs,
+            character_description=_style_test_char_desc,
         )
     except Exception:
         logger.exception("Style test image generation failed", style_id=str(style_id))

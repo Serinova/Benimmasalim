@@ -1,13 +1,11 @@
 """
-Çatalhöyük Macerası Scenario — Birleştirilmiş Güncelleme
-=========================================================
-update_ ve create_ script'lerinin en iyi parçaları birleştirildi:
-- Modular prompt (500 char limit) — update_ standardı
-- Hikaye: Macera odaklı (gezi rehberi DEĞİL) — create_ kalitesi
-- Outfit: update_all_outfits.py standardı (EXACTLY lock phrase)
-- custom_inputs_schema: list formatı (frontend uyumlu)
-- theme_key: "catalhoyuk" (sabit)
-- İsim: "Çatalhöyük Macerası" (Neolitik Kenti kaldırıldı)
+Çatalhöyük Macerası — Zaman Yolculuğu, Macera, Indiana Jones Tarzı
+==================================================================================
+- Kitap adı: [Çocuk adı]'ın Çatı Yolu: Çatalhöyük (alt başlık yok)
+- Zaman yolculuğu ile 9000 yıllık Neolitik köye gidiş ve duman krizini (küçük yangın) çözme macerası
+- Yerler: höyük, kerpiç evler, damdan geçiş labirentleri, ocaklar, toprak kaplar
+- Kıyafet: Indiana Jones tarzı gezgin kıyafeti, kız ve erkek için zorunlu ve her sayfada aynı tutarlı (kıyafet kilidi)
+- Kurguyu bozabilecek kullanıcı seçenekleri yok (custom_inputs boş)
 """
 
 import asyncio
@@ -16,176 +14,107 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy import select
+from app.core.database import async_session_factory
 from app.models import Scenario
 
 # ============================================================================
-# MODULAR PROMPT COMPONENTS (500 char limit!)
+# MODULAR PROMPT COMPONENTS (AI DIRECTOR - PASS 2)
 # ============================================================================
 
 CATALHOYUK_COVER_PROMPT = (
     "An {child_age}-year-old {child_gender} named {child_name} "
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
-    "Ancient 9000-year-old Catalhoyuk settlement in background. "
-    "Mud-brick houses with rooftop ladder entrances, no doors. "
-    "Archaeological excavation layers, Konya plain. "
-    "Wide shot: child 30%, ancient site 70%. "
-    "Educational, time-travel atmosphere."
+    "Child holding a glowing earthy ancient amulet with spiral carvings pulsing warm amber light. "
+    "Ancient 9000-year-old Catalhoyuk Neolithic settlement spreading behind — clustered mud-brick houses with flat rooftops, wooden ladder entrances, cracked sun-dried clay walls with faded ochre wall paintings. "
+    "A glowing turquoise time-rift crack splitting the dramatic evening sky above the settlement, volumetric dust motes swirling in the warm steppe wind. "
+    "Low-angle hero shot: child 30% foreground, vast ancient archaeological site 70%. "
+    "Prehistoric palette: warm mud brown, deep ochre, burnt terracotta, amber amulet glow, turquoise rift light."
 )
 
 CATALHOYUK_PAGE_PROMPT = (
     "An {child_age}-year-old {child_gender} named {child_name} "
     "with {hair_description}, wearing {clothing_description}. "
     "{scene_description}. "
-    "Elements: [Houses: mud-brick, flat roofs, ladder entrances from rooftop / "
-    "Wall art: ancient paintings (bulls, geometric) / Excavation: dig site, layers / "
-    "Daily life: pottery, tools, hearths / Settlement: clustered, no streets]. "
-    "Earthy colors: mud brown, ochre, terracotta."
+    "Elements: [Mud-brick clustered houses: flat roofs, ladder access / "
+    "Wall art: ancient paintings / Daily life: clay pots, hearths, smoke, rooftop pathways, Neolithic village vibe]. "
+    "Cinematic action lighting, dynamic pose, detailed environment, depth of field. Wide angle, full body visible in action, child 30-40% of frame. No eye contact with camera. Earthy colors: mud brown, ochre, terracotta."
 )
 
 # ============================================================================
-# OUTFIT DEFINITIONS (update_all_outfits.py standardı)
+# OUTFIT — Indiana Jones Tarzı Kıyafet Kilidi (Sabit ve Zorunlu)
 # ============================================================================
 
 OUTFIT_GIRL = (
-    "terracotta rust-colored cotton t-shirt with small geometric pattern on chest, "
-    "dark brown cotton cargo shorts, tan leather ankle boots, "
-    "light brown canvas bucket hat, small leather crossbody satchel. "
-    "EXACTLY the same outfit on every page — same terracotta shirt, same brown shorts, same leather boots."
+    "khaki explorer shirt, fitted brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat, subtle woven bracelet charm. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest."
 )
 
 OUTFIT_BOY = (
-    "ochre yellow cotton t-shirt with small arrowhead emblem, "
-    "dark olive green cotton shorts, tan leather ankle boots, "
-    "brown canvas explorer hat, small leather hip pouch on belt. "
-    "EXACTLY the same outfit on every page — same ochre shirt, same olive shorts, same leather boots."
+    "khaki explorer shirt, brown leather vest, tan cargo shorts, sturdy brown boots, "
+    "small satchel crossbody bag, classic fedora hat. "
+    "EXACTLY the same outfit on every page — same khaki shirt, same fedora hat, same brown vest."
 )
 
 # ============================================================================
-# STORY BLUEPRINT (Macera odaklı — gezi rehberi DEĞİL)
+# STORY BLUEPRINT — Zaman Yolculuğu ve Çatı Macerası (PURE AUTHOR - PASS 1)
 # ============================================================================
 
 CATALHOYUK_STORY_PROMPT_TR = """
-# ÇATALHÖYÜK MACERASI — ARKEOLOJİ KEŞFİ
+# ÇATALHÖYÜK'ÜN ÇATI YOLU: NEOLİTİK MACERA
 
-## TEMEL YAPI: 7 BÖLÜM, 22 SAYFA
+## YAPI: {child_name} Indiana Jones tarzı kıyafetleriyle bir müzede eski bir tılsım/amulet bularak zaman yolculuğu yapar ve 9000 yıllık Neolitik Çatalhöyük köyünde gerçek bir duman (küçük yangın) krizini çözer. Heyecan, labirent gibi çatılarda yol bulma, zeka ve adrenalin içerir. Korkutucu veya kanlı DEĞİL, risk var ama güvenli tonda anlatılmalı.
 
-Bu hikaye bir arkeoloji macerası. {child_name}, Çatalhöyük'te 9000 yıl öncesine
-hayal yolculuğu yaparak insanlığın ilk şehir yaşamını keşfeder.
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Çatı Yolu: Çatalhöyük" olmalı. Alt başlık EKLEME.
 
-⚠️ ÖNEMLİ KURALLAR:
-- Bu bir MACERA hikayesi, gezi rehberi DEĞİL
-- Her bölümde çocuk AKTİF katılımcı olmalı (gözlemci değil)
-- Endişe → Eylem → Başarı döngüsü her bölümde olmalı
-- Yardımcı karakter: Bilge Kedi (arkeolog kedisi, kazı alanında yaşıyor)
-- Çocuk TEK BAŞINA macerada (aile yok)
-- Korku/şiddet/gore YOK, eğitici ve heyecanlı
+**STİL & TON:** 
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. 
+- Dili akıcı, ritimli ve 5-10 yaş aralığında merak uyandırıcı olmalıdır. 
+- Bilgi yığını yapma; Çatalhöyük detaylarını (damdan giriş, sokaksızlık, bitişik evler) maceranın içinde doğal bir zorluk/mekan gibi kullan.
+- Her sayfa veya bölüm sonunda hafif bir merak (cliffhanger) hissi bırak.
 
 ---
 
-### BÖLÜM 1 — GİRİŞ: GİZEMLİ HÖYÜK (Sayfa 1-4)
-{child_name} Konya ovasında yürürken garip bir tepe görür — bu Çatalhöyük höyüğü!
-Bir kedi (Bilge Kedi) kazı alanından çıkıp ona yaklaşır ve gizem dolu bakışlarla
-höyüğe doğru yürür. Çocuk merakla peşinden gider.
-- S1: Konya ovasında yürüyüş, uzakta garip bir tepe
-- S2: Höyüğe yaklaşma, kazı alanı, "Bu ne?"
-- S3: Bilge Kedi ile tanışma, kedi höyüğe doğru yürüyor
-- S4: Kazı alanına giriş, "9000 yıl önce burada insanlar yaşamış!" ✓ İLK HAYRANLIK
-**Değer**: Merak, keşif cesareti
+### Bölüm 1 — Gizemli Tılsım (Sayfa 1-3)
+- Sayfa 1: {child_name} müzedeki (Ziyaretçi Merkezi) ziyaretini bitirirken köşede, unutulmuş tozlu bir kutunun içinde toprağa bulanmış tuhaf bir taş amulet bulur. "Bunu kim unutmuş olabilir?" diyerek meraklanır.
+- Sayfa 2: Amuletin üzerindeki tozu siler silmez üzerinde spiral ve ok benzeri eski semboller belirir. Taş aniden avucunda hafifçe ısınır. {child_name} kalp atışlarını duyarak taşı çantasına koyar.
+- Sayfa 3: Çatalhöyük kazı alanında gezerken rüzgar aniden toz kaldırır; çantasının içinden incecik bir 'tık tık' sesi gelmektedir. Amuletteki semboller, sanki yerdeki şekillerle eşleşip ona gizli bir yol gösteriyor gibidir.
+
+### Bölüm 4 — Zaman Geçidi (Sayfa 4-6)
+- Sayfa 4: Kerpiç evlerin aslına uygun kopyalarının (rekonstrüksiyon) olduğu bölümde, bir ev duvarında minik bir niş (oyuk) fark eder. Oyuğun şekli çantasındaki taşın şekliyle birebir aynıdır. {child_name} nefesini tutar.
+- Sayfa 5: Tereddütle amuleti nişe yerleştirir. O anda müthiş bir toz dansı başlar, havayı keskin bir "Vıın!" sesi kaplar ve çevredeki ışıklar bir anda söner. Değişen şey zemin değildir, sanki bizzat zamandır...
+- Sayfa 6: Gözlerini açtığında karşısında 9000 yıl öncesinin gerçek Neolitik Çatalhöyük'ü vardır: sımsıkı bitişik toprak renkli evler, çatılarda çalışan insanlar ve havada yoğun bir ocak dumanı kokusu. "Burası... çok eski!" diye fısıldar şok içinde.
+
+### Bölüm 3 — Çatı Labirenti ve Kriz (Sayfa 7-9)
+- Sayfa 7: Çatılardan birinden Neolitik çağda yaşayan bir çocuğun panik dolu bağırışı duyulur: "Duman! Bir evin içi duman doluyor!" Köyde küçük bir ateş kontrolden çıkmıştır.
+- Sayfa 8: {child_name} hızla merdiveni tırmanıp çatılara fırlar. Ancak sokak yoktur! Evlerin çatılarından atlayarak ilerlemek zorundadır ve labirent gibi dizilmiş bu köyde yön bulmak bir bulmacaya dönüşür.
+- Sayfa 9: Amuletindeki sembollerin, çatı geçişlerine önceden çizilmiş eski yön işaretleriyle eşleştiğini fark eder (spiral = sağ, düz çizgi = ileri). Antik bulmacayı okuyarak dumanın kaynağına doğru koşmaya başlar.
+
+### Bölüm 4 — Dumana Müdahale (Sayfa 10-13)
+- Sayfa 10: Doğru çatıyı bulur fakat evin tek giriş deliği olan dar kapaktan dışarıya göz yaşartan bir duman çıkmaktadır. Geri çekilir, içinden "Bir yolunu bulmalıyım!" diye geçirir.
+- Sayfa 11: Çatının kenarında dizili toprak kil testileri ve kurumuş keten bezleri gözüne çarpar. Amacı dumanı azaltıp aşağıda, dumanın içinde kalmış olan önemli bir erzağı (yiyecek sepetini) kurtarmaktır.
+- Sayfa 12: Islak bezi yüzüne sararak nefes almayı kolaylaştırır ve yanındaki yetişkin bir köylüden işaretlerle yardım ister. Ancak o an yaşlılardan biri çantasındaki amuleti fark edip "O işaret kutsal!" diye bağırır.
+- Sayfa 13: Yanlış anlaşıldığını fark eder, bazıları onu durdurmak ister. {child_name} hızla amuletindeki işaretleri gösterip taş devrinin basit el kol hareketleriyle "Size yardım etmeye geldim!" demek istercesine göğsüne vurur.
+
+### Bölüm 5 — Zekice Çözüm (Sayfa 14-17)
+- Sayfa 14: Damdan aşağı evin içine süzülür. Dumanın kaynağını tespit eder: Ortadaki büyük ocak devrilmiş, korlar kurumuş sazlardan örülü hasıra sıçramıştır. Susuzluktan dolayı suyu harcamadan, zemindeki kili-toprağı kullanarak ateşi boğma fikri aklına gelir.
+- Sayfa 15: Yetişkin köylüyle omuz omuza verip üstüne toprak/kil atarak korları tamamen söndürürler. Fakat yeni bir sorun baş göstermiştir; içeride sıkışan duman yandaki bağlantılı odaya doğru akıyordur!
+- Sayfa 16: Odanın üst köşesinde kapalı bir havalandırma deliği olduğunu tahmin eder çünkü amuletindeki yıldızvari sembol "açıklık" anlamına gelmektedir. 
+- Sayfa 17: İşaret sayesinde çatıdaki gizli, küçük bir ahşap kapağı bulup kaldırırlar. Büyük bir hava akışı sağlanır ve içerideki duman hızla gökyüzüne dağılarak herkesi ferahlatır.
+
+### Bölüm 6 — İz Bırakmak ve Dönüş (Sayfa 18-21)
+- Sayfa 18: Çatalhöyük sakinleri sevinç içindedir; bu gizemli küçük yabancıya kil kaselerde soğuk su ikram eder ve minnetle bakarlar. Usta bir köylü, "Bu yaptığını unutmayacağız" dercesine tebessüm eder.
+- Sayfa 19: Sanatkar biri oracıktaki kil tablete onu hatırlamak için boyasıyla ufak bir fedora (şapka) silueti çizer. Kahramanımız hiç beklemediği bir şekilde 9000 yıl öncesine kendi imzasını atmıştır.
+- Sayfa 20: Tam o an boynundaki amulet yeniden kor gibi ısınmaya ve tanıdık mavi ışığını saçmaya başlar: "Dönüş zamanı!". Yeni arkadaşları ayrılmasını istemez ancak zamanı daralmaktadır. Çatıdan koşarak uzaklaşır.
+- Sayfa 21: Evlerin arasındaki gizli duvar nişini bulur, amuleti çevirdiği gibi bembeyaz boyuttan geçerek sessiz, turistik günümüze düşer. Avucunu açtığında küçük, yanık bir kil boncukla göz göze gelir. Acaba bu eski taş daha hangi kapıları açacaktır?
 
 ---
 
-### BÖLÜM 2 — ZAMAN YOLCULUĞU: 9000 YIL ÖNCESİ (Sayfa 5-8)
-Bilge Kedi eski bir obsidyen aynaya dokunur ve her şey değişir — çocuk kendini
-9000 yıl öncesinde bulur! Etrafta kerpiç evler, insanlar tarım yapıyor,
-çocuklar oynuyor. Neolitik Çağ'ın canlı dünyası!
-- S5: Obsidyen ayna, dokunuş, ışık patlaması
-- S6: 9000 yıl öncesi! Canlı şehir, insanlar, hayvanlar
-- S7: "Artık göçebe değiller, yerleşik yaşam başlamış!" ✓ ZAMAN ZİRVESİ
-- S8: Neolitik insanlarla ilk temas, çocuklar oynuyor
-**Değer**: Tarih bilinci, adaptasyon
-
----
-
-### BÖLÜM 3 — KERPİÇ EVLER: DAMDAN GİRİŞ SIRRI (Sayfa 9-12)
-Bilge Kedi çocuğu bir evin damına çıkarır. Kapı yok! Damdan merdiven ile
-iniliyor — dünyanın en ilginç mimari çözümü! İçeride ocak, tahıl depoları,
-duvar resimleri. Çocuk bir ev inşaatına yardım eder.
-- S9: Evlerin damlarında yürüme, "Kapı nerede?"
-- S10: Damdan merdiven ile iniş, "Akıllıca!"
-- S11: İç mekan keşfi — ocak, tahıl, aletler
-- S12: Kerpiç yapımına yardım, çamur ve saman karıştırma ✓ MİMARİ ZİRVESİ
-**Değer**: Yaratıcılık, problem çözme
-
----
-
-### BÖLÜM 4 — DUVAR RESİMLERİ: İNSANLIĞIN İLK SANATI (Sayfa 13-16)
-Bir evin duvarında devasa boğa resmi! 9000 yıllık sanat eseri. Çocuk doğal
-boyalarla (kırmızı toprak, kömür karası) kendi resmini yapmaya çalışır.
-Geometrik desenler, el izleri, avcılık sahneleri — insanlığın ilk sanat galerisi!
-- S13: Devasa boğa duvar resmi, "Bu 9000 yıllık!"
-- S14: Doğal boyalar keşfi — kırmızı toprak, kömür
-- S15: Çocuk kendi resmini yapıyor, el izi bırakıyor
-- S16: Geometrik desenler, "İlk soyut sanat!" ✓ SANAT ZİRVESİ
-**Değer**: Sanat, yaratıcılık, kültürel miras
-
----
-
-### BÖLÜM 5 — İLK UYGARLIK: TARIM VE İŞBİRLİĞİ (Sayfa 17-19)
-Çocuk tarlada buğday hasadına katılır. Obsidyen bıçaklarla kesim, el yapımı
-çömleklere depolama. Herkes birlikte çalışıyor — ilk toplum kuralları!
-Bir sorun çıkar: Tahıl deposuna su sızıyor. Çocuk çözüm önerir.
-- S17: Buğday hasadı, obsidyen bıçak kullanımı
-- S18: Çömlek yapımı, tahıl depolama
-- S19: Su sızıntısı sorunu, çocuğun çözüm önerisi ✓ UYGARLIK ZİRVESİ
-**Değer**: İşbirliği, sorumluluk, problem çözme
-
----
-
-### BÖLÜM 6 — BÜYÜK KEŞİF: GİZLİ ODA (Sayfa 20-21)
-Bilge Kedi çocuğu gizli bir odaya götürür. İçeride hiç görülmemiş duvar
-resimleri, özel eşyalar, belki de bir tapınak! Bu keşif arkeolojinin gücünü
-gösterir — geçmişin sırları sabırla ortaya çıkar.
-- S20: Gizli oda keşfi, Bilge Kedi'nin rehberliği
-- S21: Hiç görülmemiş duvar resimleri, "Muhteşem!" ✓ DORUK KEŞİF
-**Değer**: Sabır, bilimsel merak
-
----
-
-### BÖLÜM 7 — FİNAL: DÖNÜŞ VE GURUR (Sayfa 22)
-Obsidyen ayna tekrar parlar, çocuk bugüne döner. Kazı alanında durup
-9000 yıllık mirasa bakar. "Tarih bize kim olduğumuzu söyler."
-Bilge Kedi yanında, ikisi birlikte gün batımını izler.
-- S22: Bugüne dönüş, gurur ve şükran hissi ✓ TATMIN DORUĞU
-**Değer**: Tarih bilinci, kültürel miras koruma
-
----
-
-## DOPAMIN ZİRVELERİ:
-1. S4: İlk hayranlık — 9000 yıl!
-2. S7: Zaman yolculuğu — canlı Neolitik dünya
-3. S12: Mimari keşif — damdan giriş ve kerpiç yapımı
-4. S16: Sanat zirvesi — ilk duvar resimleri
-5. S19: Uygarlık — işbirliği ve problem çözme
-6. S21: Doruk keşif — gizli oda
-7. S22: Tatmin — gurur ve dönüş
-
-## DEĞERLER:
-- Merak ve keşif cesareti
-- Tarih bilinci ve kültürel miras
-- Yaratıcılık ve problem çözme
-- İşbirliği ve sorumluluk
-- Bilimsel düşünme (arkeoloji)
-
-## GÜVENLİK KURALLARI:
-- Korku/şiddet/gore YOK
-- Tehlikeli davranış teşviki YOK
-- Çocuk güvenli ortamda keşif yapıyor
-- Neolitik insanlar dostane ve yardımsever
+## KURALLAR
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 21 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- AI Görüntü (scene_description) promptlarını (İngilizce) yazarken "standing still" veya "looking at camera" KULLANMA. Aksiyon belirt (örn: "Child jumping between mudbrick roofs", "Child throwing clay dirt to put out hearth").
 """
 
 # ============================================================================
@@ -193,86 +122,34 @@ Bilge Kedi yanında, ikisi birlikte gün batımını izler.
 # ============================================================================
 
 CATALHOYUK_CULTURAL_ELEMENTS = {
-    "location": "Konya, Turkey (Çumra district)",
+    "location": "Çatalhöyük, Çumra, Konya, Turkey",
     "historic_site": "Çatalhöyük, 9000 years old (7100-5700 BC)",
     "unesco": "UNESCO World Heritage Site",
-    "period": "Neolithic Age (New Stone Age)",
-    "significance": "One of the world's oldest cities, first urban settlement",
-    "architecture": [
-        "Mud-brick houses with flat roofs",
-        "Rooftop entrances (no doors, ladder access!)",
-        "Clustered houses (no streets between)",
-        "Interior hearths and storage areas",
+    "period": "Neolithic Age",
+    "major_elements": [
+        "Mud-brick houses, rooftop pathways, ladder access (no streets or doors)",
+        "Wall paintings, hearths, clay pots, woven baskets",
+        "Ancient village community, smoke vents",
+        "Earthy textures, mud, clay, ochre elements",
     ],
-    "art_elements": [
-        "Wall paintings (9000 years old!)",
-        "Bull motifs and hunting scenes",
-        "Geometric patterns (first abstract art)",
-        "Natural pigments (red, black, white)",
-    ],
-    "daily_life": [
-        "Agriculture (wheat, barley cultivation)",
-        "Pottery making",
-        "Obsidian tools and blades",
-        "Community living and cooperation",
-    ],
-    "atmosphere": "Educational, archaeological wonder, time-travel feeling",
-    "educational_focus": [
-        "Neolithic Age and agricultural revolution",
-        "First settled urban life",
-        "Early civilization development",
-        "Archaeology as a science",
-        "UNESCO World Heritage preservation",
-    ],
-    "values": ["Curiosity", "History appreciation", "Creativity", "Cooperation"],
-    "color_palette": "earthy brown, ochre, terracotta, mud, warm amber",
+    "atmosphere": "Action-packed, mysterious, time-travel, Neolithic discovery",
+    "values": ["Courage", "Problem Solving", "Community Help", "Historical awareness"],
 }
 
 # ============================================================================
-# CUSTOM INPUTS (list formatı — frontend uyumlu)
+# CUSTOM INPUTS — Kurguyu bozmayacak şekilde boş
 # ============================================================================
 
-CATALHOYUK_CUSTOM_INPUTS = [
-    {
-        "key": "favorite_discovery",
-        "label": "En Merak Ettiği Keşif",
-        "type": "select",
-        "options": ["Damdan Giriş Sırrı", "Duvar Resimleri", "İlk Tarım", "Kerpiç Ev Yapımı", "Gizli Oda"],
-        "default": "Damdan Giriş Sırrı",
-        "required": False,
-        "help_text": "Hikayede çocuğun en çok heyecanlanacağı keşif",
-    },
-    {
-        "key": "companion_name",
-        "label": "Bilge Kedi'nin Adı",
-        "type": "select",
-        "options": ["Tarçın", "Höyük", "Kedi Usta", "Obsidyen"],
-        "default": "Tarçın",
-        "required": False,
-        "help_text": "Arkeolog kedisinin adı",
-    },
-    {
-        "key": "special_skill",
-        "label": "Çocuğun Özel Yeteneği",
-        "type": "select",
-        "options": ["Resim Yapma", "Yapı İnşa Etme", "Tarım", "Keşif ve Gözlem"],
-        "default": "Keşif ve Gözlem",
-        "required": False,
-        "help_text": "Hikayede çocuğun öne çıkan yeteneği",
-    },
-]
+CATALHOYUK_CUSTOM_INPUTS: list[dict] = []
 
 # ============================================================================
-# DATABASE UPDATE FUNCTION
+# DATABASE UPDATE
 # ============================================================================
-
 
 async def update_catalhoyuk_scenario():
-    """Çatalhöyük senaryosunu günceller (upsert)."""
-    from app.core.database import async_session_factory
-
-    async with async_session_factory() as session:
-        result = await session.execute(
+    """Çatalhöyük senaryosunu Zaman Yolculuğu & Çatı Labirenti kurgusuyla günceller."""
+    async with async_session_factory() as db:
+        result = await db.execute(
             select(Scenario).where(
                 (Scenario.theme_key == "catalhoyuk")
                 | (Scenario.theme_key == "catalhoyuk_neolithic_city")
@@ -283,32 +160,38 @@ async def update_catalhoyuk_scenario():
         scenario = result.scalar_one_or_none()
 
         if not scenario:
-            print("Çatalhöyük scenario not found — skipping")
-            return
+            scenario = Scenario(name="Çatalhöyük'ün Çatı Yolu", is_active=True)
+            scenario.theme_key = "catalhoyuk"
+            db.add(scenario)
 
-        scenario.name = "Çatalhöyük Macerası"
+        # Meta Bilgiler
+        scenario.name = "Çatalhöyük'ün Çatı Yolu"
         scenario.description = (
-            "9000 yıl öncesine yolculuk! Dünyanın en eski şehirlerinden "
-            "Çatalhöyük'ü keşfet. Damdan girilen kerpiç evler, duvar resimleri "
-            "ve ilk uygarlık adımlarını öğren. UNESCO Dünya Mirası'nda "
-            "arkeoloji macerası!"
+            "Indiana Jones tarzı bir prehistorik macera! Bulduğu antik amulet ile "
+            "9000 yıllık Neolitik Çatalhöyük'e ışınlanan çocuğun, sokaksız çatı labirentlerinde "
+            "yol bularak duman krizini (küçük yangın) çözmesini anlatan heyecanlı bir serüven."
         )
         scenario.theme_key = "catalhoyuk"
+        
+        # Kapaklar ve Promplar
         scenario.cover_prompt_template = CATALHOYUK_COVER_PROMPT
         scenario.page_prompt_template = CATALHOYUK_PAGE_PROMPT
         scenario.story_prompt_tr = CATALHOYUK_STORY_PROMPT_TR
+        
+        # Kıyafet Sistemi
         scenario.outfit_girl = OUTFIT_GIRL
         scenario.outfit_boy = OUTFIT_BOY
+        
+        # Kültürel & Pazarlama Verileri
         scenario.cultural_elements = CATALHOYUK_CULTURAL_ELEMENTS
         scenario.custom_inputs_schema = CATALHOYUK_CUSTOM_INPUTS
-        scenario.marketing_badge = "YENİ! Arkeoloji Macerası"
-        scenario.age_range = "7-10"
-        scenario.tagline = "9000 yıllık zaman yolculuğu!"
+        scenario.marketing_badge = "Zaman Yolculuğu"
+        scenario.age_range = "5-10"
+        scenario.tagline = "Amuletin izinden 9000 yıl öncesine ışınlan!"
         scenario.is_active = True
-        scenario.display_order = 5
 
-        await session.commit()
-        print(f"Çatalhöyük scenario updated: {scenario.id}")
+        await db.commit()
+        print(f"Catalhoyuk 'Çatı Yolu' scenario updated seamlessly: {scenario.id}")
 
 
 if __name__ == "__main__":

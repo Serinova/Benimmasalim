@@ -39,7 +39,7 @@ def get_default_hair() -> str:
 DEFAULT_COVER_TEMPLATE = (
     # CHARACTER block comes FIRST — explicit age/gender/outfit before scene to prevent
     # the diffusion model from inventing a second child from the scene description.
-    "An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, "
+    "A {child_age}-year-old {child_gender} named {child_name} with {hair_description}, "
     "wearing {clothing_description}. "
     "{scene_description}. "
     "BOOK TITLE: Render the EXACT text [{story_title}] as a beautifully integrated book title. "
@@ -56,7 +56,7 @@ DEFAULT_COVER_TEMPLATE = (
 )
 
 DEFAULT_BACK_COVER_TEMPLATE = (
-    "An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, "
+    "A {child_age}-year-old {child_gender} named {child_name} with {hair_description}, "
     "wearing {clothing_description}. "
     "{scene_description}. "
     "BACK COVER: This is the back cover of the book — same world, same atmosphere, same character as the front cover. "
@@ -69,9 +69,10 @@ DEFAULT_BACK_COVER_TEMPLATE = (
 
 DEFAULT_INNER_TEMPLATE = (
     # CHARACTER block first — prevents scene_description from introducing a conflicting character.
-    "An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, "
+    "A {child_age}-year-old {child_gender} named {child_name} with {hair_description}, "
     "wearing {clothing_description}. "
     "{scene_description}. "
+    "GAZE: The child is looking at the scene (the subject, the view, or the action — e.g. the Kaaba, the path, the sky), absorbed in the moment — NOT at the viewer or camera. "
     "TEXT AREA RULE: The BOTTOM 25% of the image must have a softer, less detailed, or lighter background "
     "(sky, mist, open ground, blurred foliage) so that overlaid story text remains readable. "
     "Place the main action and the child in the UPPER 75% of the frame. "
@@ -97,13 +98,13 @@ BODY_PROPORTION = (
 )
 SHARPNESS = "Sharp focus entire scene, no blur, detailed background."
 
-# ── Yüz referansı ───────────────────────────────────────────────────────────
+# ── Yüz referansı (yüklenen resme benzerlik) ─────────────────────────────────
 LIKENESS_HINT = (
-    "CRITICAL LIKENESS LOCK: Create a stylized illustration of the child from the reference photo. "
+    "CRITICAL LIKENESS LOCK — reference photo is the source of truth: "
+    "Create a stylized illustration of the child FROM THE ATTACHED REFERENCE PHOTO. "
     "PRESERVE EXACTLY: the child's unique facial structure (face shape, eye shape, nose shape, mouth shape), "
     "EXACT hair color, EXACT hairstyle (length, texture, style), EXACT skin tone. "
     "The face MUST be instantly recognizable as the SAME child from the reference photo on EVERY page. "
-    "Maintain strong facial similarity while keeping the 2D children's book illustration style. "
     "DO NOT simplify or genericize facial features — keep the child's distinctive characteristics. "
     "The illustration style applies to the background and rendering technique, NOT to the facial identity."
 )

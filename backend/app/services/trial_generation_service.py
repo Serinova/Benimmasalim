@@ -1,4 +1,4 @@
-﻿"""Trial generation pipeline: story generation, preview images, and remaining images.
+"""Trial generation pipeline: story generation, preview images, and remaining images.
 
 These functions are the heavy AI generation workers extracted from the API router.
 They run as Arq background tasks (or FastAPI BackgroundTask fallbacks).
@@ -430,6 +430,26 @@ async def generate_trial_story_inner(
                 logger.warning("QA checks found issues (non-blocking)", failures=qa_report["failures"][:10])
 
             # %% Persist story data to trial %%
+            _cover_count = sum(1 for p in story_pages if p.get("page_number") == 0)
+            _inner_count = sum(1 for p in story_pages if (p.get("page_number") or 0) > 0 and p.get("page_type") != "backcover")
+            _bc_count = sum(1 for p in story_pages if p.get("page_type") == "backcover")
+            logger.info(
+                "STORY_PAGES_PERSIST_AUDIT",
+                trial_id=trial_id,
+                total=len(story_pages),
+                cover=_cover_count,
+                inner=_inner_count,
+                backcover=_bc_count,
+                expected_inner=page_count,
+                page_numbers=[p.get("page_number") for p in story_pages],
+            )
+            if _inner_count < page_count:
+                logger.error(
+                    "STORY_PAGES_INNER_COUNT_SHORT",
+                    trial_id=trial_id,
+                    expected=page_count,
+                    actual=_inner_count,
+                )
             await trial_svc.update_trial_story(
                 trial_id=_trial_uuid,
                 story_title=story_response.title,
@@ -605,7 +625,7 @@ async def generate_preview_images_inner(
 
     from app.services.ai.face_service import resolve_face_reference
     from app.services.storage_service import storage_service as _ss
-    _face_ref_url, _face_embedding = await resolve_face_reference(child_photo_url, _ss)
+    _face_ref_url, _original_photo_url, _face_embedding = await resolve_face_reference(child_photo_url, _ss)
 
     logger.info(
         "Starting preview image generation (yatay A4)",
@@ -695,6 +715,7 @@ async def generate_preview_images_inner(
                         result = await image_provider.generate_consistent_image(
                             prompt=visual_prompt,
                             child_face_url=_face_ref_url or "",
+                        original_photo_url=_original_photo_url,
                             clothing_prompt=_clothing or "",
                             style_modifier=actual_style,
                             width=width,
@@ -837,14 +858,15 @@ async def generate_composed_preview_inner(
 
     from app.services.ai.face_service import resolve_face_reference
     from app.services.storage_service import storage_service as _ss_comp
-    _face_ref_url, _face_embedding = await resolve_face_reference(child_photo_url, _ss_comp)
+    _face_ref_url, _original_photo_url, _face_embedding = await resolve_face_reference(child_photo_url, _ss_comp)
 
     _char_desc_for_images = ""
     if _face_ref_url:
         try:
             from app.services.ai.face_analyzer_service import get_face_analyzer as _get_fa2
             _fa2 = _get_fa2()
-            _char_desc_for_images = await _fa2.get_enhanced_child_description(
+            # Use "AI Director" mode for concise description (30-50 words) to avoid prompt dilution
+            _char_desc_for_images = await _fa2.analyze_for_ai_director(
                 image_source=_face_ref_url,
                 child_name=child_name,
                 child_age=child_age,
@@ -1037,6 +1059,7 @@ async def generate_composed_preview_inner(
                         result = await image_provider.generate_consistent_image(
                             prompt=visual_prompt,
                             child_face_url=_face_ref_url or "",
+                        original_photo_url=_original_photo_url,
                             clothing_prompt=(clothing_description or "").strip(),
                             style_modifier=actual_style,
                             width=width,
@@ -1082,13 +1105,25 @@ async def generate_composed_preview_inner(
                     preview_images[r[0]] = r[1]
 
             composed_urls: dict[int, str] = {}
-            PREVIEW_DPI = 150
+            PREVIEW_DPI = 300  # Print-quality DPI (was 150 → low-res PDFs)
             story_id = trial_id[:8]
 
             for page_num, image_url in preview_images.items():
                 try:
                     _is_cover = page_num == 0
-                    template = cover_template if _is_cover else inner_template
+
+                    # COVER: Gemini already renders the title natively via is_cover=True +
+                    # story_title parameter. PIL compose on top would double-render (or worse,
+                    # write wrong text if story_title arrives empty). Use the raw Gemini image.
+                    if _is_cover:
+                        composed_urls[page_num] = image_url
+                        logger.info(
+                            "COVER_COMPOSE_SKIPPED: using raw Gemini image (title rendered natively)",
+                            page_num=page_num,
+                        )
+                        continue
+
+                    template = inner_template
                     if not template:
                         composed_urls[page_num] = image_url
                         continue
@@ -1104,7 +1139,7 @@ async def generate_composed_preview_inner(
                             page_text = p.get("text", "")
                             break
 
-                    if _is_cover:
+                    if False:  # was: if _is_cover — now cover is handled above
                         page_text = story_title or ""
 
                     template_config = build_template_config(template)
@@ -1179,28 +1214,33 @@ async def generate_composed_preview_inner(
 
                 if scenario_id:
                     from app.models.scenario import Scenario as _Scenario
+                    from app.services.scenario_content_service import generate_scenario_intro_text as _gen_intro
+
                     _sc_result = await db.execute(
                         select(_Scenario).where(_Scenario.id == uuid.UUID(scenario_id))
                     )
                     _sc = _sc_result.scalar_one_or_none()
-                    if _sc and getattr(_sc, 'description', None) and len(_sc.description) > 20:
-                        _intro_text = _sc.description[:500]
-                    elif _sc:
-                        # Try scenario name as fallback
-                        _sc_name = getattr(_sc, 'name', None) or getattr(_sc, 'location_en', None)
+                    if _sc:
+                        # Edebi, kitap tanıtan metin; [Çocuk adı] gibi placeholder kullanılmaz (story_title zaten çözülmüş başlık)
+                        _intro_text = await _gen_intro(
+                            scenario=_sc,
+                            child_name=child_name,
+                            story_title=story_title or "",
+                        )
+                    if not _intro_text and _sc:
+                        _sc_name = getattr(_sc, "name", None) or getattr(_sc, "location_en", None)
                         if _sc_name:
                             _intro_text = (
-                                f'{_sc_name} macerasina hosgeldin, {child_name}!\n\n'
-                                f'Bu kitapta seni cok ozel bir yolculuk bekliyor. '
-                                f'Hazır mısın?'
+                                f"{_sc_name} macerasına hoş geldin, {child_name}!\n\n"
+                                f"Bu kitapta seni çok özel bir yolculuk bekliyor. Hazır mısın?"
                             )
 
-                # Always guarantee an intro page — use AppSetting or fallback
+                # Garantili intro metni: AppSetting veya genel fallback (placeholder yok)
                 if not _intro_text:
                     try:
                         from app.models.app_setting import AppSetting as _AppSetting
                         _setting_row = (await db.execute(
-                            select(_AppSetting).where(_AppSetting.key == 'default_intro_text')
+                            select(_AppSetting).where(_AppSetting.key == "default_intro_text")
                         )).scalar_one_or_none()
                         _tpl_text = _setting_row.value if _setting_row and _setting_row.value else None
                     except Exception:
@@ -1208,15 +1248,25 @@ async def generate_composed_preview_inner(
                     if _tpl_text:
                         _intro_text = (
                             _tpl_text
-                            .replace('{child_name}', child_name)
-                            .replace('{story_title}', story_title or 'Masalim')
+                            .replace("{child_name}", child_name)
+                            .replace("{story_title}", story_title or "Masalım")
                         )
                     else:
                         _intro_text = (
-                            f'{story_title} macerasina hosgeldin, {child_name}!\n\n'
-                            f'Bu ozel yolculukta seni harika surprizler bekliyor. '
-                            f'Her sayfayi cevirerek hayal gucun kanatlansin!'
+                            f"{story_title or 'Bu macera'} yolculuğuna hoş geldin, {child_name}!\n\n"
+                            f"Bu kitapta neler göreceğini, neler keşfedeceğini merak ediyor musun? "
+                            f"Sayfaları çevir, seni bekleyen hikâyeye dal!"
                         )
+
+                # Son güvenlik: placeholder/senaryo description sızıntısı varsa güvenli metne geç
+                _intro_lower = (_intro_text or "").lower()
+                if "[çocuk adı]" in _intro_lower or "[cocuk adi]" in _intro_lower or "kitap adı:" in _intro_lower or "kitap adi:" in _intro_lower:
+                    _intro_text = (
+                        f"{story_title or 'Bu macera'} yolculuğuna hoş geldin, {child_name}!\n\n"
+                        f"Bu kitapta neler göreceğini, neler keşfedeceğini merak ediyor musun? "
+                        f"Sayfaları çevir, seni bekleyen hikâyeye dal!"
+                    )
+                    logger.warning("Intro text contained placeholder leak — replaced with safe fallback", trial_id=trial_id)
 
                 from sqlalchemy import desc as _desc2_
                 _intro_tpl_result = await db.execute(
@@ -1308,7 +1358,7 @@ async def generate_remaining_images_inner(
 
     from app.services.ai.face_service import resolve_face_reference
     from app.services.storage_service import storage_service as _ss_rem
-    _face_ref_url, _face_embedding = await resolve_face_reference(child_photo_url, _ss_rem)
+    _face_ref_url, _original_photo_url, _face_embedding = await resolve_face_reference(child_photo_url, _ss_rem)
 
     _rem_char_desc_for_images = ""
 
@@ -1499,7 +1549,8 @@ async def generate_remaining_images_inner(
                         get_face_analyzer as _get_fa_rem,
                     )
                     _fa_rem = _get_fa_rem()
-                    _rem_char_desc_for_images = await _fa_rem.get_enhanced_child_description(
+                    # Use "AI Director" mode for concise description (30-50 words) to avoid prompt dilution
+                    _rem_char_desc_for_images = await _fa_rem.analyze_for_ai_director(
                         image_source=_face_ref_url,
                         child_name=_rem_child_name,
                         child_age=_rem_child_age,
@@ -1757,7 +1808,7 @@ async def generate_remaining_images_inner(
                         )
                         _inner_tmpl = _it_r.scalar_one_or_none()
 
-                _COMPOSE_DPI = 150
+                _COMPOSE_DPI = 300  # Print-quality DPI (was 150 → low-res PDFs)
                 _story_id_short = trial_id[:8]
                 _text_map = {p["page_number"]: p.get("text", "") for p in prompts}
                 _story_title_rem = getattr(_trial_obj_rem, "story_title", "") or ""
@@ -1769,7 +1820,18 @@ async def generate_remaining_images_inner(
                 for _pg_num, _raw_url in generated_images.items():
                     try:
                         _is_cov = (_pg_num == 0)
-                        _tmpl = _cover_tmpl if _is_cov else _inner_tmpl
+
+                        # COVER: Gemini renders title natively — skip PIL compose to avoid
+                        # double-rendering or wrong text on cover.
+                        if _is_cov:
+                            composed_images[_pg_num] = _raw_url
+                            logger.info(
+                                "REMAINING_COVER_COMPOSE_SKIPPED: using raw Gemini image",
+                                page_num=_pg_num,
+                            )
+                            continue
+
+                        _tmpl = _inner_tmpl
                         if not _tmpl:
                             composed_images[_pg_num] = _raw_url
                             continue
@@ -1780,7 +1842,7 @@ async def generate_remaining_images_inner(
                             _img_b64 = _b64_rem.b64encode(_resp.content).decode()
 
                         _pg_text = _text_map.get(_pg_num, "")
-                        if _is_cov:
+                        if False:  # was: if _is_cov — cover handled above
                             _pg_text = _story_title_rem or _pg_text
 
                         _tpl_cfg = _build_tpl_cfg(_tmpl)
@@ -1934,6 +1996,57 @@ async def generate_remaining_images_inner(
 
                 back_cover_config = None
                 audio_url = getattr(trial, "audio_file_url", None)
+
+                # QR kodu düzeltmesi: audio_file_url yoksa ama has_audio_book true ise
+                # sesli kitabı oluşturup audio_url'yi set et
+                if not audio_url and getattr(trial, "has_audio_book", False):
+                    try:
+                        from app.services.ai.elevenlabs_service import ElevenLabsService
+                        from app.services.storage_service import StorageService as _StorageSvc
+
+                        _tts_storage = _StorageSvc()
+                        _tts_svc = ElevenLabsService()
+
+                        _full_story_text = ""
+                        for _sp in (trial.story_pages or []):
+                            if isinstance(_sp, dict) and _sp.get("text"):
+                                _full_story_text += _sp["text"] + "\n\n"
+
+                        if _full_story_text.strip():
+                            _audio_type = getattr(trial, "audio_type", "system")
+                            _audio_voice_id = getattr(trial, "audio_voice_id", None)
+
+                            if _audio_type == "cloned" and _audio_voice_id:
+                                _audio_bytes = await _tts_svc.text_to_speech(
+                                    text=_full_story_text,
+                                    voice_id=_audio_voice_id,
+                                )
+                            else:
+                                _audio_bytes = await _tts_svc.text_to_speech(
+                                    text=_full_story_text,
+                                    voice_type="female",
+                                )
+
+                            _audio_gcs_url = _tts_storage.upload_audio(
+                                audio_bytes=_audio_bytes,
+                                order_id=str(trial.id),
+                                filename="audiobook.mp3",
+                            )
+                            trial.audio_file_url = _audio_gcs_url
+                            await db.commit()
+                            audio_url = _audio_gcs_url
+                            logger.info(
+                                "TRIAL_AUDIO_GENERATED_FOR_QR",
+                                trial_id=trial_id,
+                                audio_url=_audio_gcs_url[:80] if _audio_gcs_url else "",
+                            )
+                    except Exception as _tts_err:
+                        logger.warning(
+                            "TRIAL_AUDIO_GENERATION_FAILED (QR will be missing)",
+                            trial_id=trial_id,
+                            error=str(_tts_err),
+                        )
+
                 try:
                     bc_result = await db.execute(
                         select(BackCoverConfig)
@@ -1944,6 +2057,11 @@ async def generate_remaining_images_inner(
                 except Exception:
                     pass
 
+                # CRITICAL: Sort pages by page_number before PDF assembly.
+                # story_pages from DB may not be ordered — if page 1 lands
+                # after page 2 in the list, the PDF will read out-of-order.
+                composed_pages.sort(key=lambda p: int(p.get("page_number", 9999)))
+
                 cover_image_url: str | None = None
                 story_pages_no_cover: list[dict] = []
                 for p in composed_pages:
@@ -1952,9 +2070,15 @@ async def generate_remaining_images_inner(
                     else:
                         story_pages_no_cover.append(p)
 
+                # Also ensure final list is ordered (redundant but defensive)
+                story_pages_no_cover.sort(key=lambda p: int(p.get("page_number", 9999)))
+
+
                 _n_story = len(story_pages_no_cover)
                 _has_ded = 1 if dedication_b64 else 0
                 _has_back = 1 if back_cover_config else 0
+                _back_cover_img_url = getattr(trial, "back_cover_image_url", None)
+                _has_visual_back = 1 if _back_cover_img_url else 0
                 _inner_tpl_cfg = build_template_config(inner_template) if inner_template else {}
                 pdf_data = {
                     "story_title": trial.story_title,
@@ -1963,6 +2087,7 @@ async def generate_remaining_images_inner(
                     "cover_image_url": cover_image_url,
                     "dedication_image_base64": dedication_b64,
                     "back_cover_config": back_cover_config,
+                    "back_cover_image_url": _back_cover_img_url,
                     "audio_qr_url": audio_url,
                     "page_width_mm": page_width_mm,
                     "page_height_mm": page_height_mm,
@@ -1970,7 +2095,7 @@ async def generate_remaining_images_inner(
                     "template_config": _inner_tpl_cfg,
                     "images_precomposed": True,
                     "expected_story_pages": _n_story,
-                    "expected_total_pages": 1 + _has_ded + _n_story + _has_back,
+                    "expected_total_pages": 1 + _has_ded + _n_story + _has_back + _has_visual_back,
                 }
 
                 pdf_service = PDFService()

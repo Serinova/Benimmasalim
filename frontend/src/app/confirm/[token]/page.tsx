@@ -136,9 +136,9 @@ function ImageLightbox({
   }, [currentIndex, orderedKeys.length, onClose, onNavigate]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/90">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-2">
         <span className="text-sm font-medium text-white/80">
           {currentIndex + 1} / {orderedKeys.length}
         </span>
@@ -151,7 +151,7 @@ function ImageLightbox({
       </div>
 
       {/* Image area with swipe */}
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden px-2">
+      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2">
         {/* Desktop prev arrow */}
         {currentIndex > 0 && (
           <button
@@ -179,15 +179,16 @@ function ImageLightbox({
                 onNavigate(currentIndex - 1);
               }
             }}
-            className="flex max-h-[65vh] w-full max-w-3xl cursor-grab items-center justify-center active:cursor-grabbing"
+            className="flex h-full w-full max-w-7xl cursor-grab items-center justify-center active:cursor-grabbing"
           >
             {url ? (
               <Image
                 src={url}
                 alt={label}
-                width={1200}
-                height={800}
-                className="max-h-[65vh] w-auto rounded-lg object-contain"
+                width={1920}
+                height={1280}
+                className="max-h-full max-w-full rounded-lg object-contain"
+                style={{ maxHeight: "calc(100vh - 160px)" }}
                 unoptimized
                 draggable={false}
               />
@@ -211,10 +212,10 @@ function ImageLightbox({
       </div>
 
       {/* Bottom info + actions */}
-      <div className="mx-auto w-full max-w-3xl px-4 pb-6 pt-3">
-        <p className="mb-1 text-center text-sm font-semibold text-purple-300">{label}</p>
+      <div className="mx-auto w-full max-w-3xl px-4 pb-2 pt-1">
+        <p className="mb-0.5 text-center text-sm font-semibold text-purple-300">{label}</p>
         {text && (
-          <p className="mx-auto mb-3 max-w-xl text-center text-sm leading-relaxed text-white/80">
+          <p className="mx-auto mb-2 max-w-xl text-center text-xs leading-relaxed text-white/60 line-clamp-2">
             {text}
           </p>
         )}
@@ -241,16 +242,16 @@ function ImageLightbox({
       </div>
 
       {/* Thumbnail strip */}
-      <div className="flex gap-1.5 overflow-x-auto px-4 pb-4">
+      <div className="flex gap-1 overflow-x-auto px-4 pb-2">
         {orderedKeys.map((k, i) => {
           const thumbUrl = getImageUrl(k);
           return (
             <button
               key={k}
               onClick={() => onNavigate(i)}
-              className={`relative h-12 w-16 flex-shrink-0 overflow-hidden rounded transition ${i === currentIndex
-                  ? "ring-2 ring-purple-400"
-                  : "opacity-50 hover:opacity-80"
+              className={`relative h-10 w-14 flex-shrink-0 overflow-hidden rounded transition ${i === currentIndex
+                ? "ring-2 ring-purple-400"
+                : "opacity-50 hover:opacity-80"
                 }`}
             >
               {thumbUrl ? (
@@ -519,7 +520,7 @@ export default function ConfirmPage() {
     }
   }
 
-  const regenRemaining = (preview.max_page_regenerations ?? 3) - (preview.page_regenerate_count ?? 0);
+  const regenRemaining = (preview.max_page_regenerations ?? 4) - (preview.page_regenerate_count ?? 0);
   const canRegenerate = preview.status === "PENDING" || preview.status === "PREVIEW_GENERATED";
 
   return (
@@ -626,8 +627,8 @@ export default function ConfirmPage() {
                     <Image
                       src={url}
                       alt={label}
-                      width={600}
-                      height={400}
+                      width={900}
+                      height={600}
                       className={`aspect-[3/2] w-full object-cover transition ${isThisRegen ? "opacity-40" : ""}`}
                       unoptimized
                     />

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Search, X, Info } from "lucide-react";
 import ScenarioDetailModal from "@/components/ScenarioDetailModal";
@@ -32,7 +34,7 @@ interface HeroAndAdventureStepProps {
 }
 
 function getTheme(s: Scenario): string {
-  const name = (s.name || "").toLowerCase();
+  const name = (s.name || "").toLowerCase().trim();
   if (name.includes("uzay") || name.includes("gezegen") || name.includes("güneş")) return "Uzay";
   if (name.includes("orman") || name.includes("doğa") || name.includes("amazon")) return "Doğa";
   if (name.includes("tarih") || name.includes("kapadok") || name.includes("yerebatan") || name.includes("sarnıç")) return "Tarih";
@@ -55,9 +57,10 @@ export default function HeroAndAdventureStep({
   onScenarioSelect,
   onCustomVariablesChange,
   onContinue,
-  onBack,
+  onBack: _onBack,
   preselectedScenarioId,
 }: HeroAndAdventureStepProps) {
+  const router = useRouter();
   const [nameTouched, setNameTouched] = useState(false);
   const [nameFocused, setNameFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,7 +102,10 @@ export default function HeroAndAdventureStep({
     setNameFocused(false);
   }, []);
 
-  const showScenarioSection = !preselectedScenarioId || scenarioId;
+  // Ana sayfadan seçili macera ile gelinmişse grid'i başta gizle
+  // Kullanıcı "Değiştir" butonuna basarsa açılır
+  const [showScenarioPicker, setShowScenarioPicker] = useState(!preselectedScenarioId);
+
 
   return (
     <div className="pb-24 space-y-6">
@@ -229,143 +235,204 @@ export default function HeroAndAdventureStep({
       </section>
 
       {/* ── Section 2: Scenario Selection ── */}
-      {showScenarioSection && (
-        <section aria-label="Macera seçimi" className="pt-2">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-px flex-1 bg-gray-200" />
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Hikaye Konusu Seç
-            </span>
-            <div className="h-px flex-1 bg-gray-200" />
-          </div>
+      <section aria-label="Macera seçimi" className="pt-2">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            Hikaye Konusu
+          </span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
 
-          {/* Search + Theme filter */}
-          <div className="space-y-3 mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Konu ara..."
-                className="w-full rounded-xl border-2 border-gray-200 bg-white pl-9 pr-9 py-2.5 text-sm placeholder:text-gray-300 outline-none focus:border-purple-400 transition-colors"
-              />
-              {searchQuery && (
+        {/* Eğer ana sayfadan seçili macera ile gelindiyse ve picker kapalıysa → Banner göster */}
+        {!showScenarioPicker && selectedScenarioObj ? (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 rounded-2xl border-2 border-purple-400 bg-gradient-to-r from-purple-50 to-pink-50 p-3 shadow-sm"
+          >
+            {selectedScenarioObj.thumbnail_url && (
+              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl shadow-sm">
+                <Image
+                  src={selectedScenarioObj.thumbnail_url}
+                  alt={selectedScenarioObj.name}
+                  fill
+                  className="object-cover"
+                  sizes="64px"
+                />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-purple-400 mb-0.5">
+                Seçilen Macera ✓
+              </p>
+              <p className="text-sm font-bold text-gray-800 line-clamp-1">
+                {selectedScenarioObj.name}
+              </p>
+              {selectedScenarioObj.tagline && (
+                <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                  {selectedScenarioObj.tagline}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowScenarioPicker(true)}
+              className="flex-shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-500 hover:border-purple-300 hover:text-purple-600 transition-all"
+            >
+              Değiştir
+            </button>
+          </motion.div>
+        ) : (
+          <>
+            {/* Eğer preselected ile picker açıldıysa geri dön butonu */}
+            {preselectedScenarioId && selectedScenarioObj && (
+              <div className="flex items-center gap-2 mb-3">
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowScenarioPicker(false)}
+                  className="text-xs text-purple-500 font-semibold hover:underline"
                 >
-                  <X className="h-4 w-4" />
+                  ← Seçili maceraya dön
                 </button>
+              </div>
+            )}
+
+            {/* Search + Theme filter */}
+            <div className="space-y-3 mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Konu ara..."
+                  className="w-full rounded-xl border-2 border-gray-200 bg-white pl-9 pr-9 py-2.5 text-sm placeholder:text-gray-300 outline-none focus:border-purple-400 transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {themes.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTheme(null)}
+                    className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all ${!activeTheme ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-600"
+                      }`}
+                  >
+                    Tümü
+                  </button>
+                  {themes.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setActiveTheme(activeTheme === t ? null : t)}
+                      className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all ${activeTheme === t ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-600"
+                        }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
 
-            {themes.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                <button
-                  type="button"
-                  onClick={() => setActiveTheme(null)}
-                  className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all ${!activeTheme ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-600"
-                    }`}
-                >
-                  Tümü
-                </button>
-                {themes.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setActiveTheme(activeTheme === t ? null : t)}
-                    className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all ${activeTheme === t ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-600"
-                      }`}
-                  >
-                    {t}
-                  </button>
-                ))}
+            {/* Scenario Grid */}
+            {filtered.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-400">Aramanızla eşleşen konu bulunamadı</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                {filtered.map((s) => {
+                  const isSelected = scenarioId === s.id;
+                  return (
+                    <motion.button
+                      key={s.id}
+                      type="button"
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        onScenarioSelect(s.id);
+                        // Picker'dan seçim yapıldıysa kapat
+                        if (preselectedScenarioId) setShowScenarioPicker(false);
+                      }}
+                      className={`
+                        relative rounded-2xl overflow-hidden border-2 transition-all text-left
+                        ${isSelected ? "border-purple-500 ring-4 ring-purple-100 shadow-lg" : "border-gray-100 hover:border-gray-200 shadow-sm"}
+                      `}
+                    >
+                      {s.thumbnail_url && (
+                        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                          <Image
+                            src={s.thumbnail_url}
+                            alt={s.name}
+                            fill
+                            loading="lazy"
+                            className="object-cover"
+                            sizes="(max-width: 640px) 50vw, 33vw"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                          />
+                        </div>
+                      )}
+                      <div className="p-2.5 sm:p-3">
+                        <p className="text-xs sm:text-sm font-bold text-gray-800 line-clamp-1">{s.name}</p>
+                        {s.tagline && (
+                          <p className="text-[10px] sm:text-xs text-gray-500 line-clamp-1 mt-0.5">{s.tagline}</p>
+                        )}
+                      </div>
+
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute top-2 right-2 h-6 w-6 rounded-full bg-purple-600 text-white flex items-center justify-center"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                        </motion.div>
+                      )}
+
+                      {/* Info button */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setDetailScenario(s); }}
+                        className="absolute bottom-2 right-2 p-1 rounded-full bg-white/80 text-gray-500 hover:bg-white"
+                      >
+                        <Info className="h-3.5 w-3.5" />
+                      </button>
+                    </motion.button>
+                  );
+                })}
               </div>
             )}
+          </>
+        )}
+
+        {/* Custom inputs for selected scenario */}
+        {selectedScenarioObj?.custom_inputs_schema?.length ? (
+          <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <CustomInputsForm
+              fields={selectedScenarioObj.custom_inputs_schema as unknown as Array<{
+                key: string;
+                label: string;
+                type: "text" | "number" | "select" | "textarea";
+                required?: boolean;
+                options?: string[];
+              }>}
+              values={customVariables}
+              onChange={onCustomVariablesChange}
+            />
           </div>
+        ) : null}
+      </section>
 
-          {/* Scenario Grid */}
-          {filtered.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-400">Aramanızla eşleşen konu bulunamadı</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-              {filtered.map((s) => {
-                const isSelected = scenarioId === s.id;
-                return (
-                  <motion.button
-                    key={s.id}
-                    type="button"
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => onScenarioSelect(s.id)}
-                    className={`
-                      relative rounded-2xl overflow-hidden border-2 transition-all text-left
-                      ${isSelected ? "border-purple-500 ring-4 ring-purple-100 shadow-lg" : "border-gray-100 hover:border-gray-200 shadow-sm"}
-                    `}
-                  >
-                    {s.thumbnail_url && (
-                      <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
-                        <img
-                          src={s.thumbnail_url}
-                          alt={s.name}
-                          loading="lazy"
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                      </div>
-                    )}
-                    <div className="p-2.5 sm:p-3">
-                      <p className="text-xs sm:text-sm font-bold text-gray-800 line-clamp-1">{s.name}</p>
-                      {s.tagline && (
-                        <p className="text-[10px] sm:text-xs text-gray-500 line-clamp-1 mt-0.5">{s.tagline}</p>
-                      )}
-                    </div>
-
-                    {isSelected && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute top-2 right-2 h-6 w-6 rounded-full bg-purple-600 text-white flex items-center justify-center"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                      </motion.div>
-                    )}
-
-                    {/* Info button */}
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setDetailScenario(s); }}
-                      className="absolute bottom-2 right-2 p-1 rounded-full bg-white/80 text-gray-500 hover:bg-white"
-                    >
-                      <Info className="h-3.5 w-3.5" />
-                    </button>
-                  </motion.button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Custom inputs for selected scenario */}
-          {selectedScenarioObj?.custom_inputs_schema?.length ? (
-            <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-              <CustomInputsForm
-                fields={selectedScenarioObj.custom_inputs_schema as unknown as Array<{
-                  key: string;
-                  label: string;
-                  type: "text" | "number" | "select" | "textarea";
-                  required?: boolean;
-                  options?: string[];
-                }>}
-                values={customVariables}
-                onChange={onCustomVariablesChange}
-              />
-            </div>
-          ) : null}
-        </section>
-      )}
 
       {/* Scenario detail modal */}
       <ScenarioDetailModal
@@ -384,7 +451,7 @@ export default function HeroAndAdventureStep({
         onPrimary={onContinue}
         primaryDisabled={!canContinue}
         secondaryLabel="← Geri"
-        onSecondary={onBack}
+        onSecondary={() => router.push("/")}
       />
     </div>
   );

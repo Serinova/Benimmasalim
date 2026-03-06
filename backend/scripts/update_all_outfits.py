@@ -125,9 +125,10 @@ OUTFITS = {
     "Sultanahmet": {
         "outfit_girl": (
             "soft white cotton long-sleeve modest dress reaching ankles with delicate blue floral embroidery on hem, "
-            "white cotton hijab headscarf covering hair neatly, comfortable cream flat shoes, "
+            "PROPERLY WRAPPED white hijab: fabric wraps FULLY around head and neck — NO hair visible, NO neck visible, "
+            "fabric drapes softly over shoulders (modern proper hijab wrap, NOT a loose veil), comfortable cream flat shoes, "
             "small white shoulder bag with blue strap. "
-            "EXACTLY the same outfit on every page — same white dress with blue embroidery, same white hijab."
+            "EXACTLY the same outfit on every page — same white dress with blue embroidery, same properly wrapped white hijab."
         ),
         "outfit_boy": (
             "clean white cotton long-sleeve shirt, light beige cotton loose-fitting pants, "
@@ -141,9 +142,10 @@ OUTFITS = {
     "Kudüs": {
         "outfit_girl": (
             "soft ivory white cotton long-sleeve modest dress reaching ankles, "
-            "white cotton hijab headscarf covering hair completely with neat edges, "
+            "PROPERLY WRAPPED white hijab: fabric wraps FULLY around head and neck — NO hair visible, NO neck visible, "
+            "fabric drapes softly over shoulders and chest (modern proper hijab wrap, NOT a loose veil, NOT fabric on top of head only), "
             "comfortable light beige flat sandals, small white cotton drawstring bag. "
-            "EXACTLY the same outfit on every page — same ivory dress, same white hijab, same beige sandals."
+            "EXACTLY the same outfit on every page — same ivory dress, same properly wrapped white hijab, same beige sandals."
         ),
         "outfit_boy": (
             "clean white cotton knee-length kurta tunic shirt, "
@@ -284,10 +286,12 @@ OUTFITS = {
         ),
         "outfit_boy": (
             "pure white cotton knee-length kurta tunic with no patterns or decorations, "
-            "white knit taqiyah prayer cap on head, light beige loose-fitting cotton pants, "
+            "small round white knitted taqiyah skull-cap sitting snugly on top of the head "
+            "(NOT a turban, NOT a wrapped cloth, NOT a keffiyeh, NOT a hood — ONLY a small round knitted cap), "
+            "light beige loose-fitting cotton pants, "
             "comfortable tan leather sandals, small white cotton drawstring backpack. "
             "Simple and clean appearance inspired by ihram purity. "
-            "EXACTLY the same outfit on every page — same white kurta, same white taqiyah, same beige pants."
+            "EXACTLY the same outfit on every page — same white kurta, same small round white taqiyah cap, same beige pants, same sandals."
         ),
     },
 }

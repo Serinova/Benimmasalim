@@ -82,7 +82,7 @@ class ImageProcessingService:
             img_b64 = base64.b64encode(image_bytes).decode('utf-8')
             
             api_key = settings.gemini_api_key
-            url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key={api_key}'
+            url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key={api_key}'
             
             payload = {
                 'contents': [{'parts': [

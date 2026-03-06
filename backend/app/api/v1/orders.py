@@ -753,7 +753,7 @@ async def process_remaining_pages(preview_id: str) -> None:
 
 
 
-MAX_PAGE_REGENERATIONS = 3
+MAX_PAGE_REGENERATIONS = 4
 
 
 @router.get("/preview-by-token/{token}")
@@ -983,7 +983,7 @@ async def regenerate_page_image(
 
     from app.services.ai.face_service import resolve_face_reference
     from app.services.storage_service import storage_service as _ss_regen
-    _regen_face_url, _regen_face_embedding = await resolve_face_reference(child_photo_url, _ss_regen)
+    _regen_face_url, _regen_original_photo_url, _regen_face_embedding = await resolve_face_reference(child_photo_url, _ss_regen)
 
     # AI-Director: generate character description for face likeness
     _regen_char_desc = ""
@@ -1034,6 +1034,7 @@ async def regenerate_page_image(
             precomposed_negative=prompt_data.get("negative_prompt", "") if is_v3 else "",
             reference_embedding=_regen_face_embedding,
             character_description=_regen_char_desc,
+            original_photo_url=_regen_original_photo_url,
         )
         new_image_url = gen_result[0] if isinstance(gen_result, tuple) else gen_result
     except Exception as e:

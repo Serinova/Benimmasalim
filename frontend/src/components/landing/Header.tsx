@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,13 +12,13 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import { BookOpen, Menu, UserCircle } from "lucide-react";
+import { Menu, UserCircle, LogOut, LayoutDashboard } from "lucide-react";
 
 const navLinks = [
-  { href: "#nasil-calisir", label: "Nasıl Çalışır?" },
-  { href: "#ornekler", label: "Örnekler" },
-  { href: "#fiyat", label: "Fiyat" },
-  { href: "#sss", label: "SSS" },
+  { href: "/#nasil-calisir", label: "Nasıl Çalışır?" },
+  { href: "/#ornekler", label: "Örnekler" },
+  { href: "/#fiyat", label: "Fiyat" },
+  { href: "/#sss", label: "SSS" },
   { href: "/contact", label: "İletişim" },
 ];
 
@@ -28,9 +29,11 @@ interface UserData {
 }
 
 export default function Header() {
+  const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const syncAuth = () => {
@@ -53,12 +56,19 @@ export default function Header() {
     };
 
     syncAuth();
+    setMounted(true);
     window.addEventListener("storage", syncAuth);
     window.addEventListener("auth-change", syncAuth);
     return () => {
       window.removeEventListener("storage", syncAuth);
       window.removeEventListener("auth-change", syncAuth);
     };
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const handleLogout = () => {
@@ -72,127 +82,166 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+    <header
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${scrolled
+          ? "border-b bg-white/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/80"
+          : "bg-white/0"
+        }`}
+    >
+      <div className="container flex h-20 items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2" aria-label="Ana Sayfa">
-          <BookOpen className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold">Benim Masalım</span>
+        <Link href="/" className="flex items-center gap-3 shrink-0" aria-label="Ana Sayfa — Benim Masalım">
+          <Image
+            src="/logo.png"
+            alt="Benim Masalım"
+            width={68}
+            height={68}
+            className="h-16 w-16 object-contain drop-shadow-sm"
+            priority
+          />
+          <span className="text-2xl font-bold text-slate-900">
+            Benim <span className="text-primary">Masalım</span>
+          </span>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden items-center gap-6 md:flex" aria-label="Ana menü">
-          {navLinks.map((link) =>
-            link.href.startsWith("/") ? (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-              >
-                {link.label}
-              </Link>
-            ) : (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-              >
-                {link.label}
-              </a>
-            )
-          )}
-          {isAdmin && (
-            <Link href="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary">
-              Admin
+        <nav className="hidden items-center gap-5 md:flex" aria-label="Ana menü">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm font-medium text-slate-600 transition-colors hover:text-primary"
+            >
+              {link.label}
             </Link>
-          )}
-          {isLoggedIn ? (
-            <div className="flex items-center gap-3">
-              <Link
-                href="/account"
-                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-              >
-                <UserCircle className="h-4 w-4" />
-                {userName ? userName : "Hesabım"}
-              </Link>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                Çıkış Yap
-              </Button>
-            </div>
+          ))}
+        </nav>
+
+        {/* Desktop Actions */}
+        <div className="hidden items-center gap-2 md:flex">
+          {mounted ? (
+            <>
+              {isAdmin && (
+                <Link href="/admin">
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-slate-600">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
+              {isLoggedIn ? (
+                <>
+                  <Link href="/account">
+                    <Button variant="ghost" size="sm" className="gap-1.5 text-slate-600">
+                      <UserCircle className="h-4 w-4" />
+                      {userName ?? "Hesabım"}
+                    </Button>
+                  </Link>
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-slate-500" onClick={handleLogout}>
+                    <LogOut className="h-4 w-4" />
+                    Çıkış
+                  </Button>
+                </>
+              ) : (
+                <Link href="/auth/login">
+                  <Button variant="ghost" size="sm">
+                    Giriş Yap
+                  </Button>
+                </Link>
+              )}
+            </>
           ) : (
-            <Link href="/auth/login">
-              <Button variant="ghost" size="sm">
-                Giriş Yap
-              </Button>
-            </Link>
+            // Skeleton during hydration to prevent layout shift
+            <div className="h-8 w-20 animate-pulse rounded-md bg-slate-100" aria-hidden="true" />
           )}
           <Link href="/create-v2">
-            <Button size="sm">Kitap Oluştur</Button>
+            <Button size="sm" className="gap-1.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-sm hover:from-purple-700 hover:to-pink-600">
+              Kitap Oluştur
+            </Button>
           </Link>
-        </nav>
+        </div>
 
         {/* Mobile Nav */}
         <div className="flex items-center gap-2 md:hidden">
           <Link href="/create-v2">
-            <Button size="sm">Kitap Oluştur</Button>
+            <Button
+              size="sm"
+              className="gap-1 bg-gradient-to-r from-purple-600 to-pink-500 text-white text-xs px-3 hover:from-purple-700 hover:to-pink-600"
+            >
+              Kitap Oluştur
+            </Button>
           </Link>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Menüyü aç">
+              <Button variant="ghost" size="icon" aria-label="Menüyü aç" className="h-10 w-10">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                  Benim Masalım
+            <SheetContent side="right" className="w-72 pt-8">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="flex items-center gap-2.5">
+                  <Image
+                    src="/logo.png"
+                    alt="Benim Masalım"
+                    width={44}
+                    height={44}
+                    className="h-11 w-11 object-contain"
+                  />
+                  <span>
+                    Benim <span className="text-primary">Masalım</span>
+                  </span>
                 </SheetTitle>
               </SheetHeader>
-              <nav className="mt-8 flex flex-col gap-4" aria-label="Mobil menü">
+
+              <nav className="flex flex-col gap-1" aria-label="Mobil menü">
                 {navLinks.map((link) => (
                   <SheetClose asChild key={link.href}>
-                    {link.href.startsWith("/") ? (
-                      <Link
-                        href={link.href}
-                        className="rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent"
-                      >
-                        {link.label}
-                      </Link>
-                    ) : (
-                      <a
-                        href={link.href}
-                        className="rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent"
-                      >
-                        {link.label}
-                      </a>
-                    )}
+                    <Link
+                      href={link.href}
+                      className="flex h-11 items-center rounded-lg px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-primary"
+                    >
+                      {link.label}
+                    </Link>
                   </SheetClose>
                 ))}
-                {isAdmin && (
+
+                {mounted && isAdmin && (
                   <SheetClose asChild>
                     <Link
                       href="/admin"
-                      className="rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent"
+                      className="flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
                     >
+                      <LayoutDashboard className="h-4 w-4 text-slate-400" />
                       Admin Panel
                     </Link>
                   </SheetClose>
                 )}
-                {isLoggedIn && (
+
+                {mounted && isLoggedIn && (
                   <SheetClose asChild>
                     <Link
                       href="/account"
-                      className="flex items-center gap-2 rounded-md px-3 py-2 text-base font-medium transition-colors hover:bg-accent"
+                      className="flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
                     >
-                      <UserCircle className="h-5 w-5" />
+                      <UserCircle className="h-4 w-4 text-slate-400" />
                       {userName ? `${userName} — Hesabım` : "Hesabım"}
                     </Link>
                   </SheetClose>
                 )}
-                <div className="mt-4 border-t pt-4">
-                  {isLoggedIn ? (
-                    <Button variant="outline" className="w-full" onClick={handleLogout}>
+              </nav>
+
+              <div className="mt-6 flex flex-col gap-2 border-t pt-6">
+                <SheetClose asChild>
+                  <Link href="/create-v2" className="block">
+                    <Button className="w-full gap-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white hover:from-purple-700 hover:to-pink-600">
+                      Kitap Oluştur
+                    </Button>
+                  </Link>
+                </SheetClose>
+                {mounted ? (
+                  isLoggedIn ? (
+                    <Button variant="outline" className="w-full gap-2" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4" />
                       Çıkış Yap
                     </Button>
                   ) : (
@@ -203,9 +252,9 @@ export default function Header() {
                         </Button>
                       </Link>
                     </SheetClose>
-                  )}
-                </div>
-              </nav>
+                  )
+                ) : null}
+              </div>
             </SheetContent>
           </Sheet>
         </div>

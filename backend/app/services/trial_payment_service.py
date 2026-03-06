@@ -23,9 +23,9 @@ logger = structlog.get_logger()
 
 def norm_iyzico_host(url: str | None) -> str:
     """Iyzico SDK için sadece hostname (şema/path/baştaki // yok). 'nonnumeric port' hatasını önler."""
-    raw = (url or "sandbox-api.iyzipay.com").strip()
+    raw = (url or "api.iyzipay.com").strip()
     host = raw.removeprefix("https://").removeprefix("http://").strip("/").split("/")[0]
-    return host or "sandbox-api.iyzipay.com"
+    return host or "api.iyzipay.com"
 
 
 def get_iyzico_options() -> dict[str, str]:

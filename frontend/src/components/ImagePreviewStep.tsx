@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, forwardRef, useCallback } from "react";
+import { useState, useRef, useEffect, forwardRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -11,6 +11,39 @@ import {
   BookOpen,
 } from "lucide-react";
 import type { GenerationProgress } from "@/lib/api";
+
+/**
+ * Turkish possessive suffix after apostrophe (iyelik eki).
+ * Rules follow vowel harmony (büyük ünlü uyumu):
+ *   Back vowels (a,ı,o,u) → ın/nın/nun/un; Front vowels (e,i,ö,ü) → in/nin/nün/ün
+ *   Ends in vowel → 'nın / 'nin / 'nun / 'nün
+ *   Ends in consonant → 'ın / 'in / 'un / 'ün
+ */
+function getTurkishPossessiveSuffix(name: string): string {
+  if (!name) return "ın";
+  const last = name.slice(-1).toLowerCase();
+  const secondLast = name.length > 1 ? name.slice(-2, -1).toLowerCase() : "";
+  const isVowel = (c: string) => "aeıioöuü".includes(c);
+
+  const lastVowel = Array.from(name.toLowerCase()).filter((c) => isVowel(c)).at(-1) ?? "a";
+  const endsInVowel = isVowel(last);
+
+  const suffixMap: Record<string, [string, string]> = {
+    a: ["nın", "ın"],
+    ı: ["nın", "ın"],
+    e: ["nin", "in"],
+    i: ["nin", "in"],
+    o: ["nun", "un"],
+    u: ["nun", "un"],
+    ö: ["nün", "ün"],
+    ü: ["nün", "ün"],
+  };
+
+  const [vowelSuffix, consonantSuffix] = suffixMap[lastVowel] ?? ["nın", "ın"];
+  // Suppress unused warning
+  void secondLast;
+  return endsInVowel ? vowelSuffix : consonantSuffix;
+}
 
 interface ImagePreviewStepProps {
   childName: string;
@@ -402,8 +435,8 @@ function MagicalLoadingAnimation({
           />
         </motion.div>
 
-        {/* Sparkle particles */}
-        {[...Array(8)].map((_, i) => (
+        {/* Sparkle particles — reduced to 3 for performance */}
+        {[...Array(3)].map((_, i) => (
           <motion.div
             key={i}
             animate={{
@@ -489,9 +522,7 @@ function MagicalLoadingAnimation({
 export default function ImagePreviewStep({
   childName,
   previewImages,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onApprove,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onBack,
   onReportIssue,
   isLoading = false,
@@ -502,6 +533,7 @@ export default function ImagePreviewStep({
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
 
   // Defensive: treat null/undefined previewImages as empty object
   const _images: Record<string | number, string> = previewImages ?? {};
@@ -516,12 +548,17 @@ export default function ImagePreviewStep({
   const introImage = (_images as Record<string, string>)["intro"] || "";
   const hasIntro = Boolean(_images["intro"]);
 
-  // Dynamically find ALL story page keys (any numeric key > 0, sorted ascending)
-  const storyPageKeys = Object.keys(_images)
-    .filter((k) => k !== "0" && k !== "dedication" && k !== "intro" && !k.includes("back"))
-    .map(Number)
-    .filter((n) => !Number.isNaN(n) && n > 0)
-    .sort((a, b) => a - b);
+  // Memoized story page keys to avoid recalculation on every render
+  const storyPageKeys = useMemo(
+    () =>
+      Object.keys(_images)
+        .filter((k) => k !== "0" && k !== "dedication" && k !== "intro" && !k.includes("back"))
+        .map(Number)
+        .filter((n) => !Number.isNaN(n) && n > 0)
+        .sort((a, b) => a - b),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [previewImages],
+  );
 
   // Slide layout:
   //   0: cover
@@ -538,11 +575,10 @@ export default function ImagePreviewStep({
 
   useEffect(() => {
     // Show preview as soon as loading is done and at least the cover image exists.
-    // Dedication / intro pages may be absent (partial generation) — handled gracefully below.
     if (!isLoading && Object.keys(_images).length >= 1) {
-      const timer = setTimeout(() => setImagesLoaded(true), 1500);
-      return () => clearTimeout(timer);
+      setImagesLoaded(true);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, previewImages]);
 
   const goNext = useCallback(() => {
@@ -559,12 +595,15 @@ export default function ImagePreviewStep({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) goNext();
+    const diffX = touchStartX.current - e.changedTouches[0].clientX;
+    const diffY = touchStartY.current - e.changedTouches[0].clientY;
+    // Only trigger horizontal swipe if horizontal movement dominates
+    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+      if (diffX > 0) goNext();
       else goPrev();
     }
   };
@@ -616,40 +655,39 @@ export default function ImagePreviewStep({
         <div className="relative z-10">
           {/* Header */}
           <motion.div
-            initial={{ opacity: 0, y: -30 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="px-4 pb-2 pt-4 text-center"
+            transition={{ delay: 0.2 }}
+            className="px-4 pb-3 pt-5 text-center"
           >
-            <div className="mb-2 flex items-center justify-center gap-3">
+            <div className="mb-1.5 flex items-center justify-center gap-2">
               <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
+                animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.1, 1] }}
+                transition={{ duration: 3, repeat: Infinity }}
               >
-                <Sparkles className="h-6 w-6 text-yellow-400" />
+                <Sparkles className="h-5 w-5 text-yellow-400" />
               </motion.div>
-              <h1 className="font-serif text-xl text-amber-100 md:text-2xl">
-                {childName}&apos;{childName.slice(-1).match(/[aıouAIOU]/) ? "nın" : "ın"} Kitabı
-                Hazır!
+              <h1 className="font-serif text-lg text-amber-100 sm:text-xl md:text-2xl">
+                {childName}&apos;{getTurkishPossessiveSuffix(childName)} Kitabı Hazır!
               </h1>
               <motion.div
-                animate={{ rotate: [0, -10, 10, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
+                animate={{ rotate: [0, -15, 15, 0], scale: [1, 1.1, 1] }}
+                transition={{ duration: 3, repeat: Infinity }}
               >
-                <Sparkles className="h-6 w-6 text-yellow-400" />
+                <Sparkles className="h-5 w-5 text-yellow-400" />
               </motion.div>
             </div>
-            <p className="text-sm text-amber-200/70">
+            <p className="text-xs text-amber-200/60">
               Kaydırarak veya oklarla sayfaları inceleyin
             </p>
           </motion.div>
 
-          {/* Tek sayfa gösterim (ana sayfa hero ile aynı tarz — mobil uyumlu) */}
+          {/* Sayfa viewer */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-            className="relative flex min-h-[360px] items-center justify-center px-2 py-4 sm:min-h-[420px] md:min-h-[480px]"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.4 }}
+            className="relative px-12 py-2 sm:px-14 md:px-16"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -658,16 +696,19 @@ export default function ImagePreviewStep({
               type="button"
               onClick={goPrev}
               disabled={currentSlide <= 0}
-              className="absolute left-1 z-20 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-amber-200 backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/20 hover:text-white disabled:opacity-30 sm:left-2 sm:h-12 sm:w-12 md:left-4 md:h-14 md:w-14"
+              className="absolute left-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-amber-200 backdrop-blur-sm transition-all hover:scale-110 hover:bg-black/60 hover:text-white disabled:opacity-20 sm:left-2 sm:h-10 sm:w-10 md:h-12 md:w-12"
               aria-label="Önceki sayfa"
             >
-              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
+              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
             </button>
 
             {/* Tek sayfa alanı — tam genişlikte tek resim */}
             <div
-              className="relative mx-auto w-full max-w-lg overflow-hidden rounded-xl shadow-2xl"
-              style={{ aspectRatio: "297 / 210" }}
+              className="relative mx-auto w-full max-w-lg overflow-hidden rounded-2xl ring-1 ring-amber-500/20"
+              style={{
+                aspectRatio: "4 / 3",
+                boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 8px 48px rgba(0,0,0,0.7), 0 0 80px rgba(251,191,36,0.08)",
+              }}
             >
               <AnimatePresence mode="wait">
                 {/* Kapak */}
@@ -680,7 +721,7 @@ export default function ImagePreviewStep({
                     transition={{ duration: 0.25 }}
                     className="absolute inset-0"
                   >
-                    <CoverPage imageUrl={coverImage} isFront={true} ref={() => { }} />
+                    <CoverPage imageUrl={coverImage} isFront={true} ref={null} />
                   </motion.div>
                 )}
                 {/* Karşılama 1 - İthaf sayfası */}
@@ -693,7 +734,7 @@ export default function ImagePreviewStep({
                     transition={{ duration: 0.25 }}
                     className="absolute inset-0"
                   >
-                    <DedicationPage childName={childName} imageUrl={dedicationImage} ref={() => { }} />
+                    <DedicationPage childName={childName} imageUrl={dedicationImage} ref={null} />
                   </motion.div>
                 )}
                 {/* Karşılama 2 - isteğe bağlı intro sayfası */}
@@ -706,7 +747,7 @@ export default function ImagePreviewStep({
                     transition={{ duration: 0.25 }}
                     className="absolute inset-0"
                   >
-                    <DedicationPage childName={childName} imageUrl={introImage} ref={() => { }} />
+                    <DedicationPage childName={childName} imageUrl={introImage} ref={null} />
                   </motion.div>
                 )}
                 {/* TÜM hikaye sayfaları — döngüyle */}
@@ -725,7 +766,7 @@ export default function ImagePreviewStep({
                          imageUrl={_images[pageKey] || ""}
                         pageNumber={pageIdx + 1}
                         side={pageIdx % 2 === 0 ? "left" : "right"}
-                        ref={() => { }}
+                        ref={null}
                       />
                     </motion.div>
                   ) : null;
@@ -740,7 +781,7 @@ export default function ImagePreviewStep({
                     transition={{ duration: 0.25 }}
                     className="absolute inset-0"
                   >
-                    <CoverPage imageUrl={backCoverImageUrl} isFront={false} ref={() => { }} />
+                    <CoverPage imageUrl={backCoverImageUrl} isFront={false} ref={null} />
                   </motion.div>
                 )}
                 {/* Arka kapak (resim yoksa dekoratif) */}
@@ -753,7 +794,7 @@ export default function ImagePreviewStep({
                     transition={{ duration: 0.25 }}
                     className="absolute inset-0"
                   >
-                    <BackCover ref={() => { }} />
+                    <BackCover ref={null} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -764,42 +805,45 @@ export default function ImagePreviewStep({
               type="button"
               onClick={goNext}
               disabled={currentSlide >= TOTAL_SLIDES - 1}
-              className="absolute right-1 z-20 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-amber-200 backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/20 hover:text-white disabled:opacity-30 sm:right-2 sm:h-12 sm:w-12 md:right-4 md:h-14 md:w-14"
+              className="absolute right-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/40 text-amber-200 backdrop-blur-sm transition-all hover:scale-110 hover:bg-black/60 hover:text-white disabled:opacity-20 sm:right-2 sm:h-10 sm:w-10 md:h-12 md:w-12"
               aria-label="Sonraki sayfa"
             >
-              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
+              <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
             </button>
           </motion.div>
 
-          {/* Sayfa göstergesi (noktalar + etiketler) — tüm sayfalar */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 px-2">
-            {[
-              { label: "Kapak", idx: 0 },
-              { label: "İthaf", idx: 1 },
-              ...(hasIntro ? [{ label: "Giriş", idx: 2 }] : []),
-              ...storyPageKeys.map((_, pageIdx) => ({
-                label: `Sayfa ${pageIdx + 1}`,
-                idx: getStorySlideIdx(pageIdx),
-              })),
-              ...(backCoverImageUrl ? [{ label: "Arka Kapak", idx: backCoverSlideIdx }] : []),
-            ].map(({ label, idx }) => (
-              <button
-                key={`nav-${idx}`}
-                type="button"
-                onClick={() => goToSlide(idx)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all touch-manipulation ${currentSlide === idx
-                  ? "bg-amber-500 text-white shadow-lg"
-                  : "bg-amber-200/20 text-amber-200/80 hover:bg-amber-200/30"
+          {/* Sayfa göstergesi — etiket + sayaç */}
+          <div className="mt-3 flex flex-col items-center gap-2 px-2">
+            {/* Sayfa etiketi */}
+            <p className="text-xs font-semibold tracking-wide text-amber-300/80 uppercase">
+              {[
+                "Kapak",
+                "İthaf",
+                ...(hasIntro ? ["Giriş"] : []),
+                ...storyPageKeys.map((_, i) => `Sayfa ${i + 1}`),
+                ...(backCoverImageUrl ? ["Arka Kapak"] : []),
+              ][currentSlide] ?? ""}
+              <span className="ml-2 font-normal text-amber-300/40">
+                {currentSlide + 1} / {TOTAL_SLIDES}
+              </span>
+            </p>
+            {/* Dot navigation */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 px-4">
+              {Array.from({ length: TOTAL_SLIDES }).map((_, idx) => (
+                <button
+                  key={`dot-${idx}`}
+                  type="button"
+                  onClick={() => goToSlide(idx)}
+                  aria-label={`Sayfa ${idx + 1}`}
+                  className={`rounded-full transition-all duration-200 touch-manipulation ${
+                    currentSlide === idx
+                      ? "h-2 w-6 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]"
+                      : "h-2 w-2 bg-amber-200/25 hover:bg-amber-200/50"
                   }`}
-              >
-                {label}
-              </button>
-            ))}
+                />
+              ))}
+            </div>
           </div>
-          {/* Sayfa konumu bilgisi */}
-          <p className="mt-2 text-center text-xs text-amber-300/50">
-            {currentSlide + 1} / {TOTAL_SLIDES}
-          </p>
         </div>
 
         {/* Issue report link (non-sticky) */}
@@ -821,36 +865,32 @@ export default function ImagePreviewStep({
         onSubmit={handleIssueSubmit}
       />
 
-      {/* Tek sayfa önizleme stilleri (hero ile aynı tarz) */}
-      <style jsx global>{`
-        .page-content {
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-          padding: 0;
-          border-radius: inherit;
-        }
-
-        .page-content img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: center;
-          display: block;
-        }
-
-        .cover-page {
-          background: linear-gradient(135deg, #92400e 0%, #78350f 100%);
-        }
-
-        .inner-page {
-          background: #fef3c7;
-        }
-
-        .back-cover {
-          background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
-        }
-      `}</style>
+      {/* Approve / Back CTA buttons */}
+      <div className="sticky bottom-0 z-[60] border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-md"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}
+        >
+          <div className="mx-auto flex max-w-lg gap-3">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex h-11 items-center rounded-xl border-2 border-slate-200 px-4 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 sm:h-12"
+              >
+                ← Geri
+              </button>
+            )}
+            {onApprove && (
+              <button
+                type="button"
+                onClick={onApprove}
+                className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 text-sm font-bold text-white shadow-lg shadow-purple-200 transition-all hover:from-purple-700 hover:to-pink-600 sm:h-12 sm:text-base"
+              >
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                Hikayemi Onayla & Devam Et
+              </button>
+            )}
+          </div>
+        </div>
     </>
   );
 }

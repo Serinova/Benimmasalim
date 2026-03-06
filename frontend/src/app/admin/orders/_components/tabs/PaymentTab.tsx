@@ -3,7 +3,12 @@
 import React from "react";
 import type { OrderDetail } from "../../_lib/types";
 
-const PAID_STATUSES = new Set(["PAID", "PROCESSING", "READY_FOR_PRINT", "SHIPPED", "DELIVERED"]);
+const PAID_STATUSES = new Set([
+  // Order statuses
+  "PAID", "PROCESSING", "READY_FOR_PRINT", "SHIPPED", "DELIVERED",
+  // StoryPreview statuses (admin panel uses these)
+  "CONFIRMED", "COMPLETING", "COMPLETED",
+]);
 
 interface PaymentTabProps {
   detail: OrderDetail;
@@ -50,12 +55,12 @@ export function PaymentTab({ detail, onInvoiceAction, onDownloadInvoicePdf, onCr
                 <span className="font-medium">
                   {typeof detail.billing.billing_address === "object"
                     ? [
-                        (detail.billing.billing_address as Record<string, string>).address_line ||
-                        (detail.billing.billing_address as Record<string, string>).address || "",
-                        (detail.billing.billing_address as Record<string, string>).district || "",
-                        (detail.billing.billing_address as Record<string, string>).city || "",
-                        (detail.billing.billing_address as Record<string, string>).postalCode || "",
-                      ].filter(Boolean).join(", ")
+                      (detail.billing.billing_address as Record<string, string>).address_line ||
+                      (detail.billing.billing_address as Record<string, string>).address || "",
+                      (detail.billing.billing_address as Record<string, string>).district || "",
+                      (detail.billing.billing_address as Record<string, string>).city || "",
+                      (detail.billing.billing_address as Record<string, string>).postalCode || "",
+                    ].filter(Boolean).join(", ")
                     : String(detail.billing.billing_address)}
                 </span>
               </>
@@ -91,14 +96,14 @@ function InvoiceSection({ detail, onInvoiceAction, onDownloadInvoicePdf }: Payme
   const inv = detail.invoice!;
   const statusColor =
     inv.invoice_status === "PDF_READY" ? "text-emerald-700" :
-    inv.invoice_status === "FAILED" ? "text-red-600" :
-    inv.invoice_status === "CANCELLED" ? "text-slate-500" :
-    "text-amber-600";
+      inv.invoice_status === "FAILED" ? "text-red-600" :
+        inv.invoice_status === "CANCELLED" ? "text-slate-500" :
+          "text-amber-600";
   const emailColor =
     inv.email_status === "SENT" ? "text-emerald-700" :
-    inv.email_status === "FAILED" ? "text-red-600" :
-    inv.email_status === "SKIPPED" ? "text-amber-600" :
-    "text-slate-500";
+      inv.email_status === "FAILED" ? "text-red-600" :
+        inv.email_status === "SKIPPED" ? "text-amber-600" :
+          "text-slate-500";
 
   return (
     <div className="space-y-3 rounded-lg border bg-emerald-50 p-3">
