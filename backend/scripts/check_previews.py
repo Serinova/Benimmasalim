@@ -1,16 +1,28 @@
-"""Check story previews in database."""
+"""Check story previews in database.
+
+Uses DATABASE_URL from .env (via app config) or direct env var.
+"""
 import asyncio
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import asyncpg
 
 
 async def main():
-    conn = await asyncpg.connect(
-        host='localhost',
-        database='benimmasalim',
-        user='benimmasalim',
-        password='***REDACTED_DB_PASSWORD***'
-    )
+    # DATABASE_URL from environment (.env or Cloud Run)
+    db_url = os.environ.get("DATABASE_URL", "")
+    if not db_url:
+        print("[ERROR] DATABASE_URL environment variable is not set.", file=sys.stderr)
+        print("  Set it in .env or export it before running this script.", file=sys.stderr)
+        sys.exit(1)
+
+    # asyncpg expects postgresql:// (not postgresql+asyncpg://)
+    db_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+
+    conn = await asyncpg.connect(db_url)
 
     rows = await conn.fetch('''
         SELECT id, status, parent_email, child_name, 
