@@ -4,8 +4,6 @@ Public endpoint for storefront — reads from the unified `products` table
 with `product_type = 'coloring_book'`.
 """
 
-from decimal import Decimal
-
 import structlog
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -26,8 +24,8 @@ class ColoringBookResponse(BaseModel):
     name: str
     slug: str
     description: str | None
-    base_price: Decimal
-    discounted_price: Decimal | None
+    base_price: float
+    discounted_price: float | None
     active: bool
 
 
@@ -62,7 +60,7 @@ async def get_active_coloring_book_product(db: DbSession):
         name=product.name,
         slug=product.slug,
         description=product.description,
-        base_price=product.base_price,
-        discounted_price=product.discounted_price,
+        base_price=float(product.base_price),
+        discounted_price=float(product.discounted_price) if product.discounted_price else None,
         active=product.is_active,
     )

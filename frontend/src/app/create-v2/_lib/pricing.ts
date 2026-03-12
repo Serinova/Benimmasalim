@@ -17,18 +17,19 @@ export function calculatePricing(params: {
   discountAmount?: number;
   promoCode?: string | null;
 }): PriceBreakdown {
+  const base = Number(params.basePrice) || 0;
   const audioPrice = params.hasAudioBook
     ? params.audioType === "cloned"
       ? 300
       : 150
     : 0;
-  const coloringBookPrice = params.hasColoringBook ? params.coloringBookPrice : 0;
-  const subtotal = params.basePrice + audioPrice + coloringBookPrice;
-  const discount = params.discountAmount ?? 0;
+  const coloringBookPrice = params.hasColoringBook ? (Number(params.coloringBookPrice) || 0) : 0;
+  const subtotal = base + audioPrice + coloringBookPrice;
+  const discount = Number(params.discountAmount) || 0;
   const total = Math.max(0, subtotal - discount);
 
   return {
-    basePrice: params.basePrice,
+    basePrice: base,
     audioPrice,
     coloringBookPrice,
     discount,
