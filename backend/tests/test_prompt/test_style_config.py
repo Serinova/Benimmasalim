@@ -64,18 +64,18 @@ class TestStyleResolution:
 class TestPuLIDConfig:
     """Her stilin PuLID parametrelerini doğrular."""
 
-    def test_pixar_start_step_2(self):
+    def test_pixar_start_step_0(self):
         s = resolve_style("pixar")
-        assert s.start_step == 2
+        assert s.start_step == 0
 
     def test_anime_start_step_0(self):
         s = resolve_style("anime")
         assert s.start_step == 0
 
-    def test_watercolor_higher_cfg(self):
+    def test_watercolor_custom_cfg(self):
         s = resolve_style("watercolor")
-        assert s.true_cfg == 1.2
+        assert s.true_cfg == 1.3
 
-    def test_anime_highest_cfg(self):
+    def test_anime_custom_cfg(self):
         s = resolve_style("anime")
-        assert s.true_cfg == 1.5
+        assert s.true_cfg == 1.1

@@ -20,8 +20,6 @@ import {
   Palette,
   Target,
   Image,
-  ExternalLink,
-  Link2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -468,19 +466,6 @@ export default function AdminPromptsPage() {
                             </pre>
                           </div>
                         )}
-                        {prompt.category === "educational" &&
-                          prompt.key.startsWith("EDUCATIONAL_") && (
-                            <button
-                              onClick={() =>
-                                router.push("/admin/learning-outcomes")
-                              }
-                              className="mb-3 flex items-center gap-1 text-xs text-green-600 hover:text-green-700 hover:underline"
-                            >
-                              <Link2 className="h-3 w-3" />
-                              <span>Kazanım Kartını Düzenle</span>
-                              <ExternalLink className="h-3 w-3" />
-                            </button>
-                          )}
                         <div className="mt-3 flex items-center justify-between border-t pt-3">
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="text-xs">

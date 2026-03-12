@@ -114,27 +114,17 @@ export function GeneralTab({
         )}
       </div>
 
-      {/* Learning outcomes + Audio */}
-      <div className="flex gap-3">
-        {detail.learning_outcomes && detail.learning_outcomes.length > 0 && (
-          <div className="flex-1 rounded-lg bg-amber-50 p-3">
-            <p className="mb-1.5 text-[10px] font-medium text-slate-500">Kazanımlar</p>
-            <div className="flex flex-wrap gap-1">
-              {detail.learning_outcomes.map((o, i) => (
-                <span key={i} className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">{o}</span>
-              ))}
-            </div>
-          </div>
-        )}
-        {detail.has_audio_book && (
+      {/* Audio */}
+      {detail.has_audio_book && (
+        <div className="flex gap-3">
           <div className="w-40 flex-shrink-0 rounded-lg bg-indigo-50 p-3">
             <p className="text-[10px] font-medium text-slate-500">Sesli Kitap</p>
             <p className="text-xs font-medium text-indigo-700">
               {detail.audio_type === "cloned" ? "Klonlanmış" : "Sistem"}
             </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Timestamps */}
       <div className="space-y-1 border-t pt-3 text-xs text-slate-500">

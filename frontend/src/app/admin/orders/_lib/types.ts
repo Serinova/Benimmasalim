@@ -77,7 +77,6 @@ export interface OrderListItem {
   product_price: number | null;
   scenario_name: string | null;
   visual_style_name: string | null;
-  learning_outcomes: string[] | null;
   page_count: number;
   page_images: Record<string, string> | null;
   confirmed_at: string | null;

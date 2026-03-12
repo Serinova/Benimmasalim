@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     # Comma-separated extra keys for round-robin rotation under load
     gemini_api_keys_extra: str = ""  # e.g. "key2,key3"
-    fal_api_keys_extra: str = ""  # e.g. "key2,key3"
+
     # TWO-PASS GENERATION: Different models for different tasks
     # gemini-2.5-flash: default model, equipped to handle reasoning tokens
     gemini_story_model: str = "gemini-2.5-flash"  # PASS 0+1: Blueprint + Pages (JSON output)
@@ -117,7 +117,6 @@ class Settings(BaseSettings):
 
     # External API Rate Limits (Requests Per Minute)
     gemini_rpm_limit: int = 600  # Gemini API RPM limit - artırıldı (50+ kullanıcı için)
-    fal_rpm_limit: int = 100  # Fal.ai API RPM limit
     elevenlabs_rpm_limit: int = 50  # ElevenLabs API RPM limit
 
     # Image Generation Concurrency (scaled for 100 concurrent users)
@@ -259,8 +258,6 @@ class Settings(BaseSettings):
         # ── AI API Keys (WARNING) ─────────────────────────────────
         if not self.gemini_api_key:
             warn.append("GEMINI_API_KEY is empty — story generation will fail")
-        if not self.fal_api_key:
-            warn.append("FAL_API_KEY is empty — image generation will fail")
 
         # ── Email (WARNING) ───────────────────────────────────────
         if not self.smtp_user or not self.smtp_password:

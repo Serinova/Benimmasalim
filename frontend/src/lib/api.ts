@@ -2,7 +2,7 @@
  * API client for backend communication — Prompt System V2.
  *
  * All AI prompt composition happens on the backend.
- * Frontend sends IDs only (scenario_id, learning_outcome_ids, visual_style_id)
+ * Frontend sends IDs only (scenario_id, visual_style_id)
  * plus child meta and clothing_description.
  */
 
@@ -229,21 +229,6 @@ export interface CustomInputField {
   help_text?: string;
 }
 
-/** V2: Learning outcome with optional banned words for no_family. */
-export interface LearningOutcome {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  ai_prompt_instruction: string | null;
-  banned_words_tr: string | null;
-}
-
-export interface LearningOutcomeCategory {
-  category: string;
-  category_label: string;
-  items: LearningOutcome[];
-}
 
 /** V2: Visual style — style injection happens via style_config.py on the backend. */
 export interface VisualStyle {
@@ -281,7 +266,7 @@ export interface StoryStructure {
  *
  * Backend model (TestStructuredStoryRequest) accepted fields:
  *   child_name, child_age, child_gender, child_photo_url,
- *   scenario_id, learning_outcomes, visual_style, visual_style_id,
+ *   scenario_id, visual_style, visual_style_id,
  *   page_count, clothing_description, custom_variables.
  */
 export interface GenerateStoryV2Request {
@@ -290,7 +275,6 @@ export interface GenerateStoryV2Request {
   child_gender: string;
   child_photo_url?: string;
   scenario_id: string;
-  learning_outcomes: string[]; // outcome names (backend still expects names)
   visual_style: string; // style prompt_modifier text (fallback if no visual_style_id)
   visual_style_id?: string; // UUID — backend looks up VisualStyle from DB
   page_count: number;
@@ -340,7 +324,6 @@ export interface SubmitPreviewV2Request {
   visual_style_name?: string | null;
   visual_style?: string;
   id_weight?: number;
-  learning_outcomes?: string[] | null;
   has_audio_book: boolean;
   audio_type?: string | null;
   audio_voice_id?: string | null;
@@ -420,11 +403,6 @@ export async function adminListUsers(params: {
   if (params.search) sp.set("search", params.search);
   const q = sp.toString();
   return fetchAPI(`/admin/users${q ? `?${q}` : ""}`);
-}
-
-// Learning Outcomes (V2)
-export async function getLearningOutcomes(): Promise<LearningOutcomeCategory[]> {
-  return fetchAPI("/scenarios/learning-outcomes");
 }
 
 // Visual Styles (V2)
@@ -534,9 +512,8 @@ export interface GeneratePreviewRequest {
   scenario_name?: string | null;
   visual_style?: string | null;
   visual_style_name?: string | null;
-  learning_outcomes?: string[] | null;
-  clothing_description?: string | null;
   id_weight?: number | null;
+  clothing_description?: string | null;
 }
 
 export interface GeneratePreviewResponse {
@@ -1128,7 +1105,6 @@ export function buildStoryPayload(params: {
   childGender: string;
   childPhotoUrl?: string;
   scenarioId: string;
-  learningOutcomeNames: string[];
   visualStylePromptModifier: string;
   visualStyleId?: string;
   pageCount: number;
@@ -1143,10 +1119,6 @@ export function buildStoryPayload(params: {
     child_gender: params.childGender || "erkek",
     child_photo_url: params.childPhotoUrl || undefined,
     scenario_id: params.scenarioId,
-    learning_outcomes:
-      params.learningOutcomeNames.length > 0
-        ? params.learningOutcomeNames
-        : ["Genel macera ve eglence"],
     visual_style: params.visualStylePromptModifier,
     visual_style_id: params.visualStyleId || undefined,
     page_count: params.pageCount,

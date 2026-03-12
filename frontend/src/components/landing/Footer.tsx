@@ -116,7 +116,7 @@ export default function Footer({ data }: FooterProps) {
           <div>
             <Link href="/" className="flex items-center gap-2.5" aria-label="Ana Sayfa — Benim Masalım">
               <Image
-                src="/logo.png"
+                src="/logo.jpg"
                 alt="Benim Masalım"
                 width={52}
                 height={52}

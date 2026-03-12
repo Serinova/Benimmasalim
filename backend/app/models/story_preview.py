@@ -93,7 +93,6 @@ class StoryPreview(Base, UUIDMixin, TimestampMixin):
     # Selected options
     scenario_name: Mapped[str | None] = mapped_column(String(255))
     visual_style_name: Mapped[str | None] = mapped_column(String(255))
-    learning_outcomes: Mapped[list | None] = mapped_column(JSONB)  # Selected outcomes
 
     # Image URLs (from GCS)
     page_images: Mapped[dict | None] = mapped_column(JSONB)  # {page_num: url}
@@ -108,10 +107,9 @@ class StoryPreview(Base, UUIDMixin, TimestampMixin):
     # Format: {
     #   "style_id": "uuid-of-visual-style",        # For cache invalidation
     #   "scenario_id": "uuid-of-scenario",         # For cache invalidation
-    #   "outcomes_hash": "md5-of-outcomes",        # For cache invalidation
     #   "prompts": [{"page_number": 0, "text": "...", "scene_description": "...", "visual_prompt": "..."}, ...]
     # }
-    # ⚠️ CACHE INVALIDATION: If style_id, scenario_id, or outcomes_hash changes, cache should be regenerated!
+    # ⚠️ CACHE INVALIDATION: If style_id or scenario_id changes, cache should be regenerated!
 
     # Preview images (first 3 images generated)
     preview_images: Mapped[dict | None] = mapped_column(JSONB)

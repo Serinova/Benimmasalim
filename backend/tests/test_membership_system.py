@@ -658,9 +658,9 @@ class TestLoginRestoreGracePeriod:
     def test_login_source_has_restore_logic(self):
         import inspect
 
-        from app.api.v1.auth import login
+        from app.services.auth_service import perform_login
 
-        source = inspect.getsource(login)
+        source = inspect.getsource(perform_login)
         assert "ACCOUNT_RESTORED" in source
         assert "deletion_scheduled_at" in source
 

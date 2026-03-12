@@ -35,8 +35,6 @@ _CINEMATIC_TERMS: list[str] = [
     r"\bmovie\s+poster\b", r"\bposter\s+quality\b",
     r"\bDSLR\b", r"\bbokeh\b", r"\blens\s+flare\b",
     r"\bprofessional\s+photo\b", r"\bphotography\b", r"\bphotograph\b",
-    r"\bcover\s+illustration\b",
-    r"\bprofessional\s+book\s+cover\s+design\b",
 ]
 _CINEMATIC_RE = re.compile("|".join(f"({p})" for p in _CINEMATIC_TERMS), re.IGNORECASE)
 

@@ -47,7 +47,7 @@ def test_manifest_page0_cover_768x1024_page1_landscape_1024x768() -> None:
 
 
 def test_strict_negative_includes_typographic() -> None:
-    """Strict negative additions (typographic) consistent with prompt_debug use."""
+    """Strict negative additions consistent with prompt_debug use."""
     strict = get_strict_negative_additions()
-    assert "typographic" in strict
+    assert "text overlay" in strict
     assert strict == STRICT_NEGATIVE_ADDITIONS

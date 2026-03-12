@@ -7,7 +7,6 @@ Responsibilities (this file):
 - JSON helpers: _extract_and_repair_json, _dedupe_style
 
 Sub-mixins (inherited automatically):
-- _story_learning_outcomes._LearningOutcomesMixin  — educational helpers
 - _story_blueprint._BlueprintMixin                 — PASS-0 blueprint
 - _story_legacy_passes._LegacyPassesMixin          — legacy PASS-1/PASS-2
 """
@@ -56,8 +55,7 @@ logger = structlog.get_logger()
 class _StoryWriterMixin(_BlueprintMixin, _LegacyPassesMixin):
     """Story generation mixin for GeminiService.
 
-    Orchestration only — educational helpers in _story_learning_outcomes,
-    PASS-0 blueprint in _story_blueprint,
+    Orchestration only — PASS-0 blueprint in _story_blueprint,
     legacy PASS-1/PASS-2 in _story_legacy_passes."""
 
     def _extract_and_repair_json(self, raw_text: str) -> dict | list:

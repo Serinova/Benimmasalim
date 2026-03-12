@@ -64,7 +64,7 @@ function OrganizationJsonLd() {
     "@type": "Organization",
     name: "Benim Masalım",
     url: "https://www.benimmasalim.com.tr",
-    logo: "https://www.benimmasalim.com.tr/logo.png",
+    logo: "https://www.benimmasalim.com.tr/logo.jpg",
     description: "Yapay zeka destekli kişiye özel çocuk kitabı platformu. Çocuğunuzun adıyla masal oluşturun.",
     sameAs: [
       "https://www.instagram.com/benimmasalim",

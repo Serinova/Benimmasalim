@@ -12,7 +12,6 @@ import {
   TrendingUp,
   Package,
   BookOpen,
-  Target,
   Palette,
   ArrowRight,
   Eye,
@@ -200,13 +199,6 @@ export default function AdminDashboard() {
       href: "/admin/scenarios",
       icon: <BookOpen className="h-5 w-5" />,
       color: "bg-pink-500",
-    },
-    {
-      title: "Kazanımlar",
-      description: "Eğitici içerikler",
-      href: "/admin/learning-outcomes",
-      icon: <Target className="h-5 w-5" />,
-      color: "bg-emerald-500",
     },
     {
       title: "Görsel Stiller",

@@ -60,7 +60,11 @@ class TestPromptComposer:
         )
         composer = PromptComposer(ctx)
         result = composer.compose_page("Scene", page_number=1)
-        assert "likeness" not in result.prompt.lower() or "reference" not in result.prompt.lower()
+        # Without face_reference_url, the PuLID likeness hint should not be injected.
+        # Note: 'reference' can appear as part of style template (e.g. "from the reference photo")
+        # so we only check the explicit likeness hint string is absent.
+        from app.prompt.templates import LIKENESS_HINT
+        assert LIKENESS_HINT not in result.prompt
 
     def test_all_styles_produce_different_prompts(self):
         styles = ["default", "pixar", "watercolor", "anime", "soft_pastel", "adventure_digital"]

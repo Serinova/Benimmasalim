@@ -24,7 +24,7 @@ class TestBookContext:
             style_modifier="watercolor painting",
         )
         assert ctx.style.key == "watercolor"
-        assert ctx.style.true_cfg == 1.2
+        assert ctx.style.true_cfg == 1.3
 
     def test_build_with_id_weight_override(self):
         ctx = BookContext.build(

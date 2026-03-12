@@ -481,7 +481,8 @@ class TestInvoiceEmailTemplate:
 
         service = EmailService()
 
-        with patch.object(service, "_send_with_retry") as mock_send:
+        with patch("app.services.email_service.settings.dev_email_override", None), \
+             patch.object(service, "_send_with_retry") as mock_send:
             service._send_invoice_email(
                 recipient_email="test@example.com",
                 recipient_name="Test User",

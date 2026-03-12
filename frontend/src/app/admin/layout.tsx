@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Package,
   BookOpen,
-  Target,
   FileStack,
   ShoppingCart,
   Settings,
@@ -101,11 +100,6 @@ const navigation: NavGroup[] = [
         name: "Senaryo & İçerik",
         href: "/admin/scenarios",
         icon: <BookOpen className="h-5 w-5" />,
-      },
-      {
-        name: "Kazanımlar",
-        href: "/admin/learning-outcomes",
-        icon: <Target className="h-5 w-5" />,
       },
       {
         name: "Görsel Stiller",
@@ -371,7 +365,6 @@ function Header() {
     const pageNames: Record<string, string> = {
       products: "Ürün Yönetimi",
       scenarios: "Senaryo & İçerik",
-      "learning-outcomes": "Kazanımlar",
       "visual-styles": "Görsel Stiller",
       config: "Baskı Şablonları",
       "back-cover": "İç Kapak Arkası",

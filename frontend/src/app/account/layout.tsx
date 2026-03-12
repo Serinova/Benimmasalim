@@ -62,7 +62,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2.5" aria-label="Ana Sayfa — Benim Masalım">
             <Image
-              src="/logo.png"
+              src="/logo.jpg"
               alt="Benim Masalım"
               width={44}
               height={44}

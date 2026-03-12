@@ -35,10 +35,7 @@ def _make_promo(**overrides) -> PromoCode:
         "created_by": None,
     }
     defaults.update(overrides)
-    promo = PromoCode.__new__(PromoCode)
-    for k, v in defaults.items():
-        object.__setattr__(promo, k, v)
-    return promo
+    return PromoCode(**defaults)
 
 
 # ─── calculate_discount ─────────────────────────────────────────
@@ -182,7 +179,7 @@ class TestValidatePromoCode:
 
         from app.core.exceptions import ValidationError
 
-        with pytest.raises(ValidationError, match="Geçersiz kupon kodu"):
+        with pytest.raises(ValidationError, match="geçersiz veya kullanılamıyor"):
             await validate_promo_code("NONEXIST", Decimal("400"), mock_db)
 
     @pytest.mark.asyncio
@@ -196,7 +193,7 @@ class TestValidatePromoCode:
 
         from app.core.exceptions import ValidationError
 
-        with pytest.raises(ValidationError, match="aktif değil"):
+        with pytest.raises(ValidationError, match="geçersiz veya kullanılamıyor"):
             await validate_promo_code("TEST100", Decimal("400"), mock_db)
 
     @pytest.mark.asyncio
@@ -212,7 +209,7 @@ class TestValidatePromoCode:
 
         from app.core.exceptions import ValidationError
 
-        with pytest.raises(ValidationError, match="süresi dolmuş"):
+        with pytest.raises(ValidationError, match="geçersiz veya kullanılamıyor"):
             await validate_promo_code("TEST100", Decimal("400"), mock_db)
 
     @pytest.mark.asyncio
@@ -228,7 +225,7 @@ class TestValidatePromoCode:
 
         from app.core.exceptions import ValidationError
 
-        with pytest.raises(ValidationError, match="henüz geçerli değil"):
+        with pytest.raises(ValidationError, match="geçersiz veya kullanılamıyor"):
             await validate_promo_code("TEST100", Decimal("400"), mock_db)
 
     @pytest.mark.asyncio
@@ -242,7 +239,7 @@ class TestValidatePromoCode:
 
         from app.core.exceptions import ValidationError
 
-        with pytest.raises(ValidationError, match="kullanım limiti dolmuş"):
+        with pytest.raises(ValidationError, match="geçersiz veya kullanılamıyor"):
             await validate_promo_code("TEST100", Decimal("400"), mock_db)
 
     @pytest.mark.asyncio
@@ -256,7 +253,7 @@ class TestValidatePromoCode:
 
         from app.core.exceptions import ValidationError
 
-        with pytest.raises(ValidationError, match="Minimum sipariş tutarı"):
+        with pytest.raises(ValidationError, match="geçersiz veya kullanılamıyor"):
             await validate_promo_code("TEST100", Decimal("400"), mock_db)
 
     @pytest.mark.asyncio

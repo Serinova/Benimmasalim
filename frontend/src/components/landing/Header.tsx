@@ -92,7 +92,7 @@ export default function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 shrink-0" aria-label="Ana Sayfa — Benim Masalım">
           <Image
-            src="/logo.png"
+            src="/logo.jpg"
             alt="Benim Masalım"
             width={68}
             height={68}
@@ -181,7 +181,7 @@ export default function Header() {
               <SheetHeader className="mb-6">
                 <SheetTitle className="flex items-center gap-2.5">
                   <Image
-                    src="/logo.png"
+                    src="/logo.jpg"
                     alt="Benim Masalım"
                     width={44}
                     height={44}

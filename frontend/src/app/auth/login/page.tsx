@@ -105,7 +105,7 @@ function LoginContent() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <Link href="/" className="flex items-center gap-3" aria-label="Ana Sayfa — Benim Masalım">
             <Image
-              src="/logo.png"
+              src="/logo.jpg"
               alt="Benim Masalım"
               width={56}
               height={56}
@@ -154,7 +154,7 @@ function LoginContent() {
           {/* Mobil logo */}
           <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
             <Image
-              src="/logo.png"
+              src="/logo.jpg"
               alt="Benim Masalım"
               width={48}
               height={48}

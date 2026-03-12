@@ -35,7 +35,6 @@ logger = structlog.get_logger()
 # Default rate limits per service (requests per minute)
 DEFAULT_RATE_LIMITS = {
     "gemini": 60,
-    "fal": 100,
     "elevenlabs": 50,
     "gcs": 1000,  # GCS has high limits
 }
@@ -134,12 +133,6 @@ def _build_rotators() -> dict[str, APIKeyRotator]:
         rotators["gemini"] = APIKeyRotator(
             settings.gemini_api_key,
             getattr(settings, "gemini_api_keys_extra", ""),
-        )
-    fal_key = getattr(settings, "fal_api_key", "")
-    if fal_key:
-        rotators["fal"] = APIKeyRotator(
-            fal_key,
-            getattr(settings, "fal_api_keys_extra", ""),
         )
     return rotators
 

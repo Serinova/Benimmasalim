@@ -13,8 +13,8 @@ const cspDirectives = [
   "default-src 'self'",
   // Next.js requires 'unsafe-inline' for styles; nonce-based CSP needs custom server
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  // Scripts: self + inline for Next.js hydration
-  `script-src 'self'${isProd ? "" : " 'unsafe-eval'"} 'unsafe-inline'`,
+  // Scripts: self + inline for Next.js hydration + Google Tag Manager
+  `script-src 'self'${isProd ? "" : " 'unsafe-eval'"} 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com`,
   "img-src 'self' data: blob: https://storage.googleapis.com https://*.googleusercontent.com",
   "font-src 'self' https://fonts.gstatic.com",
   "connect-src 'self'" + connectSrcDev + (backendUrl ? " " + backendUrl.replace(/\/$/, "") : "") + " https://storage.googleapis.com https://*.iyzipay.com https://*.google-analytics.com" + connectSrcExtra,

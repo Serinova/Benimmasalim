@@ -59,7 +59,6 @@ class ImageProvider(StrEnum):
 
     GEMINI = "gemini"
     GEMINI_FLASH = "gemini_flash"
-    FAL = "fal"  # Faz 2'de eklenecek
 
 
 class ImageSize(StrEnum):

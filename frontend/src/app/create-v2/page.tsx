@@ -372,7 +372,6 @@ function CreatePageInner() {
         childGender: draft.childGender,
         childPhotoUrl,
         scenarioId: draft.scenarioId,
-        learningOutcomeNames: [],
         visualStylePromptModifier: "",
         visualStyleId: draft.selectedStyle || undefined,
         pageCount: selectedScenarioObj?.default_page_count ?? 10,
