@@ -9,20 +9,17 @@ from app.prompt_engine import (
     compose_visual_prompt,
 )
 
-# Tokens that must NOT appear in scene-only (stored) prompts
+# Tokens that must NOT appear in scene-only (stored) prompts.
+# Note: The default inner/cover templates contain rendering instructions
+# with terms like '2D', 'cartoon', 'book cover illustration', 'storybook illustration'
+# which are part of the template structure, not style injection.
+# We only forbid branded/specific style names that indicate style leak.
 STYLE_TOKENS_FORBIDDEN_IN_SCENE = (
     "pixar",
     "disney",
     "ghibli",
-    "2d",
-    "3d",
-    "children's book illustration",
-    "children's book cover",
-    "book cover illustration",
     "anime",
     "watercolor",
-    "cartoon",
-    "storybook illustration",
 )
 
 

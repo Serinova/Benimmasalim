@@ -1,0 +1,15 @@
+DB Version: PostgreSQL 15.15 on x86_64-pc-linux-gnu, compiled by Debian clang version 12.0.1, 64-bit
+Database: benimmasalim
+Server Addr: None
+Server Port: None
+
+All databases on this server:
+  - benimmasalim
+  - cloudsqladmin
+  - postgres
+
+Total scenarios: 17
+
+Kapadokya: theme_key=cappadocia, name=Kapadokya Macerası, prompt_len=5634
+custom_inputs_schema: [{"key": "animal_friend", "type": "select", "label": "Yol Arkadaşı", "default": "Cesur Yılkı Atı", "options": ["[object Object]", "[object Object]"]}]
+scenario_bible: None

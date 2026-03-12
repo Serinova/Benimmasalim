@@ -1,0 +1,218 @@
+================================================================================
+theme_key: cappadocia
+name: Kapadokya Macerası
+status: ACTIVE
+location_en: Cappadocia
+default_page_count: 22
+story_prompt_tr length: 5634 chars
+outfit_girl length: 276 chars
+scenario_bible: YES
+has_companion: YES
+no_family: True
+  custom_input: key=animal_friend, type=select, options=[{'label': 'Cesur Yılkı Atı', 'value': 'Cesur Yılkı Atı'}, {'label': 'Sevimli Kapadokya Tilkisi', 'value': 'Sevimli Kapadokya Tilkisi'}]
+
+================================================================================
+theme_key: NONE
+name: Yerebatan Macerası
+status: PASSIVE
+location_en: Basilica Cistern, Istanbul
+default_page_count: 22
+story_prompt_tr length: 1750 chars
+outfit_girl length: 374 chars
+scenario_bible: NO
+has_companion: NO
+no_family: True
+
+================================================================================
+theme_key: gobeklitepe
+name: Göbeklitepe Macerası
+status: ACTIVE
+location_en: Göbeklitepe
+default_page_count: 22
+story_prompt_tr length: 8198 chars
+outfit_girl length: 302 chars
+scenario_bible: YES
+has_companion: YES
+no_family: True
+  custom_input: key=animal_friend, type=select, options=[{'label': '🦊 Cesur Step Tilkisi', 'value': 'Cesur Step Tilkisi'}, {'label': '🦅 Step Kartalı', 'value': 'Step Kartalı'}, {'label': '🐐 Neolitik Keçi', 'value': 'Neolitik Keçi'}, {'label': '🐱 Yabani Kedi', 'value': 'Yabani Kedi'}]
+  custom_input: key=favorite_element, type=select, options=[{'label': '🦁 Hayvan Kabartmaları', 'value': 'Hayvan kabartmaları (tilki, aslan, yılan, kuş)'}, {'label': '🗿 T-Sütunları', 'value': 'T-sütunları (dev dikilitaşlar)'}, {'label': '⭕ Dairesel Taş Yapılar', 'value': 'Dairesel taş yapılar (iç içe halkalar)'}, {'label': '⛏️ Taş Ocağı', 'value': 'Taş ocağı (yarım kalmış dikilitaşlar)'}]
+
+================================================================================
+theme_key: ephesus
+name: Efes'in Zaman Kapısı
+status: ACTIVE
+location_en: Ephesus
+default_page_count: 22
+story_prompt_tr length: 5434 chars
+outfit_girl length: 589 chars
+scenario_bible: NO
+has_companion: YES
+no_family: False
+  custom_input: key=animal_friend, type=select, options=['[object Object]', '[object Object]']
+
+================================================================================
+theme_key: catalhoyuk
+name: Çatalhöyük'ün Çatı Yolu
+status: ACTIVE
+location_en: Çatalhöyük
+default_page_count: 22
+story_prompt_tr length: 6855 chars
+outfit_girl length: 436 chars
+scenario_bible: YES
+has_companion: YES
+no_family: False
+  custom_input: key=animal_friend, type=select, options=[{'label': 'Neolitik Köy Köpeği', 'value': 'Köpek'}, {'label': 'Neolitik Keçi Yavrusu', 'value': 'Neolitik Keçi'}, {'label': 'Step Kartalı', 'value': 'Step Kartalı'}, {'label': 'Yabani Kedi', 'value': 'Yabani Kedi'}]
+
+================================================================================
+theme_key: sumela
+name: Sümela'nın Kayıp Mührü
+status: ACTIVE
+location_en: Sümela Monastery
+default_page_count: 22
+story_prompt_tr length: 7517 chars
+outfit_girl length: 709 chars
+scenario_bible: YES
+has_companion: NO
+no_family: False
+
+================================================================================
+theme_key: sultanahmet
+name: Sultanahmet'te Zamanın Fısıltısı
+status: ACTIVE
+location_en: Sultanahmet Mosque (Blue Mosque)
+default_page_count: 22
+story_prompt_tr length: 7778 chars
+outfit_girl length: 594 chars
+scenario_bible: YES
+has_companion: YES
+no_family: False
+  custom_input: key=animal_friend, type=select, options=[{'label': 'Beyaz Sultanahmet Güvercini', 'value': 'Minik Beyaz Güvercin'}, {'label': 'Tombul Sokak Kedisi', 'value': 'Tombul Sokak Kedisi'}]
+
+================================================================================
+theme_key: galata
+name: Galata'nın Kayıp Işık Haritası
+status: ACTIVE
+location_en: Galata Tower
+default_page_count: 22
+story_prompt_tr length: 12003 chars
+outfit_girl length: 233 chars
+scenario_bible: YES
+has_companion: NO
+no_family: False
+
+================================================================================
+theme_key: kudus
+name: Kudüs Macerası
+status: ACTIVE
+location_en: Old City of Jerusalem
+default_page_count: 22
+story_prompt_tr length: 5080 chars
+outfit_girl length: 481 chars
+scenario_bible: NO
+has_companion: YES
+no_family: False
+  custom_input: key=animal_friend, type=select, options=['[object Object]', '[object Object]']
+
+================================================================================
+theme_key: abusimbel
+name: Abu Simbel Macerası
+status: PASSIVE
+location_en: Abu Simbel Temples
+default_page_count: 22
+story_prompt_tr length: 4839 chars
+outfit_girl length: 329 chars
+scenario_bible: NO
+has_companion: YES
+no_family: False
+  custom_input: key=favorite_moment, type=select, options=['Güneş Işığı Olayı', 'Dev Heykelleri İlk Görme', 'Karanlık Koridorda Yürüyüş', 'Çölden Tapınağın Belirmesi']
+  custom_input: key=special_discovery, type=select, options=["Ramses'in Gizli Odası", 'Kayıp Hiyeroglif Haritası', "Nefertari'nin Sihirli Aynası", 'Güneşin Matematiksel Sırrı']
+  custom_input: key=travel_companion, type=select, options=['Bilge Scarab Böceği', 'Konuşan Hiyeroglif', 'Cesur Nil Kuşu', 'Neşeli Kum Kedisi']
+
+================================================================================
+theme_key: amazon
+name: Amazon'un Gizli Çağrısı
+status: ACTIVE
+location_en: Amazon Rainforest
+default_page_count: 22
+story_prompt_tr length: 11761 chars
+outfit_girl length: 443 chars
+scenario_bible: YES
+has_companion: YES
+no_family: False
+  custom_input: key=animal_friend, type=select, options=[{'label': 'Renkli Papagan (Macaw)', 'value': 'Renkli Papagan'}, {'label': 'Sevimli Minik Maymun', 'value': 'Minik Maymun'}]
+
+================================================================================
+theme_key: dinosaur
+name: Dinozorlar Alemi: Kayıp Yuva
+status: ACTIVE
+location_en: Cretaceous Period
+default_page_count: 22
+story_prompt_tr length: 9147 chars
+outfit_girl length: 362 chars
+scenario_bible: YES
+has_companion: NO
+no_family: False
+
+================================================================================
+theme_key: umre_pilgrimage
+name: Kutsal Topraklara Ziyareti
+status: ACTIVE
+location_en: Mecca and Medina
+default_page_count: 22
+story_prompt_tr length: 4025 chars
+outfit_girl length: 647 chars
+scenario_bible: NO
+has_companion: NO
+no_family: False
+
+================================================================================
+theme_key: space
+name: Güneş Sistemi Macerası: Gezegen Kaşifleri
+status: ACTIVE
+location_en: Solar System
+default_page_count: 22
+story_prompt_tr length: 8582 chars
+outfit_girl length: 562 chars
+scenario_bible: YES
+has_companion: YES
+no_family: False
+  custom_input: key=animal_friend, type=select, options=[{'label': 'Gümüş Robot Nova (Yapay Zeka)', 'value': 'Gümüş Robot Nova'}, {'label': 'Sevimli Uzay Köpeği Cosmos', 'value': 'Mini Uzay Köpeği Cosmos'}]
+
+================================================================================
+theme_key: ocean
+name: Mercan Şehrin Sinyali
+status: ACTIVE
+location_en: Pacific Ocean
+default_page_count: 22
+story_prompt_tr length: 11133 chars
+outfit_girl length: 450 chars
+scenario_bible: YES
+has_companion: NO
+no_family: False
+
+================================================================================
+theme_key: toy_world
+name: Oyuncak Dünyası: Kayıp Kurma Anahtarı
+status: ACTIVE
+location_en: 
+default_page_count: 22
+story_prompt_tr length: 8617 chars
+outfit_girl length: 361 chars
+scenario_bible: YES
+has_companion: YES
+no_family: False
+  custom_input: key=animal_friend, type=select, options=[{'label': 'Pelüş Ayıcık', 'value': 'Pelüş Ayıcık'}, {'label': 'Zıpzıp Tavşan', 'value': 'Zıpzıp Tavşan'}]
+
+================================================================================
+theme_key: fairy_tale_world
+name: Masal Dünyası: Rüya Anahtarı
+status: ACTIVE
+location_en: 
+default_page_count: 22
+story_prompt_tr length: 8459 chars
+outfit_girl length: 373 chars
+scenario_bible: YES
+has_companion: YES
+no_family: False
+  custom_input: key=animal_friend, type=select, options=['[object Object]', '[object Object]']
+

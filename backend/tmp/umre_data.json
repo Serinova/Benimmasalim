@@ -1,0 +1,61 @@
+{
+  "id": "9c7d5ac6-a547-402e-87f0-d248f01e58df",
+  "name": "Kutsal Topraklara Ziyareti",
+  "theme_key": "umre_pilgrimage",
+  "description": "Kafile ile Mekke ve Medine'ye umre ziyareti. Kabe ilk görüş, tavaf, Sa'y, saç kesme, Mescid-i Nebevi, Uhud, Hendek. Kitap adı: [Çocuk adı]'ın Kutsal Topraklara Ziyareti.",
+  "is_active": true,
+  "display_order": 14,
+  "story_prompt_tr": "\n# KUTSAL TOPRAKLARA ZİYARET — UMRE\n\n## YAPI: {child_name} KAFİLE İLE UMRE YAPIYOR. UÇAK SAHNESİ YOK.\n\n**KRİTİK — METİN UZUNLUĞU:** Her sayfa MUTLAKA kısa olsun; sayfaya sığmalı. Her sayfa 1-3 cümle, toplam 25-50 kelime. Daha uzun yazma; kurguyu bozmadan %30 kısa tut.\n\n**KIYAFET:** Erkekler ihrama girince 2 parça dikişsiz beyaz bez, BAŞ AÇIK (takke yok). Saç kesilene kadar ihramda. Saç kesildikten sonra takke (saç SADECE kesilir, tıraş/0'a vurma YOK; erkek kel çizilmez). Kızlar hicap giyer.\n\n**AKIŞ:** Havalimanı → ihram hazırlığı ve giriş → (Cidde varışı sonrası) Kabeye doğru ihramla yürüyüş, Lebbeyk sesleri → Kabe ilk görüş (ilk görüşte duaların kabulü dileği vurgula) → Tavaf 3 sayfa → Sa'y 2 sayfa → Saç kesme 1 sayfa → Mekke'deki kubbeli mescide ziyaret 2 sayfa → Medine yolculuğu → Mescid-i Nebevi (Resulullah hakkında bilgi, hissiyat) → Uhud tepesi 1 sayfa → Hendek Savaşı 1 sayfa → Eve dönüş.\n\n---\n\n### Sayfa 1-2: Havalimanı, kafile, ihram hazırlığı\n- {child_name} kafile ile havalimanında buluşuyor. Heyecanlı. Uçak sahnesi YOK.\n- İhrama hazırlanıyorlar: beyaz, dikişsiz 2 parça bez. Niyet, telbiye. Baş açık kalacak (erkekler için).\n\n### Sayfa 3: Cidde varışı, Kabeye doğru yürüyüş\n- Cidde'ye varıldı. Kabeye doğru ihramlı yürüyüş. \"Lebbeyk Allahümme Lebbeyk\" sesleri her yerde.\n\n### Sayfa 4-5: Kabe ilk görüş\n- Mescid-i Haram'a adım. Kabe ilk kez görülüyor. Gözyaşları, huşu.\n- İlk görüşte edilen duaların kabul edildiği inancı vurgula. {child_name} içinden ne dilerse kalbiyle orada.\n\n### Sayfa 6-8: Tavaf (3 sayfa)\n- Tavafa başlama — Hacerülesved, 7 tur. İhramda, baş açık.\n- Tavafın anlamı: Kabe etrafında birlikte dönmek, tek yürek. Kısa vurgu.\n- Tavaf bitişi. Makam-ı İbrahim, Zemzem bir yudum.\n\n### Sayfa 9-10: Sa'y (2 sayfa)\n- Safa'dan Merve'ye 7 gidiş-geliş başlıyor. Hz. Hacer'in hikâyesi kısaca.\n- Sa'y bitişi. Yoruldu ama tamamladı.\n\n### Sayfa 11: Saç kesme\n- Saç kesiliyor (tıraş değil, sadece kesim). İhramdan çıkış. Yenilenme, huzur. Sebebi ve hissiyatı kısa. Metinde \"tıraş\", \"0'a vurma\", \"kel\" GEÇMESİN.\n- KRİTİK: Kız çocuğun saçını SADECE KADIN keser (anne, teyze, abla veya kadın kuaför). Erkek berber kızın saçına dokunmaz. Erkek çocuğun saçını erkek berber keser. Hikâyede ve sahne tasvirinde buna uygun yaz (kız ise kadın karakteri saç keserken göster).\n\n### Sayfa 12-13: Mekke — kubbeli mescit ziyareti (2 sayfa)\n- Mekke'deki kubbeli mescide ziyaret. Tarih, maneviyat.\n- Orada anlatılanlar, {child_name}'ın hissettiği huzur. 2 sayfa toplam.\n\n### Sayfa 14: Medine yolculuğu\n- Medine'ye yolculuk. Yeşil kubbe uzaktan. Artık takke (erkek). Kızlar hicap.\n\n### Sayfa 15: Mescid-i Nebevi, Resulullah\n- Mescid-i Nebevi. Yeşil kubbe. Resulullah (sav) hakkında bilgi, saygı, hissiyat. Görselleştirme yok, sadece anlatım.\n\n### Sayfa 16: Uhud tepesi\n- Uhud tepesi ziyareti. Tarihî önemi kısaca, bir sayfa.\n\n### Sayfa 17: Hendek Savaşı\n- Hendek (Ahzab) hatırası. Bir sayfa vurgu.\n\n### Sayfa 18+: Eve dönüş ve kapanış\n- Eve dönüş. \"Kutsal topraklar beni değiştirdi.\" Kısa, duygusal kapanış. Kalan sayfa sayısına göre 1-2 sayfa.\n\n---\n\n## 🚫 GÖRSEL KURALLAR\n- Sayfa 1-2: Henüz ihram yok veya hazırlık (erkekte baş açık).\n- Sayfa 3-10: İHRAM — 2 parça beyaz bez, BAŞ AÇIK (takke yok).\n- Sayfa 11: Saç kesme anı (sadece kesim; tıraş/kel YOK). Kız çocuk varsa saçını KADIN keser (anne/teyze/kadın kuaför); erkek berber kızın saçına dokunmaz. Erkek çocukta erkek berber olabilir.\n- Sayfa 12-22: Takke (erkek), normal saç — kel çizilmez. Kızlar hicap.\n- Peygamber/melek görseli YOK. Vaaz yok, yaşayarak anlat.\n- İlk sayfa [Sayfa 1] ile başla. Uçak, kabin, uçuş sahnesi ÇİZME.\n- G2 tutarlılık KURALI: Çocuk karakteri her sayfada aynı tutarlı kıyafetle göster. Yüz ve saç görünümü değişmez!\n- IŞIK VE DOKU (LIGHTING & TEXTURE): Mekke mermer dokusu (marble texture) ve sinematik kutsal ışık (cinematic lighting, golden glow) kesinlikle yer ver!\n- Asla didaktik nasihat verme veya vaaz bildirme. YASAK!\n\nHikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime). Kısa tut; sayfaya sığsın.\n",
+  "cover_prompt_template": "An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Standing in the grand white marble courtyard before the magnificent black Kaaba draped in ornate golden Kiswah calligraphy embroidery. Towering golden minarets and grand Ottoman domes rising against a deep twilight sky, peaceful distant pilgrims in white ihram (small, no faces). Warm reverent golden light reflecting off polished marble, soft ambient glow from the minarets, gentle volumetric light around the Kaaba. Slightly low-angle shot: child 20% foreground, sacred architecture 80%. Sacred palette: pure white marble, deep black and gold Kiswah, warm amber glow, emerald green accents. NO airplanes, NO airport, NO glowing lights, NO magic, NO fairies, NO Prophet/angel depictions.",
+  "page_prompt_template": "An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Locations: [Kaaba: black with golden Kiswah, white marble courtyard / Safa-Marwa: marble corridor / Masjid Nabawi: green dome / Zemzem: marble]. Islamic geometric patterns, calligraphy. Cinematic reverent lighting, warm golden glow, detailed marble texture. Close-up on the child's expressive face, wide for sacred architecture. Expressive emotion (amazed, smiling, determined). No eye contact with camera. Reverent and realistic. NO glowing lights, NO magic, NO fairies, NO Prophet depictions. {STYLE}",
+  "outfit_girl": "pure white cotton modest long-sleeve dress reaching ankles with no patterns or decorations, PROPERLY WRAPPED white hijab: fabric wraps FULLY around the head and neck — NO hair visible, NO neck visible, fabric drapes softly over shoulders and chest, neat pin-free folds, same style as a modern proper hijab wrap (NOT a loose veil, NOT a hood, NOT fabric merely draped on top of head). comfortable beige leather flat sandals, small white cotton drawstring backpack. Simple and clean appearance inspired by ihram purity, no jewelry. EXACTLY the same outfit on every page — same pure white dress, same properly wrapped white hijab, same beige sandals.",
+  "outfit_boy": "pure white cotton knee-length kurta tunic with no patterns or decorations, small round white knitted taqiyah skull-cap sitting snugly on top of the head (NOT a turban, NOT a wrapped cloth, NOT a keffiyeh, NOT a hood — ONLY a small round knitted cap), light beige loose-fitting cotton pants, comfortable tan leather sandals, small white cotton drawstring backpack. Simple and clean appearance inspired by ihram purity. EXACTLY the same outfit on every page — same white kurta, same small round white taqiyah cap, same beige pants, same sandals.",
+  "scenario_bible": null,
+  "cultural_elements": {
+    "values": [
+      "Humility",
+      "Patience",
+      "Gratitude",
+      "Unity",
+      "Perseverance"
+    ],
+    "primary": [
+      "Masjid al-Haram and the Kaaba (black Kiswah with golden calligraphy)",
+      "White marble courtyard reflecting sacred golden light",
+      "Tawaf: 7 circuits around the Kaaba in white ihram",
+      "Sa'y: 7 walks between Safa and Marwa marble corridor",
+      "Zamzam well and blessed water"
+    ],
+    "location": "Mecca and Medina, Saudi Arabia",
+    "secondary": [
+      "Masjid al-Nabawi and Green Dome (Medina)",
+      "Uhud Hill — site of historic battle",
+      "Khandaq (Trench) site near Medina",
+      "Mecca's domed mosques and minarets",
+      "Hair cutting ceremony — renewal and ihram exit"
+    ],
+    "atmosphere": "Peaceful, reverent, spiritual, humble, transformative",
+    "color_palette": "white (purity), gold (sacred), green (Medina), black (Kaaba)"
+  },
+  "custom_inputs_schema": null,
+  "location_constraints": "Setting follows the Umrah pilgrimage route. Kademe haritası ve Kamera kullanımları: Pages 1-2: Airport/preparation hall, white ihram garments. (Medium Shot, humble) Pages 3: Jeddah arrival, walking toward Mecca. (Wide Shot, anticipation) Pages 4-5: Masjid al-Haram entrance, first view of the Kaaba. (Hero Shot, awe-inspiring) Pages 6-8: Tawaf — circling the Kaaba, white marble courtyard. (Wide + Close-up) Pages 9-10: Sa'y — Safa to Marwa marble corridor. (Medium Shot, walking) Pages 11: Barber area, hair trimming. (Close-up, symbolic) Pages 12-13: Domed mosque visit in Mecca. (Wide Shot, reverent) Pages 14: Road to Medina, green dome in distance. (Wide landscape) Pages 15-17: Masjid al-Nabawi, Uhud hill, Khandaq trench site. (Wide + Medium) Pages 18+: Return journey, emotional farewell. (Hero Shot, warm glow) ",
+  "location_en": "Mecca and Medina",
+  "flags": {
+    "no_family": false
+  },
+  "default_page_count": 22,
+  "ai_prompt_template": null,
+  "thumbnail_url": "https://storage.googleapis.com/benimmasalim-generated-books/scenarios/ff56092a-53fe-49b9-a21e-2069eaf6a394.jpeg",
+  "tagline": "Kutsal topraklarda unutulmaz bir manevi deneyim",
+  "marketing_badge": "Manevi Yolculuk",
+  "age_range": "7-10",
+  "estimated_duration": "20-25 dakika okuma",
+  "rating": 5.0,
+  "review_count": 0,
+  "marketing_price_label": "1.250 TL'den başlayan fiyatlarla",
+  "linked_product_id": "98c00c7c-407c-4947-9da0-2ee15bd7ee95",
+  "story_page_count": 21,
+  "cover_count": 2,
+  "greeting_page_count": 2,
+  "back_info_page_count": 1
+}

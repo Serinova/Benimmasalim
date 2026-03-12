@@ -34,6 +34,8 @@ import {
   DollarSign,
   Layout,
   BookOpen,
+  Lock,
+  Code2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -598,6 +600,9 @@ export default function AdminScenariosPage() {
   };
 
   // Preview data for the form
+  // Check if scenario is code-managed (from registry)
+  const isCodeManaged = editingScenario?.is_code_managed === true;
+
   const previewData: Partial<Scenario> = {
     name: watchedValues.name,
     description: watchedValues.description,
@@ -706,6 +711,12 @@ export default function AdminScenariosPage() {
                         <Badge variant="secondary" className="shadow-sm">
                           <EyeOff className="mr-1 h-3 w-3" />
                           Pasif
+                        </Badge>
+                      )}
+                      {scenario.is_code_managed && (
+                        <Badge className="bg-blue-500 text-white shadow-sm">
+                          <Code2 className="mr-1 h-3 w-3" />
+                          Kod
                         </Badge>
                       )}
                       {scenario.marketing_badge && (
@@ -935,6 +946,45 @@ export default function AdminScenariosPage() {
               {/* ===== CONTENT TAB ===== */}
               {activeTab === "content" && <>
 
+              {/* Code-managed banner */}
+              {isCodeManaged && (
+                <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                  <Code2 className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-800">Kod Yönetimli Senaryo</p>
+                    <p className="mt-1 text-xs text-blue-600">
+                      Bu senaryonun hikaye promptu, kıyafetler, companion&apos;lar ve teknik ayarları
+                      kod tarafından yönetiliyor. Sadece pazarlama alanları, görseller, sıralama ve
+                      aktif/pasif durumu buradan düzenlenebilir.
+                    </p>
+                    {editingScenario?.companions && editingScenario.companions.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-xs font-medium text-blue-700">Companion&apos;lar:</p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {editingScenario.companions.map((c) => (
+                            <span key={c.name_tr} className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs text-blue-800">
+                              {c.name_tr} ({c.species})
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {editingScenario?.objects && editingScenario.objects.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs font-medium text-blue-700">Objeler:</p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {editingScenario.objects.map((o) => (
+                            <span key={o.name_tr} className="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-1 text-xs text-indigo-800">
+                              {o.name_tr}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Basic Info */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -1018,6 +1068,7 @@ export default function AdminScenariosPage() {
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <Variable className="h-4 w-4 text-purple-600" />
                     Dinamik Değişkenler
+                    {isCodeManaged && <Lock className="h-3 w-3 text-blue-400" />}
                   </div>
                   {customInputs.length > 0 && (
                     <Badge variant="secondary" className="text-xs">
@@ -1026,12 +1077,31 @@ export default function AdminScenariosPage() {
                   )}
                 </div>
 
-                <p className="text-xs text-gray-500">
-                  Kullanıcıların hikaye oluştururken dolduracağı özel alanlar tanımlayın. Bu
-                  değişkenleri prompt şablonlarında kullanabilirsiniz.
-                </p>
-
-                <VariableManager variables={customInputs} onVariablesChange={setCustomInputs} />
+                {isCodeManaged ? (
+                  <div className="rounded-lg border bg-gray-50 p-3">
+                    <p className="text-xs text-gray-500">Kod tarafından yönetiliyor.</p>
+                    {customInputs.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {customInputs.map((ci) => (
+                          <div key={ci.key} className="flex items-center gap-2 text-xs">
+                            <code className="rounded bg-gray-200 px-1.5 py-0.5 text-gray-700">{`{${ci.key}}`}</code>
+                            <span className="text-gray-500">{ci.label}</span>
+                            {ci.default && (
+                              <span className="text-gray-400">— varsayılan: {ci.default}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-500">
+                      Kullanıcıların hikaye oluştururken dolduracağı özel alanlar tanımlayın.
+                    </p>
+                    <VariableManager variables={customInputs} onVariablesChange={setCustomInputs} />
+                  </>
+                )}
               </div>
 
               <Separator />
@@ -1045,35 +1115,49 @@ export default function AdminScenariosPage() {
 
                 <div className="space-y-4 rounded-lg border border-purple-100 bg-gradient-to-r from-purple-50 to-pink-50 p-4">
                   <div>
-                    <Label>Hikaye Yazım Promptu (TR)</Label>
+                    <Label className="flex items-center gap-1.5">
+                      Hikaye Yazım Promptu (TR)
+                      {isCodeManaged && <Lock className="h-3 w-3 text-blue-400" />}
+                    </Label>
                     <p className="mb-1 mt-0.5 text-xs text-gray-500">
-                      Gemini&apos;ye gönderilecek hikaye talimatları. Sadece hikaye dünyası ve kurgu
-                      ile ilgili olmalı, görsel stil içermemeli.
+                      {isCodeManaged
+                        ? "Bu alan kod tarafından yönetiliyor — değiştirilemez."
+                        : "Gemini'ye gönderilecek hikaye talimatları. Sadece hikaye dünyası ve kurgu ile ilgili olmalı, görsel stil içermemeli."}
                     </p>
                     <Textarea
                       {...form.register("story_prompt_tr")}
-                      placeholder="Örn: Bu hikayede çocuk Kapadokya'daki peri bacalarında maceraya çıkar. Her sayfada farklı bir vadide keşif yapar..."
+                      placeholder="Örn: Bu hikayede çocuk Kapadokya'daki peri bacalarında maceraya çıkar..."
                       rows={5}
-                      className="bg-white font-mono text-sm"
+                      className={`font-mono text-sm ${isCodeManaged ? "cursor-not-allowed bg-gray-100 text-gray-500" : "bg-white"}`}
+                      disabled={isCodeManaged}
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Lokasyon (EN)</Label>
+                      <Label className="flex items-center gap-1.5">
+                        Lokasyon (EN)
+                        {isCodeManaged && <Lock className="h-3 w-3 text-blue-400" />}
+                      </Label>
                       <p className="mb-1 mt-0.5 text-xs text-gray-500">
                         Görsel promptlarda kullanılacak İngilizce lokasyon
                       </p>
                       <Input
                         {...form.register("location_en")}
                         placeholder="Cappadocia"
-                        className="mt-1"
+                        className={`mt-1 ${isCodeManaged ? "cursor-not-allowed bg-gray-100 text-gray-500" : ""}`}
+                        disabled={isCodeManaged}
                       />
                     </div>
                     <div>
-                      <Label>AI Üretim Sayfa Sayısı</Label>
+                      <Label className="flex items-center gap-1.5">
+                        AI Üretim Sayfa Sayısı
+                        {isCodeManaged && <Lock className="h-3 w-3 text-blue-400" />}
+                      </Label>
                       <p className="mb-1 mt-0.5 text-xs text-gray-500">
-                        Hikaye üretiminde kaç sayfa oluşturulacak (2-30). Bağlı üründen otomatik gelir, buradan override edilebilir.
+                        {isCodeManaged
+                          ? "Kod tarafından yönetiliyor."
+                          : "Hikaye üretiminde kaç sayfa oluşturulacak (2-30). Bağlı üründen otomatik gelir."}
                       </p>
                       <Controller
                         control={form.control}
@@ -1086,7 +1170,8 @@ export default function AdminScenariosPage() {
                             {...field}
                             value={field.value ?? 6}
                             onChange={(e) => field.onChange(Number(e.target.value))}
-                            className="mt-1"
+                            className={`mt-1 ${isCodeManaged ? "cursor-not-allowed bg-gray-100 text-gray-500" : ""}`}
+                            disabled={isCodeManaged}
                           />
                         )}
                       />
@@ -1096,16 +1181,25 @@ export default function AdminScenariosPage() {
                   {/* Flags */}
                   <div className="flex items-center justify-between rounded-lg border bg-white p-3">
                     <div>
-                      <Label>Ailesiz Senaryo</Label>
+                      <Label className="flex items-center gap-1.5">
+                        Ailesiz Senaryo
+                        {isCodeManaged && <Lock className="h-3 w-3 text-blue-400" />}
+                      </Label>
                       <p className="mt-0.5 text-xs text-gray-500">
-                        Aktifse hikayede anne, baba, kardeş gibi aile bireyleri yer almaz
+                        {isCodeManaged
+                          ? "Bu bayrak kod tarafından yönetiliyor."
+                          : "Aktifse hikayede anne, baba, kardeş gibi aile bireyleri yer almaz"}
                       </p>
                     </div>
                     <Controller
                       control={form.control}
                       name="no_family"
                       render={({ field }) => (
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isCodeManaged}
+                        />
                       )}
                     />
                   </div>

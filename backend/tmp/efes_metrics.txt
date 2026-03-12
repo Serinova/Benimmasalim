@@ -1,0 +1,100 @@
+=== STORY PROMPT TR ANALYSIS ===
+Total characters: 5432
+Total words: 798
+
+=== PLACEHOLDER CHECK ===
+  {animal_friend}: 1x — ✅ 1x (pipeline replace OK)
+  {animal_friend_en}: 0x — ⚠️ Not used (OK if not needed)
+  {companion}: 0x — 0x
+  {guide}: 0x — ✅ NOT USED (good)
+  {rehber}: 0x — ✅ NOT USED (good)
+  {child_name}: 4x — ✅ Pipeline auto-replaces
+  {clothing_description}: 0x — ℹ️ Not in story_prompt (normal)
+  {page_count}: 1x — ✅ Pipeline auto-replaces
+  {STYLE}: 0x — ℹ️ Only used in page_prompt_template
+
+=== PAGE_PROMPT_TEMPLATE ===
+  Has {STYLE}: ✅
+  Has {scene_description}: ✅
+  Has {child_name}: ✅
+  Has {hair_description}: ✅
+  Has {clothing_description}: ✅
+
+=== COVER_PROMPT_TEMPLATE ===
+  Has {scene_description}: ✅
+  Has {child_name}: ✅
+  Has {clothing_description}: ✅
+  Length: 687 chars
+
+=== CUSTOM INPUTS SCHEMA ===
+[
+  {
+    "key": "animal_friend",
+    "type": "select",
+    "label": "Antik Dost",
+    "default": "Antik Roma Kartalı",
+    "options": [
+      "[object Object]",
+      "[object Object]"
+    ]
+  }
+]
+🔴 CRITICAL BUG: options contain '[object Object]' strings!
+   This means companion selection is BROKEN in admin panel and frontend!
+
+=== OUTFIT ANALYSIS ===
+outfit_girl:
+  Length: 589 chars
+  Has 'EXACTLY': ✅
+  In English: ✅
+  Theme fit (Aegean): ✅
+outfit_boy:
+  Length: 485 chars
+  Has 'EXACTLY': ✅
+  In English: ✅
+  Theme fit (Aegean): ✅
+
+=== SCENARIO BIBLE ===
+Status: ❌ NULL/EMPTY — companion tutarlılığı düşebilir!
+
+=== FLAGS ===
+{
+  "no_family": false
+}
+
+=== CONTENT SAFETY ===
+  ✅ No 'anne'
+  ✅ No 'baba'
+  ✅ No 'aile'
+  ✅ No 'kardeş'
+  ✅ No 'abi'
+  ✅ No 'abla'
+  📋 no_family: false — family references allowed
+
+=== GEZİ REHBERİ FORMAT CHECK ===
+  ✅ No gezi rehberi patterns detected
+
+=== DUYGUSAL YAY ===
+  Found 8 emotion types: korku, cesaret, merak, heyecan, şaşk, panik, umut, kararsız
+  Target: 4+, Status: ✅ GOOD
+
+=== PAGE STRUCTURE ===
+  Page references: 28
+  Unique pages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+  Page range: 1-21
+  Expected: 1-21 (22 pages with cover)
+  Sections: 6
+  Section names: ['### Bölüm 1', '### Bölüm 2', '### Bölüm 3', '### Bölüm 4', '### Bölüm 5', '### Bölüm 6']
+
+=== COMPANION CAST LOCK CHECK ===
+  Default companion: 'Antik Roma Kartalı'
+  In _COMPANION_MAP: ✅ 'antik roma kartalı' exists in generate_book.py
+  In _TR_TO_EN: ✅ 'antik roma kartalı' exists in _story_blueprint.py
+  {animal_friend} in story_prompt_tr: ✅
+  Occurrences: 1
+  ⚠️ Only 1 occurrence — companion may not be well-integrated in story
+
+=== LOCATION CONTINUITY ===
+  location_constraints present: ✅
+  Length: 667 chars
+  Content: Setting alternates to show movement through Ancient Ephesus. Kademe haritası ve Kamera kullanımları: Pages 1-3: Modern Ephesus ruins exterior, sun-bleached marble paths and columns. (Wide Shot, golden hour) Pages 4-6: Library of Celsus facade, time-portal shimmering between pillars. (Medium Shot, dr...

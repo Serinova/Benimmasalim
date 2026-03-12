@@ -1,7 +1,10 @@
 """Admin scenarios management endpoints.
 
-Scenarios are PURE CONTENT - story templates and illustrations.
-Marketing/pricing fields have been moved to the Product model.
+HYBRID ARCHITECTURE:
+  - Technical content (prompts, outfits, companions, bible) lives in code
+    via the Scenario Registry (`app.scenarios`).
+  - Marketing/display fields (gallery, badge, tagline, pricing) live in the DB.
+  - Admin can only edit DB-owned fields; code-managed fields are read-only.
 
 Prompt Templates:
 - cover_prompt_template: For book covers (vertical, poster-style, title area)
@@ -444,22 +447,86 @@ class ScenarioResponse(BaseModel):
         from_attributes = True
 
 
+# Fields managed by the code registry — admin cannot overwrite these
+_CODE_MANAGED_FIELDS = frozenset({
+    "story_prompt_tr", "cover_prompt_template", "page_prompt_template",
+    "outfit_girl", "outfit_boy",
+    "custom_inputs_schema", "location_en", "flags", "default_page_count",
+})
+
+
 def scenario_to_response(scenario: Scenario) -> dict:
     """Convert Scenario model to response dict.
+
+    HYBRID: If the scenario has a code-registry entry, code-managed fields
+    (prompts, outfits, companions, bible) are taken from the registry.
+    Marketing/display fields always come from the DB.
 
     IMPORTANT: gallery_images is filtered through _safe_gallery to ensure
     no base64 data leaks into the response (can be 30MB+ per scenario).
     """
+    from app.scenarios import get_scenario_content
+
     thumb = scenario.thumbnail_url
     if thumb and _is_base64(thumb):
         thumb = ""  # Don't send base64 thumbnails in response
 
-    # Sayfa sayısı: linked product varsa tek kaynak ürün — ürünü 20 yaparsan hepsi 20 görünür
+    # Try to fetch code-managed content from the registry
+    theme_key = getattr(scenario, "theme_key", None) or ""
+    registry_content = get_scenario_content(theme_key) if theme_key else None
+
+    # Decide source for each code-managed field
+    if registry_content:
+        story_prompt_tr = registry_content.story_prompt_tr
+        cover_prompt = registry_content.cover_prompt_template
+        page_prompt = registry_content.page_prompt_template
+        outfit_girl = registry_content.outfit_girl
+        outfit_boy = registry_content.outfit_boy
+        location_en = registry_content.location_en
+        flags = registry_content.flags
+        default_page_count = registry_content.default_page_count
+        custom_inputs = registry_content.custom_inputs_schema
+        # Extra registry-only data for admin display
+        companions = [
+            {"name_tr": c.name_tr, "name_en": c.name_en, "species": c.species,
+             "appearance": c.appearance, "short_name": c.short_name}
+            for c in registry_content.companions
+        ]
+        objects = [
+            {"name_tr": o.name_tr, "appearance_en": o.appearance_en,
+             "prompt_suffix": o.prompt_suffix}
+            for o in registry_content.objects
+        ]
+        scenario_bible = registry_content.scenario_bible
+        cultural_elements = registry_content.cultural_elements
+        location_constraints = registry_content.location_constraints
+        is_code_managed = True
+    else:
+        story_prompt_tr = getattr(scenario, "story_prompt_tr", None)
+        cover_prompt = scenario.cover_prompt_template
+        page_prompt = scenario.page_prompt_template
+        outfit_girl = getattr(scenario, "outfit_girl", None)
+        outfit_boy = getattr(scenario, "outfit_boy", None)
+        location_en = getattr(scenario, "location_en", None)
+        flags = getattr(scenario, "flags", None) or {}
+        default_page_count = getattr(scenario, "default_page_count", 6)
+        custom_inputs = (
+            scenario.custom_inputs_schema
+            if isinstance(scenario.custom_inputs_schema, list)
+            else []
+        )
+        companions = []
+        objects = []
+        scenario_bible = getattr(scenario, "scenario_bible", None)
+        cultural_elements = getattr(scenario, "cultural_elements", None)
+        location_constraints = getattr(scenario, "location_constraints", None)
+        is_code_managed = False
+
+    # Sayfa sayısı: linked product varsa tek kaynak ürün
     _lp = getattr(scenario, "linked_product", None)
-    _def_page = getattr(scenario, "default_page_count", None)
     _story_page = getattr(scenario, "story_page_count", None)
     effective_default_page_count = (
-        (_lp.default_page_count if _lp and _lp.default_page_count else _def_page) or 6
+        (_lp.default_page_count if _lp and _lp.default_page_count else default_page_count) or 6
     )
     effective_story_page_count = (
         _lp.default_page_count if _lp and _lp.default_page_count else _story_page
@@ -470,27 +537,31 @@ def scenario_to_response(scenario: Scenario) -> dict:
         "name": scenario.name,
         "description": scenario.description,
         "thumbnail_url": thumb,
-        # Prompt Templates (legacy)
-        "cover_prompt_template": scenario.cover_prompt_template,
-        "page_prompt_template": scenario.page_prompt_template,
+        "theme_key": theme_key,
+        # Code-managed content (from registry if available)
+        "cover_prompt_template": cover_prompt,
+        "page_prompt_template": page_prompt,
         "ai_prompt_template": scenario.ai_prompt_template,
-        # V2 Fields
-        "story_prompt_tr": getattr(scenario, "story_prompt_tr", None),
-        "location_en": getattr(scenario, "location_en", None),
-        "flags": getattr(scenario, "flags", None) or {},
-        "default_page_count": getattr(scenario, "default_page_count", 6),
+        "story_prompt_tr": story_prompt_tr,
+        "location_en": location_en,
+        "flags": flags,
+        "default_page_count": default_page_count,
         "effective_default_page_count": effective_default_page_count,
         "effective_story_page_count": effective_story_page_count,
-        # Dynamic Variables / Custom Inputs — guard against malformed DB data
-        "custom_inputs_schema": (
-            scenario.custom_inputs_schema
-            if isinstance(scenario.custom_inputs_schema, list)
-            else []
-        ),
+        "custom_inputs_schema": custom_inputs,
         "available_variables": _safe_get_variables(scenario),
+        # Registry-only companion + object anchors
+        "companions": companions,
+        "objects": objects,
+        "scenario_bible": scenario_bible,
+        "cultural_elements": cultural_elements,
+        "location_constraints": location_constraints,
+        # Outfit Design (from registry if available)
+        "outfit_girl": outfit_girl,
+        "outfit_boy": outfit_boy,
         # Media — FILTERED: no base64 data in responses
         "gallery_images": _safe_gallery(scenario.gallery_images),
-        # Marketing Fields
+        # Marketing Fields (always from DB)
         "marketing_video_url": getattr(scenario, "marketing_video_url", None),
         "marketing_gallery": _safe_gallery(getattr(scenario, "marketing_gallery", None) or []),
         "marketing_price_label": getattr(scenario, "marketing_price_label", None),
@@ -523,15 +594,15 @@ def scenario_to_response(scenario: Scenario) -> dict:
         "greeting_page_count": getattr(scenario, "greeting_page_count", 2),
         "back_info_page_count": getattr(scenario, "back_info_page_count", 1),
         "total_page_count": scenario.total_page_count,
-        # Outfit Design
-        "outfit_girl": getattr(scenario, "outfit_girl", None),
-        "outfit_boy": getattr(scenario, "outfit_boy", None),
         # Display
         "is_active": scenario.is_active,
         "display_order": scenario.display_order,
         # Timestamps
         "created_at": scenario.created_at,
         "updated_at": scenario.updated_at,
+        # Registry metadata — tells the frontend which fields are read-only
+        "is_code_managed": is_code_managed,
+        "code_managed_fields": sorted(_CODE_MANAGED_FIELDS) if is_code_managed else [],
     }
 
 
@@ -743,6 +814,23 @@ async def update_scenario(
 
     # Update fields (exclude thumbnail_base64 from direct assignment)
     update_data = request.model_dump(exclude_unset=True, exclude={"thumbnail_base64"})
+
+    # ── HYBRID GUARD: Block code-managed fields if this scenario is in the registry ──
+    from app.scenarios import get_scenario_content
+
+    theme_key = getattr(scenario, "theme_key", None) or ""
+    registry_content = get_scenario_content(theme_key) if theme_key else None
+
+    if registry_content:
+        blocked = [f for f in _CODE_MANAGED_FIELDS if f in update_data]
+        if blocked:
+            logger.warning(
+                "ADMIN_BLOCKED_CODE_MANAGED_FIELDS",
+                scenario=scenario.name,
+                blocked_fields=blocked,
+            )
+            for f in blocked:
+                del update_data[f]
 
     # Upload base64 gallery images to GCS before saving
     if "gallery_images" in update_data and update_data["gallery_images"]:

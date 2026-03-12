@@ -1,0 +1,265 @@
+theme_key: space
+name: Güneş Sistemi Macerası: Gezegen Kaşifleri
+location_en: Solar System
+active: True
+no_family: False
+page_count: 22
+
+--- OUTFIT GIRL ---
+sleek futuristic white and electric-blue EVA astronaut suit for a child, glowing neon azure piping along the seams, high-tech helmet with a transparent gold-tinted visor, compact jetpack life-support system, durable articulated space gloves and boots, a utility belt with glowing space tools, small Turkish flag patch on the chest. NO other national flags, NO logos. EXACTLY the same outfit on every page — same astronaut suit, same helmet, same flag patch. No outfit changes. NO skirts or shorts. Same child character, consistent face and hair across all pages.
+
+--- OUTFIT BOY ---
+sleek futuristic white and carbon-black EVA astronaut suit for a child, glowing neon azure piping along the seams, high-tech helmet with a transparent gold-tinted visor, compact jetpack life-support system, durable articulated space gloves and boots, a utility belt with glowing space tools, small Turkish flag patch on the chest. NO other national flags, NO logos. EXACTLY the same outfit on every page — same astronaut suit, same helmet, same flag patch. No outfit changes. NO short shorts. Same child character, consistent face and hair across all pages.
+
+--- CUSTOM INPUTS ---
+[
+  {
+    "key": "animal_friend",
+    "type": "select",
+    "label": "Uzay Dostu",
+    "default": "Gümüş Robot Nova",
+    "options": [
+      {
+        "label": "Gümüş Robot Nova (Yapay Zeka)",
+        "value": "Gümüş Robot Nova"
+      },
+      {
+        "label": "Sevimli Uzay Köpeği Cosmos",
+        "value": "Mini Uzay Köpeği Cosmos"
+      }
+    ]
+  }
+]
+
+--- CULTURAL ELEMENTS ---
+{
+  "colors": "cosmos black, electric neon blue, vivid planetary colors (red, gold, icy white)",
+  "values": [
+    "Cesaret (Courage)",
+    "Keşif (Exploration)",
+    "Bilimsel merak (Scientific wonder)",
+    "Soğukkanlılık (Staying calm under pressure)"
+  ],
+  "primary": [
+    "Sleek high-tech spacecraft interior",
+    "Moon's gray cratered surface",
+    "Mars' dusty red dunes and storms",
+    "Jupiter's swirling, massive, stormy gas clouds",
+    "Saturn's sparkling icy rings",
+    "Glowing blue Earth from orbit"
+  ],
+  "location": "Solar System, Outer Space",
+  "secondary": [
+    "Floating objects inside cabin (zero gravity)",
+    "Asteroids whizzing by at high velocity",
+    "Compact silver AI robot companion Nova",
+    "Venus acid storm cloud reflections on ship hull",
+    "Uranus and Neptune in deep navy darkness"
+  ],
+  "atmosphere": "Epic, adrenaline-pumping, full of wonder and discovery, triumphant",
+  "sensitivity_rules": [
+    "NO aliens, NO monsters, NO scary weapons",
+    "Danger comes ONLY from natural space phenomena (storms, meteors, gravity) and is quickly overcome",
+    "Emphasize a proud independent space mission (NO USA patches/NASA logos)"
+  ]
+}
+
+--- LOCATION CONSTRAINTS ---
+Setting alternates vastly every few pages. Kademe haritası ve Kamera kullanımları: Pages 1-3: Space station interior, sleek and bright. (Wide Shot, interior) Pages 4-8: Lunar surface (gray craters) and Mars (red storms). (Medium + Close-up) Pages 9-15: Deep space, asteroid belt, massive imposing Jupiter clouds. (Epic Wide, adrenaline) Pages 16-18: Brilliant icy rings of Saturn. (Medium + Close-up, serene) Pages 19-21: Dark far-space, returning to glowing blue Earth. (Hero Shot, triumphant) CAMERA RULE: Mix extreme close-ups of the helmet/visor with massive wide panoramas of the space environment.
+
+--- SCENARIO BIBLE ---
+{
+  "magic_item": "pusula",
+  "tone_rules": [
+    "NO aliens, NO monsters, NO weapons",
+    "Danger comes ONLY from natural space phenomena (storms, gravity, meteors)",
+    "Child acts as a brave explorer and problem solver",
+    "Nova is a supportive AI companion, NOT a human child",
+    "Do NOT use 'violent' or 'attack' in visual prompts — use 'fierce', 'intense', 'turbulent' instead"
+  ],
+  "cultural_facts": [
+    "The Solar System has 8 planets orbiting the Sun",
+    "Jupiter's Great Red Spot is a storm larger than Earth that has raged for centuries",
+    "Saturn's rings are made of billions of ice and rock particles",
+    "Mars is called the Red Planet due to iron oxide on its surface",
+    "The Moon has one-sixth of Earth's gravity",
+    "Venus has an extremely thick atmosphere with sulfuric acid clouds",
+    "Uranus rotates on its side, unlike any other planet",
+    "The Kuiper Belt is a region of icy bodies beyond Neptune"
+  ],
+  "side_character": {
+    "name": "Nova",
+    "type": "compact floating silver AI robot",
+    "appearance": "a compact, floating silver AI robot companion with a glowing electric blue eye visor, small antennae, and smooth metallic body"
+  }
+}
+
+--- COVER PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Child astronaut floating weightlessly in deep space, glowing futuristic tether connecting to a sleek white space station. Friendly, compact silver AI robot companion hovering nearby with glowing blue visor. Breathtaking cosmic background: massive Jupiter with its Great Red Spot, glowing rings of Saturn, and distant red Mars. Epic cinematic lighting: deep space black, electric blue neon from the suit, warm amber starlight, glowing nebulas. Dynamic floating hero shot: child and robot 40% foreground, vast solar system 60% background. Sci-fi palette: cosmic purple, deep navy blue, electric cyan, vibrant planetary colors.
+
+--- PAGE PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Setting elements (choose based on scene description): INTERIOR: sleek futuristic space station corridor, glowing control panels, floating objects, zero gravity. PLANETARY: dusty red surface of Mars / massive cloudy storms of Jupiter / icy brilliant rings of Saturn. ATMOSPHERIC: deep space blackness with bright piercing stars, glowing colorful nebulas, bright solar flares. Shot variety (alternate each page — never repeat same angle twice in a row): [CLOSE-UP: child's determined face inside helmet visor / glowing robot screen / pressing control panel button] [MEDIUM: child and robot floating together / examining a space rock / waist-up action] [WIDE: epic panorama of a giant planet / full space station view / vast planetary landscape] Cinematic action lighting, dynamic pose, child 30-40% of frame. No eye contact with camera. Avoid: generic cartoonish stars, Earth in every shot, NASA/USA logos. Color palette: deep cosmos black, electric neon blue, high contrast planetary colors.
+
+--- STORY PROMPT TR ---
+
+# GÜNEŞ SİSTEMİ MACERASI: GEZEGEN KAŞİFLERİ
+
+## ÖZET KURGU
+{child_name}, Dünya yörüngesindeki modern uzay istasyonundan yola çıkarak
+küçük, zeki yapay zeka robot arkadaşı Nova ile Güneş Sistemi'nin derinliklerine dalar.
+Sekiz gezegenin en tehlikeli ve görkemli yanlarını yaşayarak, kozmik fırtınaları
+ve uzay boşluğunu aşarak görevini tamamlar. Uzaylı YOKTUR. Heyecan ve bilim vardır.
+
+**BAŞLIK:** "{child_name}'ın Güneş Sistemi Macerası" (Alt başlık yok)
+**TON:** 5-10 yaş. Ritimli, adrenalinli, "Nefesini tut!" hissi uyandıran,
+aksiyon dolu sinematik bir uzay keşfi. Asla kuru bir bilgi rehberi ("Merkür sıcaktır") YAPMA.
+Çocuk hergezegenin özelliğini AKSİYONLA yaşasın!
+
+---
+
+## 🎢 DUYGUSAL YAY — 5 DALGA (Tüm Hikayeye Hakim Olacak)
+
+Bu hikaye salt bilgi değil, duygu şölenidir:
+
+**DALGA 1 — İLK HEYECAN** (s.1-3): Fırlatma anı. Mideye oturan o büyük basınç. Uzayın sessizliği.
+→ Çocuğun hissi: "İnanamıyorum, boşlukta süzülüyorum!"
+
+**DALGA 2 — MERAK VE KEŞİF** (s.4-8): Ay ve iç gezegenler. İlk adımlar, asit bulutları.
+→ Çocuğun hissi: "Her gezegen bambaşka bir dünya..."
+
+**DALGA 3 — ADRENALİN VE ENDİŞE** (s.9-15): Jüpiter'in ürkütücü Kırmızı Leke fırtınası, sarsıntı!
+→ Çocuğun hissi: "Gemi savruluyor! Çıkabilecek miyiz?!" — Büyük Gerilim!
+
+**DALGA 4 — BÜYÜLENME** (s.16-18): Satürn'ün buzdan halkalarında süzülme. Kusursuz güzellik.
+→ Çocuğun hissi: "Bu gördüğüm en muazzam şey..."
+
+**DALGA 5 — BAŞARMA DUYGUSU** (s.19-21): Görevin tamamlanması. Sistemin ucundan Güneş'e bakış.
+→ Çocuğun hissi: "Zoru başardım. Evrenin sırlarını avucunda tutuyorum."
+
+---
+
+## 🎬 SAHNE YÖNETMENİ — KAMERA VE LOKASYON KURALI (G3)
+
+Bu senaryo TİP B'dir (Geniş Ortam). Herhangi bir yapıya bağlı değilsin,
+ancak kamerayı KESİNLİKLE HER SAYFADA DEĞİŞTİR:
+
+- Bazen {child_name}'in kaskının içindeki boncuk boncuk terlemiş VÜCUT ve YÜZ detayına gir (Close-up).
+- Bazen devasa bir fırtınanın önünde küçücük kalan uzay gemisini göster (Epic Wide Shot).
+- Bazen robot Nova ile çocuğun istasyon içindeki havada taklalarını çiz (Medium Action Shot).
+
+**GÖRSEL LOKASYON AKIŞI:**
+1. Uzay İstasyonu (s.1-3)
+2. Ay Yüzeyi ve Mars (s.4-8) - Kırmızı toz, gri krater
+3. Jüpiter'in Fırtınası (s.9-15) - Devasa, girdaplı gaz bulutları (Adrenalin zirvesi!)
+4. Satürn'ün Halkaları (s.16-18) - Parlak buz kristalleri
+5. Uzak Buz Devleri ve Ekran (s.19-21) - Karanlık, lacivert, istasyon ekranları
+
+---
+
+## 🦊 YARDIMCI KARAKTER TUTARLILIĞI ZORUNLU
+
+**Robot Nova** (Hikaye boyunca yoldaş ve koruyucu):
+= "a compact, floating silver AI robot companion with a glowing electric blue eye visor"
+→ HER göründüğünde AYNEN kullan. Rengi ve visor rengi değişemez! Parıldayan mavi vizör şablonu.
+
+---
+
+## 📖 SAYFA SAYFA KURGU (Gerçek Aksiyon Zamanı)
+
+### Bölüm 1 — İLK HEYECAN (Sayfa 1-3)
+Sayfa 1: Geri sayım: Üç, İki, Bir! İstasyonun fırlatma koltuğunda {child_name}'in 
+kalbi güm güm atmaktadır. "Hazır mısın Nova?" diye sorar yanındaki yüzen gümüş robota.
+Sayfa 2: Muazzam bir sarsıntıyla uzayın o derin, simsiyah boşluğuna fırlarlar. 
+Yerçekimi bittiği an, kapsülde havaya süzülen kalemi yakalar. İnanılmaz bir his!
+Sayfa 3: Pencereden arkaya bakar: Dünya, o devasa mavi mermer, hızla küçülmektedir.
+Güneş Sistemi'nin derinliklerine doğru eşsiz macera başlamıştır.
+
+### Bölüm 2 — MERAK VE KEŞİF (Sayfa 4-8)
+Sayfa 4: Ay! {child_name} gemiden çıkıp o meşhur gri kraterli yüzeye zıplar.
+Ağırlık yok gibidir; tek bir sıçrayışta metrelerce havaya süzülür. (Medium Shot)
+Sayfa 5: Sonraki durak sapsarı Venüs'tür ama Nova vizöründen kırmızı alarm verir: 
+"Dikkat, aşırı sıcak asit fırtınası!" Geminin kalkanlarını son anda devreye sokarlar.
+Sayfa 6: Mars! Kızıl Gezegen'in hışırdayan kırmızı kumlarına inerler. 
+{child_name} o kırmızı tozu eldiveniyle incelerken, bir kezıncısı kesilmiş eski araştırma istasyonunun izini bulur.
+Sayfa 7: Ama aniden Mars rüzgarı şiddetlenir, kızıl bir toz fırtınası görüşü kapatır!
+Sayfa 8: Nova'nın yansıttığı mavi lazer harita sayesinde kör fırtınadan sekerek 
+gemiye son saniyede ulaşıp kapakları kapatırlar. Nefes nefesedirler!
+
+### Bölüm 3 — ADRENALİN VE ENDİŞE (Sayfa 9-15)
+Sayfa 9: Gemi, asteroit kuşağına girer. Sağdan ve soldan devasa dönen kayalar geçiyor!
+{child_name} pilot koltuğunda tam bir usta gibi manevralar yapar, joystick'i kırar.
+Sayfa 10: Kuşağı atlatınca karşılarına o dev çıkar: JÜPİTER! 
+İçine binlerce Dünya sığabilecek kadar devasa, korkutucu ve görkemlidir.
+Sayfa 11: Hedef fırtınanın fotoğrafını çekmektir ama Jüpiter'in yerçekimi gemiyi 
+güçlü bir elektrikli hortum gibi içine doğru çekmeye başlar! (Endişe tırmanıyor)
+Sayfa 12: Gemi şiddetle titriyor! Işıklar yanıp sönüyor! Kırmızı alarm! 
+{child_name} kaskının içinden terliyor, ama panik yapmıyor.
+Sayfa 13: "Nova, motorları yüzde yüz kapasiteye al ve tam geri ateşle!" diye bağırır.
+Sayfa 14: Korkunç Büyük Kırmızı Leke'nin gaz bulutlarına teğet geçerken, 
+{child_name} hayatının en net ve en inanılmaz fotoğrafını makinesiyle şak! diye çeker.
+Sayfa 15: Ve motorların dev gücüyle fırtınanın çekiminden fırlayarak kurtulurlar!
+Derin bir nefes alıp koltuğa yaslanırlar. Başardılar!
+
+### Bölüm 4 — BÜYÜLENME (Sayfa 16-18)
+Sayfa 16: Çarpıntı bitince gözlerini uzayın en güzel mücevherine açarlar: SATÜRN.
+Sayfa 17: Gemi otomatik pilota geçerken {child_name} dışarı çıkar. 
+Satürn'ün milyonlarca buz kristalinden oluşan o elmas gibi halkalarının arasında süzülür.
+Sayfa 18: Eldiveniyle yavaşça o süzülen parlak bir buz parçasını yakalar.
+Uzay sessiz, manzara büyüleyicidir. Korku yerini kusursuz bir huzura bırakmıştır.
+
+### Bölüm 5 — BAŞARMA DUYGUSU VE ZAFER (Sayfa 19-21)
+Sayfa 19: Uranüs ve Neptün'ün lacivert derinliklerinden hızla geçerek görev verilerini toplarlar.
+Güneş artık uzakta minicik, parlak bir yıldız gibidir.
+Sayfa 20: Dönüş rotasına girmek için Nova son verileri işlerken, 
+{child_name} geminin dev camından tüm serüvenine bakar. Tüm gezegenleri aşmıştır.
+Sayfa 21: Dünya'nın o sıcak mavi yörüngesine girerken içi devasa bir gururla dolar.
+Kaskını çıkarır: "Evren çok büyük, ama bizim cesaretimiz ondan da büyük!"
+
+---
+
+## 🪝 SAYFA SONU KURALI — HOOK ZORUNLU
+
+Her sayfanın SON CÜMLESİ okuyucuda merak uyandırmalıdır. En az %50 sayfada şu tekniklerden birini kullan:
+- **Soru hook:** "Acaba ne olacaktı?" / "Peki ya ileride?" / "Bu ne böyle?"
+- **Gerilim hook:** "Tam o sırada..." / "Birden..." / "Ama beklenmedik bir şey oldu!"
+- **Ünlem hook:** "Zaman daralıyordu!" / "İnanamadı!" / "Gözlerine inanamıyordu!"
+- **Duygu hook:** "İçinde bir heyecan fırtınası koptu!" / "Kalbi pır pır ediyordu!"
+Özellikle sayfa 4, 6, 8, 10, 14, 16 gibi geçiş sayfalarında MUTLAKA hook kullan.
+SON SAYFA (21) HARİÇ tüm sayfalar hook ile bitmelidir.
+
+## 🎭 NÖTR SAYFA YASAK KURALI
+
+Hiçbir sayfa duygusal açıdan nötr OLMAMALIDIR. Her sayfada en az bir duygu belirteci kullan:
+- S.14 (Satürn'e yaklaşma): hayranlık ve büyülenme → "nefesi kesildi", "hayran kaldı"
+- S.3 (Dünya'dan uzaklaşma): merak ve heyecan → "kalbi çarpıyordu", "gözleri parlıyordu"
+- Keşif sayfalarında: merak, şaşkınlık, heyecan kelimelerini mutlaka kullan
+
+## 💬 DİYALOG DENGESİ KURALI
+
+Her sayfada diyalog OLMAK ZORUNDA DEĞİL! İdeal oran: 21 sayfanın 7-10'unda diyalog olsun.
+- Bazı sayfalar SADECE tasvir ve aksiyon ile anlatılsın (diyalogsuz).
+- Nova'nın her sayfada konuşmasına GEREK YOK. Bazen sessizce yanında süzülsün.
+- Araştırma, keşif ve manzara sayfalarını diyalogsuz yaz.
+
+## 🏃 AKSİYON YAZARLIĞI KURALI
+
+Pasif fiillerden (izledi, baktı, gördü, hissetti, düşündü) KAÇIN!
+Bunların yerine AKTİF eylemler kullan:
+- "koştu", "atladı", "kavradı", "bastı", "fırlattı", "sürdü", "çekti", "tuttu"
+- "derin bir nefes alıp kolları sıkıca kavradı" vs. "korktu"
+- "direksiyonu döndürdü" vs. "direksiyona baktı"
+Özellikle keşif sayfalarında (4-8) çocuğu AKTİF yap: taş toplar, krater inceler, kumdan numune alır.
+
+---
+
+## 📐 KURALLAR (image_prompt_en için)
+
+1. Hikâyeyi TAM OLARAK {page_count} sayfa yaz (1 kapak + 21 iç sayfa).
+2. "standing still" veya "looking at camera" YASAK. Hep aksiyon ve yanlış yollarla dolu bulmacalar yaz.
+3. NASA logosu, ABD bayrağı KESİNLİKLE YASAK! Kıyafeti Türk bayrağına odakla.
+4. G2 tutarlılık KURALI: "compact silver AI robot companion with glowing electric blue visor" CÜMLESİNİ HER ROBOT SAHNESİNDE BİREBİR AYNI KULLAN! Görüntüsü değişmez!
+5. G3 TUTARLILIK: Kamerayı (Close up, Wide, Medium) sürekli değiştir.
+6. {animal_friend} adlı dostu da aynı tutarlı şekilde sahnelerde kullan.
+7. Asla didaktik nasihat verme veya ahlaki mesaj bildirme. YASAK!
+8. VIOLENT, ATTACK, DESTROY kelimeleri image_prompt_en'de YASAK — fırtına sahnelerini "fierce storm", "intense turbulence", "powerful whirlwind" gibi ifadelerle anlatın.
+

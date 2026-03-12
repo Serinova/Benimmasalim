@@ -1,0 +1,17 @@
+theme_key=abusimbel  |  name=Abu Simbel Macerası  |  active=False
+theme_key=amazon  |  name=Amazon'un Gizli Çağrısı  |  active=True
+theme_key=catalhoyuk  |  name=Çatalhöyük'ün Çatı Yolu  |  active=True
+theme_key=dinosaur  |  name=Dinozorlar Alemi: Kayıp Yuva  |  active=True
+theme_key=ephesus  |  name=Efes'in Zaman Kapısı  |  active=True
+theme_key=galata  |  name=Galata'nın Kayıp Işık Haritası  |  active=True
+theme_key=gobeklitepe  |  name=Göbeklitepe Macerası  |  active=True
+theme_key=space  |  name=Güneş Sistemi Macerası: Gezegen Kaşifleri  |  active=True
+theme_key=cappadocia  |  name=Kapadokya Macerası  |  active=True
+theme_key=kudus  |  name=Kudüs Macerası  |  active=True
+theme_key=umre_pilgrimage  |  name=Kutsal Topraklara Ziyareti  |  active=True
+theme_key=fairy_tale_world  |  name=Masal Dünyası: Rüya Anahtarı  |  active=True
+theme_key=ocean  |  name=Mercan Şehrin Sinyali  |  active=True
+theme_key=toy_world  |  name=Oyuncak Dünyası: Kayıp Kurma Anahtarı  |  active=True
+theme_key=sultanahmet  |  name=Sultanahmet'te Zamanın Fısıltısı  |  active=True
+theme_key=sumela  |  name=Sümela'nın Kayıp Mührü  |  active=True
+theme_key=None  |  name=Yerebatan Macerası  |  active=False

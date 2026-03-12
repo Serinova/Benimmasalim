@@ -1,0 +1,245 @@
+theme_key: dinosaur
+name: Dinozorlar Alemi: Kayıp Yuva
+location_en: Cretaceous Period
+active: True
+no_family: False
+page_count: 22
+
+--- OUTFIT GIRL ---
+a rugged tan utility shirt over a white tee, dark green cargo pants with climbing boots, a distressed leather aviator jacket, and a utility belt with a compass pouch and a fossil-tooth necklace. EXACTLY the same outfit on every page — same tan utility shirt, same aviator jacket, same cargo pants. Same child character, consistent face and hair across all pages.
+
+--- OUTFIT BOY ---
+a rugged tan utility shirt over a dark tee, dark green cargo pants with climbing boots, a distressed leather aviator jacket, and a utility belt with a compass pouch and a fossil-tooth necklace. EXACTLY the same outfit on every page — same tan utility shirt, same aviator jacket, same cargo pants. Same child character, consistent face and hair across all pages.
+
+--- CUSTOM INPUTS ---
+[]
+
+--- CULTURAL ELEMENTS ---
+{
+  "values": [
+    "Sorumluluk (Responsibility)",
+    "Cesaret (Courage)",
+    "Merhamet (Compassion)",
+    "Doğaya saygı (Respect for nature)"
+  ],
+  "primary": [
+    "Natural history museum with giant fossil skeletons",
+    "Giant tree ferns and prehistoric jungle leaves",
+    "Glowing amber fossil compass artifact",
+    "Small baby dinosaur with teal crest",
+    "Rushing ancient river and muddy swamps"
+  ],
+  "location": "Prehistoric Dinosaur Valley, Late Cretaceous period",
+  "secondary": [
+    "Peaceful giant herbivores in background (Brachiosaurus, Triceratops)",
+    "Dramatic stormy skies and lightning",
+    "Giant dinosaur footprints in the mud",
+    "Fallen ancient trees blocking canyon paths",
+    "Wet stepping stones across rushing prehistoric river"
+  ],
+  "atmosphere": "Epic, time-travel mystery, race against the storm, courageous rescue",
+  "sensitivity_rules": [
+    "NO aggressive predator encounters or violence",
+    "Dangerous predators (T-Rex) are only seen as distant silhouettes if at all",
+    "Child acts as a brave protector and problem solver",
+    "Emphasis is on weathering a storm and reuniting a family"
+  ]
+}
+
+--- LOCATION CONSTRAINTS ---
+Setting alternates vastly every few pages. Kademe haritası ve Kamera kullanımları: Pages 1-3: Shadowy modern natural history museum. Pages 4-6: Bright prehistoric jungle with giant ferns. Pages 7-10: Muddy swamp paths and cloudy skies. Pages 11-14: Dark, stormy rocky canyon with fallen trees. Pages 15-18: Rushing ancient river with wet stepping stones. Pages 19-21: Wide open prehsitoric valley returning to museum. CRITICAL CAMERA RULE: Vary shot compositions heavily. Mix close-ups of the baby dinosaur and glowing compass with wide epic panoramas of the prehistoric environment.
+
+--- SCENARIO BIBLE ---
+{
+  "magic_item": "glowing amber fossil compass artifact, emitting warm light",
+  "tone_rules": [
+    "NO aggressive predator encounters or violence",
+    "Dangerous predators (T-Rex) are only seen as distant silhouettes",
+    "Child acts as a brave protector and problem solver",
+    "Emphasis is on weathering a storm and reuniting a family"
+  ],
+  "cultural_facts": [
+    "Parasaurolophus was a herbivorous dinosaur from the Late Cretaceous period",
+    "Its distinctive crest was likely used for sound communication",
+    "The Cretaceous period ended approximately 66 million years ago",
+    "Brachiosaurus was one of the tallest dinosaurs, reaching heights of 13 meters",
+    "Triceratops had three horns and a large bony frill"
+  ],
+  "side_character": {
+    "name": "Pari",
+    "type": "baby Parasaurolophus dinosaur",
+    "appearance": "a small, cute baby Parasaurolophus dinosaur with a teal-colored crest and big expressive eyes"
+  }
+}
+
+--- COVER PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Child standing bravely in a prehistoric jungle, holding a glowing amber fossil compass, amazed expression. Beside the child is a tiny, cute baby Parasaurolophus dinosaur with a teal crest. Background: colossal prehistoric tree ferns, misty dramatic valley, majestic adult Brachiosaurus grazing in the distance. Dramatic cinematic lighting from a stormy sky with dark clouds, warm golden glow from the compass, rich stone and leaf texture. Low-angle epic hero shot: child and baby dinosaur 40% foreground, immersive prehistoric wilderness 60%. Prehistoric palette: deep jungle greens, stormy slate grey, warm amber glow, misty lavender distance. {STYLE}
+
+--- PAGE PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Setting elements (choose based on scene description): MUSEUM: shadowy natural history museum, giant fossil skeletons, polished floors. JUNGLE: towering prehistoric tree ferns, thick ground mist, massive green leaves. CANYON/RIVER: rocky gorge, ancient rushing river, muddy riverbank, giant footprints. Cinematic action lighting, warm golden glow, detailed prehistoric leaf and rock texture. Close-up on expressions, wide for landscapes. Dynamic action pose, expressive emotion on face (amazed, determined, smiling). Wide angle, medium and close-up shots, child 30-40% of frame. No eye contact with camera. Color palette: lush prehistoric greens, earthy browns, warm amber magical glow. {STYLE}
+
+--- STORY PROMPT TR ---
+
+# DİNOZORLAR ALEMİ: KAYIP YUVA
+
+## ÖZET KURGU
+{child_name}, bir müzede bulduğu gizemli fosil pusula sayesinde kendini 
+Kretase Dönemi ormanlarında bulur. Fırtına yaklaşırken, sürüsünden kopmuş korkmuş 
+bir yavru dinozoru (Pari) ailesine kavuşturmak için tehlikeli çamurları, sarp 
+kanyonları ve vahşi nehri aşmak zorundadır. Kan, şiddet, T-Rex saldırısı YOKTUR; 
+tehlike doğanın kendisidir (fırtına, bataklık) ve devasa herbivorlar (otoburlar) sadece manzaradır.
+
+**BAŞLIK:** "{child_name}'ın Dinozorlar Alemi: Kayıp Yuva" (Alt başlık yok)
+**TON:** 5-10 yaş. Hızlı, nefes kesici, "Acaba yetişebilecekler mi?" dedirten bir kurtarma görevi.
+
+---
+
+## 🎢 DUYGUSAL YAY — 5 DALGA (Tüm Hikayeye Hakim Olacak)
+
+Bu hikaye salt bir "dinozor sergisi" değil, nabzı atan bir yolculuktur:
+
+**DALGA 1 — BÜYÜLÜ BAŞLANGIÇ (Heyecan)** (s.1-3): Müzeden geçmişe sıçrama.
+→ Çocuğun hissi: "İnanamıyorum, dev ağaçlar... zamanda yolculuk yaptım!"
+
+**DALGA 2 — MERHAMET VE SORUMLULUK** (s.4-6): Korkmuş minik yavrunun bulunması.
+→ Çocuğun hissi: "Korkma küçüğüm, seni ailene götüreceğim."
+
+**DALGA 3 — DOĞAYA KARŞI MÜCADELE (Endişe/Adrenalin)** (s.7-14): Fırtına kopuyor! Bataklık, düşen ağaçlar.
+→ Çocuğun hissi: "Hızlı olmalıyız, fırtına bizi yakalayacak!" (Zaman baskısı)
+
+**DALGA 4 — ZİRVE CESARET** (s.15-18): Azgın nehir geçişi. Yavru korkuyor, çocuk ona cesaret veriyor.
+→ Çocuğun hissi: "Benimle atla, yapabiliriz!"
+
+**DALGA 5 — KAVUŞMA VE GURUR** (s.19-21): Sürüye kavuşma, ebeveyn dinozorun teşekkürü.
+→ Çocuğun hissi: "Bir hayat kurtardım." (Saf tatmin)
+
+---
+
+## 🎬 SAHNE YÖNETMENİ — KAMERA VE LOKASYON KURALI (G3)
+
+Burası fantastik geniş bir ortam. Kamerayı SÜREKLİ değiştir:
+- Bazen {child_name}'in elindeki parlayan pusulaya ve yavru dinozor Pari'nin yüzüne odaklan (Close-up).
+- Bazen dev eğrelti otlarının altındaki koşturmacayı göster (Medium).
+- Bazen arka plandan yavaşça geçen dev bir Brachiosaurus sürüsünü geniş açıyla göster (Epic Wide).
+
+**LOKASYON AKIŞI:**
+1. Doğa Tarihi Müzesi (s.1-3) - Gölge ve cilalı zemin
+2. Antik Eğrelti Ormanı (s.4-6) - Dev yapraklar, sis
+3. Çamurlu Bataklık Geçidi (s.7-10) - Balçık, Triceratops ayak izleri
+4. Rüzgarlı Kanyon (s.11-14) - Koyu gri kayalar, şimşekli hava
+5. Antik Nehir ve Geniş Vadi (s.15-21) - Rushing water, geniş yeşil düzlük
+
+---
+
+## 🦕 YARDIMCI KARAKTER TUTARLILIĞI ZORUNLU (G2)
+
+⚠️ KRİTİK TUTARLILIK KURALI — BU BÖLÜM HER SAYFADA GEÇERLİDİR!
+
+**Pari (Yavru Dinozor)** - Hikaye boyunca yoldaş:
+= "a small, cute baby Parasaurolophus dinosaur with a teal-colored crest and big expressive eyes"
+→ Pari, HER göründüğü sayfada AYNEN BU TANIM ile çizilmelidir!
+→ Pari her zaman bir DİNOZOR'dur (baby Parasaurolophus). ASLA insan, ASLA çocuk, ASLA başka tür dinozor olarak çizme!
+→ Pari'nin rengi (teal crest), türü (Parasaurolophus), boyutu (small/baby) SAYFADAN SAYFAYA DEĞİŞMEZ!
+→ Pari BOYNUZLU değildir, UZUN BOYUNLU değildir, KANATLARI yoktur — sadece tepesinde turkuaz ibik olan küçük yavru dinozor!
+
+**Fosil Pusula:**
+= "a glowing amber-colored fossil compass artifact, emitting warm light"
+→ HER göründüğünde AYNEN kullan.
+
+---
+
+## 📖 SAYFA SAYFA KURGU (Adrenalin Odaklı)
+
+### Bölüm 1 — ZAMANDA BİR KAPI (Sayfa 1-3)
+Sayfa 1: {child_name}, devasa dinozor iskeletlerinin olduğu loş bir doğa tarihi müzesindedir. 
+Yanından geçerken bir Triceratops fosilinin ayak ucunda soluk mavi parlayan yuvarlak bir taş fark eder: Bir fosil pusula.
+Sayfa 2: Pusulayı eline aldığı an cihaz "vızzzz" diye titremeye ve dönmeye başlar. 
+Müzenin duvarları gölge gibi silinirken, parlak ışıklar gözlerini kamaştırır. Heyecan zirvededir!
+Sayfa 3: Rüzgar diner. {child_name} gözlerini açtığında apartman boyunda eğrelti otlarının olduğu, 
+ılık rüzgarlı antik bir ormandadır! "Zamanda yolculuk yaptım..." diye fısıldar büyülenmişçe.
+
+### Bölüm 2 — KORKMUŞ BİR DOST (Sayfa 4-6)
+Sayfa 4: Çalılıkların arasından hışırtılar gelir. Kahramanımız fedorasını düzeltip 
+korkusuzca oraya yaklaşır. Karşısına başındaki turkuaz ibiği titreyen, gözleri yaşlı minik bir 
+yavru çıkar. Bu Pari'dir — bir Parasaurolophus yavrusu.
+Sayfa 5: Pari çok korkmuştur. {child_name} diz çöker, ona gülümseyerek elini uzatır. 
+Pusula aniden sıcak bir sarı ışık saçmaya başlar ve oku ileriye doğru döner.
+Sayfa 6: O an gökyüzü gürler! Simsiyah dev fırtına bulutları vadiyi kaplamaya başlar. 
+"Sürünü bulmalıyız, hem de fırtına patlamadan önce!" der {child_name}. Yarış başlar!
+
+### Bölüm 3 — DOĞAYA KARŞI MÜCADELE (Sayfa 7-14)
+Sayfa 7: Pusula onları çamurlu ve tehlikeli bir bataklığa yönlendirir. 
+Yanlış adıma yer yoktur. Tam o sırada ileride devasa, üç boynuzlu bir Triceratops sakince suyu geçer.
+Sayfa 8: {child_name} zekice bir fikir bulur: "Onun ayak izlerine basmalıyız, oralar serttir!" 
+Pari'yi kucağına alıp koca ayak izlerine seke seke basarak bataklığı geçerler.
+Sayfa 9: Güvenli toprağa çıktıklarında ilk yağmur damlaları düşer. Pusula deli gibi titremektedir.
+Pari uzaklardan gelen borazan gibi bir sese yanıt vererek incecik bağırır. Ailesi!
+Sayfa 10: Rüzgar şiddetlenir. Yolları sarp ve karanlık bir kanyona çıkar. 
+Sayfa 11: Şimşek çakar! Koca bir ağaç çatırtıyla devrilip kanyonun çıkışını bir duvar gibi kapatır. 
+Geçiş kapanmıştır ve yağmur hızlanmaktadır. (Büyük endişe anı)
+Sayfa 12: {child_name} asla pes etmez. Çantasından ipini çıkarır, devrilmiş ağacın köklerine atar 
+ve Indiana Jones çevikliğiyle Pari ile birlikte o dev kütüğün üzerinden aşarlar.
+Sayfa 13: Kanyonun tepesine vardıklarında çok gerilerde, sislerin arasında dev bir T-Rex'in ürkütücü 
+gölgesini fark ederler. Asla yaklaşmazlar.
+Sayfa 14: "Daha hızlı olmalıyız!" diyerek ormanın daha güvenli ve derinliklerine doğru koşarlar.
+
+### Bölüm 4 — ZİRVE CESARET (Sayfa 15-18)
+Sayfa 15: Sürünün sesleri çok yakından gelmektedir ama koca bir engel daha vardır: 
+Yağmurdan kabarmış, çağlayarak akan antik bir nehir!
+Sayfa 16: Nehrin karşı kıyısında devasa yetişkin Parasaurolophus'lar endişeyle dolanmaktadır. 
+Pari nehre bakıp korkuyla geri çekilir. Nehir çok vahşidir.
+Sayfa 17: {child_name} ipi beline bağlar. "Bana güven Pari! Benimle atla!" der. 
+Nehirdeki ıslak taşlara saniyeleri hesaplayarak atlar, Pari de ondan cesaret alıp seker.
+Sayfa 18: Son büyük sıçrayış! Kayıp çimenlik kıyıya yuvarlanırlar. Başarmışlardır!
+
+### Bölüm 5 — KAVUŞMA VE GURUR (Sayfa 19-21)
+Sayfa 19: Dev anne dinozor koşarak gelir ve Pari'ye burnunu sürterek sevgiyle sarılır. 
+Tüm sürü minnet dolu bir borazan sesi çıkarır. 
+Sayfa 20: Anne dinozor {child_name}'e bakıp saygıyla boynunu eğer. 
+Onca tehlikeyi aşan küçük kahramanımızın göğsü büyük bir gururla kabarır.
+Sayfa 21: Elindeki fosil pusula son kez kör edici mavi bir ışık patlatır. 
+Gözlerini açtığında yine müzededir. Elindeki pusula taşlaşmış minik bir pati izine dönüşmüştür. 
+Büyük bir macera yaşanmış ve bitmiştir.
+
+---
+
+## 🪝 SAYFA SONU KURALI — HOOK ZORUNLU
+
+Her sayfanın SON CÜMLESİ okuyucuda merak uyandırmalıdır. En az %50 sayfada şu tekniklerden birini kullan:
+- **Soru hook:** "Bu ses nereden geliyordu?" / "Acaba yetişebilecekler miydi?" / "Peki şimdi ne olacaktı?"
+- **Gerilim hook:** "Tam o sırada..." / "Birden..." / "Ama beklenmedik bir şey oldu!"
+- **Merak hook:** "Bir şey yaklaşıyordu!" / "İnanamadı!" / "Ama karşılarında inanılmaz bir manzara belirdi!"
+Özellikle sayfa 1, 3, 5, 6, 8, 10, 12, 14, 15, 17, 18 gibi geçiş sayfalarında MUTLAKA hook kullan.
+
+## 🏃 AKSİYON YAZARLIĞI KURALI
+
+Pasif fiillerden (izledi, baktı, gördü, hissetti, düşündü) KAÇIN!
+Bunların yerine AKTİF eylemler kullan:
+- "koştu", "atladı", "kavradı", "kapar", "fırladı", "sıçradı", "tırmandı", "daldı"
+- "dizlerinin üzerine çöküp izleri inceledi" vs. "izlere baktı"
+- "dalları savurarak patikayı aştı" vs. "patikadan geçti"
+- "ellerini kayaya sımsıkı sardı" vs. "kayaya tutundu"
+Özellikle fırtına ve nehir sayfalarında (7-15) çocuğu AKTİF yap: çamur atlar, dal iter, kütük kavrar.
+
+## 💬 DİYALOG DENGESİ KURALI
+
+Her sayfada diyalog OLMAK ZORUNDA DEĞİL! İdeal oran: 21 sayfanın 7-10'unda diyalog olsun.
+- Bazı sayfalar SADECE tasvir ve aksiyon ile anlatılsın (diyalogsuz).
+- Pari konuşamaz ama sesler çıkarabilir (hıçkırık, ciyaklama, borazan sesi).
+- Araştırma, keşif ve manzara sayfalarını diyalogsuz yaz.
+
+---
+
+## 📐 KURALLAR (image_prompt_en için)
+
+1. Hikâyeyi TAM OLARAK {page_count} sayfa yaz (1 kapak + 21 iç sayfa).
+2. "standing still" veya "looking at camera" YASAK. Hep aksiyon ve yanlış yollarla dolu bulmacalar yaz.
+3. G2 tutarlılık KURALI — KRİTİK: Pari'nin göründüğü HER SAHNEDE şu İngilizce tanımı BİREBİR AYNI kullan:
+   "a small, cute baby Parasaurolophus dinosaur with a teal-colored crest and big expressive eyes"
+   Pari ASLA insan olarak çizilmez! Pari ASLA başka bir dinozor türü olarak çizilmez!
+   Pari her zaman aynı küçük yavru dinozor (baby Parasaurolophus) olarak görünür!
+4. KAN, YIRTICI SALDIRISI YASAK! Tehlike fırtına ve nehir gibi doğa olaylarıdır. Doğru yolu bulmak çocuğun zekasına kalmıştır.
+5. DUYGU (EMOTION) ÇIPASI: amazed, smiling, determined belirterek emotion odaklı yaz!
+6. IŞIK VE DOKU (LIGHTING & TEXTURE): Ormanın yaprak dokusuna (leaf texture, rock texture) ve sinematik ışığa (cinematic lighting, golden glow) kesinlikle yer ver!
+7. Asla didaktik nasihat verme veya ahlaki mesaj bildirme. YASAK!
+

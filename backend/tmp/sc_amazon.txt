@@ -1,0 +1,220 @@
+theme_key: amazon
+name: Amazon'un Gizli Çağrısı
+location_en: Amazon Rainforest
+active: True
+no_family: False
+page_count: 22
+
+--- OUTFIT GIRL ---
+a rugged olive-green jungle utility shirt over a bright yellow tee, breathable dark brown cargo pants, sturdy waterproof jungle boots, a wide-brimmed adventure hat, and a leather crossbody satchel with a glowing animal-tooth charm. NO other clothing. EXACTLY the same outfit on every page — same utility shirt, same hat, same cargo pants. No outfit changes. NO skirts or shorts. Same child character, consistent face and hair across all pages.
+
+--- OUTFIT BOY ---
+a rugged olive-green jungle utility shirt over a bright orange tee, breathable dark brown cargo pants, sturdy waterproof jungle boots, a wide-brimmed adventure hat, and a leather crossbody satchel with a glowing animal-tooth charm. NO other clothing. EXACTLY the same outfit on every page — same utility shirt, same hat, same cargo pants. No outfit changes. NO short shorts. Same child character, consistent face and hair across all pages.
+
+--- CUSTOM INPUTS ---
+[
+  {
+    "key": "animal_friend",
+    "type": "select",
+    "label": "Orman Dostu",
+    "default": "Renkli Papagan",
+    "options": [
+      {
+        "label": "Renkli Papagan (Macaw)",
+        "value": "Renkli Papagan"
+      },
+      {
+        "label": "Sevimli Minik Maymun",
+        "value": "Minik Maymun"
+      }
+    ]
+  }
+]
+
+--- CULTURAL ELEMENTS ---
+{
+  "values": [
+    "Empathy",
+    "Observation",
+    "Respect for Nature",
+    "Resilience"
+  ],
+  "primary": [
+    "Kapok trees, hanging lianas, dense ferns",
+    "Winding brown river with misty golden sun rays",
+    "Pink river dolphins (boto) splashing in water",
+    "Poison dart frogs with warning patterns",
+    "Scarlet macaws and colorful toucans in canopy"
+  ],
+  "location": "Amazon Rainforest, dense jungle",
+  "secondary": [
+    "Leafcutter ant trails carrying giant leaves",
+    "Capybara tracks in soft mud",
+    "Liana vine bridges swaying in wind",
+    "Three-toed sloth hanging from high branches",
+    "Jaguar silhouette in distant mist"
+  ],
+  "atmosphere": "Lush, adventurous, exotic, safely wild, biodiverse",
+  "historic_site": "Wilderness ecosystem",
+  "sensitivity_rules": [
+    "NO aggressive animal encounters",
+    "Dangerous animals (like jaguars) only far away or as silhouettes",
+    "Child remains safe throughout the journey",
+    "Action and ecology focus"
+  ]
+}
+
+--- LOCATION CONSTRAINTS ---
+Setting alternates to show movement through Amazon. Kademe haritası ve Kamera kullanımları: Page 1: Amazon camp entrance, dense jungle path with lianas. (WIDE SHOT — epic canopy, full body) Page 2: Edge of camp, path leading into jungle, glowing amulet. (MEDIUM SHOT — child waist-up with amulet detail) Page 3: First steps into massive trees and lianas. (WIDE SHOT — sense of scale) Page 4: Muddy river bank, pink dolphin jumping. (MEDIUM SHOT — misty water atmosphere) Page 5: Mud tracks close-up, child kneeling and examining. (CLOSE-UP — hands touching tracks) Page 6: Capybara crossing, child following. (LOW ANGLE — dynamic movement) Page 7: Toucan dropping fruit, child catching it. (MEDIUM SHOT — action catch moment) Page 8: Child holding fruit to light, examining patterns. (CLOSE-UP — fruit detail and child's amazed face) Page 9: Poison dart frog on leaf, comparing to fruit pattern. (EXTREME CLOSE-UP — vibrant frog colors) Page 10: Jumping over tree root with code pattern. (LOW ANGLE — dynamic jump) Page 11: Leafcutter ant trail, child kneeling to follow. (HIGH ANGLE — ant trail visible from above) Page 12: Liana bridge crossing, child gripping vines. (LOW ANGLE — vertigo perspective, scary height) Page 13: Child climbing tree root, sloth pointing the way. (MEDIUM SHOT — courage moment) Page 14: Dark path, jaguar silhouette far away. (WIDE SHOT — dramatic shadows and light) Page 15: Sunlight breaking through, following faint sound. (WIDE SHOT — contrast dark to light) Page 16: Pushing through leaves, discovering baby toucan. (CLOSE-UP — emotional discovery) Page 17: Child gently extending hand to baby toucan. (CLOSE-UP — tender moment, child's gentle expression) Page 18: Running through forest with baby toucan on satchel. (LOW ANGLE — dynamic action running) Page 19: Bright river clearing, toucans flying, family reunion. (WIDE SHOT — golden hour, birds in flight) Page 20: Camp counselor arriving, sunset glow. (MEDIUM SHOT — warm pride moment) Page 21: Child walking into sunset with companion, red seed on hat. (WIDE SHOT — epic closing panorama) 
+
+--- SCENARIO BIBLE ---
+{
+  "magic_item": "glowing animal-tooth charm on the leather crossbody satchel",
+  "tone_rules": [
+    "NO aggressive animal encounters — all animals observed from safe distance",
+    "Dangerous animals (like jaguars) only as distant silhouettes",
+    "Child remains safe throughout the journey",
+    "The companion animal is a supportive sidekick, NOT a human child",
+    "Action and ecology focus — NO didactic lessons or moral preaching"
+  ],
+  "cultural_facts": [
+    "The Amazon Rainforest produces about 20% of the world's oxygen",
+    "Pink river dolphins (botos) are unique to Amazon rivers",
+    "Leafcutter ants can carry 50 times their body weight",
+    "Toucans use their large bills to reach fruit on thin branches",
+    "Poison dart frogs' bright colors warn predators to stay away",
+    "Capybaras are the largest rodents in the world",
+    "Ocelots are small, beautifully spotted wild cats of the Amazon",
+    "Three-toed sloths move so slowly that algae grows on their fur"
+  ],
+  "side_character": {
+    "name": "Mico",
+    "type": "tiny playful squirrel monkey",
+    "appearance": "a tiny, playful squirrel monkey with golden-brown fur, big round dark eyes, and a long curling tail, sitting on the child's shoulder"
+  }
+}
+
+--- COVER PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Child pushing through hanging lianas and dense layered tropical jungle foliage, amazed expression, colossal ancient trees draped in vines and bromeliads. Winding Amazon river glimmering in the distance, exotic scarlet macaws and toucans in flight among the canopy. Dramatic cinematic lighting with golden sunlight piercing through the dense canopy, rich leaf texture, volumetric jungle mist. Eye-level adventure shot: child 25% foreground, immersive jungle depth 75%. Vibrant tropical palette: deep emerald greens, golden light shafts, rich earth browns, pops of scarlet and turquoise. {STYLE}
+
+--- PAGE PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Elements: [Amazon rainforest, dense jungle, winding river, mist, sun rays through canopy, hanging vines, exotic wildlife, vibrant colors]. Cinematic action lighting, warm golden glow, detailed tropical leaf texture. Dynamic action pose, expressive emotion on face (amazed, determined, smiling). Wide angle and medium shots, full body visible in action, child 30-40% of frame. No eye contact with camera. Dangerous animals only in the distance, no direct contact, child remains safe. Avoid: photorealistic, pasted face, collage, duplicate child, extra people (unless required by scene), text, watermark, logo, blurry, low quality. {STYLE}
+
+--- STORY PROMPT TR ---
+
+# AMAZON'UN GİZLİ ÇAĞRISI: GİZEMLİ MACERA
+
+## YAPI: {child_name} Indiana Jones tarzı kıyafetleriyle, katıldığı güvenli Amazon ormanı kampında tuhaf bir "tık tık" sinyali/mesajı alır. Şiddet içermeyen bu macerada, çocuğumuz vahşi hayvanların uzaktan verdikleri görsel/hareket ipuçlarını birbirine bağlayarak kayıp ve yalnız bir hayvan yavrusuna ulaşır. Heyecanlı, koşturmacalı ama hayvan tehlikesi/korkusu olmayan (her tehlikeli hayvan güvenli mesafededir), biyolojik çeşitlilik ipucu dolu bir keşif öyküsü yaz.
+
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Amazon'un Gizli Çağrısı" olmalı. Alt başlık EKLEME.
+
+**STİL & TON:** 
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. Dili akıcı, ritimli ve 5-10 yaş aralığında merak uyandırıcı olmalıdır. 
+- Bilgi yığını yapma; hayvanların özelliklerini, çocuğun ipucu ve harita ögesi olarak hissetmesine yardımcı olarak entegre et.
+
+---
+
+## 🦊 YARDIMCI KARAKTER TUTARLILIĞI ZORUNLU
+
+**{animal_friend}** (Hikaye boyunca yoldaş ve sevimli dost):
+Eğer "Minik Maymun" seçildiyse = "a tiny, playful squirrel monkey (Mico) with golden-brown fur, big round dark eyes, and a long curling tail, sitting on child's shoulder"
+Eğer "Renkli Papagan" seçildiyse = "a vibrant scarlet macaw with bright red, blue and yellow feathers, perched on child's shoulder"
+→ HER göründüğünde AYNEN kullan. Rengi ve boyutu değişemez!
+
+---
+
+### Bölüm 1 — Gizemli Ritim (Sayfa 1-3) [DUYGULAR: merak → heyecan → cesaret]
+- Sayfa 1: {child_name} yanında sevimli dostu {animal_friend} ile birlikte yemyeşil Amazon kampına koşarak girer. Etraftan inanılmaz bitki kokuları ve kuş ıslıkları yükselir. Gözlerini kocaman açarak dev ağaçlara bakar. Tam o an uzaklardan garip bir sinyal duyulur: "Tık tık... tık!" Bu ses nereden geliyordu?
+- Sayfa 2: Başını kaldırıp dikkatle dinler, o tok ritmin bir hayvanın adımı değil, uzaklardan gelen zekice bir ısrar mesajı olduğunu kavrar. Deri çantasını sıkıca omzuna geçirirken {animal_friend} de merakla kulağını diker. Kararlı bir şekilde fısıldar: "Bu bir işaret olabilir!" Ama bu işaret onu nereye götürecekti?
+- Sayfa 3: "Ormanda hiçbir ses nedensiz değildir!" diyerek kollarını sıvar ve tık-tık seslerinin geldiği kalın lianaların sarktığı yola doğru cesaretle atılır. {animal_friend} omzundan sıçrayıp önden koşmaya başlar. Birden patikanın ortasında garip bir iz belirir!
+
+### Bölüm 2 — Nehir ve Çamur İzleri (Sayfa 4-6) [DUYGULAR: sevinç → merak → heyecan]
+- Sayfa 4: Gizemli sesi takip ederken çamurlu bir nehir kıyısına varır. Pembeleşen sulardan muazzam bir pembe nehir yunusu (boto) aniden havaya fırlar! Yunus neşeyle burnunu savurup suyun akış yönünü gösterir ve kaybolur. Rota bellidir ama ileride ne bekliyordu?
+- Sayfa 5: Suyun işaret ettiği yöne koşarken sinyal sesi güçlenir, fakat {child_name} birden durur. Yumuşak çamurun üzerinde yüzlerce karmaşık iz birbirine girmiştir. Dizlerinin üzerine çöküp izleri parmağıyla incelemeye başlar. Doğru yol hangisiydi?
+- Sayfa 6: Tam o anda dev yaprakların arasından tonton bir kapibara çıkar ve karmaşayı umursamadan en net ayak izlerini toprağa basarak sakince karşıya geçer. {child_name} ayağa fırlayıp peşinden koşar: "Onun gibi sakin olmalı, karışıklıktaki net izleri okumalıyım!" Ama kapibara izleri bir anda ormanın en karanlık köşesine kıvrılır...
+
+### Bölüm 3 — Desenin Sırrı (Sayfa 7-10) [DUYGULAR: merak → heyecan → şaşkınlık → korku_başlangıcı]
+- Sayfa 7: Çamur izi bittiği anda tepeden koca gagalı bir tukan bağırır ve büyük, lekeli bir meyveyi tam {child_name}'in önüne düşürüverir. {child_name} yerden kapar ve meyvenin üzerindeki parlak deseni incelemeye başlar. {animal_friend} meyveyi koklamaya çalışır. Bu desen neyin işaretiydi?
+- Sayfa 8: Meyveyi ışığa tutunca lekelerde az önce duyduğu ritmin "şeklini" görür: Üç nokta ve bir çizgi! Heyecanla meyveyi çantasına atar ve sesin geldiği yöne dönüp kulak kabarttır. Ama ses asıl başka yönden gelmektedir!
+- Sayfa 9: O yöne koştuğunda, uzak bir yaprağın üzerinde göz alıcı parlaklıkta zehirli ok kurbağası parıldar. Kurbağadaki uyarıcı desenleri gören {child_name} meyveyi çıkarıp karşılaştırır: Tamamen aynı! "Bu işaret bana hem yolu hem de dokunmadan uzaktan durmayı öğretiyor!" Peki sıradaki ipucu neredeydi?
+- Sayfa 10: Kurbağanın gösterdiği yöndeki üç leke-bir çizgi şeklindeki ağaç kökünü atlayarak geçer. Zihnine kaydettiği kod işe yaramıştır! Ama tam o sırada ses yön değiştirir ve "tık-tıkıt... zzzt!" diye yepyeni, daha hızlı bir sinyale dönüşür. Bir şey yaklaşıyordu!
+
+### Bölüm 4 — Ormanın Rehberleri (Sayfa 11-14) [DUYGULAR: korku → KORKU_DORUK → CESARET → şaşkınlık]
+⚡ KRİTİK DUYGU GEÇİŞİ: Sayfa 11-12'de korku tırmanmalı, Sayfa 13'te cesaretle dönüşmeli!
+- Sayfa 11: Zemin birden canlanır! Yaprak kesen devasa karıncalar, kendilerinden büyük yapraklarla çizgi gibi muazzam bir otoban kurmuştur. {child_name} dizlerinin üzerine çöküp karınca hattını takip etmeye başlar: "İşte benim canlı haritam!" {animal_friend} karıncalardan birini yakalamaya çalışıp neredeyse düşer.
+- Sayfa 12: Karınca hattı onu ıslak bir dereciğin üzerine gerilmiş sallantılı liana köprüsüne getirir. Kalbi güm güm atar, içini korku kaplar ama ellerini sarmaşıklara sımsıkı sarar, dengede kalarak adım adım karşıya geçer. Rüzgar köprüyü savurduğunda bile bırakmaz! Korku yüzünden elleri titrer ama vazgeçmez! Ama köprünün ötesinde onu ne bekliyordu?
+- Sayfa 13: Köprüyü atladığında korkusunu yenmiştir! Yukardaki dallardan birinde ters asılı, sevimli üç parmaklı bir tembel hayvan ona ileriyi işaret eder. {child_name} cesaretini toplayıp bir ağaç köküne tırmanır, tembel hayvan gibi yüksekten bakar ve gizli bir patikayı keşfeder! Aşağı atlayıp o patikaya koşar.
+- Sayfa 14: Patika birden karanlıklaşır. Uzaklarda ulu bir jaguarın güçlü homurtusu ve ince silüeti belirir. {child_name} saygıyla durur, nefesini tutar ve rehberinin sözünü hatırlar: ormanın kalbi korkutmak için değil, dikkat etmek için atıyordu. Jaguar süzülüp kaybolunca ileride bir ışık parıltısı görünür...
+
+### Bölüm 5 — Sinyalin Kaynağı (Sayfa 15-18) [DUYGULAR: üzüntü → empati → sevinç → heyecan]
+- Sayfa 15: Jaguarın süzüldüğü aralıktan güneş ışıkları vurur, tık-tık sesi kesilir ve yerini çok daha cılız, ince bir "cıvıltı" alır. {child_name} koşarak ışığa doğru atılır. Bu ses bir sinyal değil, çaresiz bir yardım çağrısıydı! Kim yardım istiyordu?
+- Sayfa 16: İç içe geçmiş yaprak kümesinin arasına dalıp dalları yanlara iterek ilerler. Ve orada, korkuyla titreşen, sürüsünden ayrılmış minicik bir yavru tukan bulur! Baştan beri ormanda yankılanan o ritmik sinyal, bu minik yavrunun kurtarma çağrısıdır. {animal_friend} yavruya doğru yavaşça yaklaşır.
+- Sayfa 17: Yavruyu korkutmamak için nefesini tutup elini çok yavaşça uzatır. Yavru bir an tereddüt eder, sonra güvende olduğunu anlayıp çantanın kayışına atlayıverir. Yavru, uzaklardaki çiçekli bir çalıya doğru hüzünle "cıvk" diye seslenir. Ailesini mi arıyordu?
+- Sayfa 18: {child_name} hemen aklındaki yapbozu kurar; karıncaların döndüğü yön ile kurbağadaki üç noktalı desen o dev çalılıkları işaret etmektedir! Vakit kaybetmeden koşmaya başlar, dalları savurarak patikayı aşar ve çalıların arkasındaki o tertemiz büyük yeşil düzlüğe varır. Ama orada inanılmaz bir manzara beklemektedir!
+
+### Bölüm 6 — Tamamlanma (Sayfa 19-21) [DUYGULAR: sevinç → gurur → heyecan]
+- Sayfa 19: Düzlüğün bittiği aydınlık nehir kenarında dev tukan sürüsü telaşla tur atmaktadır. Yavru kuş inanılmaz bir sevinçle kanat çırparak {child_name}'in omzundan fırlar ve hızla ailesinin dallarına konar. Kavuşma anında tüm ormandan rengârenk kuşlar havalanır!
+- Sayfa 20: Arkasından usulca kamp rehberi yetişir ve gururla, "Ormanı dinlemeyi harika başardın!" der. {child_name} kocaman gülümser. Amazonun o acı dolu çağrısı tamamen susmuş, yerini huzurlu bir nehir şırıltısına bırakmıştır.
+- Sayfa 21: Yere eğilince tukan tüyleriyle kaplı pırıl pırıl kırmızı bir tohum bulur; onu kaptığı gibi şapkasına takar. Gülümser: "Amazon'un sırları hiçbir zaman bitmez..." {animal_friend} omzuna tırmanır ve ikisi birlikte gün batımına doğru yürürler. Acaba yarınki sinyal nerede yankılanacaktır?
+
+---
+
+## 🪝 SAYFA SONU KURALI — HOOK ZORUNLU (MİNİMUM %50)
+
+Her sayfanın SON CÜMLESİ okuyucuda merak uyandırmalıdır. En az 11/21 sayfada (yani %50+) şu tekniklerden birini kullan:
+- **Soru hook:** "Bu ses nereden geliyordu?" / "Acaba ne olacaktı?" / "Peki sıradaki ipucu neredeydi?"
+- **Gerilim hook:** "Tam o sırada..." / "Birden..." / "Ama beklenmedik bir şey oldu!"
+- **Merak hook:** "Bir şey yaklaşıyordu!" / "İnanamadı!" / "Ama orada inanılmaz bir manzara beklemektedir!"
+HOOK ZORUNLU sayfalar: 1, 3, 4, 5, 6, 7, 8, 10, 12, 14, 15, 17, 18 (en az bunların 11'inde hook olmalı).
+Hook'suz sayfa art arda EN FAZLA 2 sayfa olabilir.
+
+## 🏃 AKSİYON YAZARLIĞI KURALI (MİNİMUM %50 AKTİF FİİL)
+
+Pasif fiillerden (izledi, baktı, gördü, hissetti, düşündü) KAÇIN!
+Bunların yerine AKTİF eylemler kullan:
+- "koştu", "atladı", "kavradı", "kapar", "fırladı", "sıçradı", "tırmandı", "daldı"
+- "dizlerinin üzerine çöküp izleri inceledi" vs. "izlere baktı"
+- "dalları savurarak patikayı aştı" vs. "patikadan geçti"
+- "ellerini sarmaşıklara sımsıkı sardı" vs. "sarmaşığı tuttu"
+Özellikle keşif sayfalarında (4-10) çocuğu AKTİF yap: iz sürer, meyve kapar, dal iter, kök atlar.
+HEDEF: Aktif fiil oranı MİNİMUM %50 olmalı. Her sayfada en az 1 aktif eylem fiili kullan.
+
+## 💬 DİYALOG DENGESİ KURALI (MAKS 10 SAYFA)
+
+Her sayfada diyalog OLMAK ZORUNDA DEĞİL! İdeal oran: 21 sayfanın MAKSIMUM 10'unda diyalog olsun.
+- Bazı sayfalar SADECE tasvir ve aksiyon ile anlatılsın (diyalogsuz).
+- {animal_friend}'in her sayfada konuşmasına GEREK YOK. Bazen sessizce yanında olsun.
+- Araştırma, keşif ve manzara sayfalarını diyalogsuz yaz.
+- Ses efektleri ("tık tık", "cıvıltı" vb.) diyalog DEĞİLDİR, bunlar tasvir olarak kullanılabilir.
+
+## 📈 DUYGUSAL YAY KURALI (KORKU→CESARET GEÇİŞİ ZORUNLU)
+
+Hikayede KORKU ve ardından CESARET duygu geçişi MUTLAKA olmalıdır:
+- Sayfa 11-12: KORKU tırmanır (karanlık, tehlike, kalp atışı, titreme)
+- Sayfa 13: CESARET ile dönüşüm (korkuyu yenme, kararlılık, adım atma)
+- Bu geçiş DOĞRUDAN olmalı — araya NÖTRsayfa girMEMELİ!
+Korku kelimeleri: "korktu", "titredi", "kalbi güm güm attı", "nefesini tuttu", "donakaldı"
+Cesaret kelimeleri: "cesaretini topladı", "korkusunu yendi", "kararlılıkla", "göğsünü gere gere"
+
+## 🔊 SES MOTİFİ ÇEŞİTLİLİĞİ
+
+Ana ses motifi "tık tık" ormanda ilerledikçe EVRİLMELİDİR:
+- Sayfa 1-3: "Tık tık... tık!" (uzak, gizemli)
+- Sayfa 4-6: "Tık-tık-tık" (daha yakın, hızlanan)
+- Sayfa 7-10: "Tık-tıkıt... zzzt!" (yön değiştiren, farklılaşan)
+- Sayfa 11-14: Ses kaybolur veya karışır (gerilim)
+- Sayfa 15-18: "Cıvıltı" → ses değişir, yardım çağrısına dönüşür
+Monoton "tık tık" tekrarından KAÇIN.
+
+---
+
+## 🚫 KURALLAR (DOĞRU ORMAN KURGUSU)
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 21 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- image_prompt_en'de "standing still" veya "looking at camera" KULLANMA. Hep aksiyon ve yanlış yollarla dolu bulmacalar yaz.
+- Bu hikaye tehlikeli saldırılar veya korku dolu sahneler içermemelidir; hayvanlar (jaguar vb.) sadece uzakta, bir tablo veya silüet gibi, saygı duyulacak figürlerdir.
+- G2 TUTARLILIK: Maceraya {animal_friend} adlı sevimli dostu da katılır, onu da sahnelerde TUTARLILIK ile kullan. Doğru yolları bulmasına bazen o yardım eder.
+- DUYGU (EMOTION) ÇIPASI: amazed, smiling, determined belirterek emotion odaklı yaz!
+- IŞIK VE DOKU (LIGHTING & TEXTURE): Ormanın yaprak dokusuna (leaf texture, bark texture) ve sinematik ışığa (cinematic lighting, golden glow, sun rays) kesinlikle yer ver!
+- Asla didaktik nasihat verme veya ahlaki mesaj bildirme. YASAK!
+- Görsel prompt'larda ASLA "violent", "attack", "destroy", "kill" kelimeleri KULLANMA. Bunun yerine: "fierce" → "güçlü", "intense" → "yoğun" yaz.
+

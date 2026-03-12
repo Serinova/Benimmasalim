@@ -1,11 +1,19 @@
 // Shared types for scenarios module
 
+/** Proper {label, value} dict format for select options. */
+export interface SelectOption {
+  label: string;
+  value: string;
+}
+
 export interface CustomInputField {
   key: string; // Variable key used in templates, e.g., "spaceship_name"
   label: string; // Display label for users, e.g., "Uzay Gemisi Adı"
   type: "text" | "number" | "select" | "textarea";
   default?: string;
-  options?: string[]; // For "select" type
+  /** For "select" type — always stored as {label, value}[] dicts.
+   *  Legacy string[] is also accepted for backward compat. */
+  options?: SelectOption[] | string[];
   required?: boolean;
   placeholder?: string;
   help_text?: string;
@@ -16,6 +24,7 @@ export interface Scenario {
   name: string;
   description: string | null;
   thumbnail_url: string;
+  theme_key?: string | null;
   // V2: Story-only fields
   story_prompt_tr: string | null;
   location_en: string | null;
@@ -31,6 +40,9 @@ export interface Scenario {
   // Dynamic Variables / Custom Inputs
   custom_inputs_schema?: CustomInputField[];
   available_variables?: string[];
+  // Registry companion + object anchors (read-only display)
+  companions?: { name_tr: string; name_en: string; species: string; appearance: string; short_name: string }[];
+  objects?: { name_tr: string; appearance_en: string; prompt_suffix: string }[];
   // Media
   gallery_images: string[];
   // Marketing Fields
@@ -73,4 +85,7 @@ export interface Scenario {
   is_active: boolean;
   display_order: number;
   created_at: string | null;
+  // Registry metadata — tells the frontend which fields are read-only
+  is_code_managed?: boolean;
+  code_managed_fields?: string[];
 }

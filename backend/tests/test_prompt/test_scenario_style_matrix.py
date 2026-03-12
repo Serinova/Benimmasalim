@@ -91,14 +91,14 @@ class TestAllStylesProduceValidPrompts:
 
     @pytest.mark.parametrize("style_key", ALL_STYLES)
     def test_all_styles_different_prompts(self, style_key: str):
-        """Farklı stiller farklı prompt üretmeli — stil blokları benzersiz."""
+        """Farklı stiller farklı prompt üretmeli — stil anchor'ı dahil edilmeli."""
         ctx = _make_ctx(style_key, SCENARIOS[0])
         composer = PromptComposer(ctx)
         result = composer.compose_page("Child standing in a meadow", page_number=1)
-        # Stil bloğunun prompt'a dahil edildiğini doğrula
-        style_block_fragment = STYLES[style_key].style_block[:30]
-        assert style_block_fragment in result.prompt, (
-            f"{style_key} stil bloğu prompt'a dahil edilmemiş"
+        # Stil anchor'ının prompt'a dahil edildiğini doğrula
+        style_anchor = STYLES[style_key].anchor.rstrip(".")
+        assert style_anchor in result.prompt, (
+            f"{style_key} stil anchor'ı prompt'a dahil edilmemiş"
         )
 
 

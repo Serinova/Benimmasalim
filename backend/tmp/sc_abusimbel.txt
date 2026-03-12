@@ -1,0 +1,241 @@
+theme_key: abusimbel
+name: Abu Simbel Macerası
+location_en: Abu Simbel Temples
+active: False
+no_family: False
+page_count: 22
+
+--- OUTFIT GIRL ---
+a crisp white linen explorer tunic with gold trim, breathable beige desert trousers, durable leather gladiator-style boots, a wide-brimmed sun hat, and a glowing gold ankh pendant on a leather cord. EXACTLY the same outfit on every page — same white tunic, same beige trousers, same boots. No outfit changes. NO skirts or shorts.
+
+--- OUTFIT BOY ---
+a crisp white linen explorer tunic with bronze trim, breathable tan desert trousers, durable leather gladiator-style boots, a wide-brimmed sun hat, and a glowing gold ankh pendant on a leather cord. EXACTLY the same outfit on every page — same white tunic, same tan trousers, same boots. No outfit changes. NO short shorts.
+
+--- CUSTOM INPUTS ---
+[
+  {
+    "key": "favorite_moment",
+    "type": "select",
+    "label": "En Heyecanlı An",
+    "default": "Güneş Işığı Olayı",
+    "options": [
+      "Güneş Işığı Olayı",
+      "Dev Heykelleri İlk Görme",
+      "Karanlık Koridorda Yürüyüş",
+      "Çölden Tapınağın Belirmesi"
+    ],
+    "required": false,
+    "help_text": "Hikayenin en büyülü sahnesinin konusu"
+  },
+  {
+    "key": "special_discovery",
+    "type": "select",
+    "label": "Keşfetmek İstediği Şey",
+    "default": "Ramses'in Gizli Odası",
+    "options": [
+      "Ramses'in Gizli Odası",
+      "Kayıp Hiyeroglif Haritası",
+      "Nefertari'nin Sihirli Aynası",
+      "Güneşin Matematiksel Sırrı"
+    ],
+    "required": false,
+    "help_text": "Hikayede çocuğun peşine düşeceği büyük gizem"
+  },
+  {
+    "key": "travel_companion",
+    "type": "select",
+    "label": "Yol Arkadaşı",
+    "default": "Bilge Scarab Böceği",
+    "options": [
+      "Bilge Scarab Böceği",
+      "Konuşan Hiyeroglif",
+      "Cesur Nil Kuşu",
+      "Neşeli Kum Kedisi"
+    ],
+    "required": false,
+    "help_text": "Tapınağın derinliklerinde çocuğa eşlik edecek antik dost"
+  }
+]
+
+--- CULTURAL ELEMENTS ---
+{
+  "atmosphere": "monumental, awe-inspiring, ancient, sun-baked, mysterious interior darkness contrasting with blazing exterior light, archaeological wonder",
+  "time_periods": [
+    "blazing Egyptian sunrise with first golden rays striking the colossal facade",
+    "harsh midday desert sun with deep shadows between statues and sharp contrasts",
+    "the magical solar alignment — a golden beam cutting through 60m of darkness",
+    "warm sunset turning sandstone to deep amber-gold, Lake Nasser reflecting purple and orange"
+  ],
+  "color_palette": "pharaonic gold sandstone, Nile deep blue, desert amber, hieroglyph colors (Egyptian red, lapis blue, gold leaf, malachite green), shadow purple-brown, sky azure",
+  "cultural_items": [
+    "Egyptian double crown (pschent) on Ramesses statues",
+    "Scarab beetle motifs symbolizing the sun",
+    "Ankh (key of life) symbols carved in stone",
+    "Lotus and papyrus column designs",
+    "Painted vulture and cobra ceiling motifs (wadjet and nekhbet)"
+  ],
+  "primary_landmarks": [
+    "Great Temple facade with four colossal Ramesses II statues (~20m tall)",
+    "Hypostyle hall with eight Osiride pillars and painted ceiling",
+    "Inner sanctuary with solar alignment phenomenon (Feb 22 & Oct 22)",
+    "Nefertari's Small Temple with Hathor-headed columns",
+    "Battle of Kadesh wall reliefs — ancient military art masterpiece"
+  ],
+  "secondary_elements": [
+    "Lake Nasser and Nubian desert landscape",
+    "UNESCO rescue relocation site (1964-1968 engineering marvel)",
+    "Hieroglyphic walls with 3,000-year-old painted reliefs",
+    "Desert approach path with temples emerging from cliff face",
+    "Pharaonic cartouches and carved friezes on every surface"
+  ]
+}
+
+--- LOCATION CONSTRAINTS ---
+Abu Simbel Temples UNESCO World Heritage Site iconic elements iconic elements (include 1-2 relevant details depending on the scene):
+- Four colossal seated statues of Ramesses II (~20m tall each) carved into the cliff face — pharaonic crowns, serene faces, hieroglyphic cartouches
+- Temple interior with Osiride pillars, hieroglyphic walls, and dramatic light shafts cutting through darkness
+- The golden Nubian desert landscape and Lake Nasser's blue waters in the background
+- Distinctive warm golden sandstone of ancient Egyptian monuments
+- Sense of monumental scale — the child dwarfed by 3,000-year-old colossal architecture
+
+--- SCENARIO BIBLE ---
+{}
+
+--- COVER PROMPT ---
+A breathtaking children's book cover illustration for "{book_title}".
+
+SCENE COMPOSITION:
+A young child {scene_description}, standing in awe at the base of the colossal facade of the Great Temple of Abu Simbel in southern Egypt, dwarfed by the four enormous seated statues of Pharaoh Ramesses II carved directly into the cliff face.
+
+ICONIC BACKGROUND ELEMENTS (include 2-3 key details):
+- The four colossal seated statues of Ramesses II (each ~20 meters tall) carved into the golden sandstone cliff — serene pharaonic faces, double crowns of Upper and Lower Egypt, hands resting on knees
+- The temple entrance between the two central statues — a dark rectangular doorway leading into the mountain
+- Smaller statues of royal family members standing between the legs of the colossal figures
+- Hieroglyphic carvings and cartouches covering the facade above the entrance
+- The golden Nubian desert stretching to the horizon behind, with Lake Nasser's blue waters visible in the distance
+- A brilliant Egyptian sun positioned directly above the temple, casting dramatic shadows
+
+LIGHTING & ATMOSPHERE:
+- Intense golden Egyptian sunlight illuminating the sandstone facade in warm amber-gold tones
+- Deep dramatic shadows cast by the colossal statues creating a sense of immense scale
+- The desert air shimmering with heat haze over the distant sands and lake
+- A vast cloudless deep blue Egyptian sky contrasting with the golden stone
+- Color palette: pharaonic gold sandstone, deep Nile blue, desert amber, sky azure, shadow purple-brown
+
+CLOTHING:
+The child is wearing {clothing_description}.
+
+STYLE:
+{visual_style}.
+
+COMPOSITION REQUIREMENTS:
+- Professional book cover design with clear title space at the top
+- Child positioned in lower third, emphasizing the overwhelming scale of the 20-meter statues
+- The four colossal Ramesses statues filling the frame with monumental grandeur
+- Sense of ancient power, mystery, and archaeological wonder
+
+--- PAGE PROMPT ---
+A stunning children's book illustration set at the legendary Abu Simbel Temples in southern Egypt, a UNESCO World Heritage Site.
+
+SCENE ACTION:
+A young child {scene_description}.
+
+AUTHENTIC ABU SIMBEL SETTING (vary these elements per scene):
+- GREAT TEMPLE FACADE: The iconic cliff-face carved with four colossal seated statues of Ramesses II (~20m tall each) — serene pharaonic faces with double crowns, hands on knees, smaller royal family figures between the legs, hieroglyphic cartouches and carved friezes above the entrance
+- TEMPLE INTERIOR - HYPOSTYLE HALL: Eight massive Osiride pillars (Ramesses as Osiris) lining the central aisle — towering carved figures holding crook and flail, painted ceiling with vulture motifs, dramatic shafts of light from the entrance cutting through the darkness
+- INNER SANCTUARY (HOLY OF HOLIES): The deepest chamber with four seated statues (Ra-Horakhty, deified Ramesses, Amun, Ptah) — the magical room where sunlight reaches only twice a year, mysterious darkness punctuated by golden light
+- SOLAR ALIGNMENT PHENOMENON: The magical moment when sunlight travels 60 meters through the temple corridor to illuminate the inner sanctuary statues — a golden beam cutting through darkness, ancient astronomical precision, the "Sun Festival" spectacle
+- NEFERTARI'S TEMPLE (SMALL TEMPLE): The elegant smaller temple dedicated to Queen Nefertari and goddess Hathor — six standing colossal statues (four Ramesses, two Nefertari) on the facade, Hathor-headed columns inside, beautiful painted reliefs of the queen
+- BATTLE RELIEFS: Massive wall carvings depicting the Battle of Kadesh — chariots, horses, archers, dramatic action scenes carved in raised relief, ancient Egyptian military art at its finest
+- LAKE NASSER & NUBIAN DESERT: The vast artificial lake stretching to the horizon behind the temples — deep blue waters against golden desert cliffs, the dramatic landscape of southern Egypt/Nubia
+- UNESCO RESCUE SITE: The artificial hill constructed to hold the relocated temples — the visible seam where the mountain was reconstructed, a testament to 1960s engineering marvel
+- HIEROGLYPHIC WALLS: Every surface covered in carved and painted hieroglyphs — cartouches of Ramesses, offering scenes, gods and pharaohs in profile, colorful painted reliefs preserved for 3,000 years
+- DESERT APPROACH: The pathway leading to the temples across the Nubian desert — golden sand, scattered desert rocks, the temples emerging from the cliff face as you approach, mirages on the horizon
+
+ARCHITECTURAL & HISTORICAL ACCURACY:
+- Built circa 1264-1244 BCE by Pharaoh Ramesses II (New Kingdom, 19th Dynasty)
+- Great Temple: carved ~33 meters into the cliff, facade ~35 meters wide, ~30 meters tall
+- Four seated colossi of Ramesses II: each approximately 20 meters tall
+- Small Temple (Nefertari): six standing figures on facade (~10 meters tall each)
+- Solar alignment: sunlight illuminates inner sanctuary on Feb 22 and Oct 22 each year
+- UNESCO rescue: entire complex cut and relocated 65 meters higher in 1964-1968
+- Dedicated to Ra-Horakhty, Amun, Ptah, and the deified Ramesses himself
+- Nefertari's temple dedicated to goddess Hathor
+
+LIGHTING OPTIONS (match to scene mood):
+- Blazing Egyptian sunrise with the first golden rays striking the colossal facade
+- Harsh midday desert sun with deep shadows between the statues and sharp contrasts
+- The magical solar alignment beam — a single shaft of golden light cutting through 60 meters of darkness to illuminate the sanctuary
+- Warm sunset turning the sandstone to deep amber-gold, Lake Nasser reflecting purple and orange
+
+CLOTHING:
+The child is wearing {clothing_description}.
+
+STYLE:
+{visual_style}.
+
+COMPOSITION:
+- Clear focal point on the child in the middle-ground
+- Monumental scale of ancient Egyptian architecture creating dramatic sense of wonder
+- Space at bottom for text overlay (25% of image height)
+- Vibrant color palette: pharaonic gold sandstone, Nile blue, desert amber, hieroglyph colors (red, blue, gold, green), shadow purple
+
+--- STORY PROMPT TR ---
+Sen ödüllü çocuk kitabı yazarı ve Antik Mısır tarihi/arkeoloji uzmanısın.
+Kahraman, yaş ve eğitsel değerler yukarıda verilmiştir. Görevin: Abu Simbel Tapınakları'nda geçen büyülü bir macera yazmak.
+
+📍 ABU SİMBEL TAPINAKLARI — KULLANILACAK KÜLTÜREL MEKANLAR (hikayeye en az 6 tanesini entegre et):
+1. Büyük Tapınak cephesi — kayaya oyulmuş 4 devasa oturan II. Ramses heykeli (her biri ~20 metre), çift taçlı firavun yüzleri, hiyeroglif kartuşlar, kraliyet ailesi heykelleri
+2. Hipostil salon — 8 devasa Osiris sütunu (Ramses formunda), tavan kanatları, giriş ışığının karanlığı yaran dramatik ışık demetleri
+3. Kutsal oda (en iç oda) — 4 oturan heykel (Ra-Horakhty, tanrısallaştırılmış Ramses, Amun, Ptah), yılda sadece iki kez güneş ışığının ulaştığı gizemli oda
+4. Güneş ışığı olayı — her yıl 22 Şubat ve 22 Ekim'de güneş ışığının 60 metre tapınak koridorundan geçerek kutsal odadaki heykelleri aydınlatması, antik astronomik hassasiyet
+5. Nefertari Tapınağı — Kraliçe Nefertari ve Hathor tanrıçasına adanmış zarif küçük tapınak, 6 ayakta duran dev heykel, Hathor başlı sütunlar, kraliçenin güzel kabartmaları
+6. Tarihi sahneler — eski yaşamı ve kahramanlıkları anlatan devasa duvar oymaları, atlar, arabalar, antik figürler, yüksek kabartma tekniğiyle dramatik aksiyon sahneleri
+7. Nasser Gölü ve Nubya Çölü — tapınağın arkasındaki devasa yapay göl, derin mavi sular ile altın rengi çöl kayalıkları, güney Mısır'ın dramatik manzarası
+8. UNESCO kurtarma alanı — tapınakların 65 metre yukarı taşındığı yapay tepe, modern mühendisliğin en büyük başarılarından biri
+9. Hiyeroglif duvarlar — her yüzeyi kaplayan oyma ve boyalı hiyeroglifler, Ramses kartuşları, tanrı ve firavun tasvirleri, 3.000 yıldır korunmuş renkli kabartmalar
+10. Çöl yaklaşımı — Nubya çölünden tapınaklara giden yol, altın kum, kayalıklar, yaklaştıkça kaya yüzünden beliren devasa tapınak cephesi, ufuktaki serap
+
+🎭 YARDIMCI KARAKTER (en az biri hikayede olsun):
+Bilge Scarab Böceği (güneşin sırrını bilen, tapınağın en karanlık köşelerinde ışık yolu gösteren altın kanatlı böcek),
+Konuşan Hiyeroglif (duvardan ayrılıp canlanabilen, 3.000 yıllık hikayeleri anlatan hiyeroglif figür),
+Cesur Nil Balıkçıl Kuşu (Nasser Gölü'nden tapınağa uçan, Nil'in sırlarını bilen zarif kuş),
+Neşeli Kum Kedisi (çöl kedisi, tapınağın gizli odalarını ve tünellerini bilen küçük rehber)
+veya Usta Taş Yontucu Sesi (3.000 yıl önce heykelleri oymuş antik ustanın neşeli hatırası, sanatın ve sabrın sırrını öğreten).
+Karakter, tapınağın 3.000 yıllık tarihinden veya Antik Mısır'ın büyülü dünyasından "uyanmış" olabilir.
+
+⚡ ÖNEMLİ — BU BİR GEZİ REHBERİ DEĞİL, BİR MACERA HİKAYESİ!
+Abu Simbel Tapınakları ARKA PLAN olarak kullan. Hikayenin motorunu MEKANLAR DEĞİL,
+çocuğun İÇ YOLCULUĞU ve eğitsel değerler oluştursun.
+
+❌ YANLIŞ: "Ali tapınağa girdi. Heykelleri gördü. Sonra çıktı."
+✅ DOĞRU: Çocuğun bir SORUNU/ZAYIFLIĞI var. Bu sorun Abu Simbel'in devasa tapınağında
+bir MACERA'ya dönüşüyor. Karanlık koridorda yürürken hiyeroglifler canlanıyor,
+güneş ışığı olayı çocuğu 3.000 yıl öncesine taşıyor, Ramses'in dev heykelleri
+arasında kendini küçücük hissederken BÜYÜK şeyler başarmayı öğreniyor.
+Çocuk antik mühendisliğin ve sabrın gücünü keşfederken KENDİNİ keşfediyor.
+
+🔑 EĞİTSEL DEĞER ENTEGRASYONU:
+Seçilen eğitsel değer hikayenin OLAY ÖRGÜSÜNÜ belirlemeli:
+- Azim seçildiyse → 20 yıl süren tapınak inşaatı, bir taş bir taş sabrın zaferi
+- Merak seçildiyse → güneş ışığı olayının bilimsel sırrı, astronomik hassasiyet çocuğu çeksin
+- Cesaret seçildiyse → 60 metre karanlık koridorda ilerlemek, bilinmeyene adım atmak
+- Hayal gücü seçildiyse → hiyeroglifler canlanıp hikayeler anlatsın, duvarlar konuşsun
+- İş birliği seçildiyse → UNESCO kurtarma projesi, tüm dünyanın birlikte çalışması
+Değer sadece "söylenmesin", çocuk YAŞAYARAK öğrensin!
+
+⚠️ ÖNEMLİ KISITLAMALAR:
+1. Hikayede DİNİ RİTÜEL veya İBADET SAHNESİ OLMAMALIDIR.
+   Antik Mısır tanrıları "mitolojik figürler ve heykel sanatı" olarak sunulsun, inanç olarak değil.
+2. Tapınak "antik mühendislik harikası ve sanat şaheseri" olarak sunulsun.
+3. Güneş ışığı olayı "astronomi ve matematik dahiliği" perspektifinden.
+4. Ramses ve Nefertari "tarihî lider ve kraliçe" olarak, dini figür olarak değil.
+5. UNESCO kurtarma projesi "insanlığın ortak mirası" ve "uluslararası iş birliği" vurgusuyla.
+
+🎨 SAHNE AÇIKLAMASI KURALLARI (Pass-2 için ipucu):
+Her sahne için spesifik Abu Simbel lokasyonu ve mimari/arkeolojik detay kullan.
+Örn: "Ramses'in 20 metrelik dev heykelinin ayaklarının dibinde başını kaldırıp yukarı bakarken",
+"Karanlık tapınak koridorunda güneş ışığı demetinin altın gibi parladığı anda",
+"Nefertari Tapınağı'nın Hathor başlı sütunları arasında kraliçenin kabartmasına dokunurken",
+"Çöl kumlarından beliren tapınak cephesini ilk kez uzaktan görürken".
+Genel ifadelerden kaçın ("tapınakta" yerine somut yer adı ve detay kullan).

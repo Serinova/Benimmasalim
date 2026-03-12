@@ -1,0 +1,325 @@
+theme_key: galata
+name: Galata'nın Kayıp Işık Haritası
+location_en: Galata Tower
+active: True
+no_family: False
+page_count: 22
+
+--- OUTFIT GIRL ---
+a vintage brown leather jacket over a cream turtleneck, tailored olive cargo pants, and ankle boots, with a delicate pocket watch chain and driving gloves. EXACTLY the same outfit on every page — same jacket, same pants, same gloves.
+
+--- OUTFIT BOY ---
+a vintage brown leather jacket over a dark turtleneck, tailored olive cargo pants, and ankle boots, with a newsboy cap and driving gloves. EXACTLY the same outfit on every page — same jacket, same pants, same gloves, same cap.
+
+--- CUSTOM INPUTS ---
+[]
+
+--- CULTURAL ELEMENTS ---
+{
+  "colors": "warm amber sunset, deep burgundy facades, golden cobblestone, purple twilight",
+  "values": [
+    "Yardımseverlik (Helpfulness)",
+    "Azim (Determination)",
+    "Gözlem gücü (Sharp observation)",
+    "Hızlı düşünme (Quick thinking)"
+  ],
+  "primary": [
+    "Galata Tower — medieval stone cylinder landmark",
+    "Steep colorful Istanbul stairs (Camondo style)",
+    "Narrow cobblestone alleys, antique shop windows",
+    "Nostalgic red tram tracks",
+    "Karaköy waterfront, Bosphorus glimpse"
+  ],
+  "location": "Galata Tower area, Karaköy, Istanbul, Turkey",
+  "secondary": [
+    "Orange tabby street cats — iconic Istanbul character",
+    "Warm amber street lanterns on iron posts",
+    "Cozy cafe windows, street musicians",
+    "Seagulls over the Bosphorus",
+    "Turkish tea glasses on small wooden tables"
+  ],
+  "atmosphere": "Urban adventure, golden hour race against time, modern-day mystery",
+  "historic_site": "Galata Tower — built 1348 by Genoese, 67 metres tall",
+  "sensitivity_rules": [
+    "Modern day setting — no historical time travel",
+    "Safe and friendly — no villains, no real danger",
+    "No religious rituals or political content"
+  ]
+}
+
+--- LOCATION CONSTRAINTS ---
+Primary landmark: Galata Tower — visible ONLY in opening (p.1-2), and closing (p.19-21). Interior/atmospheric scenes (p.3-18): do NOT draw the full tower — use streets/atmosphere. TIER 1 ICONIC (full tower): pages cover, 1, 2, 20, 21. TIER 2 CONTEXTUAL (tower distant background): pages 3, 9, 19. TIER 3 ATMOSPHERIC (no tower): pages 4-8, 10-18. Atmospheric cues always usable: warm amber lantern on wet cobblestone / narrow stone alley / steep colorful Galata stairs / cozy cafe window glow / orange tabby cat on stone step / rusty iron railing / distant Bosphorus shimmer at street end.
+
+--- SCENARIO BIBLE ---
+{
+  "tone_rules": [
+    "Modern day setting — no historical time travel or magic",
+    "Safe and friendly — no villains, no real danger",
+    "No religious rituals or political content",
+    "Hezarfen the pigeon is always present as companion throughout the story"
+  ],
+  "cultural_facts": [
+    "Galata Tower was built in 1348 by the Genoese, 67 metres tall",
+    "Hezarfen Ahmet Çelebi is a legendary Ottoman aviator who allegedly flew from Galata Tower across the Bosphorus in the 17th century",
+    "The Galata district is famous for steep colorful stairs, narrow cobblestone alleys, and vibrant street art",
+    "Istanbul tabby cats are a beloved cultural icon",
+    "The Galata Bridge connects Karaköy to Eminönü over the Golden Horn"
+  ],
+  "side_character": {
+    "name": "Hezarfen",
+    "type": "pigeon",
+    "appearance": "a plump grey-white pigeon with iridescent purple-green neck shimmer and a tiny brass goggle perched on its head"
+  }
+}
+
+--- COVER PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Child holding a small antique brass light projector device, intricate glowing golden map lines materializing on the ancient cobblestone floor. A plump grey-white pigeon with an iridescent purple-green neck shimmer and a tiny brass goggle perched on its head is sitting on the child's shoulder, looking ahead alertly. Iconic Galata Tower rising dramatically behind narrow Istanbul streets — its ancient stone cylinder filling the background, warm amber-orange sunset sky, seagulls circling. Rich golden hour backlighting, long cobblestone shadows, warm volumetric sunset haze. Low-angle hero shot: child 30% foreground, tower and Galata streetscape 70%. Istanbul evening palette: warm amber, golden cobblestone glow, deep burgundy facades, purple twilight sky.
+
+--- PAGE PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. COMPANION: A plump grey-white pigeon named Hezarfen with iridescent purple-green neck shimmer and a tiny brass goggle perched on its head — always the SAME pigeon on every page. Setting (choose based on scene — landmark only for opening/climax/closing): ICONIC: Galata Tower stone exterior, tower base archway, landmark courtyard. STREETS: steep colorful Galata stairs, narrow cobblestone alley, warm-lit cafe windows, old stone walls. ATMOSPHERIC: golden lamplight on wet cobblestone, faded painted plaster walls, warm amber cafe glow, rusty iron railings, antique shop windows, orange tabby cats on steps. TRANSITION: red vintage tram tracks, Bosphorus glimpsed at street end, distant rooftops. Shot variety (alternate — never same angle twice in a row): [CLOSE-UP: device glowing on cobblestone / pigeon's goggle glinting / child's determined face] [MEDIUM: child running in alley / examining map lines / waist-up action] [WIDE: full staircase / crowded street with tower background / meydan] [INTERIOR: dark underpass / cozy shadowy nook / beside tram tracks] Cinematic action lighting, dynamic pose, child 30-40% of frame. No eye contact with camera. Istanbul evening: amber, old stone, warm lantern glow.
+
+--- STORY PROMPT TR ---
+
+# GALATA'NIN KAYIP IŞIK HARİTASI
+
+## ÖZET KURGU
+{child_name}, gün batarken Galata Kulesi çevresinde dolaşırken yere düşen gizemli
+pirinç bir mini ışık aparatı bulur. Tam o anda omzuna tombul, gözüpek bir güvercin konar —
+bir zamanlar Hezarfen Çelebi'nin uçuş güzergahını izlediği söylenen efsanevi Hezarfen!
+Aparat kaldırımlara altın harita çizgileri yansıtır.
+Bir sokak sanatçısının kaybettiği eşsiz bilekliği bulmak için Hezarfen'le birlikte
+bu ışıklı haritayı takip ederek Galata sokaklarında koşar.
+Doğru yolu bulup güneş batmadan yetişmesi gerek.
+
+**BAŞLIK:** "{child_name}'ın Kayıp Işık Haritası: Galata" — alt başlık ekleme.
+**TON:** 5-10 yaş. Her sayfa 2-4 kısa, ritimli cümle. Çizgi roman hızı: aksiyon → soluk → aksiyon.
+- Asla didaktik nasihat veya ahlaki mesaj bildirme. YASAK!
+
+---
+
+## 🎢 DUYGUSAL YAY — 5 DALGA (Tüm Hikayeye Hakim)
+
+Bu hikaye 5 duygusal dalgada ilerler, her dalga bir öncekinden daha yüksek:
+
+**DALGA 1 — HEYECAN** (s.1-3): Büyülü keşif — "Bu ne?!" + Hezarfen'le tanışma
+**DALGA 2 — MERAK** (s.4-8): Harita nereye koşturuyor? Hezarfen ipucu veriyor!
+**DALGA 3 — ENDİŞE** (s.9-14): Harita kaybolur! Zaman azalıyor! Hezarfen sakinleştiriyor
+**DALGA 4 — KEŞFETME** (s.15-18): Sır çözülür — ses ve harita bağlantısı, Hezarfen rehberlik
+**DALGA 5 — ZAFER** (s.19-21): Bileklik bulunur, Hezarfen göğe süzülür, içi gurur dolar
+
+---
+
+## 🎬 SAHNE YÖNETMENİ — LOKASYON AKIŞI (G3)
+
+Galata Kulesi HER sayfada çizilmez. Sinematik kademe:
+
+◉ AÇILIŞ (s.1-2): Kule TAM, görkemli, geniş açı — gün batımı silueti
+◉ SOKAKLAR (s.3-7): Kule uzakta ya da yok — renkli merdivenler ve dar sokaklar öne
+◉ ATMOSFERİK (s.8-14): Kule görünmüyor — amber lamba, ıslak kaldırım, kafeler
+◉ ZİRVE (s.15-18): Kalabalık meydan — kule uzak siluet olabilir
+◉ KAPANIŞ (s.19-21): Kule yeniden TAM — gece başlıyor, lambalar yanıyor
+
+image_prompt_en için s.8-14'te "Galata Tower" yerine şunlardan birini seç:
+"warm amber lantern glow on wet ancient cobblestone" /
+"narrow stone alley with faded painted plaster walls" /
+"steep colorful stairs lit by warm evening light" /
+"cozy Istanbul cafe window, warm glow spilling onto evening cobblestones"
+
+Kule adını maksimum 5-6 sayfada kullan, geri kalanında atmosfer öğeleri yeter.
+
+---
+
+## 🐦 HEZARFEN GÜVERCİN — COMPANION TUTARLILIK ZORUNLU (G2-a)
+
+⚠️ KRİTİK TUTARLILIK KURALI — BU BÖLÜM HER SAYFADA GEÇERLİDİR!
+
+**Hezarfen** — Tombul, cesur İstanbul güvercini. Hikaye boyunca yoldaş:
+= "a plump grey-white pigeon with iridescent purple-green neck shimmer and a tiny brass goggle perched on its head"
+→ Hezarfen, HER göründüğü sayfada AYNEN BU TANIM ile çizilmelidir!
+→ Hezarfen her zaman bir GÜVERCİN'dir. ASLA insan, ASLA başka kuş türü olarak çizme!
+→ Hezarfen'in rengi (grey-white, purple-green shimmer), aksesuarı (tiny brass goggle) SAYFADAN SAYFAYA DEĞİŞMEZ!
+
+**Hezarfen'in Hikayedeki Rolü:**
+- Haritanın gösterdiği yönü havadan keşfediyor, {child_name}'e ipucu veriyor
+- Tehlikeli anlarda çocuğun omzuna konup cesaretlendiriyor
+- Yanlış yolda kanat çırparak uyarı veriyor
+- Finalde göğe süzülerek vedalaşıyor
+
+---
+
+## 🦊 YARDIMCI KARAKTERLERİ TUTARLILIK ZORUNLU
+
+**Sokak Sanatçısı** (bölüm 1 ve finale):
+= "a young dark-haired street artist wearing a paint-stained indigo denim jacket and fingerless gloves"
+→ HER göründüğünde AYNEN aynı kıyafet. Değişmez.
+
+---
+
+## ✨ ÖZEL EŞYA TUTARLILIĞI ZORUNLU
+
+**Işık Aparatı:**
+= "a small antique brass light projector, palm-sized, engraved gears on the side,
+   projecting thin golden map lines onto the ground, warm amber glow"
+Her göründüğünde bu tanım. Rengi (pirinç/altın) ve boyutu değişmez.
+
+**Sanatçının Bilekliği:**
+= "a hand-stitched dark brown leather bracelet with small silver clasp and engraved star pattern"
+Bulunduğu sahnelerde bu tanım.
+
+---
+
+## 📖 SAYFA SAYFA KURGU
+
+### Bölüm 1 — HEYECAN (Sayfa 1-3)
+
+Sayfa 1: Gün batarken Galata Kulesi meydanında {child_name} kalabalıkta dolaşıyor.
+Aceleden toparlanıp geçen bir sokak sanatçısının çantasından küçük bir nesne düşüyor,
+taşlara çarpıp kayarak {child_name}'in ayaklarının dibinde duruyor.
+Duygu: "Bu ne?" — merak kıvılcımı.
+🪝 HOOK: Nesne taşa çarptığında hafif bir altın ışık sızıyor — sıradan bir şey değil bu.
+
+Sayfa 2: {child_name} eğilip aparatı alıyor. Düğmeye parmağı kayınca zemine incecik
+altın çizgiler fışkırıyor. Bir harita! Tam "İnanamıyorum!" derken,
+omzuna tombul bir güvercin konuyor — gözüpek ve meraklı. Hezarfen!
+Duygu: Şok + yükselen heyecan.
+🪝 HOOK: Hezarfen kanat çırparak bir sokağı işaret ediyor — sanki nereye gideceklerini biliyor.
+
+Sayfa 3: Sanatçının sesi uzaktan geliyor: "Bilekliğimi düşürdüm! O olmadan sahne yapamam!"
+{child_name} tek saniye düşünmeden haritaya bakıp koşmaya başlıyor.
+Hezarfen de havalanıp önden süzülüyor. Karar anı — hızlı ve net.
+🪝 HOOK: Hezarfen bir sokağın köşesinde heyecanla daireler çiziyor — acele etmeli!
+
+### Bölüm 2 — MERAK (Sayfa 4-8)
+
+Sayfa 4: Altın çizgiler dar bir sokağa işaret ediyor — renkli merdivenler.
+{child_name} merdivenlerden üçer üçer atlayarak tırmanıyor. Hezarfen yanında süzülüyor.
+Sahne: Wide — renkli merdiven tam görünür.
+🪝 HOOK: Merdivenlerin tepesinde harita aniden sağa kıvrılıyor — ama orada karanlık bir geçit var.
+
+Sayfa 5: Tepede harita söner! Aparat bozuldu mu? {child_name} panikle çeviriyor, sallıyor.
+Tam o anda Hezarfen bir taşın üstüne konup gagasıyla taşı tıklatıyor.
+Harita o taştan tekrar canlanıyor! Hezarfen yolu biliyor!
+Sahne: Close-up — Hezarfen'in gagası ve parlayan taş.
+🪝 HOOK: Yeni çizgiler bir kafenin penceresine doğru dans ediyor.
+
+Sayfa 6: Hezarfen kafenin önüne konuyor — harita orada parladıkça güvercin kanat çırpıyor.
+"Bu dost haritayı biliyor!" diyor {child_name}, köşeyi dönüp kafe penceresini inceliyor.
+Duygu: Sıcak bir gülümseme — güvercin rehbere güven.
+🪝 HOOK: Cam kafeye yansıyan ışıkta küçük bir yıldız sembolü beliriyor.
+
+Sayfa 7: Yerde parlayan bir şey! {child_name} dizleri üstüne kayarak uzanıyor — ama bu
+sanatçının bilekliği değil, düşmüş bir düğme. Yanlış harita yönü mü?
+Hezarfen hırsla kanat çırparak geri çekiliyor — bu değilmiş!
+Duygu: Hayal kırıklığı ama vazgeçme yok.
+🪝 HOOK: Aparat aniden farklı bir yöne, daha karanlık bir sokağa doğru parlıyor.
+
+Sayfa 8: Aparat zemine üç sembol çiziyor: yıldız, dalga, dönen ok.
+{child_name} duvardaki grafiti, fenerler, tabelalara bakıp karşılaştırıyor.
+Hezarfen bir tabelanın üstündeki yıldıza konuyor — eşleşiyor!
+Sahne: Medium — amber lamba ışığı, atmosfer ağır ve gizemli.
+🪝 HOOK: Güneş biraz daha battı — turuncu gökyüzü kırmızıya dönmeye başlıyor.
+
+### Bölüm 3 — ENDİŞE (Sayfa 9-14)
+
+Sayfa 9: Semboller bir kafenin eski tuğla duvarında eşleşiyor — harita sağa döndürüyor!
+{child_name} o tarafa fırlıyor, ayağı ıslak kaldırımda kayıyor ama dengesini buluyor.
+Hezarfen omzuna konup tüylerini kabarıyor — güneş iyice alçalmış.
+🪝 HOOK: Turuncu kırmızıya dönüyordu — zaman daralıyor!
+
+Sayfa 10: Kalabalık caddeye fırlar! İnsanların arasından slalom yaparak koşar.
+Bir bisiklete çarpmamak için kendini yana atar, yuvarlanıp ayağa kalkar.
+Hezarfen tepeden rehberlik ederek boş geçitlere yönlendiriyor.
+"Hayır hayır hayır!" Şapkasını tutar, koşmaya devam eder.
+🪝 HOOK: Harita bir anda titreyip soluyor — bitmek üzere mi?!
+
+Sayfa 11: Harita tamamen söner! {child_name} karanlıkta kalakaldı. Yönünü kaybetti.
+Etrafında yüksek taş duvarlar, dar bir çıkmaz. Kalbi güm güm atıyor.
+Hezarfen omzuna konup yumuşak bir "gurrr" sesi çıkarıyor — sakinleştirmeye çalışıyor.
+🪝 HOOK: Tam o anda uzaktan ritmik bir ses duyuluyor — bu ne olabilir?
+
+Sayfa 12: {child_name} sesi takip etmek için karanlık sokağa koşar.
+Ellerini duvara dayayarak ilerliyor, taş yüzeyi parmaklarının altında. Hezarfen önden uçuyor,
+yolu açıyor. Her adımda ses biraz daha yaklaşıyor.
+🪝 HOOK: Ses bir müzik — ve haritanın parladığı yön tam o sese doğru!
+
+Sayfa 13: {child_name} derin bir nefes alıp karanlık geçide dalıyor.
+Hezarfen geçidin ucundaki soluk ışığa doğru süzülüyor — bir çıkış var!
+{child_name} Hezarfen'in ardından koşuyor, taşlara takılıp tökezliyor ama düşmeden kalkıyor.
+🪝 HOOK: Geçidin sonunda sıcak bir kehribar ışık görünüyor — hayat var!
+
+Sayfa 14: {child_name} geçitten çıkınca duyduğu ritmik sesin bir sokak kemancısı olduğunu anlıyor.
+Her nota değiştiğinde aparatın ışığı titriyor! "Bu... rastlantı olamaz!"
+Hezarfen kemancının başında daireler çiziyor — burayı tanıyor!
+🪝 HOOK: Kemancı çalmayı bırakınca harita netleşiyor — ses ve harita bağlantılı!
+
+### Bölüm 4 — KEŞFETME (Sayfa 15-18)
+
+Sayfa 15: "Aynı notayı üç saniye çalar mısınız, lütfen?" diye kemancıya koşar.
+Kemancı şaşırıp çalınca — harita kilitlenir! Ok bir yöne çakılır.
+{child_name} o yöne fırlar, Hezarfen de havalanır.
+Duygu: Zafer yakın — tüyleriniz diken diken olur.
+🪝 HOOK: Ok tam bir hediyelik arabasının karanlık köşesini işaret ediyor.
+
+Sayfa 16: {child_name} yere çöker, taşların arasındaki karanlığa elini uzatıyor.
+Parmaklarının ucu bir şeye değiyor... Hezarfen merakla başını eğip bakıyor.
+Sahne: Close-up — el, karanlık, taş aralığı, güvercin gagası.
+🪝 HOOK: Parmakları sert bir deri yüzeyine dokunuyor — bu olabilir mi?!
+
+Sayfa 17: {child_name} sıkıca kavrayıp çekiyor: koyu kahve deri bileklik, gümüş tokalı,
+yıldız kabartmalı! AMA aparat kırmızı yanar söner — bitmedi!
+Bilekliğin tokası kopmuş! Hezarfen gagasıyla bir yeri işaret ediyor.
+🪝 HOOK: Toka nerede? Hezarfen bir bankın altına doğru gagasını uzatıyor!
+
+Sayfa 18: {child_name} bankın altına uzanıp elleri ile aranıyor. Elleri titriyor.
+Son ok. Son şans. Hezarfen bankın kenarında sabırsızca kanat çırpıyor.
+Parmakları küçük metal bir parçaya dokunuyor — TOKA!
+🪝 HOOK: Tam set elinde — ama güneş batmak üzere! Koşmalı!
+
+### Bölüm 5 — ZAFER (Sayfa 19-21)
+
+Sayfa 19: {child_name} bilekliği ve tokayı sıkıca tutar, dik Galata merdivenlerinden
+bir fırtına gibi koşarak sanatçının standına geri döner.
+Hezarfen tepede süzülerek yolu gösteriyor.
+Sahne: Wide — koşu, merdiven, gün batımı kırmızısı, Galata Kulesi silueti uzakta.
+🪝 HOOK: Sanatçı hâlâ orada mı? Kalbi yerinden fırlayacak gibi!
+
+Sayfa 20: Sanatçı bilekliğe kavuşunca gözleri dolarak {child_name}'e sarılıyor.
+Aparat son kez parlar — zemine minik bir altın yıldız izi bırakır ve söner.
+Hezarfen omzundan havalanıp sanatçının çevresinde sevinçle daireler çiziyor.
+Duygu: Gerçek, derin bir tatmin. "Başardım."
+
+Sayfa 21: Galata Kulesi gece başlarken ilk lambalarla tam ve görkemli.
+Hezarfen {child_name}'in omzuna son bir kez konup gagasını yanağına sürüyor.
+Sonra kanatlarını açıp Galata'nın üzerinde süzülerek karanlığa karışıyor.
+{child_name} güler: "Galata'nın bir sırrını daha biliyorum artık."
+Duygu: Gurur, huzur, veda sıcaklığı.
+
+---
+
+## 📐 KURALLAR
+
+1. Hikâyeyi TAM OLARAK {page_count} sayfa yaz (1 kapak + 21 iç sayfa).
+2. image_prompt_en'de "standing still" veya "looking at camera" KULLANMA. Hep aksiyon. Karanlık sokakta cinematic aydınlatma yap, textureleri vurgula.
+3. Hikaye GÜNÜMÜZDE geçer — ışınlanma, zaman makinesi, büyü YOK.
+4. Dini ritüel, siyasi içerik, şiddet, korku YOK.
+5. Emotion odaklı yaz (amazed, smiling, determined).
+
+🎨 GÖRSEL TUTARLILIK ZORUNLU:
+- Işık aparatı: "a small antique brass light projector, palm-sized, projecting golden map lines" — AYNI
+- Hezarfen güvercin: "a plump grey-white pigeon with iridescent purple-green neck shimmer and a tiny brass goggle perched on its head" — AYNI
+- Sokak sanatçısı: "paint-stained indigo denim jacket and fingerless gloves" — AYNI
+- Kahraman kıyafeti: {clothing_description} — HİÇBİR SAYFADA DEĞİŞMEZ
+
+🏃 AKSİYON KURALI ZORUNLU:
+Her sayfada en az BİR aktif fiil kullan. Pasif fiiller (izledi, baktı, hissetti) yanına
+mutlaka bir hareket fiili ekle: koştu, atladı, tırmandı, uzandı, fırladı, kaydı,
+yuvarlandı, sıçradı, kavradı, çekti, döndü.
+KRİZ SAYFALARI (s.9-14) özellikle aksiyon yoğun olmalı — çocuk DUR-KALK değil,
+sürekli hareket halinde olmalı.
+
+🪝 HOOK KURALI ZORUNLU:
+Her sayfanın SON CÜMLESİ mutlaka okuyucuyu bir sonraki sayfaya çekmelidir.
+Yöntemler: soru cümlesi ("Acaba...?"), "tam o sırada" / "birden" / "ansızın",
+merak uyandıran ipucu, gerilim artışı, beklenmedik ses/görüntü.
+Minimum %60 sayfada hook olmalıdır.
+

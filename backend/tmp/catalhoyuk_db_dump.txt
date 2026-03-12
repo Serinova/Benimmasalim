@@ -1,0 +1,102 @@
+OUTFIT_GIRL:
+a striking crimson linen tunic over a long-sleeved cream shirt, tailored charcoal-grey climbing pants, rugged desert boots, a braided leather belt with small pouches, and a glowing ancient stone amulet around the neck. NO other clothing. EXACTLY the same outfit on every page — same crimson tunic, same amulet, same climbing pants. No outfit changes. NO skirts or shorts. Same child character, consistent face and hair across all pages.
+
+OUTFIT_BOY:
+a striking burnt-orange linen tunic over a long-sleeved dark shirt, tailored charcoal-grey climbing pants, rugged desert boots, a braided leather belt with small pouches, and a glowing ancient stone amulet around the neck. NO other clothing. EXACTLY the same outfit on every page — same orange tunic, same amulet, same climbing pants. No outfit changes. NO short shorts. Same child character, consistent face and hair across all pages.
+
+SCENARIO_BIBLE:
+{
+  "magic_item": {
+    "name": "Antik Tılsım (Amulet)",
+    "behavior": "Tehlike anında hızlı titrer/parlar, yön gösterir, sakin anlarda hafifçe ışıldar.",
+    "visual_lock": "a glowing earthy ancient stone amulet with spiral carvings pulsing warm amber light",
+    "appears_on_pages": "all"
+  },
+  "tone_rules": [
+    "Indiana Jones tarzı macera — hızlı, aksiyonlu, nefes kesici",
+    "Korkutucu sahneler YASAK, duman/tehlike hissi var ama kurtuluş hemen gelir",
+    "Didaktik değil, olay örgüsüyle eğitsel değerleri yaşat",
+    "Bu bir turistik gezi değil, aksiyon odaklı hikaye"
+  ],
+  "cultural_facts": [
+    "Çatalhöyük 9000 yıllık (MÖ 7100-5700) Neolitik yerleşim",
+    "Sokak yok — evlere çatılardan ahşap merdivenle girilir",
+    "Kerpiç evler birbirine bitişik, çatılar yaya yolu olarak kullanılır",
+    "Duvar resimleri (boğa motifleri), obsidyen aletler, kil kaplar",
+    "UNESCO Dünya Mirası listesinde"
+  ],
+  "side_character": {
+    "name": "Köy Köpeği",
+    "species": "dog",
+    "personality": "Meraklı, sadık, cesur ama yangından korkar. Havlayarak yol gösterir.",
+    "visual_lock": "a small playful sandy-brown village dog with floppy ears and a short tail",
+    "absent_reason": "S.10-15 arası evin içine girmeye cesaret edemez, çatıda bekler.",
+    "appears_on_pages": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      16,
+      18,
+      19,
+      20
+    ]
+  }
+}
+
+STORY_PROMPT_TR_WORD_COUNT: 1158
+
+STORY_PROMPT_TR_CHAR_COUNT: 7892
+
+  PLACEHOLDER_FOUND: {child_name} x8
+
+  PLACEHOLDER_FOUND: {page_count} x1
+
+
+COVER_PROMPT:
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Child holding a glowing earthy ancient amulet with spiral carvings pulsing warm amber light. Ancient 9000-year-old Catalhoyuk Neolithic settlement spreading behind — clustered mud-brick houses with flat rooftops, wooden ladder entrances, cracked sun-dried clay walls with faded ochre wall paintings. A glowing turquoise time-rift crack splitting the dramatic evening sky above the settlement, volumetric dust motes swirling in the warm steppe wind. Low-angle hero shot: child 30% foreground, vast ancient archaeological site 70%. Prehistoric palette: warm mud brown, deep ochre, burnt terracotta, amber amulet glow, turquoise rift light.
+
+
+PAGE_PROMPT:
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Setting elements (choose based on scene description): MUSEUM: modern museum interior, glass display cases, soft lighting. ROOFTOPS: ancient mud-brick houses, flat roofs, wooden ladders, no streets, smoky air. INTERIOR: dark earthy room, clay pots, glowing hearth, faded ochre wall paintings, smoke. Shot variety (alternate each page — never repeat same angle twice in a row): [CLOSE-UP: glowing earthy ancient amulet / child's determined face / throwing clay] [MEDIUM: child interacting with villagers / climbing a wooden ladder / waist-up action] [WIDE: epic panorama of ancient 9000-year-old Catalhoyuk Neolithic settlement / jumping between mudbrick roofs] Cinematic action lighting, dynamic pose, detailed environment, depth of field. Child 30-40% of frame. No eye contact. Earthy colors: mud brown, ochre, terracotta, amber amulet glow, turquoise rift light.
+
+
+LOCATION_CONSTRAINTS:
+Setting alternates vastly every few pages. Kademe haritası ve Kamera kullanımları: Pages 1-3: Modern natural history museum interior. (Medium Shot) Pages 4-6: Swirling time-portal effect. (Close-up) Pages 7-9: Rooftops of Catalhoyuk (flat mudbrick roofs, no streets). (Wide Shot) Pages 10-17: Dark, smoky, earthy indoor hearth rooms under the roofs. (Low angle action shot) Pages 18-21: Sunset rooftops leading back to the bright museum. (Wide Shot) 
+
+
+CULTURAL_ELEMENTS:
+{
+  "colors": "Earthy mud brown, deep ochre, burnt terracotta, amber glow, time-rift turquoise",
+  "period": "Neolithic Age",
+  "unesco": "UNESCO World Heritage Site",
+  "values": [
+    "Courage",
+    "Problem Solving",
+    "Community Help",
+    "Historical awareness"
+  ],
+  "primary": [
+    "Mud-brick clustered houses",
+    "Rooftop pathways, wooden ladder access",
+    "Ancient clay pots, hearths",
+    "Glowing stone amulet with spiral carvings",
+    "Small sandy-brown village dog",
+    "Sun-dried adobe brick walls"
+  ],
+  "location": "Çatalhöyük, Çumra, Konya, Turkey",
+  "secondary": [
+    "Faded ochre wall paintings (bull motifs)",
+    "Woven reed baskets",
+    "Modern museum display cases",
+    "Ancient bone tools and obsidian arrowheads"
+  ],
+  "atmosphere": "Action-packed, mysterious, time-travel, Neolithic discovery",
+  "historic_site": "Çatalhöyük, 9000 years old (7100-5700 BC)",
+  "sensitivity_rules": [
+    "NO aggressive animal encounters or violent fires",
+    "No modern slang from ancient villagers",
+    "Child remains safe throughout the journey, danger is overcome quickly"
+  ]
+}

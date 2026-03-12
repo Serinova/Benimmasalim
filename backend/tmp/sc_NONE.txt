@@ -1,0 +1,119 @@
+theme_key: NONE
+name: Yerebatan Macerası
+location_en: Basilica Cistern, Istanbul
+active: False
+no_family: True
+page_count: 22
+
+--- OUTFIT GIRL ---
+a deep teal cotton zip-up explorer jacket with reflective silver stripes on sleeves, dark navy blue waterproof trousers, black rubber rain boots with teal trim, small yellow LED flashlight headlamp on forehead, dark gray utility backpack. EXACTLY the same outfit on every page — same teal jacket, same navy trousers, same black boots. No outfit changes. NO skirts or shorts.
+
+--- OUTFIT BOY ---
+a dark navy blue cotton zip-up explorer jacket with reflective orange stripes on sleeves, dark charcoal waterproof trousers, black rubber rain boots with orange trim, small yellow LED flashlight headlamp on forehead, dark gray utility backpack. EXACTLY the same outfit on every page — same navy jacket, same charcoal trousers, same black boots. No outfit changes. NO short shorts.
+
+--- CUSTOM INPUTS ---
+[]
+
+--- CULTURAL ELEMENTS ---
+{
+  "color_palette": [
+    "warm amber and orange from spotlights",
+    "cool blue-grey of stone columns",
+    "golden reflections on water surface",
+    "deep shadows between columns",
+    "mossy green on wet stone surfaces"
+  ],
+  "cultural_items": [
+    "oil lanterns and torches for underground illumination",
+    "Byzantine mosaic fragments on walls",
+    "ancient water channels and stone pipes",
+    "marble fish sculptures in the water"
+  ],
+  "primary_landmarks": [
+    "Hundreds of ancient marble columns in a vast underground cistern",
+    "Medusa head column bases (one upside-down, one sideways)",
+    "Shallow water reflecting columns and amber lighting",
+    "Arched brick ceilings with Byzantine architectural details"
+  ],
+  "secondary_elements": [
+    "Hagia Sophia visible when exiting to street level",
+    "Sultanahmet Square and Blue Mosque in the vicinity",
+    "Roman and Byzantine era carved column capitals",
+    "Tear-shaped column (Hen's Eye column) with peacock eye carvings",
+    "Ancient aqueduct system that fed the cistern"
+  ]
+}
+
+--- LOCATION CONSTRAINTS ---
+Yerebatan Cistern (Basilica Cistern) iconic elements iconic elements (include 1-2 relevant details depending on the scene): - Hundreds of ancient marble columns reflected in shallow water below, - Warm amber and orange lighting illuminating the underground space with dramatic shadows, - The famous Medusa head column base partially submerged in water, - Arched brick ceilings with Byzantine-era architectural details, - Cool stone tones contrasted with warm artificial lighting, - Istanbul above-ground elements for outdoor scenes (Hagia Sophia, Sultanahmet Square)
+
+--- SCENARIO BIBLE ---
+{}
+
+--- COVER PROMPT ---
+A breathtaking children's book cover illustration.
+
+SCENE COMPOSITION:
+A young child {scene_description}, exploring deep inside the magnificent underground Yerebatan Cistern (Basilica Cistern) in Istanbul, Turkey.
+
+ICONIC BACKGROUND ELEMENTS (include 2-3 key details):
+- Hundreds of ancient marble columns stretching into the distance, reflected in the shallow water below
+- Warm amber and orange lighting illuminating the underground space with dramatic shadows
+- The famous Medusa head column base partially submerged in water
+- Arched brick ceilings with Byzantine-era architectural details
+- Mysterious reflections of columns in the still shallow water on the floor
+
+LIGHTING & ATMOSPHERE:
+- Warm amber spotlights creating pools of golden light on the columns
+- Dramatic shadows between the columns adding mystery and depth
+- Reflections dancing on the water surface
+- Cool stone tones contrasted with warm artificial lighting
+
+CLOTHING:
+The child is wearing {clothing_description}.
+
+COMPOSITION REQUIREMENTS:
+- Child positioned in lower third of the image
+- Upper 30% shows the grand ceiling and columns creating sense of scale and open space for title text
+- Columns framing the child from both sides
+
+BOOK TITLE — IMPORTANT:
+This cover MUST prominently display the book title: "{book_title}"
+The title should be rendered as beautiful, large typographic text that is an integral part of the cover design.
+Place the title in the upper portion (top 15-20%) of the image with elegant, bold lettering.
+Title style should match the adventure theme: warm golden color with a subtle shadow or outline for readability.
+The text must be perfectly legible and spelled exactly as specified.
+
+--- PAGE PROMPT ---
+A young child {scene_description}.
+The child is wearing {clothing_description}.
+Composition: text overlay at the bottom.
+
+--- STORY PROMPT TR ---
+Sen ödüllü çocuk kitabı yazarı ve İstanbul tarihi uzmanısın. Kahraman, yaş ve eğitsel değerler yukarıda verilmiştir. Görevin: Yerebatan Sarnıcı'nda geçen büyülü bir macera yazmak.
+
+📍 YEREBATAN SARNICI — KULLANILACAK KÜLTÜREL MEKANLAR (hikayeye en az 4 tanesini entegre et):
+1. Yüzlerce antik mermer sütun — su yüzeyinde yansımaları, kehribar ışıkla aydınlatılmış
+2. Medusa başı sütun altlıkları — biri ters, biri yan duran gizemli taş yüzler
+3. Tavus kuşu gözü sütunu (Gözyaşı Sütunu) — oyma desenli özel sütun
+4. Bizans tuğla kemerli tavanlar — yeraltı sarayının büyüleyici mimarisi
+5. Sığ su altındaki mermer zeminler — adım atınca su kıpırtısı
+6. Sokak seviyesine çıkış — Ayasofya ve Sultanahmet Meydanı manzarası
+
+📖 HİKAYE YAPISI:
+- Çocuk sarnıca giriyor ve yeraltı dünyasının büyüsüne kapılıyor
+- Medusa başlarının gizemi etrafında bir macera örgüsü kur
+- Sütunların arasında yankılanan fısıltılar, su damlası sesleri atmosfer oluştursun
+- Tarihî bilgiyi doğal diyalog ve keşif yoluyla ver, ders anlatır gibi yazma
+- Işık-gölge kontrastı, yansımalar ve yeraltı atmosferini duygusal sahne öğesi olarak kullan
+
+⚠️ KURALLAR:
+- Karanlık, korku veya tehlike vurgusu YASAK — macera merak ve hayranlık odaklı olsun
+- Hikayede DİNİ RİTÜEL veya İBADET SAHNESİ OLMAMALIDIR
+- Yerebatan Sarnıcı'nın gizemi arkeolojik ve tarihî merak perspektifinden işlensin
+
+🎨 SAHNE AÇIKLAMASI KURALLARI (Pass-2 için ipucu):
+Her sahne için spesifik Yerebatan lokasyonu ve mimari detay kullan.
+Örn: 'Medusa başı sütunlarının önünde', 'Gözyaşı Sütunu'nun yanında',
+'Sarnıcın en derin noktasında su yansımalarının arasında', 'Sokağa çıkış merdivenlerinde Ayasofya manzarası ile'.
+Genel ifadelerden kaçın ('sarnıçta', 'sütunların yanında' yerine somut yer adı ve detay kullan).

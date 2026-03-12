@@ -64,6 +64,9 @@ class _BlueprintMixin:
 
         # Extract story structure from scenario (hikaye yapısı, zone progression, epic moments)
         story_structure = getattr(scenario, "story_prompt_tr", "") or ""
+
+        # Resolve {animal_friend} placeholder from custom_inputs_schema default
+        story_structure = _resolve_companion_placeholder(scenario, story_structure)
         
         task_prompt = build_blueprint_task_prompt(
             child_name=child_name,
@@ -184,3 +187,62 @@ class _BlueprintMixin:
             "Blueprint tüm denemelerde oluşturulamadı.",
             reason_code="BLUEPRINT_ALL_RETRIES_EXHAUSTED",
         )
+
+
+def _resolve_companion_placeholder(scenario: Scenario, story_text: str) -> str:
+    """Replace {animal_friend} and {animal_friend_en} placeholders in story_prompt_tr.
+
+    Reads the default companion value from the scenario's custom_inputs_schema.
+    If no custom_inputs_schema exists, uses a sensible fallback.
+
+    This fixes the bug where raw {animal_friend} was sent to the AI,
+    causing it to invent a different animal on every generation.
+    """
+    if "{animal_friend" not in story_text:
+        return story_text
+
+    # Try to read default from custom_inputs_schema
+    companion_tr = ""
+    custom_inputs = getattr(scenario, "custom_inputs_schema", None)
+    if custom_inputs and isinstance(custom_inputs, list):
+        for inp in custom_inputs:
+            if isinstance(inp, dict) and inp.get("key") == "animal_friend":
+                companion_tr = (inp.get("default") or "").strip()
+                break
+
+    if not companion_tr:
+        companion_tr = "sevimli küçük bir tilki"
+
+    # Build English equivalent for image prompts — uses Scenario Registry
+    from app.scenarios import get_all_companions as _get_all_companions
+
+    _registry_companions = _get_all_companions()
+    _companion_lower = companion_tr.lower().strip()
+
+    # 1) Direct lookup in registry
+    anchor = _registry_companions.get(_companion_lower)
+    if anchor:
+        companion_en = anchor.name_en
+    else:
+        # 2) Partial match in registry
+        companion_en = ""
+        for tr_key, anch in _registry_companions.items():
+            if tr_key in _companion_lower:
+                companion_en = anch.name_en
+                break
+
+    # 3) Ultimate fallback
+    if not companion_en:
+        companion_en = "a small animal companion"
+
+    result = story_text.replace("{animal_friend}", companion_tr)
+    result = result.replace("{animal_friend_en}", companion_en)
+
+    logger.info(
+        "COMPANION_PLACEHOLDER_RESOLVED",
+        scenario=getattr(scenario, "name", ""),
+        companion_tr=companion_tr,
+        companion_en=companion_en,
+    )
+    return result
+

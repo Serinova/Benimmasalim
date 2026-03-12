@@ -1,0 +1,187 @@
+theme_key: toy_world
+name: Oyuncak Dünyası: Kayıp Kurma Anahtarı
+location_en: None
+active: True
+no_family: False
+page_count: 22
+
+--- OUTFIT GIRL ---
+child toy-world explorer outfit: bright blue hoodie, red sleeveless utility vest with pockets, tan shorts, colorful sneakers, a small toy-tool belt, and a tiny headlamp, no logos, plus a small star hair clip. EXACTLY the same outfit on every page — same blue hoodie, same red vest, same sneakers. Same child character, consistent face and hair across all pages.
+
+--- OUTFIT BOY ---
+child toy-world explorer outfit: bright blue hoodie, red sleeveless utility vest with pockets, tan shorts, colorful sneakers, a small toy-tool belt, and a tiny headlamp, no logos. EXACTLY the same outfit on every page — same blue hoodie, same red vest, same sneakers. Same child character, consistent face and hair across all pages.
+
+--- CUSTOM INPUTS ---
+[
+  {
+    "key": "animal_friend",
+    "type": "select",
+    "label": "Yol Arkadaşı Oyuncak",
+    "default": "Pelüş Ayıcık",
+    "options": [
+      {
+        "label": "Pelüş Ayıcık",
+        "value": "Pelüş Ayıcık"
+      },
+      {
+        "label": "Zıpzıp Tavşan",
+        "value": "Zıpzıp Tavşan"
+      }
+    ]
+  }
+]
+
+--- CULTURAL ELEMENTS ---
+{
+  "values": [
+    "Problem-solving",
+    "Teamwork",
+    "Kindness",
+    "Agility"
+  ],
+  "primary": [
+    "Giant colorful building bricks and a block city",
+    "Wooden toy train tracks and stations",
+    "A giant wind-up clock tower with golden gears",
+    "Cute bouncing tin robots with dials",
+    "Vintage glowing wind-up key",
+    "Speedy slot cars and ramp tracks"
+  ],
+  "location": "Magical Toy World and a child's bedroom",
+  "secondary": [
+    "Soft plush forests with cotton candy trees",
+    "Bouncing rubber balloon balls",
+    "A dusty old wooden toy chest in the real world",
+    "Shiny scattered mechanical toy parts"
+  ],
+  "atmosphere": "Energetic, completely playful, whimsical, fast-paced puzzle adventure",
+  "historic_site": "Toy Kingdom",
+  "sensitivity_rules": [
+    "NO frightening monsters or villains",
+    "Action is joyous and toy-based (like dodging bouncing balls or chasing toy cars)",
+    "Child acts as a clever mechanic/explorer hero"
+  ]
+}
+
+--- LOCATION CONSTRAINTS ---
+Setting alternates vastly every few pages. Kademe haritası ve Kamera kullanımları: Pages 1-3: Child's dimly lit bedroom, mysterious chest. (Close-up, magical glow) Pages 4-6: Giant Lego Block City. (Wide Shot, vibrant colors) Pages 7-9: Action at the Toy Train Station. (Medium panning shot) Pages 10-12: The mechanical Robot Workshop. (Low angle action shot) Pages 13-16: High-speed slot car track & Plush Forest. (Dynamic Wide Action) Pages 17-21: The giant Wind-up Clock Tower center. (Epic Wide Shot, celebration) 
+
+--- SCENARIO BIBLE ---
+{
+  "tone_rules": [
+    "Neşeli, enerjik ve heyecanlı macera tonu",
+    "Korku unsurları hafif ve komik olmalı (hantal robot, çatırdayan köprü)",
+    "Bulmaca çözme odaklı — zeka ve cesaret ön planda",
+    "Rengarenk ve parlak atmosfer sürekli hissettirilmeli"
+  ],
+  "puzzle_types": [
+    "Renk sıralama bulmacası",
+    "Ritim eşleştirme",
+    "Dişli şifre çözme",
+    "İz takip etme"
+  ],
+  "cultural_facts": [
+    "Oyuncak Dünyası tamamen hayal ürünü fantastik bir evrendir",
+    "Büyük Saat Kulesi dünyayı çalıştıran kalptir",
+    "Blok Şehri dev lego parçalarından yapılmıştır",
+    "Tren İstasyonu zemberekli mekanik trenlerle doludur",
+    "Robot Atölyesi teneke robotların ve dişlilerin yeridir",
+    "Pelüş Ormanı pamuk şekeri ağaçlarıyla kaplıdır"
+  ],
+  "side_character": {
+    "name": "Pofuduk",
+    "type": "plush creature",
+    "visual_lock": "small pink fluffy plush creature with bright button eyes, soft patchwork texture, round body, stubby arms and legs, always cheerful",
+    "behavior_rules": [
+      "Her sayfada Pofuduk'un farklı bir aksiyonu olmalı (koşmak, zıplamak, saklanmak, işaret etmek)",
+      "Pofuduk konuşabilir — kısa, eğlenceli replikler verir",
+      "Yusuf'a bulmaca çözmede yardım eder ve ipuçları verir",
+      "Tehlikeli anlarda Yusuf'un arkasına saklanır ama cesaretlendirici sözler söyler",
+      "Sevinçli anlarda zıplar ve dans eder"
+    ],
+    "description_en": "A small, pink, fluffy plush creature named Pofuduk with bright button eyes and soft patchwork texture",
+    "description_tr": "Küçük, pembe, yumuşacık pofuduk bir yaratık. Düğme gözlü, yama dokulu, sevimli ve sadık"
+  }
+}
+
+--- COVER PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Child holding a glowing vintage wind-up key with an amazed and happy expression. Background features a giant colorful lego-style city, toy trains, cute robots, and soft plush animals. Dynamic angle, warm playful cinematic lighting. Wide shot: child 30%, environment 70%. Whimsical, adventurous toy kingdom atmosphere, rich texture. {STYLE}
+
+--- PAGE PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Elements: [giant toy kingdom, colorful brick blocks, wooden toy trains, cute bouncing robots, soft plush animals, shiny toy cars, spinning gears]. Fill scenes with many toys: blocks/lego-like bricks, toy trains, robots, plush animals, toy cars, spinning gears, colorful props. Cinematic action lighting, dynamic pose, expressive emotion on face, detailed environment, depth of field, high-end toy texture. Wide angle, medium shots, full body visible in action, child 30-40% of frame. No eye contact with camera. Avoid: photorealistic, pasted face, collage, duplicate child, random text, watermark, logo, blurry, low quality. {STYLE}
+
+--- STORY PROMPT TR ---
+
+## 📖 SAYFA SAYFA KURGU (Gerçek Aksiyon Zamanı)
+
+**🪝 SAYFA SONU HOOK KURALI (ÇOK ÖNEMLİ!):**
+- Her sayfanın SON CÜMLESİ merak, heyecan veya gerilim uyandırmalıdır.
+- Hook teknikleri: "Tam o sırada...", "Birden...", "Ama bir sorun vardı!", "Ansızın...", soru cümlesi ("Acaba...?"), beklenmedik keşif, tehlike ipucu veya sürpriz
+- En az %50 sayfada güçlü bir hook olmalı. Sayfa düz bir bilgi cümlesiyle BİTMEMELİ.
+
+**💬 DİYALOG KURALI:**
+- {animal_friend} konuşan bir karakter! En az her 2-3 sayfada bir {animal_friend} ile {child_name} arasında kısa, eğlenceli bir diyalog olmalı.
+- Diyaloglar aksiyonla iç içe olmalı: "Buraya bak!" diye bağırdı / "Hızlan!" diye fısıldadı
+- 21 sayfanın en az 10'unda diyalog bulunmalı.
+
+**📈 DUYGUSAL YAY KURALI:**
+- Her sayfada en az 1 duygu kelimesi olmalı (merak, heyecan, korku, cesaret, gurur, sevinç, şaşkınlık, üzüntü)
+- NÖTR sayfa OLMAMALI — her sayfada kahramanın duygusal durumu net olmalı
+- S.11-12 civarında KORKU/ENDİŞE doruk noktasına ulaşmalı
+- S.12-13'te kahraman CESARETLE bu korkuyu yenmeli (korku→cesaret geçişi)
+
+**🏃 AKTİF KAHRAMAN KURALI:**
+- Kahraman pasif DEĞİL, aktif olmalı! "İzledi", "baktı" yerine "koştu", "atladı", "kavradı", "fırladı", "eğildi" gibi AKSİYON fiilleri kullan.
+
+### Bölüm 1 — Büyülü Geçiş (Sayfa 1-3)
+Sayfa 1: {child_name} gece yarısı odasında dağılmış oyuncaklarını özenle toplarken çalışma masasının en alt çekmecesinde eski, pırıl pırıl parlayan gizemli bir "kurma anahtarı" bulur. 
+Sayfa 2: Karanlık odada anahtarın o büyüleyici ışığına kapılıp onu ihtiyar oyuncak sandığının kilidine yaklaştırdığı an, koca sandıktan harika bir "Klik!" sesi yankılanır. Kapağın altından rengarenk simli bir rüzgar yüzüne doğru esmeye başlar!
+Sayfa 3: {child_name} gözlerini yavaşça açtığında etrafındaki her şey değişmiştir; kendisi ufacık kalmıştır ve etrafında devasa lego binaların, hareket eden trenlerin ve uçuşan pelüşların olduğu muazzam bir Oyuncak Dünyası'na gelmiştir! Merakla ve cesurca etrafına bakar.
+
+### Bölüm 2 — Tehlikeli Duraklama (Sayfa 4-6)
+Sayfa 4: Tam o sırada telaşla koşturan yumuşacık bir {animal_friend} nefes nefese yanına gelir ve "Oyuncak Dünyası'nın kalbi olan Büyük Saat Kulesi durdu, kahraman!" diye bağırır. {animal_friend}, eğer o altın kurma anahtarının parçaları bulunmazsa tüm dünyanın sonsuza dek donup kalacağını söyler. Çocuğun yüzünde korku değil kahramanlık ifadesi belirir.
+Sayfa 5: Çok ileride, ufukta dondurma külahlarına benzeyen dev Saat Kulesi görünür ama oraya giden yollar tamamen kapalıdır. Önlerinde harika seçeneklerle üç görkemli kapı duruyordur: Blok Şehri, Tren İstasyonu ve Robot Atölyesi... Önce hangisine girmelidir? YANLIŞ kapı yoktur ama bulmaca DOĞRU çözülmelidir.
+Sayfa 6: Zaman kaybetmeden devasa lego binaların olduğu Blok Şehri'ne cesurca adamını atar. Ama üzerinde yürümek zorunda olduğu rengarenk blok köprünün parçaları çatırdamaya başlayınca, aşağılara dalga dalga düşmemek için acil bir çözüm bulması gerekir!
+
+### Bölüm 3 — Tren İpuçları (Sayfa 7-9)
+Sayfa 7: Zekasıyla lego bloklarının renklerini DOĞRU sıraya dizip şifreyi tamamlayan kahramanımız, köprüyü çelik gibi güçlendirerek karşıya geçer. Orada ilk ipucunu kırmızı bir kutunun içinde bulur, kağıtta kocaman harflerle şöyle yazmaktadır: "RAYLAR KALBE GİDER." Çocuğun sevinç dolu gülümsemesi kameraya yansır.
+Sayfa 8: İkinci kapı olan Tren İstasyonu'na girdiğinde vızır vızır küçük trenlerin bir oraya bir buraya geçtiğini, zembereklerin çınladığını duyar. Minyatür şapkalı tatlı bir İstasyon Şefi ona telaşla "Yolunu kaybetme şampiyon!" diye seslenir.
+Sayfa 9: Gözlerini yere indiren {child_name}, yerdeki o karmaşık rayların içine çok gizli renk kodlarının işlendiğini fark ediverir. Hiç tereddüt etmeden o DOĞRU rengin parladığı ray üzerinde en hızlı oyuncak trenle nefes kesen mutlu bir yarışa girerek koşmaya başlar.
+
+### Bölüm 4 — Şifreyi Dinlemek (Sayfa 10-12)
+Sayfa 10: Rengarenk rayları şevkle takip ederken, bir anda karşısına çıkan dev bir kavşakta iki büyük ok bulunur: Oklar TİK ve TAK yönlerini gösterir. Çocuk şapkasını hafifçe kaldırıp, saat kulesinin o çok uzaktan gelen zayıf ritmine kulağını verir... Ritmi yakalamak çok zevklidir.
+Sayfa 11: Zekasıyla ritmi eşleştiren çocuk TAK tabelasına saparak harika bir hamle yapar ve ikinci ipucunu bulur: "DİŞLİLERİN ŞİFRESİ ÜÇ VURUŞ." Tam o esnada yanından hızla geçen minik komik bir kömür vagonu, havaya fırlattığı gümüş bir "dişli parçasını" ona hediye ediverir. Muhteşem!
+Sayfa 12: Eksik parçaların sonuncusu için Robot Atölyesi'ne dalar; içerisi zıplayan teneke robotlar, dönen çarklar ve binlerce yanıp sönen komik ışıkla doludur. Karşısında üzerinde dijital ekranı olan, kilitli bir kapı belirir. Çocuğun inanılmaz odaklandığı (determined) yüzü belirgindir.
+
+### Bölüm 5 — Arabalı Kovalamaca (Sayfa 13-16)
+Sayfa 13: Kaşifimiz elindeki ikinci ipucunu hatırlar ve mekanizmaya tam "üç vuruş" şifresini tuşlayarak ritmi girer. Dev çelik kapı inleyerek yana doğru kayar ve içeride saat kulesinin o devasa eksik oyuncak çarkları dönmeye başlar. 
+Sayfa 14: Kapı açılır açılmaz atölyeden jet hızıyla fırlayan kırmızı minik ve çılgın bir yarış arabası, son anahtar tamamlama parçasını bagajına kaptığı gibi egzoz dumanı atarak kaçar! Çocuk da hemen akrobatik bir şekilde onun peşine düşerek adrenalin dolu bir koşuya başlar.
+Sayfa 15: O inanılmaz ve komik Araba Pisti'nde dev rampalar, ters tüneller, bariyerler vardır ama oyuncak dünyasının kahramanı mükemmel zıplayışlarla tüm engelleri bir akrobat gibi aşar. Arabanın peşinden macera dolu bir takibe girer.
+Sayfa 16: Tünelin çıkışı çok daha ilginç bir mekana, pamuk şekeri ağaçların ve zıplayan balon toplarının olduğu yumuşacık, komik bir "Pelüş Ormanı"na açılır. Kahramanımız kırmızı arabanın lastik izlerini o yumuşak şekerleme tozlarının üzerinden dedektif gibi takip eder, bulmaca çözmenin heyecanı harikadır.
+
+### Bölüm 6 — Saat Kulesi (Sayfa 17-19)
+Sayfa 17: Nihayet ormanın sonunda, kırmızı yarış arabasının büyük bir elma yumak pamuğu yığınına sıkıştığını bulur ve onu oradan nazikçe kurtararak okşar. Aracın da kornayla "teşekkür" edip parçayı çocuğun avucuna bırakmasıyla eksik halka tamamen bulunmuş olur. Yardımlaşmak çok güzeldir.
+Sayfa 18: Hiç vakit kaybetmeden tüm parçaları sıkıca tutan çocuk, o kilitli duran dev Saat Kulesi'nin ana kapısına ulaşır; ama kule dişli şekilde son bir kilit yuvası barındırıyordur. Parçaları ancak DOĞRU takarsa kilit tamamlanabilecektir!
+Sayfa 19: Kahramanımız aklını kullanarak dişlileri sırasıyla yuvalara koyar, "Klik!" diye bir mekanik ses yankılanıverir! O eksik kurma anahtarı harika bir ışıkla tamamen bütünleşirken, dev kule saniyeler içinde aydınlanmaya başlar.
+
+### Bölüm 7 — Canlanan Oyuncaklar (Sayfa 20-21)
+Sayfa 20: Çocuk o harika altın anahtarı kule merkezine hızla ve heyecanla takıp bilek gücüyle ardı ardına çevirir: "tık... tık!" Şehrin kalbi atmaya başlar; donmuş tüm trenler yürür, ayıcıklar zıplar ve koca krallıkta yeniden muazzam, kutlamalı bir müzik patlar! Yüzündeki mutluluk her sahneyi aydınlatmaktadır.
+Sayfa 21: Arkadaşları teşekkür edip çocuğun yeleğine pırıl pırıl minicik bir oyuncak dünya rozeti iliştirir. Çocuğumuz o büyük tatminle gözlerini kapattığında, anında odasının o loş, tanıdık güvenli sessizliğinde sandığının başında bulur kendini. Harika ve gurur verici bir yolculuk olmuştur.
+
+---
+
+## 🚫 LOKASYON YAZIM KONTROLÜ (BU BİR TURİST ROTASI DEĞİLDİR)
+- YANLIŞ: "{child_name} oyuncak dünyasını dolaştı. Sonra etrafa baktı."
+- DOĞRU: "{child_name} dev oyuncak trenin üstünden zıplayarak kurma anahtarının parçasını yakaladı!"
+- Hikaye boyunca didaktik nasihatlerde bulunma, asla ahlaki mesaj bildirme.
+
+## 📐 KURALLAR (image_prompt_en için)
+
+1. Hikâyeyi TAM OLARAK {page_count} sayfa yaz (1 kapak + 21 iç sayfa).
+2. "standing still" veya "looking at camera" YASAK. Hep aksiyon. Örn: "Child leaping over toy train tracks".
+3. Kan, şiddet YASAK! Sadece yarış, heyecan ve neşe hissi vardır, tehlikeli canavarlar yoktur. Oldukça safe bir evrendir.
+4. G2 TUTARLILIK (YARDIMCI): "[animal_friend_en] with bright button eyes and soft patchwork texture" CÜMLESİNİ ÇIKTIĞI SAHNELERDE KULLAN! G2 Kartı kuralı esastır: Aynı kıyafeti, aynı saç stilini ısrarla tutarlı tut.
+5. G3 LOKASYON/KAMERA: Kademe kademe geçiş yapılmalıdır. Wide shot ve close-up varyasyonları olmalıdır. Kamera değişmelidir.
+6. DUYGU (EMOTION) ÇIPASI: Her sahnede kahramanın duygularına, yüz ifadesine ve hislerine (amazed, smiling, determined) dokunarak emotion odaklı yaz!
+7. IŞIK VE DOKU (LIGHTING & TEXTURE): Oyuncakların dokusuna (texture, plastik, yumuşak, pelüş) ve renklerin canlı aydınlatmasına (cinematic lighting, glow) mutlaka önem ver, atmosfer parlasın.
+

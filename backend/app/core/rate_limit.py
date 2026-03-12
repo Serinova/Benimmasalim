@@ -229,7 +229,6 @@ class RateLimitTracker:
 
         self.rate_limits: dict[str, int] = {
             "gemini": getattr(settings, "gemini_rpm_limit", DEFAULT_RATE_LIMITS["gemini"]),
-            "fal": getattr(settings, "fal_rpm_limit", DEFAULT_RATE_LIMITS["fal"]),
             "elevenlabs": getattr(
                 settings, "elevenlabs_rpm_limit", DEFAULT_RATE_LIMITS["elevenlabs"]
             ),
@@ -340,7 +339,7 @@ def rate_limit_retry(
     - Pre-emptive rate limiting
 
     Args:
-        service: Service name (gemini, fal, elevenlabs)
+        service: Service name (gemini, elevenlabs)
         max_attempts: Max retries for rate limit errors
         timeout_attempts: Max retries for timeout errors
 

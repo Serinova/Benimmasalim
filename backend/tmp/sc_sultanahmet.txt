@@ -1,0 +1,184 @@
+theme_key: sultanahmet
+name: Sultanahmet'te Zamanın Fısıltısı
+location_en: Sultanahmet Mosque (Blue Mosque)
+active: True
+no_family: False
+page_count: 22
+
+--- OUTFIT GIRL ---
+elegant Istanbul hanımefendi explorer style — a graceful knee-length A-line skirt in deep navy brocade fabric, a cream-white high-collar Victorian blouse with delicate lace cuffs and pearl buttons, a tailored double-breasted velvet vest in deep burgundy, polished dark navy T-strap mary-jane flats, a small embroidered evening satchel with a golden clasp, and a delicate gold hair bow. NO shorts, NO jeans. Modest and elegant. EXACTLY the same outfit on every page — same navy skirt, same burgundy vest, same pearl-button blouse. Same child character, consistent face and hair across all pages.
+
+--- OUTFIT BOY ---
+elegant Istanbul beyefendi explorer style — a crisp white Wing-collar dress shirt with a slim navy cravat tie, a tailored charcoal tweed double-breasted vest with brass buttons, slim-fit dark charcoal wool trousers with a sharp crease, polished dark mahogany oxford lace-up shoes, a classic charcoal newsboy flat cap, and a gleaming golden pocket watch chain tucked into the vest pocket. EXACTLY the same outfit on every page — same white shirt, same charcoal tweed vest, same newsboy cap. Same child character, consistent face and hair across all pages.
+
+--- CUSTOM INPUTS ---
+[
+  {
+    "key": "animal_friend",
+    "type": "select",
+    "label": "Meydan Dostu",
+    "default": "Minik Beyaz Güvercin",
+    "options": [
+      {
+        "label": "Beyaz Sultanahmet Güvercini",
+        "value": "Minik Beyaz Güvercin"
+      },
+      {
+        "label": "Tombul Sokak Kedisi",
+        "value": "Tombul Sokak Kedisi"
+      }
+    ]
+  }
+]
+
+--- CULTURAL ELEMENTS ---
+{
+  "values": [
+    "Problem Solving",
+    "Tracking",
+    "Historical Empathy",
+    "Patience"
+  ],
+  "primary": [
+    "Historic stone pavements and narrow Ottoman alleyways",
+    "Soaring ancient arched doorways",
+    "Ancient carved stone municipal fountains (çeşme)",
+    "Warm sunset lighting, sweeping shadows",
+    "A magical mechanical brass music wheel"
+  ],
+  "location": "Sultanahmet Square, Istanbul, Turkey",
+  "secondary": [
+    "Lively crowd in the background fading in and out",
+    "Large flocks of white pigeons taking flight",
+    "Detailed Ottoman blue tile accents hidden in stonework",
+    "A weathered antique leather guide book",
+    "An ancient carved wooden bench under an old plane tree"
+  ],
+  "atmosphere": "Adventurous, mysterious, fast-paced investigation, sunset magic",
+  "historic_site": "Sultanahmet and Hagia Sophia exteriors, Historic Peninsula",
+  "sensitivity_rules": [
+    "NO worship close-ups",
+    "Exterior focus mostly (Square, fountains, arches)",
+    "NO religious figure depictions",
+    "Action and mystery focus"
+  ]
+}
+
+--- LOCATION CONSTRAINTS ---
+Setting alternates to show movement. Kademe haritası ve Kamera kullanımları: Pages 1-3: Sultanahmet Square, wide sunset skyline, discovery. (Wide Shot) Pages 4-6: Ancient stone fountain. (Medium Shot, splashing water, golden backlight) Pages 7-10: Ancient Ottoman archways and carved stone walls. (Low Angle, claustrophobic but magical texture) Pages 11-14: Long shadows on stone cobblestone near a wooden bench. (Close-up, dramatic lighting) Pages 15-18: Vibrant historic tourist bazaar/stands in the evening glow. (Dynamic Wide Action, colorful) Pages 19-21: The majestic square again, twilight setting in. (Epic Hero Shot) 
+
+--- SCENARIO BIBLE ---
+{
+  "tone_rules": [
+    "Indiana Jones tarzı heyecanlı macera tonu",
+    "Gizemli ama korkunç değil",
+    "Tarih bilgisi dolaylı olarak verilmeli, ders gibi anlatılmamalı",
+    "Akşam güneşi ve altın renk paleti sürekli hissettirilmeli"
+  ],
+  "puzzle_types": [
+    "Sembol eşleştirme",
+    "Gölge takip etme",
+    "Harita okuma",
+    "Zaman kırpışması ipuçları"
+  ],
+  "cultural_facts": [
+    "Sultanahmet Meydanı, Roma Hipodromu'nun üzerine inşa edilmiştir",
+    "Dikilitaş (Obelisk) M.Ö. 1450'den kalma Mısır eseridir",
+    "Alman Çeşmesi 1901'de hediye olarak yapılmıştır",
+    "Bab-ı Hümayun, Topkapı Sarayı'nın ana giriş kapısıdır",
+    "Meydandaki güvercinler İstanbul'un sembollerinden biridir"
+  ],
+  "side_character": {
+    "name": "Ceviz",
+    "type": "pigeon",
+    "visual_lock": "small white pigeon with bright dark eyes, clean white feathers, friendly and curious posture",
+    "behavior_rules": [
+      "Her sayfada Ceviz'in farklı bir aksiyonu olmalı (uçmak, tünemek, kanat çırpmak, süzülmek)",
+      "Asla insan gibi davranmaz — gerçekçi güvercin hareketleri",
+      "Yusuf'a ipucu bulmada yardım eder ama konuşmaz",
+      "Duygusal sahnelerde Yusuf'un omzuna konar veya yanında durur"
+    ],
+    "description_en": "A small white pigeon named Ceviz, the most curious and brave pigeon of the square",
+    "description_tr": "Minik beyaz güvercin, meydanın en meraklı ve cesur güvercini"
+  }
+}
+
+--- COVER PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Child holding a small mechanical music wheel glowing with subtle golden light waves, looking amazed. Sultanahmet Square with Hagia Sophia's massive dome and slender minarets silhouetted against a warm amber sunset, a flock of white pigeons mid-flight catching the golden light. Warm cinematic lighting, golden hour backlighting, soft lens flare behind the domes, volumetric dust motes in the evening air, highly detailed stone texture. Slightly low-angle shot: child 30% foreground, majestic Ottoman skyline 70%. Regal warm palette: amber gold, Ottoman blue tile accents, creamy marble, soft coral sky. {STYLE}
+
+--- PAGE PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Elements: [Sultanahmet Square exterior, historic stone pavements, soaring archways, ancient stone fountains, warm sunset light, lively crowd, pigeons]. Cinematic action lighting, warm golden glow, detailed ancient stone texture. Dynamic action pose, extremely determined and expressive emotion on face. Wide angle and medium shots, full body visible in action, child 30-40% of frame. No eye contact with camera. Avoid: photorealistic, pasted face, collage, duplicate child, extra people (unless required by scene), text, watermark, logo, blurry, low quality. {STYLE}
+
+--- STORY PROMPT TR ---
+
+# SULTANAHMET'TE ZAMANIN FISILTISI: GİZEMLİ MACERA
+
+## YAPI: {child_name} Indiana Jones tarzı kıyafetleriyle Sultanahmet'te rehber kitabında bulduğu eski bir "ses çarkı / müzik kutusu" ile tarihi "zaman kırpışmaları" yaşayarak geçmişle bugün arasında bir köprü kurar ve kayıp bir tarihi emaneti bulur. Heyecanlı, sır dolu, zamanla yarış hissi veren ama korkutucu/şiddet içermeyen, İstanbul'un akşam güneşini hissettiren tempolu bir kurgu. Tam ışınlanma yok; sadece kısa anlarda eski zamanlar üst üste biniyor.
+
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Zamanın Fısıltısı: Sultanahmet" olmalı. Alt başlık EKLEME.
+
+**STİL & TON:** 
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. Dili akıcı, ritimli ve 5-10 yaş aralığında merak uyandırıcı olmalıdır. 
+- Bilgi yığını yapma; meydanı, çeşmeleri, güvercinleri, güneş saati ve gölgeleri zorluk/ipucu ögesi olarak kullan.
+- Şiddet yok, korku yok. Sadece gizemli ve heyecanlı yakalanmadan ipucu toplama kurgusu var.
+
+**🪝 SAYFA SONU HOOK KURALI (ÇOK ÖNEMLİ!):**
+- Her sayfanın SON CÜMLESİ merak, heyecan veya gerilim uyandırmalıdır.
+- Hook teknikleri: "Tam o sırada...", "Birden...", "Ama bir sorun vardı!", "Ansızın...", soru cümlesi ("Acaba...?"), beklenmedik bir keşif, tehlike ipucu veya sürpriz
+- En az %50 sayfada güçlü bir hook olmalı. Sayfa düz bir bilgi cümlesiyle BİTMEMELİ.
+- Örnek YANLIŞ: "Yusuf çeşmeyi inceledi."
+- Örnek DOĞRU: "Ama tam çarkı çevirirken, gölgelerin arasından garip bir ışık parladı!"
+
+**🏃 AKTİF KAHRAMAN KURALI:**
+- Kahraman pasif DEĞİL, aktif olmalı! "İzledi", "baktı", "hissetti" gibi pasif fiiller yerine "koştu", "atladı", "kavradı", "fırladı", "eğildi", "çevirdi" gibi AKSİYON fiilleri kullan.
+- Her sayfada en az 1 aktif fiil olmalı. Kahraman olay YAŞAMALI, sadece izlememeli.
+
+**📈 DUYGUSAL YAY KURALI:**
+- S.11-12 civarında KORKU/ENDİŞE doruk noktasına ulaşmalı
+- S.13-14'te kahraman CESARETLE bu korkuyu yenmeli (korku→cesaret geçişi)
+- Her sayfada en az 1 duygu kelimesi olmalı (merak, heyecan, korku, cesaret, gurur, sevinç, şaşkınlık, üzüntü)
+- NÖTR sayfa OLMAMALI — her sayfada kahramanın duygusal durumu net olmalı
+
+---
+
+### Bölüm 1 — Gizemli Çark (Sayfa 1-3)
+- Sayfa 1: {child_name} akşamüzeri Sultanahmet Meydanı'nda dolaşırken etrafında ona eşlik eden sevimli {animal_friend} ile birlikte yerde deri kaplı, çok eski bir rehber kitap görür. Kitabın sayfalarının arasına gizlenmiş pirinçten, tekerlekli mekanik bir "ses çarkı" bulur. Yüzünde kararlı (determined) bir ifade vardır.
+- Sayfa 2: Merakla çarkın kenarını hafifçe çevirdiğinde içinden çok ince, minicik bir melodi duyulur. Melodi çalmaya başladığı anda etrafındaki ağaçlar ve insanlar "bir an için" eski bir zaman gibi titrer!
+- Sayfa 3: Kahramanımız şaşkınlık içindeyken etrafındaki onlarca güvercin aniden havalanır ve rüzgarla kitabın içinden bir sayfa uçuşur. Yere düşen o sayfada aceleyle çizilmiş, el yapımı bir harita parçası vardır.
+
+### Bölüm 2 — Zaman Kırpışması (Sayfa 4-6)
+- Sayfa 4: Haritanın üzerinde belirgin 3 işaret çizilidir: oymalı bir çeşme, devasa bir kapı kemeri ve garip bir taş desen. {child_name} heyecanla etrafına bakınıp "Bunlar tam da burada!" diyerek çeşmeye doğru koşmaya başlar.
+- Sayfa 5: Püsküren suların olduğu çeşmeye varınca çarktaki melodiyi bir kez daha çevirir. Tıpkı bir göz kırpması gibi: meydandaki kalabalık bir anlığına eski kaftanlı, sarıklı insanlarla dolu bir tarihe dönüşüverir.
+- Sayfa 6: Bu "zaman kırpışmasının" o kısacık anında, panikle koşan birinin elinden çok önemli küçük bir mühür-kılıfı benzeri nesne düşürdüğünü görür. Bir saniye sonra görüntü tamamen günümüze döner ama kahramanımız nesnenin düştüğü noktayı artık biliyordur.
+
+### Bölüm 3 — Kayıp Görev (Sayfa 7-10)
+- Sayfa 7: Hızla o noktaya gider, tarihi taş desenin köşesinde çok ufak bir oyuk fark eder. Taşların arasına sıkışmış eski, tozlu mühür kılıfını bulup çıkarır; fakat kötü haber: içi boştur!
+- Sayfa 8: Az ilerideki bir rehberin telaşla "Sergiye ait çok önemli eski bir etiket mühür bugün kayboldu, bulunmazsa eser yanlış tanıtılacak ve tarih değişecek!" dediğini duyar. Artık çözmesi gereken bir görevi vardır.
+- Sayfa 9: Kılıfın kayıp parçasını bulmak için haritadaki ikinci işarete, devasa kapı kemerine doğru atılır. Çarkını tekrar çevirdiğinde oluşan o sihirli dalgayla, kemerin gölgesindeki duvarda yepyeni parlayan bir işaret beliriverir.
+- Sayfa 10: Duvardaki gizli işaret bir bulmacadır: üç sembol yan yanadır (Lale, Dalga ve Yıldız). Kahramanımız etrafındaki binlerce tarihi taş desenin arasında bu üçlünün doğru sıralanışını nefes nefese aramaya başlar.
+
+### Bölüm 4 — Gölgenin Oyunu (Sayfa 11-14)
+- Sayfa 11: Lale, dalga ve yıldız oymalarını doğru sırda yan yana bulduğu an, elindeki harita sayfası sanki kendi iradesi varmışçasına katlanıp şekil değiştirir! Üzerinde yeni bir ok ve "Gölge nereye düşerse..." yazısı belirir.
+- Sayfa 12: Güneşin altın sarısı son ışıklarıyla meydanda upuzun bir gölge çizgisi oluşmuştur; çocuğumuz güneş batmadan gölgeyi yakalayabilmek için kalabalıkların arasında adeta uçarcasına hızlanır.
+- Sayfa 13: Takip ettiği gölge çizgisi tam da eski bir ahşap bankın ayaklarının hizasında son bulur. Hemen yere eğilip gizlenmiş karanlık noktaya bakar: orada, toprağın rengine karışmış çok küçük bir kese durmaktadır!
+- Sayfa 14: Keseyi heyecanla açar, içinde aynı lale ve yıldız desenlerini taşıyan kayıp mührün parçası vardır. Ancak parça ortadan kırıktır; bulmacanın bitmesi için o sivri ucun da tamamlanması gerekmektedir.
+
+### Bölüm 5 — Birleşen Yapboz (Sayfa 15-18)
+- Sayfa 15: {child_name} bu sefer bir risk alıp çarkın melodisini "ters" yönde çevirir. Oluşan bu yeni ters-zaman kırpışmasında, yıllar yıllar önce eksik parçanın panikten koşuşturan adamın çantasındaki "püsküle" takılıp savrulduğunu izler.
+- Sayfa 16: Hemen gerçek zamana döner; meydanı tarar ve kimseyi suçlamadan sadece aklına kazıdığı o "eski desenli püskülün" birebir aynısını bulmak için standlara ve insan geçişlerine odaklanır.
+- Sayfa 17: Turist dükkanlarının sıralandığı köşede, tezgahın kenarında asılı nostaljik bir çanta püskülü görür, tezgahın tam arkasında toprağa gizlenmiş bir ışık parıldar. Eğilir ve düşmüş olan o ufacık eksik parçayı da bulur!
+- Sayfa 18: İki parçayı mühür kılıfında birleştirdiği an haritadaki tüm semboller altın gibi parlar. Kahramanımız zafer sevinciyle hiç vakit kaybetmeden doğrudan rehberin olduğu sergi noktasına doğru depar atar.
+
+### Bölüm 6 — Geriye Kalan İmza (Sayfa 19-21)
+- Sayfa 19: Nefes nefese kalmış bir halde tamamlanmış mührü tam zamanında sergideki görevliye ulaştırır, hatanın düzeltilmesini sağlar. Görevli, "Sıradan bir ziyaretçi değilsin, büyük bir felaketin önüne geçtin!" diyerek göz kırpar.
+- Sayfa 20: Çantasındaki ses çarkı son kez, bu kez çok yumuşak bir ninni gibi çalar; meydanda etrafı saran kalabalık ona bir anlığına sarıklı esnaflar olarak görünüp teşekkür eder gibi gülümserler. Tarihten küçük bir selam almıştır.
+- Sayfa 21: Çarkı sonsuza dek durdurduğunda her şey o normal, güzel İstanbul akşamına döner. Ancak harita sayfası yok olmuş, çantasının içinde sadece parlayan küçücük bir yıldız çizimi bırakmıştır. Acaba bu yıldız bir gün başka bir yerde yeniden parlayacak mıdır?
+
+---
+
+## KURALLAR
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 21 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- AI Görüntü (scene_description) promptlarını (İngilizce) yazarken "standing still" veya "looking at camera" KULLANMA. Aksiyon belirt. (amazed, smiling, determined) gibi emotion kelimeleri ekle. Cinematic lighting ve stone texture gibi ışık/doku kelimelerini unutma.
+- G2 TUTARLILIK: Maceraya [animal_friend_en] adlı sevimli dostu da katılır, onu da sahnelerde TUTARLILIK ile kullan. Doğru yolları bulmasına bazen o yardım eder.
+- Asla didaktik nasihat verme veya ahlaki mesaj bildirme. YASAK!
+

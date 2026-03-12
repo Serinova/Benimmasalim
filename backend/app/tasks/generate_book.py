@@ -297,6 +297,13 @@ async def generate_full_book(order_id: str) -> dict:
             (style.style_block_override or "").strip() if style else None
         ) or None
 
+        # ── Extract companion info from story pages ──────────────────────────
+        # The companion is determined during story generation (PASS-0 blueprint).
+        # We extract it from the first page's image_prompt to lock it for all pages.
+        _comp_name, _comp_species, _comp_appearance = _extract_companion_from_pages(
+            existing_pages, _scenario
+        )
+
         book_ctx = BookContext.build(
             child_name=order.child_name or "",
             child_age=order.child_age or 7,
@@ -313,6 +320,9 @@ async def generate_full_book(order_id: str) -> dict:
             id_weight_override=_style_overrides["id_weight"],
             leading_prefix_override=_book_leading_prefix_override,
             style_block_override=_book_style_block_override,
+            companion_name=_comp_name,
+            companion_species=_comp_species,
+            companion_appearance=_comp_appearance,
         )
         prompt_composer = PromptComposer(
             book_ctx,
@@ -934,3 +944,66 @@ async def _upscale_and_resize(
         )
 
     return image_bytes
+
+
+def _extract_companion_from_pages(
+    pages: list,
+    scenario: object | None,
+) -> tuple[str, str, str]:
+    """Extract companion (name, species, appearance) from scenario's custom_inputs_schema.
+
+    This enables CAST LOCK in page_builder.py to properly lock the companion
+    character across all pages, preventing species/appearance changes.
+
+    Returns:
+        (companion_name, companion_species, companion_appearance)
+    """
+    if not scenario:
+        return "", "", ""
+
+    # Read companion from custom_inputs_schema default
+    custom_inputs = getattr(scenario, "custom_inputs_schema", None)
+    if not custom_inputs or not isinstance(custom_inputs, list):
+        return "", "", ""
+
+    companion_tr = ""
+    for inp in custom_inputs:
+        if isinstance(inp, dict) and inp.get("key") == "animal_friend":
+            companion_tr = (inp.get("default") or "").strip()
+            break
+
+    if not companion_tr:
+        return "", "", ""
+
+    # Map Turkish companion names to English species + appearance — uses Scenario Registry
+    from app.scenarios import get_companion_map as _get_companion_map
+
+    _COMPANION_MAP = _get_companion_map()
+
+    _companion_lower = companion_tr.lower().strip()
+    info = _COMPANION_MAP.get(_companion_lower)
+
+    if not info:
+        # Try partial match
+        for key, val in _COMPANION_MAP.items():
+            if key in _companion_lower or _companion_lower in key:
+                info = val
+                break
+
+    if not info:
+        # Generic fallback: use TR name, guess species
+        info = {
+            "name": companion_tr,
+            "species": "animal companion",
+            "appearance": "a small friendly animal companion",
+        }
+
+    logger.info(
+        "COMPANION_EXTRACTED_FOR_BOOK",
+        scenario=getattr(scenario, "name", ""),
+        companion_tr=companion_tr,
+        companion_name=info["name"],
+        companion_species=info["species"],
+    )
+    return info["name"], info["species"], info["appearance"]
+

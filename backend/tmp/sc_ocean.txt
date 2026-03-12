@@ -1,0 +1,156 @@
+theme_key: ocean
+name: Mercan Şehrin Sinyali
+location_en: Pacific Ocean
+active: True
+no_family: False
+page_count: 22
+
+--- OUTFIT GIRL ---
+child-sized ocean explorer outfit: a teal lightweight wetsuit with short sleeves, a yellow diving vest, waterproof knee pads, snorkeling mask pushed up on the forehead, compact oxygen mini-tank backpack, flippers, and a small waterproof satchel, no logos, plus a small seashell charm bracelet. EXACTLY the same outfit on every page — same teal wetsuit, same yellow vest, same flippers. Same child character, consistent face and hair across all pages.
+
+--- OUTFIT BOY ---
+child-sized ocean explorer outfit: a teal lightweight wetsuit with short sleeves, a yellow diving vest, waterproof knee pads, snorkeling mask pushed up on the forehead, compact oxygen mini-tank backpack, flippers, and a small waterproof satchel, no logos. EXACTLY the same outfit on every page — same teal wetsuit, same yellow vest, same flippers. Same child character, consistent face and hair across all pages.
+
+--- CUSTOM INPUTS ---
+[]
+
+--- CULTURAL ELEMENTS ---
+{
+  "values": [
+    "Environmental Protection",
+    "Observation",
+    "Empathy",
+    "Agility"
+  ],
+  "primary": [
+    "A magnificent Coral City with branching staghorn and fan corals",
+    "A tiny high-tech underwater research capsule with a glass dome",
+    "Sea turtles guiding the child through currents",
+    "Dolphins spinning to show blocked water flow direction",
+    "Glowing blue oceanic signal compass on the wrist"
+  ],
+  "location": "A deep oceanic vibrant Coral Reef",
+  "secondary": [
+    "Octopus pointing to three key net anchor rocks",
+    "Bioluminescent jellyfish lighting a dark passage",
+    "Manta ray showing safe bypass path around currents",
+    "A distant majestic shark respected from afar",
+    "Whale singing a deep thank-you at mission success"
+  ],
+  "atmosphere": "Vibrant, educational, wondrous, safe yet adventurous",
+  "historic_site": "Wilderness ecosystem",
+  "sensitivity_rules": [
+    "NO aggressive animal encounters (sharks are distant and respected)",
+    "NO direct dangerous physical tasks (uses capsule robot arm)",
+    "Child acts as a protector of the ocean and its creatures"
+  ]
+}
+
+--- LOCATION CONSTRAINTS ---
+Setting alternates to show movement through the ocean depth. Kademe haritası ve Kamera kullanımları: Pages 1-4: Marine research center aquarium wall and glass dome capsule launch. (Wide Shot, aquarium blues) Pages 5-7: Descent into coral reef, sea turtle guide. (Medium Shot, dreamy) Pages 8-10: Net tangle close to coral gate, octopus pointing. (Close-up, tense) Pages 11-13: Dark narrow arch passage lit by jellyfish. (Low Angle, bioluminescent) Pages 14-16: Deep water net cutting with robot arm. (Close-up, action) Pages 17-19: Final net release, corals rebloom. (Epic Wide, color burst) Pages 20-22: Return to surface, whale song, mission complete. (Hero Shot, golden light) 
+
+--- SCENARIO BIBLE ---
+{
+  "tone_rules": [
+    "Dalga robotu her sayfada mevcut olmalı ama bazı sayfalarda konuşmak yerine ışıklarıyla iletişim kurabilir",
+    "Deniz canlıları asla konuşmaz ama sembolik hareketlerle yol gösterir",
+    "Köpekbalıkları sadece arka plan majestikliğidir, asla tehdit değildir",
+    "Korku duygusu 'endişe/heyecan' seviyesinde tutulmalı, asla travmatik olmamalı"
+  ],
+  "cultural_facts": [
+    "Mercan resifleri okyanusun yağmur ormanlarıdır ve binlerce türe ev sahipliği yapar",
+    "Deniz kaplumbağaları 100 yıldan fazla yaşayabilir ve okyanusları dolaşır",
+    "Yunuslar dünyanın en zeki canlılarındandır ve birbirleriyle sesle iletişim kurar",
+    "Biolüminesan canlılar kendi ışıklarını üreterek karanlık derinlikleri aydınlatır",
+    "Manta vatozları kanat açıklığı 7 metreye ulaşabilir ama tamamen zararsızdır"
+  ],
+  "side_character": {
+    "name": "Dalga",
+    "type": "research robot",
+    "appearance": "a small, cute, round research robot with a shiny silver-blue metallic body, two big glowing blue LED eyes, small retractable arms, and a tiny antenna on top"
+  }
+}
+
+--- COVER PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Child swimming gracefully next to a small glass-domed underwater research capsule with glowing instrument panels inside. A small, cute, round research robot named Dalga with a shiny silver-blue metallic body, two big glowing blue LED eyes, small retractable arms, and a tiny antenna on top floats beside the child. Surrounded by a magnificent vibrant coral reef ecosystem — branching staghorn corals, fan corals, sea anemones — and shimmering schools of tropical fish in formation. Dramatic underwater lighting: golden sun rays piercing through the turquoise water surface creating dancing caustic light patterns, subtle bioluminescent blue accents from deep-sea organisms. Dynamic underwater angle: child 30% foreground, expansive coral reef environment 70%. Ocean palette: deep turquoise blue, vibrant coral oranges and pinks, golden caustic light, pearl white bubbles.
+
+--- PAGE PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. A small, cute, round research robot named Dalga with a shiny silver-blue metallic body, two big glowing blue LED eyes, small retractable arms, and a tiny antenna on top is always present in the scene. Elements: [underwater reef, vibrant corals, sun rays through water, bubbles, schools of fish, deep blue gradients]. Include multiple sea creatures in most scenes (fish, turtle, dolphin, octopus, seahorse, manta ray, jellyfish, etc.). Cinematic action lighting, warm golden underwater glow, detailed coral texture. Close-up on expressions, wide for reef panoramas. Dynamic action pose, expressive emotion (amazed, determined, smiling). Wide angle and close-up shots, child 30-40% of frame. No eye contact with camera. Dangerous animals only in the distance, no direct contact, child remains safe. Avoid: photorealistic, pasted face, collage, duplicate child, random text, watermark, logo, blurry, low quality. {STYLE}
+
+--- STORY PROMPT TR ---
+
+# MERCAN ŞEHRİN SİNYALİ
+
+## YAPI: {child_name} okyanus keşif kıyafetleriyle araştırma merkezinde akıllı bir deniz pusulası bularak kendini kurtarma görevinde bulur. Yanındaki sevimli robot arkadaşı Dalga da ona eşlik eder. Okyanusun altındaki dev mercan şehrindeki yavru balıkların yolu kopan bir ağ ile kapanmıştır ve akıntı tersine dönmüştür. Çocuğumuz kapsülüyle iner ve her sayfada başka bir deniz canlısından (kaplumbağa, yunus, denizanası vb.) aldığı zekice ipuçlarıyla bu ağı uzaktan, güvenli bir şekilde çözer. Dalga her sayfada yanında olup ipuçlarını analiz eder, ışıklarıyla rehberlik eder. Şiddet, köpekbalığı saldırısı ve boğulma KESİNLİKLE YOKTUR. Bol deniz canlısı tanıtarak, "yardım edip başardım" hissi veren, 22 sayfalık sürükleyici bir kurgudur.
+
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Mercan Şehrin Sinyali" olmalı. Alt başlık EKLEME.
+
+**STİL & TON:**
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. Dili akıcı, ritimli ve çocuk okurları heveslendirici şekilde dinamiktir.
+- Ders sıkıcılığında biyoloji bilgisi değil, hayvanların özelliklerini maceranın içine yedirerek (Manta vatozun kanadıyla akıntıyı göstermesi gibi) anlat. Köpek balıkları sadece arka plan majestikliğidir, Asla tehdit değildir.
+- Dalga robotu her sayfada doğal şekilde yer alır ama her cümlede konuşmaz; bazen jestler, ışıklar veya hareketlerle etkileşir.
+
+## 🪝 HOOK KURALI (ZORUNLU)
+Her sayfanın SON cümlesi okuyucuda "sonraki sayfayı çevirme" dürtüsü uyandırmalıdır.
+Geçerli hook türleri:
+1. Merak sorusu: "Acaba bu ses nereden geliyordu?"
+2. Gerilim: "İşte tam o anda, karanlıktan bir ışık parladı!"
+3. Tehlike/engel: "Ama kapsül tehlikeli bir şekilde sallanmaya başladı!"
+4. Sürpriz: "Gözlerine inanamadı — devasa bir gölge yaklaşıyordu!"
+Minimum %60 sayfada (13/22 sayfa) hook cümlesi olmalıdır.
+
+## ✍️ AKTİF YAZIM KURALI
+- Pasif yapılar ("izliyordu", "bakıyordu") yerine aktif fiiller tercih et: "fırladı", "daldı", "kavradı", "uzandı", "döndü".
+- Özellikle kriz sayfalarında (S.11-16) çocuğun fiziksel eylemlerini vurgula.
+
+---
+
+### Bölüm 1 — Mavi Sinyalin Çağrısı (Sayfa 1-4)
+- Sayfa 1: {child_name} devasa akvaryumların olduğu deniz araştırma merkezinde büyülü sualtı dünyasını hayranlıkla izlemektedir. Yanında sevimli robot dostu Dalga da merakla akvaryuma bakınmaktadır. Cam kenarında mavi bir ışıkla hafifçe parlayan o küçük ve garip akıllı deniz pusulasını fark eder. Yüzünde şaşkınlık (amazed) ifadesi vardır. → HOOK: "Bu garip pusula ona ne söylemeye çalışıyordu?"
+- Sayfa 2: Çocuk merakla eğilip pusulaya dokunduğu anda küçücük ekranda parlayan harflerle yanıp sönen bir "BLUE SIGNAL" (Mavi Sinyal) ibaresi beliriverir! Dalga'nın gözleri heyecanla parlamaya başlar. Kahramanımızın kalbi hızla çarpar. → HOOK: "Sanki okyanusun bizzat kendisi ondan çok önemli bir görev için yardım istiyordu!"
+- Sayfa 3: Dalga neşeyle antenini sallayarak "Mini araştırma kapsülü birinci göreve hazır!" diye anons geçer. Çocuk büyük bir sevinçle hemen yüksek teknolojili sarı kapsüle atlayıp oturur ve üstündeki sağlam cam kubbe güvenle tıslayarak kapanır. → HOOK: "Dalganın gözlerindeki mavi ışık rotayı çoktan çizmişti!"
+- Sayfa 4: Kapsül yavaşça ve güvenli bir şekilde denizin serin sularına dalıverdi! Etrafındaki dünya aniden huzur veren muazzam bir mavi uzaya dönüştü. İlk karşılayanlar ise etrafında dans eden ve yön gösteren, sürü halinde gümüş gibi parlayan minicik balıklar oldu. → HOOK: "Ama derinlerde çok daha büyük bir sürpriz bekliyordu..."
+
+### Bölüm 2 — Mercanlara İniş (Sayfa 5-7)
+- Sayfa 5: Biraz daha derinleştikçe bilgece ve yavaşça yüzen, çok tatlı devasa bir deniz kaplumbağası kapsülün yanına dostça yaklaştı. Kaplumbağa kocaman gözleriyle çocuğun kolundaki pusulaya baktı ve tam o sinyalin yönüne doğru yüzmeye başladı. Dalga hemen kaplumbağanın rotasını taradı. → HOOK: "Sanki 'Lütfen, beni takip et' diyordu — peki ama nereye?"
+- Sayfa 6: Kaplumbağayı takip ederek kapsül muazzam Mercan Şehrine ulaştı ama {child_name}'un nefesi kesildi! Palyaço balıkları ve renkli anemonlar üzgünce solmuştu ve suyun doğal akıntısı sanki tamamen tersine dönmüştü. Dalga endişeyle ışıklarını kırmızıya çevirdi. → HOOK: "Mercan Şehri'ne ne olmuştu? Bu ters akıntı neyin işaretiydi?"
+- Sayfa 7: Tam o anda ufukta çok neşeli sesler çıkartan yunuslar fırlayıp ortaya çıktı! Akıntının merkezinde "dairesel bir yol ve burgu" çizerek yukarıyı gösterdiler. Zeki çocuğumuz bu ipucunu hemen kavradı ve Dalga'ya döndü. → HOOK: "Koca resifin doğal akıntısını tıkayan dev bir şey yukarıda yapışmıştı!"
+
+### Bölüm 3 — Ağdaki İpuçları (Sayfa 8-10)
+- Sayfa 8: Çok geçmeden kocaman, üstü atık dolu ve kopup gelmiş dev bir halat/ağ parçasının tam da mercan geçidinin kilit noktasına sıkıca takıldığını gördüler. {child_name} dışarı çıkıp tehlikeli bir şekilde dokunmak yerine, kapsülündeki araçlarla güvenli şekilde çözeceğine karar verdi. Dalga onayladığını gösteren yeşil ışık yaktı. → HOOK: "Ama bu devasa ağın sökülmesi nasıl mümkün olacaktı?"
+- Sayfa 9: Kayaların hemen altından kıvrak kollarıyla uzanan zeki bir ahtapot yavrusu yanaşarak uzun kollarıyla dikkatlice o koca ağın bağlı olduğu "üç anahtar kaya noktasını" tek tek işaret etti. Dalga hemen verileri taradı ve kapsülün ekranına aktardı. → HOOK: "Macera devasa bir sualtı bulmacasına dönüştü — acaba önce hangi kilidi açmalıydı?"
+- Sayfa 10: {child_name} hemen bileğindeki o mavi ışıklı deniz pusulasına uzandı! Ekranda üç yeni simge parladı: Bir denizkabuğu, bir deniz yıldızı ve bir dalga... Dalga'nın anteni heyecanla titredi — resifin üstündeki kayalar tam da bu şekillere benziyordu! → HOOK: "Ama üç kilide ulaşmak için önce karanlık bir geçitten geçmeleri gerekiyordu..."
+
+### Bölüm 4 — Akıntıya Karşı (Sayfa 11-13)
+- Sayfa 11: Hedeflenen kilit noktaya doğru yol alırken birdenbire ufuktaki çok büyük bir denizanası grubu pırıl pırıl ışıldayarak o doğru ve zararsız olan asıl geçidi aydınlattı. {child_name} kolları kasılarak direksiyonu kavradı ve Dalga'nın hesapladığı rotayı izleyerek karanlık bir kemerin altından ustalıkla süzüldü. → HOOK: "Geçidin ötesinde onu bekleyen manzara tüylerini diken diken etti!"
+- Sayfa 12: O karanlık ve dar geçidin duvarlarına harika kuyruklarıyla tamamen kamufle olarak saklanmış incecik yüzlerce denizatı fark etti — {child_name}'un kalbi heyecanla sıkıştı! O an Dalga incecik bir sesle "bip"leyerek zamanın azaldığını ve gün batmadan yüzeye dönmesi gerektiğini hatırlattı. → HOOK: "Zaman tükenmek üzereydi — artık harekete geçme vakti gelmişti!"
+- Sayfa 13: Geçitten hemen sonra karşısına çıkan koca gövdeli bilge Manta vatozu devasa kanadıyla zorlu akıntının açısını gösterdi. {child_name} müzisyen gibi ellerini kullanarak kapsülün açısını tam da vatozun kanat yönüne doğru ustaca çevirdi ve Dalga'nın ışıkları neşeyle parladı. → HOOK: "Artık ağın ilk kilit noktası tam karşısındaydı — büyük an gelmişti!"
+
+### Bölüm 5 — Çözüm Başlıyor (Sayfa 14-16)
+- Sayfa 14: Karşıya geçerken derinliklerin sisi içinde koca yüzgeciyle sadece uzaktan ve yanlarından çok asilce süzülen majestik bir köpekbalığı geçti (asla tehdit değildir). {child_name} saygıyla mesafesini korudu ve kapsülü görev yoluna hiç durmadan şevkle sürdü. Dalga rotayı sorunsuz olarak onayladı. → HOOK: "İşte karşısında, sökülmesi gereken o gizemli üç kilit noktası duruyordu!"
+- Sayfa 15: Tam zamanında ulaşmıştı! {child_name} büyük bir kararlılıkla kapsülünün kontrol panelini açtı ve yüksek teknolojili "Remote Cutter" (Kancalı Robot Kol) düğmesine bastı. Dalga hedefleme sistemini devreye soktu, gözleri lazer gibi odaklandı. → HOOK: "Robotik kol uzanıyordu — acaba o kördüğümü çözebilecek miydi?"
+- Sayfa 16: Robotik kol ustaca uzanarak ağdaki o ilk kördüğümü zekice kesip çözdü! O koca ağ zinciri biraz gevşese de yerinden çıkmaya hiç niyeti yoktu. Fakat o ikinci zorlu nokta çok daha derindeydi ve okyanusun ters akan girdap akıntısı kapsülü tehlikeli bir şekilde titretmeye başladı! → HOOK: "Kapsül sallanıyordu — ikinci kilidi çözmek için cesaret gerekiyordu!"
+
+### Bölüm 6 — Son Hamleler (Sayfa 17-19)
+- Sayfa 17: {child_name} korkusuna rağmen kollarını sıktı ve derin bir nefes aldı. Rehberi olan deniz kaplumbağasının girdiği iki kayanın boşluğunu fark edip o siperden koca akıntıyı kırarak en uca yaklaştı. Ustaca yönlendirdiği kol yardımıyla inatçı ikinci kilit noktasını da ustalıkla kesti! → HOOK: "Geriye sadece bir kilit kalmıştı — ama en zoru buydu!"
+- Sayfa 18: En son kilit noktasının yanındaki yuvalarında yavru palyaço balıkları büyük bir telaş yaşıyordu. {child_name} derin ve uzun bir nefes aldı, Dalga'ya baktı ve fısıldadı: "Sakin kalın minikler, bu sadece en son küçük bir adım..." Cesaretle son kesim düğmesine uzandı! → HOOK: "Parmağı düğmeye dokunduğu anda her şey değişecekti!"
+- Sayfa 19: {child_name} son düğmeye bastığı anda kalın ağ tamamen serbest kalıp süzüldü ve kapsülün büyük atık toplama haznesinin içine güvenle çekildi! Büyük şehrin tüm akıntısı birdenbire doğru yönünü buldu — grileşen bütün güzel mercanlar sanki derin bir nefes alıp yeniden canlandı! Dalga'nın gözleri en parlak maviye döndü! → HOOK: "Ve okyanus, bu cesur küçük kaşife teşekkür etmek istedi..."
+
+### Bölüm 7 — Güvenli Geçit (Sayfa 20-22)
+- Sayfa 20: Tam bu sevinç yaşanırken mavi uçsuz bucaksız sisin ardından çok çok büyük bir balina en tatlı şarkısını söylercesine bir ton fırlattı — kocaman okyanus adeta bu derin sesiyle "Teşekkür" ediyordu. Yol boyunca kurtarılmayı bekleyen tüm minik deniz yavruları açılan o harika güvenli geçitten neşeyle yüzerek geçtiler.
+- Sayfa 21: {child_name} büyük başarının ardından kapsülün kollarını çekti ve kabarcıkların arasından güneşin pembeye büründüğü su yüzeyine çıkarak merkeze sağ salim döndü. Dalga omzuna hafifçe dokunarak en parlak ışığıyla onu tebrik etti.
+- Sayfa 22: Merkezde soyunma odasına geçerken o mavi deniz pusulası ekranında kocaman bir istiridye kabuğu simgesi bırakarak görevi bittiği için usulca söndü. Cebinde anı olarak sapsarı bir deniz kabuğu rozeti kalmıştı. {child_name} Dalga'yla birlikte pencereden denize bakarak cesaretle gülümsedi — korktuğu anlar olmuştu ama adımlarını hiç geri çekmemişti. "Koca okyanus bana yarın yeni bir mavi sinyal daha yollar mı?" diye fısıldadı.
+
+---
+
+## 🚫 KURALLAR
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 22 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- image_prompt_en'de "standing still" veya "looking at camera" KULLANMA. Hep aksiyon (örn: "Child navigating glass-domed research capsule", "Child watching an octopus point to the net").
+- Hayvanların hiçbiri konuşmaz (sembolik eylemlerle yol gösterirler). Hiçbir deniz canlısı saldırısı olmamalı.
+- G2 tutarlılık KURALI: Dalga her sayfada aynı tutarlı şekilde görünür. Görüntüsü değişmez!
+- DUYGU (EMOTION) ÇIPASI: amazed, smiling, determined kullan!
+- IŞIK VE DOKU (LIGHTING & TEXTURE): Mercan dokusu (coral texture) ve sinematik su altı ışığı (cinematic underwater lighting, golden glow) kesinlikle yer ver!
+- Asla didaktik nasihat verme veya ahlaki mesaj bildirme. YASAK!
+- Son sayfa (S.22) MUTLAKA "cesaret" kelimesini içermeli ve korku→cesaret geçişi net olmalı.
+- Dalga robot bazı sayfalarda konuşmak yerine ışıklarıyla veya jestleriyle iletişim kurabilir.
+

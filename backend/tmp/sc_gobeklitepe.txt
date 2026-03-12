@@ -1,0 +1,274 @@
+theme_key: gobeklitepe
+name: Göbeklitepe Macerası
+location_en: Göbeklitepe
+active: True
+no_family: True
+page_count: 22
+
+--- OUTFIT GIRL ---
+beige cotton field shirt with button-down collar and chest pocket, olive green cargo pants with side pockets, tan leather ankle boots, wide-brim sand-colored canvas sun hat, small khaki field bag crossbody. EXACTLY the same outfit on every page — same beige shirt, same olive cargo pants, same sun hat.
+
+--- OUTFIT BOY ---
+stone beige safari-style shirt with flap pockets, khaki cargo pants with button-flap pockets, brown leather work boots, tan canvas explorer hat, small olive field satchel across body. EXACTLY the same outfit on every page — same beige shirt, same khaki cargo, same explorer hat.
+
+--- CUSTOM INPUTS ---
+[
+  {
+    "key": "animal_friend",
+    "type": "select",
+    "label": "Step Dostu",
+    "default": "Cesur Step Tilkisi",
+    "options": [
+      {
+        "label": "🦊 Cesur Step Tilkisi",
+        "value": "Cesur Step Tilkisi"
+      },
+      {
+        "label": "🦅 Step Kartalı",
+        "value": "Step Kartalı"
+      },
+      {
+        "label": "🐐 Neolitik Keçi",
+        "value": "Neolitik Keçi"
+      },
+      {
+        "label": "🐱 Yabani Kedi",
+        "value": "Yabani Kedi"
+      }
+    ]
+  },
+  {
+    "key": "favorite_element",
+    "type": "select",
+    "label": "En Sevdiği Öğe",
+    "default": "Hayvan kabartmaları (tilki, aslan, yılan, kuş)",
+    "options": [
+      {
+        "label": "🦁 Hayvan Kabartmaları",
+        "value": "Hayvan kabartmaları (tilki, aslan, yılan, kuş)"
+      },
+      {
+        "label": "🗿 T-Sütunları",
+        "value": "T-sütunları (dev dikilitaşlar)"
+      },
+      {
+        "label": "⭕ Dairesel Taş Yapılar",
+        "value": "Dairesel taş yapılar (iç içe halkalar)"
+      },
+      {
+        "label": "⛏️ Taş Ocağı",
+        "value": "Taş ocağı (yarım kalmış dikilitaşlar)"
+      }
+    ]
+  }
+]
+
+--- CULTURAL ELEMENTS ---
+{
+  "values": [
+    "Curiosity",
+    "Cooperation",
+    "History appreciation",
+    "Scientific thinking"
+  ],
+  "primary": [
+    "T-shaped megalithic pillars (3-5m tall limestone)",
+    "Animal relief carvings (fox, lion, snake, vulture, scorpion)",
+    "Circular stone enclosures (concentric rings)",
+    "Stone quarry with unfinished pillars in bedrock",
+    "Harran Plain golden steppe landscape"
+  ],
+  "location": "Sanliurfa, Turkey (Harran Plain)",
+  "secondary": [
+    "Ancient hunter-gatherer construction techniques",
+    "Secret passage/cave entrance between stones",
+    "Sacred carved stone placed in T-pillar niche",
+    "Warm sandstone and amber tones in sunset light",
+    "Archaeological dig site atmosphere"
+  ],
+  "atmosphere": "Ancient, mysterious, archaeological wonder",
+  "historic_site": "Gobeklitepe, 12,000 years old (world's oldest temple)"
+}
+
+--- LOCATION CONSTRAINTS ---
+Setting alternates to show movement. Kademe haritası ve Kamera kullanımları: Pages 1-4: Göbeklitepe archaeological site exterior, T-shaped pillars, golden steppe. (Wide Shot, epic) Pages 5-8: Inside the secret passage and emerging into 12,000 years ago. (Medium Shot, dramatic lighting shift) Pages 9-12: Ancient construction site, hunter-gatherers working on stone pillars. (Close-up, detailed stone texture) Pages 13-16: Circular stone enclosures with animal carvings. (Low Angle, mystical atmosphere) Pages 17-20: Returning through passage to modern day. (Wide Shot, warm sunset) Pages 21-22: Sunset departure, epic final look at pillars. (Hero Shot, golden hour) 
+
+--- SCENARIO BIBLE ---
+{
+  "key_objects": {
+    "gizli_gecit": {
+      "last_page": 17,
+      "first_page": 4,
+      "appearance_en": "narrow stone passage entrance between two fallen megaliths, covered partially by dry golden grass",
+      "appearance_tr": "iki devrilmiş dikilitaş arasında dar taş geçit girişi, kısmen kuru altın otlarla kaplı",
+      "prompt_suffix": "narrow stone passage between megaliths — SAME appearance on every occurrence"
+    },
+    "kutsal_oyma_tasi": {
+      "last_page": 12,
+      "first_page": 9,
+      "appearance_en": "sacred small carved stone tablet with ancient geometric sun symbols, palm-sized, weathered cream limestone",
+      "appearance_tr": "avuç içi büyüklüğünde kutsal oyma taş tablet, üzerinde antik geometrik güneş sembolleri, yıpranmış krem rengi kireçtaşı",
+      "prompt_suffix": "holding a sacred small carved stone tablet with geometric symbols — SAME appearance on every page"
+    }
+  },
+  "companion_pack": {
+    "yabani_kedi": {
+      "role": "Sessiz ve gizemli keşif arkadaşı, karanlık geçitte cesaret veren",
+      "species": "wildcat",
+      "appearance_en": "small striped tawny wildcat with green eyes and a bushy ringed tail",
+      "appearance_tr": "küçük çizgili sarımsı yabani kedi, yeşil gözler, gür halkalı kuyruk"
+    },
+    "step_kartali": {
+      "role": "Tepeden izleyen kahraman, T-sütunlarının üzerine konan akıllı rehber",
+      "species": "eagle",
+      "appearance_en": "majestic dark brown steppe eagle with golden-tipped feathers and piercing amber eyes",
+      "appearance_tr": "görkemli koyu kahverengi step kartalı, altın uçlu tüyler, keskin kehribar gözler"
+    },
+    "neolitik_keci": {
+      "role": "Avcı-toplayıcı çağından kalma neşeli dost, taşların arasında zıplayan",
+      "species": "goat",
+      "appearance_en": "small brown Neolithic wild goat kid with curved tiny horns and a white chest patch",
+      "appearance_tr": "küçük kahverengi Neolitik yabani keçi yavrusu, ufak kıvrık boynuzlar, beyaz göğüs lekesi"
+    },
+    "cesur_step_tilkisi": {
+      "role": "Çocuğun cesur keşif arkadaşı, geçidi ilk fark eden",
+      "species": "fox",
+      "appearance_en": "small reddish-brown steppe fox with bushy tail and bright eyes",
+      "appearance_tr": "küçük kızıl-kahverengi step tilkisi, gür kuyruğu ve parlak gözleri"
+    }
+  },
+  "side_characters": {
+    "avci_toplayici_sef": {
+      "rule": "SAME outfit and appearance on every page",
+      "outfit_en": "elderly hunter-gatherer chief in dark brown animal hide robe with bone necklace and grey beard",
+      "appears_on": [
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    "avci_toplayici_cocuk": {
+      "rule": "SAME outfit and appearance on every page",
+      "outfit_en": "young hunter-gatherer child in light brown deer hide tunic with short dark hair",
+      "appears_on": [
+        8,
+        13,
+        14,
+        15
+      ]
+    }
+  },
+  "consistency_rules": [
+    "Companion animal MUST have EXACTLY the same species, color, and size on EVERY page",
+    "Sacred carved stone tablet MUST have the same geometric patterns on pages 9-12",
+    "Child's explorer/archaeologist outfit MUST NOT change between time periods",
+    "T-pillars in ancient era should look newer/cleaner than modern era",
+    "Hunter-gatherer characters wear animal hide clothes with stone tools — consistent across all appearances"
+  ],
+  "location_zone_map": {
+    "passage": "pages 4-5, 16-17",
+    "modern_site": "pages 1-4, 17-22",
+    "ancient_12000": "pages 5-16"
+  }
+}
+
+--- COVER PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Ancient Gobeklitepe T-shaped megalithic pillars with animal carvings in background, amazed expression. Harran Plain steppe, warm cinematic lighting on limestone, rich stone texture. Wide shot: child 30%, ancient pillars 70%. Epic archaeological wonder atmosphere. {STYLE}
+
+--- PAGE PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Elements: [T-pillars: 3-5m limestone megaliths, animal carvings (fox, lion, snake, vulture) / Circular enclosures: stone rings / Harran Plain: golden steppe / Stone quarry: unfinished pillars in bedrock]. Cinematic action lighting, warm golden glow, detailed ancient stone texture. Dynamic action pose, expressive emotion on face (amazed, determined, smiling). Wide angle and medium shots, child 30-40% of frame. No eye contact with camera. {STYLE}
+
+--- STORY PROMPT TR ---
+
+# GÖBEKLİTEPE MACERASI — ARKADAŞLARLA, TARİHE DOKUNUŞ
+
+## YAPI: {child_name} yanında {animal_friend} ile Göbeklitepe'de dolaşır. Rehber rotası DEĞİL — macera. Gizli bir geçit keşfeder; geçitten geçince 12.000 yıl öncesine (Göbeklitepe'nin yaşandığı tarih) gider. Orada izler, gizlenir, avcı-toplayıcılara yardım eder, bir sorun çözer, tarihe dokunur; sonra geçitten geri dönüp bugüne gelir.
+
+**BAŞLIK:** Kitap adı sadece "[Çocuk adı]'ın Göbeklitepe Macerası" olmalı. Alt başlık EKLEME.
+
+**KURGU:** Çocuk yanında sadece {animal_friend} ile Göbeklitepe'ye gelir. Anne, baba, kardeş veya aile üyesi HİÇBİR ZAMAN hikayede yer almaz. Rehber yok; kendi keşifleri. Gezerken gizli bir geçit/mağara ağzı bulurlar. İçeri girince kendilerini 12.000 yıl öncesinde (avcı-toplayıcıların dikilitaşları inşa ettiği dönem) bulurlar. Orada: avcı-toplayıcıları izlerler, gizlenirler, onların bir sorununa (kutsal oyma taşın yerine konulması) yardım ederler — "tarihe dokunurlar". Sonra aynı geçitten geri geçip bugüne dönerler. Macera odaklı; korku/şiddet yok.
+
+**EN SEVDİĞİ SEÇİMİ:** Aşağıdan seçilen öğe (T-sütunlar, hayvan kabartmaları vb.) hikayenin ana akışını DEĞİŞTİRMEZ. Sadece 1-2 sahnede hafif vurgu veya detay olarak geçebilir (örn. çocuğun en sevdiği hayvan kabartmada görünür). Ana olay: geçit → zaman yolculuğu → yardım → dönüş.
+
+---
+
+### Bölüm 1 — Göbeklitepe'de İlk Adımlar (Sayfa 1-4)
+- {child_name} yanında sevimli dostu {animal_friend} ile birlikte Şanlıurfa'da, Göbeklitepe arkeolojik alanına dolaşmaya gelir. Yüzünde kararlı (determined) bir ifade vardır.
+- Dev T-sütunlarını ilk gördüğünde duraksayıp gözlerini kocaman açar. "Bunlar gerçekten 12.000 yaşında mı?" diye fısıldar. {animal_friend} yanıt verir gibi kulağını dikip heyecanla kuyruk/kanat sallar.
+- Taşların etrafında dolaşırken {animal_friend} birden durup bir yöne bakar — taşların arasında gizli bir geçit / mağara ağzı fark ederler. "Buraya bak! Bu geçit daha önce var mıydı?"
+- {child_name} derin bir nefes alır: "Hazır mısın? İçeri giriyoruz!" Cesaret toplayıp geçide ilk adımı atar. {animal_friend} de hemen peşinden gelir...
+✓ MACERA BAŞLIYOR — Ama geçidin öbür tarafında onları neler bekliyor?
+
+---
+
+### Bölüm 2 — Geçit: 12.000 Yıl Öncesine (Sayfa 5-8)
+- Geçitte yürürler; ışık değişir, sesler farklılaşır, hava taş ve toprak kokar. {animal_friend} tedirginleşir ama {child_name}'in yanından ayrılmaz.
+- Çıktıklarında manzara tamamen değişmiştir: aynı tepe ama inşaat hâlinde! İnsanlar dev taşları halatlarla çekiyor, dikilitaşlar yükseliyor. "İnanabiliyor musun? Zaman değişti!" Şaşkınlıkla (amazed) haykırır.
+- Gizlenirler, bir taş bloğun arkasından izlerler. İnsanların birlikte çalıştığını, birbirlerine seslendiğini görürler. "İşte 12.000 yıl önce insanlar böyle bir şey inşa etmiş!" {child_name} heyecanını zor bastırır.
+- Tam o an bir çocuk yaşında avcı-toplayıcı onlara doğru yürür — göz göze gelirler! Kavga yok, korku yok; sadece merak dolu bir bakışma. Çocuk başını eğip "merhaba" der gibi gülümser.
+✓ ZAMAN YOLCULUĞU ZİRVESİ — Ama henüz asıl macerayı görmüş değiller...
+
+---
+
+### Bölüm 3 — Sırrı Yerine Koyma (Sayfa 9-12)
+- Taşların arkasında kalıp avcı-toplayıcıların günlük işlerini izlerler: biri taş yontuyor, diğeri ateş başında yemek hazırlıyor. {child_name} fısıldar: "Biz de onlar gibi takım çalışması yapmalıyız."
+- Yaşlı bir şefin endişeli yüzünü görürler. Şef, T-sütununun üzerindeki özel bir yuvaya (gediğe) oturması gereken kutsal oyma taşını bulamamaktadır. Elleriyle çaresizce arar, bulamaz. "Taş kaybolmuş! Bu çok kötü..." {child_name} şefin endişesini hisseder.
+- {animal_friend} burnuyla otları karıştırırken bir şeye takılır! {child_name} eğilip bakar: kutsal oyma taşı oradaymış! "Bulduk! Hadi yerine koyalım!" Cesaret toplayıp görünmeden taşı alırlar ve T-sütunundaki o küçük gediğe tam oturacak şekilde yerleştirirler.
+- Şef geri döndüğünde taşı yerinde görüp gözleri parlar. Gökyüzüne bakar, ellerini kaldırıp sevinir. {child_name} ile {animal_friend} gizlenmiş halde birbirlerine bakarlar: "Onlara yardım ettik! Tarihe dokunduk!"
+✓ YARDIM / TARİHE DOKUNUŞ ZİRVESİ — Bu anı sonsuza kadar hatırlayacaklar.
+
+---
+
+### Bölüm 4 — Dairesel Yapı ve Hayvan Kabartmaları (Sayfa 13-16)
+- Dairesel taş yapının etrafında sessizce dolaşırlar. Hayvan kabartmaları: tilki, aslan, yılan, akbaba. {child_name} parmağıyla kabartmayı takip eder: "Bunlar 12.000 yıl sonra hâlâ duracak. Ne kadar güçlü insanlar..."
+- Az önce gördükleri avcı-toplayıcı çocuk tekrar belirir! Bu sefer daha cesurdur. Yanına gelip elinde küçük bir taş uzatır — hediye! {child_name} de cebinden küçük bir çiçek çıkarıp verir. El işaretiyle selamlaşırlar. "Farklı zamanlardanız ama arkadaş olabiliyoruz," diye düşünür {child_name}.
+- {animal_friend} geçidin yönüne doğru kulağını/gagasını çevirir. "Doğru, geri dönme zamanı," der {child_name} ama sesi biraz hüzünlüdür. "Keşke daha kalabilsek..."
+- Geçide girerler; ışık ve ses tekrar değişir. Son bir kez arkalarına bakarlar — avcı-toplayıcı çocuk uzaktan el sallar.
+✓ DÖNÜŞE HAZIRLIK — Acaba bugüne döndüklerinde her şey aynı olacak mı?
+
+---
+
+### Bölüm 5 — Bugüne Dönüş (Sayfa 17-20)
+- Geçitten çıkınca her şey tekrar bugünkü hâline dönmüştür: aynı dikilitaşlar ama artık 12.000 yıl yıpranmış, turist yolları, bilgi tabelaları. {child_name} bir an duraksayıp etrafına bakar: "Gerçek miydi yoksa hayal mi?"
+- {animal_friend} hâlâ yanında, hâlâ aynı. "Evet, gerçekti. Çünkü sen de oradaydın!" {child_name} gülümser. Elini T-sütununa koyar; taşın yüzeyinin 12.000 yıllık sıcaklığını hisseder gibi olur.
+- O kutsal oyma taşının tam olarak az önce yerleştirdikleri yerde, 12.000 yıldır durduğunu fark edince gözleri büyür. "Biz onu oraya koyduk... Ve hâlâ orada!" diye haykırır. Gurur ve hayal gücü iç içe geçer.
+- Gün batımının altın ışığı dikilitaşları boyar. {child_name} ile {animal_friend} alandan ayrılırken son bir kez arkalarına dönerler. Dev T-sütunları gün batımında altın gibi parlar.
+✓ TATMIN — Macera bitti ama izleri sonsuza kadar kalacak.
+
+---
+
+### Bölüm 6 — Kapanış (Sayfa 21-22)
+- Gün batımının son ışıklarında Harran Ovası'nın altın bozkırında yürürler. {child_name} elini {animal_friend}'in başına koyar: "Bugün inanılmaz bir şey yaşadık, değil mi? 12.000 yıl öncesine gittik ve gerçekten yardım ettik."
+- {animal_friend} neşeyle yanıt verir. {child_name} gökyüzüne bakar; ilk yıldızlar belirmeye başlamıştır. "Göbeklitepe'yi unutmayacağım. O insanlar dev taşları birlikte kaldırmış — tıpkı bizim birlikte macera yapmamız gibi." Son adımını atarken gülümser: "Bir dahaki macera nereye olacak acaba?"
+✓ SICAK KAPANIŞ — Merak canlı, dostluk pekişmiş, keşif ruhu sönmemiş.
+
+---
+
+## 🚫 KURALLAR (DOĞRU TARİHİ KURGU)
+
+⚠️ YAZMA KURALLARI:
+❌ YANLIŞ: "Ayşe Göbeklitepe'yi gördü. Sonra T-sütunlarına yürüdü. Ardından dairesel yapıyı inceledi."
+✅ DOĞRU: "Ayşe taşların arasına sıkışmış gizli bir geçit fark etti. Cesur Step Tilkisi heyecanla kuyruk sallayarak geçidin kenarına koştu."
+
+❌ YANLIŞ: "Göbeklitepe 12.000 yıl önce yapılmıştır. T-sütunları kireçtaşındandır. Hayvan kabartmaları vardır."
+✅ DOĞRU: "Dev taşların arasından bir ışık süzülüyordu. {child_name} eğilip baktığında avuç içi büyüklüğünde bir taş gördü — üzerinde güneş sembolleri vardı!"
+
+⚠️ TUTARLILIK KURALLARI:
+🦊 YARDIMCI KARAKTER: {animal_friend} = tüm sayfalarda AYNI tür, renk, boyut. DEĞİŞTİRME.
+🗝️ ÖNEMLİ OBJE: Kutsal oyma taşı = avuç içi büyüklüğünde kireçtaşı tablet, geometrik güneş sembolleri. Sayfa 9-12'de AYNI görünüm.
+👗 KIYAFET: {clothing_description} tüm sayfalarda DEĞİŞMEZ — zaman yolculuğunda bile.
+
+⛔ İÇERİK YASAKLARI:
+- Anne, baba, kardeş veya aile üyesi YASAK — çocuk sadece {animal_friend} ile.
+- Dini/siyasi referans YASAK.
+- Korku/şiddet/gore YASAK. Avcı-toplayıcılar tehdit değil.
+- Gezi rehberi formatı YASAK ("...gördü. Sonra ...gitti." YASAK).
+- Didaktik nasihat verme veya ahlaki mesaj bildirme YASAK.
+- image_prompt_en'de "standing still" veya "looking at camera" KULLANMA.
+
+🎭 DUYGU (EMOTION) ÇIPASI: amazed, smiling, determined belirterek emotion odaklı yaz!
+💡 IŞIK VE DOKU: Taşın dokusuna (texture, stone, limestone) ve sinematik ışığa (cinematic lighting, golden glow) kesinlikle yer ver!
+
+Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve macera dolu.
+

@@ -138,20 +138,20 @@ function ImageLightbox({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-2">
+      <div className="flex items-center justify-between px-3 py-1.5">
         <span className="text-sm font-medium text-white/80">
           {currentIndex + 1} / {orderedKeys.length}
         </span>
         <button
           onClick={onClose}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
         >
           ✕
         </button>
       </div>
 
       {/* Image area with swipe */}
-      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2">
+      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-1">
         {/* Desktop prev arrow */}
         {currentIndex > 0 && (
           <button
@@ -188,7 +188,7 @@ function ImageLightbox({
                 width={1920}
                 height={1280}
                 className="max-h-full max-w-full rounded-lg object-contain"
-                style={{ maxHeight: "calc(100vh - 160px)" }}
+                style={{ maxHeight: "calc(100vh - 120px)" }}
                 unoptimized
                 draggable={false}
               />
@@ -212,17 +212,17 @@ function ImageLightbox({
       </div>
 
       {/* Bottom info + actions */}
-      <div className="mx-auto w-full max-w-3xl px-4 pb-2 pt-1">
-        <p className="mb-0.5 text-center text-sm font-semibold text-purple-300">{label}</p>
+      <div className="mx-auto w-full max-w-3xl px-3 pb-1 pt-0.5">
+        <p className="mb-0 text-center text-xs font-semibold text-purple-300">{label}</p>
         {text && (
-          <p className="mx-auto mb-2 max-w-xl text-center text-xs leading-relaxed text-white/60 line-clamp-2">
+          <p className="mx-auto mb-1 max-w-xl text-center text-xs leading-snug text-white/60 line-clamp-2">
             {text}
           </p>
         )}
 
         {/* Regenerate button */}
         {canRegenerate && !isDedication && url && (
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center justify-center gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -242,14 +242,14 @@ function ImageLightbox({
       </div>
 
       {/* Thumbnail strip */}
-      <div className="flex gap-1 overflow-x-auto px-4 pb-2">
+      <div className="flex gap-1 overflow-x-auto px-3 pb-1.5">
         {orderedKeys.map((k, i) => {
           const thumbUrl = getImageUrl(k);
           return (
             <button
               key={k}
               onClick={() => onNavigate(i)}
-              className={`relative h-10 w-14 flex-shrink-0 overflow-hidden rounded transition ${i === currentIndex
+              className={`relative h-9 w-12 flex-shrink-0 overflow-hidden rounded transition ${i === currentIndex
                 ? "ring-2 ring-purple-400"
                 : "opacity-50 hover:opacity-80"
                 }`}

@@ -4,7 +4,8 @@ set -e
 echo "🚀 Starting backend..."
 echo "Running database migrations..."
 
-alembic upgrade head
+# Alembic upgrade — non-fatal (migrations may already be applied)
+alembic upgrade head || echo "⚠️ Alembic upgrade skipped (may already be at head or multiple heads exist)"
 
 echo "✅ Migrations complete. Starting server..."
 

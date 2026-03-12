@@ -459,6 +459,11 @@ async def generate_trial_story_inner(
             _blueprint_outfit = _child_outfit_block.get("description_en", "").strip()
             _blueprint_hair = _child_outfit_block.get("hair_style_en", "").strip()
             _effective_outfit = (fixed_outfit or "").strip() or _blueprint_outfit
+            # Extract companion from blueprint for CharacterBible
+            _side_char_trial = blueprint_json.get("side_character") or {}
+            _trial_comp_name = _side_char_trial.get("name", "")
+            _trial_comp_species = _side_char_trial.get("type", "")
+            _trial_comp_appearance = _side_char_trial.get("appearance", "")
 
             character_bible = build_character_bible(
                 child_name=child_name,
@@ -467,9 +472,9 @@ async def generate_trial_story_inner(
                 child_description=_visual_char_desc,
                 fixed_outfit=_effective_outfit,
                 hair_style=_blueprint_hair,
-                companion_name="",
-                companion_species="",
-                companion_appearance="",
+                companion_name=_trial_comp_name,
+                companion_species=_trial_comp_species,
+                companion_appearance=_trial_comp_appearance,
             )
 
             try:
@@ -1443,6 +1448,12 @@ async def generate_remaining_images_inner(
                         )
                         _location_key = normalize_location_key_for_anchors(str(_raw_loc or ""))
 
+                    # Extract companion from blueprint
+                    _rem_side_char = _blueprint.get("side_character") or {} if _blueprint else {}
+                    _rem_comp_name = _rem_side_char.get("name", "")
+                    _rem_comp_species = _rem_side_char.get("type", "")
+                    _rem_comp_appearance = _rem_side_char.get("appearance", "")
+
                     character_bible = build_character_bible(
                         child_name=_rem_child_name,
                         child_age=_rem_child_age,
@@ -1450,9 +1461,9 @@ async def generate_remaining_images_inner(
                         child_description="",
                         fixed_outfit=_effective_outfit,
                         hair_style=_blueprint_hair,
-                        companion_name="",
-                        companion_species="",
-                        companion_appearance="",
+                        companion_name=_rem_comp_name,
+                        companion_species=_rem_comp_species,
+                        companion_appearance=_rem_comp_appearance,
                     )
 
                     _remaining_enhanced = await gemini_service.enhance_pages_with_visual_prompts(

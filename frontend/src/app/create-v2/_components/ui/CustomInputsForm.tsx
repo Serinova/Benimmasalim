@@ -2,12 +2,26 @@
 
 import FormField from "./FormField";
 
+interface SelectOption {
+  label: string;
+  value: string;
+}
+
 interface FieldSchema {
   key: string;
   label: string;
   type: "text" | "number" | "select" | "textarea";
   required?: boolean;
-  options?: string[];
+  options?: (string | SelectOption)[];
+}
+
+/** Get display label and value from an option that can be string or {label, value}. */
+function getOptionParts(opt: string | SelectOption): { label: string; value: string } {
+  if (typeof opt === "string") {
+    if (opt === "[object Object]") return { label: "", value: "" };
+    return { label: opt, value: opt };
+  }
+  return { label: opt.label, value: opt.value };
 }
 
 interface CustomInputsFormProps {
@@ -46,11 +60,15 @@ export default function CustomInputsForm({
                 className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
               >
                 <option value="">Seçiniz</option>
-                {field.options.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
+                {field.options.map((opt) => {
+                  const { label, value } = getOptionParts(opt);
+                  if (!label && !value) return null; // Skip corrupted entries
+                  return (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           );

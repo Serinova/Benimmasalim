@@ -169,7 +169,7 @@ class TestFaceReferenceNegative:
         )
         negative = build_negative(ctx)
         assert "pores" in negative
-        assert "realistic skin texture" in negative
+        assert "realistic skin pores" in negative
 
 
 class TestCharacterConsistencyNegative:

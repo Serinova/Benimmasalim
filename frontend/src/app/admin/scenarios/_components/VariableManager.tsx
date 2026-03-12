@@ -18,7 +18,44 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import type { CustomInputField } from "../_lib/types";
+import type { CustomInputField, SelectOption } from "../_lib/types";
+
+/**
+ * Normalize options from any format to proper {label, value} dicts.
+ * Handles: string[], {label,value}[], "[object Object]" cleanup.
+ */
+function normalizeOptions(raw: unknown): SelectOption[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (typeof item === "string") {
+        // Skip corrupted "[object Object]" entries
+        if (item === "[object Object]") return null;
+        return { label: item, value: item };
+      }
+      if (item && typeof item === "object" && "label" in item && "value" in item) {
+        return { label: String(item.label), value: String(item.value) };
+      }
+      return null;
+    })
+    .filter((x): x is SelectOption => x !== null);
+}
+
+/** Display options as comma-separated labels for the input field. */
+function optionsToDisplayString(options: unknown): string {
+  return normalizeOptions(options)
+    .map((o) => o.label)
+    .join(", ");
+}
+
+/** Parse comma-separated string into proper {label, value} dicts. */
+function parseOptionsString(input: string): SelectOption[] {
+  return input
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => ({ label: s, value: s }));
+}
 
 interface VariableManagerProps {
   variables: CustomInputField[];
@@ -56,7 +93,7 @@ export function VariableManager({ variables, onVariablesChange }: VariableManage
       label: newField.label,
       type: (newField.type as CustomInputField["type"]) || "text",
       default: newField.default || undefined,
-      options: newField.type === "select" ? newField.options || [] : undefined,
+      options: newField.type === "select" ? normalizeOptions(newField.options) : undefined,
       required: newField.required ?? true,
       placeholder: newField.placeholder || undefined,
       help_text: newField.help_text || undefined,
@@ -161,13 +198,10 @@ export function VariableManager({ variables, onVariablesChange }: VariableManage
                     <div>
                       <Label className="text-xs">Seçenekler (virgülle ayırın)</Label>
                       <Input
-                        value={(variable.options || []).join(", ")}
+                        value={optionsToDisplayString(variable.options)}
                         onChange={(e) =>
                           updateVariable(index, {
-                            options: e.target.value
-                              .split(",")
-                              .map((s) => s.trim())
-                              .filter(Boolean),
+                            options: parseOptionsString(e.target.value),
                           })
                         }
                         className="mt-1"
@@ -350,14 +384,11 @@ export function VariableManager({ variables, onVariablesChange }: VariableManage
             <div>
               <Label className="text-xs">Seçenekler (virgülle ayırın)</Label>
               <Input
-                value={(newField.options || []).join(", ")}
+                value={optionsToDisplayString(newField.options)}
                 onChange={(e) =>
                   setNewField({
                     ...newField,
-                    options: e.target.value
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
+                    options: parseOptionsString(e.target.value),
                   })
                 }
                 className="mt-1"

@@ -1,0 +1,30 @@
+name: Çatalhöyük'ün Çatı Yolu
+story_len: 6855
+outfit_girl_len: 436
+outfit_boy_len: 435
+cover_len: 773
+page_len: 999
+loc_len: 450
+has_bible: True
+flags: {"no_family": false}
+
+custom_inputs options count: 4
+  - Neolitik Köy Köpeği → Köpek
+  - Neolitik Keçi Yavrusu → Neolitik Keçi
+  - Step Kartalı → Step Kartalı
+  - Yabani Kedi → Yabani Kedi
+
+story_prompt_tr word count: 978
+Has DOĞRU/YANLIŞ: True
+Has companion rule: True
+Has family restriction: True
+Has {animal_friend} placeholder: False
+
+scenario_bible keys: ['magic_item', 'tone_rules', 'cultural_facts', 'side_character']
+side_character.visual_lock: a small playful sandy-brown village dog with floppy ears and a short tail
+magic_item.visual_lock: a glowing earthy ancient stone amulet with spiral carvings pulsing warm amber light
+cultural_facts count: 7
+
+cultural_elements.primary count: 6
+cultural_elements.secondary count: 6
+cultural_elements.major_elements count: 6

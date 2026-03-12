@@ -1,0 +1,148 @@
+theme_key: fairy_tale_world
+name: Masal Dünyası: Rüya Anahtarı
+location_en: None
+active: True
+no_family: False
+page_count: 22
+
+--- OUTFIT GIRL ---
+fairytale explorer outfit for a child: emerald green cloak with a small hood, light brown tunic, dark leggings, comfy boots, a small leather satchel, and a tiny glowing lantern charm, no logos, plus a small star hairpin. EXACTLY the same outfit on every page — same green cloak, same brown tunic, same boots. Same child character, consistent face and hair across all pages.
+
+--- OUTFIT BOY ---
+fairytale explorer outfit for a child: emerald green cloak with a small hood, light brown tunic, dark leggings, comfy boots, a small leather satchel, and a tiny glowing lantern charm, no logos. EXACTLY the same outfit on every page — same green cloak, same brown tunic, same boots. Same child character, consistent face and hair across all pages.
+
+--- CUSTOM INPUTS ---
+[
+  {
+    "key": "animal_friend",
+    "type": "select",
+    "label": "Masal Dostu",
+    "default": "Parıltılı Mini Ejderha",
+    "options": [
+      "[object Object]",
+      "[object Object]"
+    ]
+  }
+]
+
+--- CULTURAL ELEMENTS ---
+{
+  "values": [
+    "Imagination",
+    "Problem-solving",
+    "Kindness",
+    "Friendship"
+  ],
+  "primary": [
+    "A magical golden Dream Key with star engravings",
+    "Giant flying islands and bouncy cloud bridges",
+    "A sweet Candy Forest with lollipop trees and jellybean bushes",
+    "A pristine Crystal Lake with flying fish",
+    "A magnificent ancient Fairy Tale Tree"
+  ],
+  "location": "A Magical Dreamland with Floating Islands",
+  "secondary": [
+    "A tiny orange sparkle dragon companion",
+    "Blue-vested talking rabbit guide",
+    "Golden Laughter Dust in a magical vial",
+    "Dream Light sphere at the lake's heart",
+    "Star dust falling from enchanted clouds"
+  ],
+  "atmosphere": "Dreamy, highly creative, bright, enchanting, puzzle-driven",
+  "historic_site": "Fairy Tale Kingdom",
+  "sensitivity_rules": [
+    "NO scary monsters, NO dark magic",
+    "The mystery relies on exploration, light-logic, and sensory play",
+    "Child acts as a whimsical explorer saving the magical balance"
+  ]
+}
+
+--- LOCATION CONSTRAINTS ---
+Setting alternates to show movement through Fairy Tale World. Kademe haritası ve Kamera kullanımları: Pages 1-3: Child's bedroom, then magical door opens to floating islands. (Wide Shot, epic reveal) Pages 4-6: Floating islands overview, Cloud Bridge in distance. (Medium Shot, dreamy atmosphere) Pages 7-9: Cloud Bridge crossing and Candy Forest entrance. (Dynamic Wide, colorful and bouncy) Pages 10-12: Deep inside Candy Forest, chocolate gate puzzle. (Close-up, candy textures and details) Pages 13-16: Crystal Lake shore, reflection puzzle, leaping on stones above water. (Low Angle, crystal reflections) Pages 17-19: Fairy Tale Tree roots, epic final fusion of light and dust. (Epic Wide, golden explosion) Pages 20-22: Restored magical world, return through door to bedroom. (Warm Hero Shot, moonlit bedroom) 
+
+--- SCENARIO BIBLE ---
+{
+  "notes": "Fındık her sayfada sincap olarak kalmalı. İnsan veya başka hayvan olarak çizilmemeli.",
+  "theme": "Masal dünyasında cesaret ve hayal gücü macerası",
+  "location": "Masal Dünyası (Fairy Tale World)",
+  "magic_item": "Altın Rüya Anahtarı (Golden Dream Key)",
+  "side_character": {
+    "name": "Fındık",
+    "type": "squirrel",
+    "appearance": "a small, adorable squirrel with fluffy brown fur, big curious eyes, and a bushy tail, perched on the child's shoulder"
+  }
+}
+
+--- COVER PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Child holding a glowing magical key, amazed expression. Background features majestic floating islands, sparkling fairy lights, and dreamy clouds. Dynamic angle, warm cinematic lighting, rich magical texture on key. Wide shot: child 30%, environment 70%. Whimsical, fairytale adventure atmosphere. {STYLE}
+
+--- PAGE PROMPT ---
+An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, wearing {clothing_description}. {scene_description}. Elements: [floating islands, glowing fairies, sparkling particles, talking animals, tiny dragon, candy forest, crystal lake, flying fish, star dust]. Cinematic action lighting, warm golden glow, detailed magical texture. Dynamic action pose, expressive emotion on face (amazed, determined, smiling). Wide angle and medium shots, full body visible in action, child 30-40% of frame. No eye contact with camera. child wearing an emerald green cloak and carrying a small satchel. Avoid: photorealistic, pasted face, collage, duplicate child, random text, watermark, logo, blurry, low quality. {STYLE}
+
+--- STORY PROMPT TR ---
+
+# MASAL DÜNYASI: RÜYA ANAHTARI
+
+## YAPI: {child_name} okuduğu kitabın içinden düşen sihirli Rüya Anahtarı sayesinde duvarında beliren kapıdan Masal Dünyası'na adım atar. Renksizleşen Masal Ağacı'nı kurtarmak için kahkaha tozu ve rüya ışığını bulması gerekmektedir. Bulut köprüsündeki şaşırtmacaları geçip, Şeker Ormanı ve Kristal Göl'de ipuçlarını tamamlar. Şiddet, korkunç canavarlar veya karanlık temalar KESİNLİKLE YOKTUR. Çok yaratıcı, gizemli ve parlak fantastik çocuk aksiyonudur.
+
+**BAŞLIK:** Kapak başlığı "[Çocuk adı]'ın Masal Dünyası: Rüya Anahtarı" olmalı. Alt başlık EKLEME.
+
+**STİL & TON:** 
+- Her sayfa 2 ila 4 kısa cümleden oluşmalıdır. Dili pırıl pırıl, sürükleyici, gizemli ve eğlencelidir.
+- Sayfaların sonunda küçük merak kırıntıları bırak. Bolca masalsı obje (şeker ağaçları, su perileri, ışık küreleri, uçan balıklar vd.) kullan.
+
+---
+
+### Bölüm 1 — Sihirli Kapı (Sayfa 1-3)
+- Sayfa 1: {child_name} odasında eski bir masal kitabını okurken yanında sevimli dostu {animal_friend} de merakla dinlemektedir. Sayfaların içinden aniden altın renginde pırıl pırıl parlayan gizemli bir ışık huzmesi fırlar. Sayfalar kendi kendine hızla dönerken kitabın tam ortasından minik, üzeri yıldız desenli bir "Rüya Anahtarı" "tık" diye kucağına düşüverir! Yüzünde şaşkınlık (amazed) vardır.
+- Sayfa 2: Anahtarı usulca avucuna aldığında eline sıcacık, tatlı bir karıncalanma yayılır. O eşsiz anahtarı hiç düşünmeden boşlukta çevirdiği anda, odasının düz duvarında ışıl ışıl parlayan devasa bir sayfa kapısı ardına kadar açılır.
+- Sayfa 3: {child_name} {animal_friend} ile birlikte o ışıltılı kapıdan büyük bir cesaretle adım atar atmaz kendini havada süzülen koca uçan adaların tam üstünde bulur! Ayaklarının altından yumuşacık bulutlar hızla akarken kararlı (determined) bir şekilde fısıldar: "İnanasıyorum, bir masalın bizzat içine düştüm!"
+
+### Bölüm 4 — Tavşanın Çağrısı (Sayfa 4-6)
+- Sayfa 4: Tam o an uzun kulaklı, zıplayarak neşeyle ama biraz da telaşla koşan mavi yelekli, konuşan bir tavşan yanına gelir. "Yardımına ihtiyacımız var kâşif! Harika Masal Ağacı soluyor, çünkü neşe kaynağımız 'rüya ışığı' kayboldu!" der.
+- Sayfa 5: Çok uzakta devasa kollarına rağmen yaprakları şeffaflaşıp solgunlaşan büyük Masal Ağacı hüzünlü şekilde görünmektedir. Tavşan o eşsiz rüya ışığını bulması için ona üç zorlu yol gösterir: Bulut Köprüsü, Şeker Ormanı ve Kristal Göl.
+- Sayfa 6: Zaman kaybetmeden doğruca havada salınan Bulut Köprüsü'ne koşar; ama bu köprünün koca pamuk taşları şiddetli rüzgarla dans edercesine sallanmaktadır. Üstelik o geveze pofuduk taşlar, komik şarkılar söyleyerek çocuğun kafasını ve yönünü şaşırtmaya çalışır!
+
+### Bölüm 7 — Rüzgarın Ritmi (Sayfa 7-9)
+- Sayfa 7: Zeki kâşifimiz o aldatıcı şarkılara kulak tıkayarak gözlerini yumar ve sadece okyanus gibi esen nazik rüzgarın gerçek ritmini dinleyerek doğru pamuksu taşlara bir bir sıçrar. Karşıya geçtiğinde havada uçan gümüş bir balık ilk sihirli ipucunu ağzından bırakır: "Işık, kahkahanın peşinden gider."
+- Sayfa 8: İkinci durak olan Şeker Ormanı'na daldığında etrafını kocaman lolipop ağaçlar, jelibon çalılar ve kanatları pırıl pırıl eden şeker kelebekler sarar. Fakat ormandaki tüm o tatlı pembe yollar birbirinin tıpatıp aynısıdır; burada sonsuza dek kaybolmak işten bile değildir!
+- Sayfa 9: Şaşkınlıkla etrafına bakarken turuncu pullu, avuç içi kadar küçücük bir ejderha pırpır ederek yanına gelir; ateş yerine sadece simli bir parıltı üflemektedir. Zeki küçük ejderha, parıltısıyla yere çok kısa ama ışıltılı bir ok çizer: "Beni takip et, bu taraftan!"
+
+### Bölüm 10 — Şeker Şifresi (Sayfa 10-12)
+- Sayfa 10: O simli oku şevkle takip eden kahramanımız çikolatadan devasa bir sınır kapısına ulaşır, ancak kapı sımsıkı kilitlidir. Kapının üstündeki renkli kilit yuvasında koca üç sembolün sırasıyla boş durduğunu görür: Kalp, yıldız ve ay!
+- Sayfa 11: Mükemmel bir dikkatle hemen etrafı arayan çocuk, çalıların altında çok gizli kalp şeklinde bir şeker, üst dallarda bir şişe yıldız tozu ve en sonda hilal şeklinde bir ay kurabiyesi bulur. Objelere bakıp doğru şifre sırasını çözdüğü anda kapı şekerimsi bir kokuyla ardına kadar açılır.
+- Sayfa 12: Kapının ardındaki pamuk şeker masanın tam üzerinde, üstünde "Kahkaha Tozu" yazan, içi kıkırdayan altın baloncuklarla dolu sihirli bir minik kavanoz onu bekliyordur. Ve hemen yanında gümüş bir yaprağın üzerinde ikinci ipucu yatıyordur: "Toz, suyun aynasında parlar."
+
+### Bölüm 13 — Yansıma Oyunu (Sayfa 13-16)
+- Sayfa 13: {child_name} o harika kavanozu sımsıkı cebine koyup koşarak kocaman, ayna gibi pürüzsüz ve cam gibi parlayan Kristal Göl'e varır. Gölün o dingin suyunun tam üzerinde masmavi kanatlı dev uçan balıklar şakıyarak neşeyle sıçramaktadır.
+- Sayfa 14: Gölün çok ilerisinde, tam ortasındaki adacıkta asıl aradığı o muazzam "Rüya Işığı" küresi pırıl pırıl parıldıyordur; ama ona doğru heyecanla su kıyısındaki kayalardan yaklaşınca, küre adeta bir oyun gibi yer değiştirmeye başlar!
+- Sayfa 15: Kahramanımız bunun kocaman yanıltıcı bir "yansıma ve sihir oyunu" olduğunu anlayarak belindeki küçük fener charm'ını (nazarlığını) çıkarıp güçlü ışığını gölün serin suyuna doğru tutar. Böylece illüzyon olan sahte yansımalar suya karışır ve o asıl gerçek Rüya Işığı'nın yeri apaçık belli olur.
+- Sayfa 16: İşe yaradığını görünce sudaki irili ufaklı nilüfer taşlarının üzerinden inanılmaz çevik adımlarla atlayarak gölün kalbine doğru ilerler. Ama o esnada gökyüzündeki sisli bulutlar hızla gölün üstüne kapanmaya başlayarak zamanla büyük bir yarış başlatır!
+
+### Bölüm 17 — Son Birleştirme (Sayfa 17-19)
+- Sayfa 17: Sisteki son andaki dev sıçrayışıyla adacığa varıp o paha biçilmez sıcak "Rüya Işığı" küresini ellerinin arasına kapıverir. Fakat dönüş için atladığı taşların üzeri tamamen yoğun ve pembe bir sisle örtülerek çıkış yolunu bir duvar gibi gizlemitşir.
+- Sayfa 18: Çantasındaki ışık huzmesinin parlamasıyla, ona ilk başta yardım eden mavi yelekli tavşan ve minicik sevimli parıltı ejderhası sisleri aralayarak koşturup gelirler. Parçaları birleştiren {child_name} bağırır: "Anladım! Kahkaha Tozu ve Rüya Işığı birlikte parlamak zorunda!"
+- Sayfa 19: Gölgeleri yırtarak hep birlikte coşkuyla Masal Ağacı'nın o devasa hastalanmış köklerinin tam dibine varırlar. Kahramanımız elindeki altın Kahkaha Tozu'nu gökyüzüne serperek, o sıcacık Rüya Işığı'nı ağacın tam kalbine ustaca ve sevgiyle yerleştirir; o an etraftaki her şey fena halde titremeye başlar!
+
+### Bölüm 20 — Renklerin Dönüşü (Sayfa 20-22)
+- Sayfa 20: Masal Ağacı derin bir nefes alır gibi "vuuuh!" diye canlanarak tüm solgun yapraklarına göz kamaştıran rengarenk bir hayat fışkırttı. Gökyüzündeki tüm bulutlardan pırıl pırıl altın rengi yıldız tozları bir müzik eşliğinde yağarken, tüm Masal Dünyası büyük kıkırdamalarla kocaman bir gülümsemeye bürünür!
+- Sayfa 21: Çocuğumuz o büyük, sıcacık görevi tamamlamanın haklı gururuyla cebinden ilk baştaki "Rüya Anahtarı"nı çıkarıp karanlığa doğru "tık" diye çevirerek masal kapısını aralar. Yüzünde mutlu bir tebessüm, üzerinde yıldız tozlarıyla güvenle odasına geri döner.
+- Sayfa 22: Odasındaki pencereden içeri süzülen ayışığıyla beraber cebine baktığında, o muazzam anahtar gerçek bir yıldız parçası gibi son bir kez tatlıca parlayıp huzurla sessizleşir. {child_name} onu masasının en özel yerine koyarken fısıldar: “Acaba bir gün başka bir maceranın masal kapısı beni bekler mi?”
+
+---
+
+## 
+## 🪝 SAYFA SONU HOOK KURALI
+- Her sayfa, okuyucunun "sonra ne olacak?" demesini sağlayacak bir cümleyle bitmelidir.
+- En az her 2 sayfada bir: "Tam o sırada...", "Birden...", "Ama beklenmedik bir şey oldu...", "Acaba...?"
+- Son cümleyi pasif gözlemle bitirme.
+
+🚫 KURALLAR (DOĞRU MASAL KURGUSU)
+- Hikayeyi TAM OLARAK {page_count} sayfa yaz. Sayfa 22 bitiminde hikaye kapanır. Toplam TAM 22 sayfa tasarla (1 kapak + 21 iç sayfa).
+- image_prompt_en'de "standing still" veya "looking at camera" KULLANMA. Hep aksiyon ve yanlış yollarla dolu bulmacalar yaz.
+- Hayvanların korkunçluğu YOK, ejderhalar çok sempatik ve küçücük olmalıdır.
+- G2 TUTARLILIK: Maceraya [animal_friend_en] adlı sevimli dostu da katılır, onu da sahnelerde TUTARLILIK ile kullan. Doğru yolları bulmasına bazen o yardım eder.
+- DUYGU (EMOTION) ÇIPASI: amazed, smiling, determined belirterek emotion odaklı yaz!
+- IŞIK VE DOKU (LIGHTING & TEXTURE): Sihirli ışıklara (cinematic lighting, golden glow, sparkle) ve doku detaylarına (texture, crystal, candy) kesinlikle yer ver!
+- Asla didaktik nasihat verme veya ahlaki mesaj bildirme. YASAK!
+
