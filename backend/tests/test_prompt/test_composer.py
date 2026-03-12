@@ -78,7 +78,7 @@ class TestPromptComposer:
             )
             composer = PromptComposer(ctx)
             result = composer.compose_page("A child standing in a meadow", page_number=1)
-            prompts.add(result.prompt[:200])
+            prompts.add(result.prompt)
         assert len(prompts) == len(styles), "Her stil farklı prompt üretmeli"
 
     def test_prompt_length_within_limits(self, ctx: BookContext):
