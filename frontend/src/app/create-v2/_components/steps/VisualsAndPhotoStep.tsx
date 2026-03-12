@@ -52,9 +52,8 @@ export default function VisualsAndPhotoStep({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
 
-  // If photo uploaded, must be analyzed (face detected) before continuing
-  const photoOk = !photoPreview || faceDetected;
-  const canContinue = !!selectedStyle && !isSubmitting && photoOk;
+  // Photo must be uploaded AND analyzed (face detected) before continuing
+  const canContinue = !!selectedStyle && !isSubmitting && faceDetected;
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,8 +102,8 @@ export default function VisualsAndPhotoStep({
             <Camera className="h-4 w-4 text-violet-500" />
             <span className="text-sm font-semibold text-slate-700">Çocuğun Fotoğrafı</span>
           </div>
-          <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">
-            İsteğe bağlı
+          <span className="text-[10px] text-red-500 bg-red-50 px-2 py-0.5 rounded-full font-medium">
+            Zorunlu
           </span>
         </div>
 
@@ -236,15 +235,7 @@ export default function VisualsAndPhotoStep({
         </div>
       </section>
 
-      {/* Skip photo link */}
-      {!photoPreview && (
-        <button
-          type="button"
-          className="w-full text-center text-xs text-slate-400 hover:text-violet-500 transition-colors py-1"
-        >
-          Fotoğraf olmadan devam edebilirsiniz →
-        </button>
-      )}
+
 
       {/* ── Section B: Style Selection ── */}
       <section className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">

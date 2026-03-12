@@ -692,6 +692,25 @@ async def generate_full_book(order_id: str) -> dict:
                     _product_price: float | None = None
                     if product and hasattr(product, "base_price") and product.base_price:
                         _product_price = float(product.base_price)
+                    # Add audio book price
+                    if _product_price and order.has_audio_book:
+                        _audio_type = getattr(order, "audio_type", "system") or "system"
+                        _product_price += 300.0 if _audio_type == "cloned" else 150.0
+                    # Add coloring book price
+                    if _product_price and getattr(order, "has_coloring_book", False):
+                        try:
+                            from app.models.product import ProductType as _CBType3
+                            _cb_r3 = await db.execute(
+                                select(Product).where(
+                                    Product.product_type == _CBType3.COLORING_BOOK.value,
+                                    Product.is_active == True,
+                                ).limit(1)
+                            )
+                            _cb3 = _cb_r3.scalar_one_or_none()
+                            if _cb3:
+                                _product_price += float(_cb3.discounted_price or _cb3.base_price)
+                        except Exception:
+                            pass
 
                     _approval_preview = StoryPreview(
                         confirmation_token=_confirmation_token,

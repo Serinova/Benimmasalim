@@ -209,7 +209,7 @@ function CreatePageInner() {
         }
       }
       if (colorRes.status === "fulfilled" && colorRes.value) {
-        setColoringBookPrice(colorRes.value.discounted_price || colorRes.value.base_price);
+        setColoringBookPrice(Number(colorRes.value.discounted_price || colorRes.value.base_price) || 0);
       }
     };
 

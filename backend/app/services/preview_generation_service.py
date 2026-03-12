@@ -1554,6 +1554,28 @@ async def process_remaining_pages_inner(preview_id: str) -> None:
                                 f"{settings.frontend_url}/confirm/"
                                 f"{preview.confirmation_token}"
                             )
+                            # Calculate total price including add-ons
+                            _total_price: float | None = None
+                            if preview.product_price:
+                                _total_price = float(preview.product_price)
+                                if getattr(preview, "has_audio_book", False):
+                                    _audio_type = getattr(preview, "audio_type", "system") or "system"
+                                    _total_price += 300.0 if _audio_type == "cloned" else 150.0
+                                if getattr(preview, "has_coloring_book", False):
+                                    try:
+                                        from app.models.product import Product as _CBProd2, ProductType as _CBType2
+                                        _cb_r2 = await db.execute(
+                                            select(_CBProd2).where(
+                                                _CBProd2.product_type == _CBType2.COLORING_BOOK.value,
+                                                _CBProd2.is_active == True,
+                                            ).limit(1)
+                                        )
+                                        _cb2 = _cb_r2.scalar_one_or_none()
+                                        if _cb2:
+                                            _total_price += float(_cb2.discounted_price or _cb2.base_price)
+                                    except Exception:
+                                        pass
+
                             email_service.send_story_email_with_confirmation(
                                 recipient_email=_parent_email,
                                 recipient_name=preview.parent_name or _parent_email,
@@ -1561,11 +1583,7 @@ async def process_remaining_pages_inner(preview_id: str) -> None:
                                 story_title=preview.story_title,
                                 story_pages=_email_pages,
                                 confirmation_url=_confirmation_url,
-                                product_price=(
-                                    float(preview.product_price)
-                                    if preview.product_price
-                                    else None
-                                ),
+                                product_price=_total_price,
                             )
                             logger.info(
                                 "REMAINING_PAGES_APPROVAL_EMAIL_SENT",

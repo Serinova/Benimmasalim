@@ -84,9 +84,24 @@ export default function ExtrasAndShippingStep({
   const [micError, setMicError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const MIN_RECORDING_SECONDS = 45;
+
+  // Preload browser voices (Chrome loads them async)
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+    return () => {
+      // Cleanup: stop any playing speech on unmount
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   const touch = (field: string) =>
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -137,21 +152,54 @@ export default function ExtrasAndShippingStep({
     onShippingFieldChange("postalCode", addr.postal_code);
   };
 
-  /* ── Voice Preview ── */
+  /* ── Voice Preview via Web Speech API ── */
+  const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
+
   const playVoicePreview = useCallback((voiceId: string) => {
+    const synth = window.speechSynthesis;
+
+    // If same voice is playing, stop it
     if (playingVoice === voiceId) {
-      audioRef.current?.pause();
+      synth.cancel();
       setPlayingVoice(null);
       return;
     }
-    // Use TTS preview URL (placeholder path — you can replace with actual audio URLs)
-    const previewUrl = `/audio/voice-preview-${voiceId}.mp3`;
-    if (audioRef.current) audioRef.current.pause();
-    const audio = new Audio(previewUrl);
-    audioRef.current = audio;
-    audio.onended = () => setPlayingVoice(null);
-    audio.onerror = () => setPlayingVoice(null);
-    audio.play().catch(() => setPlayingVoice(null));
+
+    // Stop any currently playing preview
+    synth.cancel();
+
+    const sampleText =
+      "Bir varmış bir yokmuş, uzak diyarlarda küçük bir kahraman yaşarmış. Bu kahraman cesur ve meraklıymış.";
+
+    const utterance = new SpeechSynthesisUtterance(sampleText);
+    utterance.lang = "tr-TR";
+    utterance.rate = 0.9;
+
+    // Pick a matching voice from available Turkish voices
+    const voices = synth.getVoices();
+    const turkishVoices = voices.filter((v) => v.lang.startsWith("tr"));
+
+    if (voiceId === "female") {
+      // Prefer a female Turkish voice, fallback to first Turkish or default
+      const femaleVoice = turkishVoices.find(
+        (v) => v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("kadın")
+      ) || turkishVoices[0];
+      if (femaleVoice) utterance.voice = femaleVoice;
+      utterance.pitch = 1.15;
+    } else {
+      // Prefer a male Turkish voice
+      const maleVoice = turkishVoices.find(
+        (v) => v.name.toLowerCase().includes("male") || v.name.toLowerCase().includes("erkek")
+      ) || turkishVoices[1] || turkishVoices[0];
+      if (maleVoice) utterance.voice = maleVoice;
+      utterance.pitch = 0.8;
+    }
+
+    utterance.onend = () => setPlayingVoice(null);
+    utterance.onerror = () => setPlayingVoice(null);
+    synthRef.current = utterance;
+
+    synth.speak(utterance);
     setPlayingVoice(voiceId);
   }, [playingVoice]);
 

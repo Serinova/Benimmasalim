@@ -113,7 +113,7 @@ function ImageLightbox({
 }) {
   const key = orderedKeys[currentIndex];
   const url = getImageUrl(key);
-  const text = textByPage[key] || "";
+  const _text = textByPage[key] || "";
   const label = getPageLabel(key);
   const isDedication = key === "dedication";
   const isRegenerating = regeneratingKey === key;
@@ -214,11 +214,6 @@ function ImageLightbox({
       {/* Bottom info + actions */}
       <div className="mx-auto w-full max-w-3xl px-3 pb-1 pt-0.5">
         <p className="mb-0 text-center text-xs font-semibold text-purple-300">{label}</p>
-        {text && (
-          <p className="mx-auto mb-1 max-w-xl text-center text-xs leading-snug text-white/60 line-clamp-2">
-            {text}
-          </p>
-        )}
 
         {/* Regenerate button */}
         {canRegenerate && !isDedication && url && (
@@ -668,7 +663,7 @@ export default function ConfirmPage() {
           {orderedKeys.map((key, idx) => {
             const url = getPageImageUrl(key);
             const label = getPageLabel(key);
-            const text = textByPage[key] || "";
+            const _text = textByPage[key] || "";
             const isThisRegen = regeneratingKey === key;
             return (
               <div
@@ -686,7 +681,7 @@ export default function ConfirmPage() {
                       alt={label}
                       width={900}
                       height={600}
-                      className={`aspect-[3/4] w-full object-contain bg-gray-50 transition ${isThisRegen ? "opacity-40" : ""}`}
+                      className={`aspect-[3/2] w-full object-contain bg-gray-50 transition ${isThisRegen ? "opacity-40" : ""}`}
                       unoptimized
                     />
                     {isThisRegen ? (
@@ -703,17 +698,12 @@ export default function ConfirmPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="flex aspect-[3/4] items-center justify-center bg-gray-100 text-gray-400">
+                  <div className="flex aspect-[3/2] items-center justify-center bg-gray-100 text-gray-400">
                     Gorsel yok
                   </div>
                 )}
-                <div className="p-3">
+                <div className="px-3 py-2">
                   <p className="text-sm font-semibold text-purple-600">{label}</p>
-                  {text && (
-                    <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-gray-600">
-                      {text}
-                    </p>
-                  )}
                 </div>
               </div>
             );

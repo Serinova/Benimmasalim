@@ -2141,6 +2141,28 @@ async def generate_remaining_images_inner(
                             f"{_email_settings.frontend_url}/confirm/"
                             f"{trial.confirmation_token}"
                         )
+                        # Calculate total price including add-ons
+                        _total_price: float | None = None
+                        if trial.product_price:
+                            _total_price = float(trial.product_price)
+                            if getattr(trial, "has_audio_book", False):
+                                _audio_type = getattr(trial, "audio_type", "system") or "system"
+                                _total_price += 300.0 if _audio_type == "cloned" else 150.0
+                            if getattr(trial, "has_coloring_book", False):
+                                try:
+                                    from app.models.product import Product as _CBProd, ProductType as _CBType
+                                    _cb_r = await db.execute(
+                                        select(_CBProd).where(
+                                            _CBProd.product_type == _CBType.COLORING_BOOK.value,
+                                            _CBProd.is_active == True,
+                                        ).limit(1)
+                                    )
+                                    _cb = _cb_r.scalar_one_or_none()
+                                    if _cb:
+                                        _total_price += float(_cb.discounted_price or _cb.base_price)
+                                except Exception:
+                                    pass
+
                         email_service.send_story_email_with_confirmation(
                             recipient_email=trial.parent_email,
                             recipient_name=trial.parent_name or trial.parent_email,
@@ -2148,11 +2170,7 @@ async def generate_remaining_images_inner(
                             story_title=trial.story_title,
                             story_pages=pages_for_email,
                             confirmation_url=_confirmation_url,
-                            product_price=(
-                                float(trial.product_price)
-                                if trial.product_price
-                                else None
-                            ),
+                            product_price=_total_price,
                         )
                         trial.admin_notes = (trial.admin_notes or "") + "\nTRIAL_APPROVAL_EMAIL_SENT"
                         await db.commit()

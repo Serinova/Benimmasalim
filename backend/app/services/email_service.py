@@ -433,9 +433,10 @@ class EmailService:
 
         price_html = ""
         if product_price:
+            _price_display = f"{product_price:,.0f}".replace(",", ".") if product_price == int(product_price) else f"{product_price:,.2f}".replace(",", ".")
             price_html = (
                 '<p style="font-size: 15px; color: #374151; margin: 0 0 20px 0;">'
-                f"Sipariş tutarı: <strong>{_esc(str(product_price))} TL</strong></p>"
+                f"Sipariş tutarı: <strong>{_esc(_price_display)} TL</strong></p>"
             )
 
         return (
