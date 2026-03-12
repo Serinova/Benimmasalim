@@ -77,9 +77,10 @@ class TestResolveCompanionPlaceholder:
 
         known_companions = [
             "Cesur Yılkı Atı", "Cesur Step Tilkisi",
-            "Cesur Dağ Kartalı", "Minik Beyaz Güvercin", "Güvercin Beyazı",
+            "Cesur Dağ Kartalı", "Minik Beyaz Güvercin",
             "Renkli Papağan", "Gümüş Robot Nova", "Pelüş Ayıcık",
             "Parıltılı Mini Ejderha", "Köpek", "Efes Kedisi",
+            "Sevimli Zeytin Dalı Serçesi",
         ]
 
         for companion_tr in known_companions:

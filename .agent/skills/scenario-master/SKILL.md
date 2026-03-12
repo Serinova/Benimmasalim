@@ -32,6 +32,61 @@ description: >
 
 ---
 
+## 📂 VERİ KAYNAĞI — SENARYOLAR NEREDE?
+
+> **⚠️ KRİTİK: Senaryolar artık veritabanında (DB) DEĞİL, Python dosyalarında kayıtlıdır!**
+>
+> DB'deki `scenarios` tablosunda sadece marketing alanları (description, tagline, image_url vb.) kalır.
+> Prompt, kıyafet, companion, obje, bible gibi **tüm üretim verileri** Python kodundadır.
+
+### 📁 Dosya Konumu
+
+```
+backend/app/scenarios/
+├── _base.py          # ScenarioContent, CompanionAnchor, ObjectAnchor dataclass'ları
+├── _registry.py      # register() fonksiyonu ve get_scenario_content()
+├── cappadocia.py     # Kapadokya Macerası
+├── gobeklitepe.py    # Göbeklitepe Macerası
+├── ephesus.py        # Efes'in Zaman Kapısı
+├── catalhoyuk.py     # Çatalhöyük'ün Çatı Yolu
+├── sumela.py         # Sümela'nın Kayıp Mührü
+├── galata.py         # Galata'nın Gizemli Kedileri
+├── solar_system.py   # Güneş Sistemi Macerası
+├── dinosaur.py       # Dinozor Çağı Macerası
+├── ocean.py          # Okyanusun Derinlikleri
+├── fairy_garden.py   # Peri Bahçesi
+├── pamukkale.py      # Pamukkale'nin Sırrı
+├── troy.py           # Truva'nın Gizemi
+├── antalya.py        # Antalya Sualtı Macerası
+├── nemrut.py         # Nemrut'un Devleri
+├── mardin.py         # Mardin'in Taş Evleri
+├── rainbow.py        # Gökkuşağı Adası
+└── yerebatan.py      # Yerebatan'ın Sırrı
+```
+
+### 🔍 Senaryo İnceleme Yöntemi
+
+Bir senaryoyu analiz etmek için **DB sorgusu YAPMA**, doğrudan dosyayı oku:
+```
+view_file backend/app/scenarios/<tema>.py
+```
+
+Her dosya bir `ScenarioContent` dataclass içerir:
+- `theme_key` — benzersiz anahtar
+- `story_prompt_tr` — Türkçe hikaye promptu
+- `cover_prompt_template` — kapak görseli promptu
+- `page_prompt_template` — sayfa görseli promptu
+- `outfit_girl` / `outfit_boy` — kıyafet tanımları
+- `companions` — `CompanionAnchor` listesi
+- `objects` — `ObjectAnchor` listesi
+- `cultural_elements` — kültürel öğeler dict
+- `location_constraints` — sayfa bazlı lokasyon
+- `scenario_bible` — side characters, zone map, consistency rules
+- `custom_inputs_schema` — companion seçimi (`type: "hidden"` ZORUNLU)
+- `flags` — `no_family`, vb.
+
+---
+
 ## 📋 MODÜLLER
 
 Bu skill 4 modülden oluşur. Her modül bağımsız çalışabilir:

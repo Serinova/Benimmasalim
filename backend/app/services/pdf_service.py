@@ -1135,78 +1135,69 @@ class PDFService:
         # ── Layout: top-down ────────────────────────────────────────────────────
         y_pos = page_height - margin - 5 * mm
 
-        # ── Logo (üstte ortalanmış — altına beyaz arka plan ile belirginleştirildi) ──
+        # ── Logo (üstte ortalanmış — PIL alpha-compositing ile %100 opak) ──
         import os as _os
-        try:
-            from PIL import Image as _PILImg2
-            _pil_available = True
-        except ImportError:
-            _pil_available = False
+        from PIL import Image as _PILImg2
 
-        _logo_h_pt = 45.0 * mm  # Çok daha belirgin ve büyük
+        _logo_h_pt = 65.0 * mm  # Maksimum belirginlik
         _logo_rendered = False
 
+        _assets_dir = _os.path.join(
+            _os.path.dirname(_os.path.dirname(_os.path.dirname(
+                _os.path.abspath(__file__)))),
+            "assets",
+        )
         _logo_candidates = [
-            "/app/assets/logo.png",
-            _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(
-                _os.path.abspath(__file__)))), "assets", "logo.png"),
+            "/app/assets/logo.jpg",   # Docker – JPG öncelikli
+            "/app/assets/logo.png",   # Docker – PNG fallback
+            _os.path.join(_assets_dir, "logo.jpg"),
+            _os.path.join(_assets_dir, "logo.png"),
         ]
         for _lpath in _logo_candidates:
             if _os.path.exists(_lpath):
                 try:
-                    if _pil_available:
-                        _logo_pil = _PILImg2.open(_lpath).convert("RGBA")
-                        _lw, _lh = _logo_pil.size
-                        _aspect = _lw / _lh
-                        _logo_w_pt = _logo_h_pt * _aspect
+                    _logo_pil = _PILImg2.open(_lpath)
+                    _lw, _lh = _logo_pil.size
+                    _aspect = _lw / _lh
+                    _logo_w_pt = _logo_h_pt * _aspect
 
-                        _logo_x = (page_width - _logo_w_pt) / 2
-                        _logo_y = y_pos - _logo_h_pt
+                    _logo_x = (page_width - _logo_w_pt) / 2
+                    _logo_y = y_pos - _logo_h_pt
 
-                        # Logo altına beyaz yarı-saydam arka plan çiz (logo boyama/gradient ile karışmasın)
-                        _logo_bg_pad = 4 * mm  # logo etrafında boşluk
-                        c.saveState()
-                        c.setFillColor(_RLColor(1, 1, 1, alpha=0.85))
-                        c.roundRect(
-                            _logo_x - _logo_bg_pad,
-                            _logo_y - _logo_bg_pad,
-                            _logo_w_pt + 2 * _logo_bg_pad,
-                            _logo_h_pt + 2 * _logo_bg_pad,
-                            3 * mm,
-                            fill=1, stroke=0,
-                        )
-                        c.restoreState()
+                    # Logo altına TAM OPAK beyaz arka plan (silik görünmeyi önler)
+                    _logo_bg_pad = 8 * mm
+                    c.saveState()
+                    c.setFillColor(_RLColor(1, 1, 1, alpha=1.0))
+                    c.roundRect(
+                        _logo_x - _logo_bg_pad,
+                        _logo_y - _logo_bg_pad,
+                        _logo_w_pt + 2 * _logo_bg_pad,
+                        _logo_h_pt + 2 * _logo_bg_pad,
+                        3 * mm,
+                        fill=1, stroke=0,
+                    )
+                    c.restoreState()
 
-                        # Doğrudan PNG dosya yolunu veriyoruz, ReportLab mask="auto" ile transparanlığı muazzam işler.
-                        c.drawImage(
-                            _lpath,
-                            _logo_x, _logo_y,
-                            width=_logo_w_pt, height=_logo_h_pt,
-                            preserveAspectRatio=True,
-                            mask="auto",
-                        )
-                    else:
-                        # PIL yoksa da direkt bas
-                        _aspect = 1.0
-                        _logo_w_pt = _logo_h_pt * _aspect
-                        _logo_x = (page_width - _logo_w_pt) / 2
-                        _logo_y = y_pos - _logo_h_pt
-                        # Beyaz arka plan
-                        c.saveState()
-                        c.setFillColor(_RLColor(1, 1, 1, alpha=0.85))
-                        c.roundRect(
-                            _logo_x - 4 * mm, _logo_y - 4 * mm,
-                            _logo_w_pt + 8 * mm, _logo_h_pt + 8 * mm,
-                            3 * mm, fill=1, stroke=0,
-                        )
-                        c.restoreState()
-                        c.drawImage(
-                            _lpath,
-                            _logo_x, _logo_y,
-                            width=_logo_w_pt, height=_logo_h_pt,
-                            preserveAspectRatio=True,
-                            mask="auto",
-                        )
+                    # PIL ile alpha-compositing: şeffaf pikselleri beyaz arka plana yapıştır
+                    # → %100 opak JPEG oluştur → mask="auto" KULLANMA!
+                    _logo_rgba = _logo_pil.convert("RGBA")
+                    _white_bg = _PILImg2.new("RGB", (_lw, _lh), (255, 255, 255))
+                    _white_bg.paste(_logo_rgba, mask=_logo_rgba.split()[3])
+                    _logo_pil.close()
+                    _logo_rgba.close()
+
+                    _logo_buf = io.BytesIO()
+                    _white_bg.save(_logo_buf, format="JPEG", quality=98)
+                    _white_bg.close()
+                    _logo_buf.seek(0)
+
+                    c.drawImage(
+                        ImageReader(_logo_buf),
+                        _logo_x, _logo_y,
+                        width=_logo_w_pt, height=_logo_h_pt,
+                        preserveAspectRatio=True,
+                    )
+                    _logo_buf.close()
 
                     y_pos -= _logo_h_pt + 5 * mm
                     _logo_rendered = True
