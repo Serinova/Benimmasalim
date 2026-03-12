@@ -10,11 +10,8 @@ Validates:
 """
 
 import inspect
-import uuid
 
-import pytest
-
-from app.models.order import Order, OrderStatus
+from app.models.order import Order
 
 
 class TestListEndpointPayload:

@@ -4,21 +4,27 @@ Contains the Arq worker entry point for background PDF generation.
 Extracted from app.api.v1.admin.orders to break the API→service coupling
 and allow image_worker to import from the service layer (not the router).
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.models.story_preview import StoryPreview
 
 
 async def generate_admin_pdf_inner(preview_id: str) -> str:
     """Arq worker entry point. Generates PDF, uploads to GCS, saves URL to preview/order."""
 
     import structlog
-    from sqlalchemy.orm import selectinload
     from starlette.concurrency import run_in_threadpool
 
     from app.core.database import async_session_factory
     from app.models.book_template import BackCoverConfig
     from app.models.order import Order
-    from app.models.product import Product
     from app.models.story_preview import StoryPreview
     from app.services.admin_pdf_service import _build_template_config_for_preview  # local helper
     from app.services.pdf_service import PDFService
@@ -131,7 +137,9 @@ async def generate_admin_pdf_inner(preview_id: str) -> str:
         if not _admin_intro_image_url:
             try:
                 from app.models.scenario import Scenario as _AdminScenario
-                from app.services.scenario_content_service import generate_scenario_intro_text as _generate_scenario_intro_text
+                from app.services.scenario_content_service import (
+                    generate_scenario_intro_text as _generate_scenario_intro_text,
+                )
 
                 _admin_scenario_obj = None
                 _admin_cache = getattr(preview, "generated_prompts_cache", None) or {}
@@ -155,9 +163,10 @@ async def generate_admin_pdf_inner(preview_id: str) -> str:
                     story_title=getattr(preview, "story_title", "") or "",
                 )
                 if _admin_intro_text:
+                    from sqlalchemy import select as _admin_select
+
                     from app.models.book_template import PageTemplate as _PageTemplate
                     from app.services.page_composer import PageComposer, build_template_config
-                    from sqlalchemy import select as _admin_select
 
                     _ded_tpl_result = await db.execute(
                         _admin_select(_PageTemplate)
@@ -207,9 +216,11 @@ async def generate_admin_pdf_inner(preview_id: str) -> str:
                 _scenario_id = getattr(preview, "scenario_id", None)
                 if _scenario_id:
                     try:
-                        from app.models.scenario import Scenario as _Scen2
-                        from sqlalchemy import select as _sel2
                         from uuid import UUID as _U2
+
+                        from sqlalchemy import select as _sel2
+
+                        from app.models.scenario import Scenario as _Scen2
                         _sc_res2 = await db.execute(_sel2(_Scen2).where(_Scen2.id == _U2(str(_scenario_id))))
                         _sc2 = _sc_res2.scalar_one_or_none()
                         if _sc2:
@@ -335,13 +346,14 @@ async def generate_admin_pdf_inner(preview_id: str) -> str:
         return pdf_url
 
 
-async def _build_template_config_for_preview(preview: "StoryPreview", db: "AsyncSession") -> tuple[float, float, float, dict]:
+async def _build_template_config_for_preview(preview: StoryPreview, db: AsyncSession) -> tuple[float, float, float, dict]:
     """Load product template from DB and return (page_width_mm, page_height_mm, bleed_mm, template_config).
 
     Used by both generate_admin_pdf_inner and the generate_book_from_preview endpoint.
     """
-    from app.models.product import Product
     from sqlalchemy.orm import selectinload
+
+    from app.models.product import Product
 
     page_width_mm = 297.0
     page_height_mm = 210.0

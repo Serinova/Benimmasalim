@@ -13,7 +13,6 @@ sends them — no fire-and-forget, no lost emails on restart.
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-import sqlalchemy as sa
 import structlog
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert

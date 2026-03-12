@@ -354,6 +354,8 @@ function CreatePageInner() {
     setGenerating(true);
     setPreviewLoading(true);
     setPreviewError(null);
+    // Immediately show the waiting screen (Step 3 with isLoading=true)
+    goToStep(3);
 
     try {
       let childPhotoUrl: string | undefined;
@@ -371,7 +373,7 @@ function CreatePageInner() {
         childPhotoUrl,
         scenarioId: draft.scenarioId,
         learningOutcomeNames: [],
-        visualStylePromptModifier: selectedStyleObj?.prompt_modifier || "",
+        visualStylePromptModifier: "",
         visualStyleId: draft.selectedStyle || undefined,
         pageCount: selectedScenarioObj?.default_page_count ?? 10,
         customVariables: Object.keys(draft.customVariables).length > 0 ? draft.customVariables : undefined,
@@ -398,9 +400,8 @@ function CreatePageInner() {
         story_title: storyData.story.title,
         story_pages: storyData.story.pages,
         scenario_id: draft.scenarioId,
-        visual_style: selectedStyleObj?.prompt_modifier,
+        visual_style: selectedStyleObj?.name || "",
         visual_style_name: selectedStyleObj?.display_name || selectedStyleObj?.name,
-        id_weight: draft.customIdWeight ?? selectedStyleObj?.id_weight,
         parent_name: contactInfo?.firstName ? `${contactInfo.firstName} ${contactInfo.lastName}`.trim() : (draft.childName ? `${draft.childName}'ın Velisi` : "Misafir Kullanıcı"),
         parent_email: contactInfo?.email || "trial@benimmasalim.com",
         user_id: leadUserId || undefined,
@@ -419,7 +420,7 @@ function CreatePageInner() {
         if (previewData.trial_token) sessionStorage.setItem("current_trial_token", previewData.trial_token);
 
         await pollPreviewStatus(previewData.trial_id, previewData.trial_token || undefined);
-        goToStep(3);
+        // Step 3 is already shown — no need for goToStep(3) again
       } else {
         throw new Error("Önizleme oluşturulamadı");
       }
@@ -427,6 +428,8 @@ function CreatePageInner() {
       const message = err instanceof Error ? err.message : "Bilinmeyen hata";
       setPreviewError(message);
       toast({ title: "Sihir Yarım Kaldı", description: message, variant: "destructive" });
+      // Go back to step 2 on error so user can retry
+      goToStep(2);
     } finally {
       setGenerating(false);
     }
@@ -623,9 +626,7 @@ function CreatePageInner() {
             onAnalyze={handleAnalyzePhoto}
             visualStyles={visualStyles}
             selectedStyle={draft.selectedStyle}
-            customIdWeight={draft.customIdWeight}
             onStyleSelect={(v) => setField("selectedStyle", v)}
-            onIdWeightChange={(v) => setField("customIdWeight", v)}
             onBack={() => goToStep(1)}
             onSubmit={handleGeneratePreview}
             isSubmitting={generating}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Phone,
@@ -13,7 +12,6 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  ArrowLeft,
   RefreshCw,
   MessageSquare,
   Eye,
@@ -66,7 +64,6 @@ interface TrialStats {
 }
 
 export default function AbandonedTrialsPage() {
-  const router = useRouter();
   const { toast } = useToast();
 
   const [trials, setTrials] = useState<AbandonedTrial[]>([]);
@@ -81,6 +78,7 @@ export default function AbandonedTrialsPage() {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [includeFollowedUp]);
 
   const fetchData = async () => {
@@ -179,17 +177,11 @@ export default function AbandonedTrialsPage() {
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => router.push("/admin")}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Admin Panel
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Terk Edilmiş Denemeler</h1>
-              <p className="text-gray-600">
-                Önizleme gördü ama satın almadı - Potansiyel müşteriler
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Terk Edilmiş Denemeler</h1>
+            <p className="text-gray-600">
+              Önizleme gördü ama satın almadı - Potansiyel müşteriler
+            </p>
           </div>
 
           <div className="flex items-center gap-2">

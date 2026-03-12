@@ -18,7 +18,6 @@ from app.services.ai._helpers import (
     get_gemini_story_url,
 )
 from app.services.ai.llm_output_repair import (
-    extract_and_repair_json as _enhanced_extract_json,
     repair_blueprint as _repair_blueprint,
 )
 
@@ -41,7 +40,6 @@ class _BlueprintMixin:
         page_count: int,
         scenario: Scenario,
         book_title: str = "",
-        value_name: str = "",
     ) -> dict:
         """PASS-0: Generate story blueprint JSON.
 
@@ -78,7 +76,6 @@ class _BlueprintMixin:
             page_count=page_count,
             bible=bible,
             book_title=book_title,
-            value_name=value_name,
             story_structure=story_structure,  # YENİ: Senaryo yapısını blueprint'e dahil et
         )
 

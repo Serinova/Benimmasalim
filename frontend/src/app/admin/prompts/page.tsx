@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -110,23 +111,13 @@ export default function AdminPromptsPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  useAdminAuth();
+
   useEffect(() => {
-    checkAuth();
     fetchPrompts();
     fetchCacheStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const checkAuth = () => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") {
-      router.push("/");
-    }
-  };
 
 
   const fetchPrompts = async () => {

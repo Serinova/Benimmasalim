@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -111,24 +112,6 @@ const SECTION_META: Record<
 };
 
 
-function checkAuth(router: ReturnType<typeof useRouter>): boolean {
-  const userStr = localStorage.getItem("user");
-  if (!userStr) {
-    router.push("/auth/login");
-    return false;
-  }
-  try {
-    const u = JSON.parse(userStr);
-    if (u.role !== "admin") {
-      router.push("/");
-      return false;
-    }
-    return true;
-  } catch {
-    router.push("/auth/login");
-    return false;
-  }
-}
 
 /* ─── JSON Editor Component ───────────────────────────────────────── */
 
@@ -701,10 +684,11 @@ export default function AdminHomepagePage() {
     }
   }, [router, toast]);
 
+  useAdminAuth();
+
   useEffect(() => {
-    if (!checkAuth(router)) return;
     fetchSections();
-  }, [router, fetchSections]);
+  }, [fetchSections]);
 
   const handleUpdate = async (
     id: string,

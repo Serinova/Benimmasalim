@@ -14,6 +14,24 @@ router = APIRouter()
 
 
 # =============================================================================
+# SHARED HELPERS
+# =============================================================================
+
+
+async def _ensure_single_default(
+    db: DbSession, model: type, *, exclude_id: UUID | None = None
+) -> None:
+    """Unset is_default on all rows except the given ID.
+
+    Called before creating/updating a row with is_default=True.
+    """
+    stmt = model.__table__.update().values(is_default=False)
+    if exclude_id:
+        stmt = stmt.where(model.id != exclude_id)
+    await db.execute(stmt)
+
+
+# =============================================================================
 # REQUEST/RESPONSE SCHEMAS
 # =============================================================================
 
@@ -294,9 +312,8 @@ async def create_book_template(
     if result.scalar_one_or_none():
         raise ConflictError(f"'{request.name}' adında bir şablon zaten var")
 
-    # If this is default, unset other defaults
     if request.is_default:
-        await db.execute(BookTemplate.__table__.update().values(is_default=False))
+        await _ensure_single_default(db, BookTemplate)
 
     template = BookTemplate(**request.model_dump())
     db.add(template)
@@ -324,9 +341,8 @@ async def update_book_template(
     if not template:
         raise NotFoundError("Kitap şablonu", template_id)
 
-    # If setting as default, unset others
     if request.is_default:
-        await db.execute(BookTemplate.__table__.update().values(is_default=False))
+        await _ensure_single_default(db, BookTemplate, exclude_id=template_id)
 
     update_data = request.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -381,7 +397,7 @@ async def list_page_templates(
             "id": str(t.id),
             "name": t.name,
             "page_type": t.page_type,
-            "updated_at": t.updated_at.isoformat() if getattr(t, "updated_at", None) else None,
+            "updated_at": t.updated_at.isoformat() if t.updated_at else None,
             "page_width_mm": t.page_width_mm,
             "page_height_mm": t.page_height_mm,
             "bleed_mm": t.bleed_mm,
@@ -396,11 +412,11 @@ async def list_page_templates(
             "text_x_percent": t.text_x_percent,
             "text_y_percent": t.text_y_percent,
             "text_position": t.text_position,
-            "text_vertical_align": getattr(t, "text_vertical_align", "bottom"),
+            "text_vertical_align": t.text_vertical_align,
             "font_family": t.font_family,
             "font_size_pt": t.font_size_pt,
             "font_color": t.font_color,
-            "font_weight": getattr(t, "font_weight", "normal") or "normal",
+            "font_weight": t.font_weight or "normal",
             "text_align": t.text_align,
             "background_color": t.background_color,
             "text_stroke_enabled": t.text_stroke_enabled,
@@ -411,10 +427,10 @@ async def list_page_templates(
             "text_bg_opacity": t.text_bg_opacity,
             "text_bg_shape": t.text_bg_shape,
             "text_bg_blur": t.text_bg_blur,
-            "text_bg_extend_top": getattr(t, "text_bg_extend_top", 60),
-            "text_bg_extend_bottom": getattr(t, "text_bg_extend_bottom", 15),
-            "text_bg_extend_sides": getattr(t, "text_bg_extend_sides", 6),
-            "text_bg_intensity": getattr(t, "text_bg_intensity", 100),
+            "text_bg_extend_top": t.text_bg_extend_top,
+            "text_bg_extend_bottom": t.text_bg_extend_bottom,
+            "text_bg_extend_sides": t.text_bg_extend_sides,
+            "text_bg_intensity": t.text_bg_intensity,
             "cover_title_enabled": t.cover_title_enabled,
             "cover_title_font_family": t.cover_title_font_family,
             "cover_title_font_size_pt": t.cover_title_font_size_pt,
@@ -426,10 +442,10 @@ async def list_page_templates(
             "cover_title_stroke_width": t.cover_title_stroke_width,
             "cover_title_stroke_color": t.cover_title_stroke_color,
             "cover_title_y_percent": t.cover_title_y_percent,
-            "cover_title_preset": getattr(t, "cover_title_preset", "premium") or "premium",
-            "cover_title_effect": getattr(t, "cover_title_effect", "gold_shine") or "gold_shine",
-            "cover_title_letter_spacing": getattr(t, "cover_title_letter_spacing", 0) or 0,
-            "dedication_default_text": getattr(t, "dedication_default_text", None),
+            "cover_title_preset": t.cover_title_preset or "premium",
+            "cover_title_effect": t.cover_title_effect or "gold_shine",
+            "cover_title_letter_spacing": t.cover_title_letter_spacing or 0,
+            "dedication_default_text": t.dedication_default_text,
             "is_active": t.is_active,
         }
 
@@ -498,6 +514,27 @@ async def delete_page_template(
     if not template:
         raise NotFoundError("Sayfa şablonu", template_id)
 
+    # ZERO-RISK FIX: Prevent deleting templates that are in use
+    from sqlalchemy import or_
+
+    from app.models.product import Product
+
+    usage_result = await db.execute(
+        select(Product.id)
+        .where(
+            or_(
+                Product.cover_template_id == template_id,
+                Product.inner_template_id == template_id,
+                Product.back_template_id == template_id,
+            )
+        )
+        .limit(1)
+    )
+    if usage_result.scalar_one_or_none():
+        raise ConflictError(
+            "Bu şablon aktif bir ürüne bağlı olduğu için silinemez. Önce üründen kaldırın."
+        )
+
     await db.delete(template)
     await db.commit()
 
@@ -553,9 +590,8 @@ async def create_ai_config(
     if result.scalar_one_or_none():
         raise ConflictError(f"'{request.name}' adında bir yapılandırma zaten var")
 
-    # If this is default, unset other defaults
     if request.is_default:
-        await db.execute(AIGenerationConfig.__table__.update().values(is_default=False))
+        await _ensure_single_default(db, AIGenerationConfig)
 
     config = AIGenerationConfig(**request.model_dump())
     db.add(config)
@@ -583,9 +619,8 @@ async def update_ai_config(
     if not config:
         raise NotFoundError("AI yapılandırması", config_id)
 
-    # If setting as default, unset others
     if request.is_default:
-        await db.execute(AIGenerationConfig.__table__.update().values(is_default=False))
+        await _ensure_single_default(db, AIGenerationConfig, exclude_id=config_id)
 
     update_data = request.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -612,6 +647,17 @@ async def delete_ai_config(
 
     if not config:
         raise NotFoundError("AI yapılandırması", config_id)
+
+    # ZERO-RISK FIX: Prevent deleting configs that are in use
+    from app.models.product import Product
+
+    usage_result = await db.execute(
+        select(Product.id).where(Product.ai_config_id == config_id).limit(1)
+    )
+    if usage_result.scalar_one_or_none():
+        raise ConflictError(
+            "Bu AI yapılandırması aktif bir ürüne bağlı olduğu için silinemez. Önce üründen kaldırın."
+        )
 
     await db.delete(config)
     await db.commit()

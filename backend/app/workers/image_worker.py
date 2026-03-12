@@ -351,9 +351,12 @@ async def generate_coloring_book_for_trial(
     """Arq task: Generate coloring book for a trial."""
     logger.info("ARQ_TASK_START: generate_coloring_book_for_trial", trial_id=trial_id)
     try:
-        from app.tasks.generate_coloring_book_for_trial import generate_coloring_book_for_trial as _gen_trial_cb
         from uuid import UUID
+
         from app.core.database import async_session_factory
+        from app.tasks.generate_coloring_book_for_trial import (
+            generate_coloring_book_for_trial as _gen_trial_cb,
+        )
         
         trial_uuid = trial_id if isinstance(trial_id, UUID) else UUID(trial_id)
 

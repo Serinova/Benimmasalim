@@ -141,3 +141,4 @@ export async function downloadTransactionsCsv(from_date?: string, to_date?: stri
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+

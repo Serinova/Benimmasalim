@@ -10,23 +10,39 @@ import uuid
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, Request, status
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps import CurrentUser, DbSession, CurrentUserOptional
+from app.api.v1.deps import CurrentUser, CurrentUserOptional, DbSession
 from app.config import get_settings
 from app.models.story_preview import PreviewStatus, StoryPreview
 from app.models.visual_style import VisualStyle
-from app.models.product import Product
-from app.models.scenario import Scenario
-from app.models.order import Order, OrderStatus
-from app.services.trial_service import get_trial_service
+from app.schemas.trials import (
+    CompleteTrialRequest,
+    CreatePaymentRequest,
+    CreateTrialRequest,
+    GeneratePreviewRequest,
+    PreviewResponse,
+    TrialResponse,
+    VerifyTrialPaymentRequest,
+)
+from app.services.trial_generation_service import (
+    create_coloring_book_order_from_trial as _create_coloring_book_order_from_trial,
+)
+from app.services.trial_generation_service import (
+    generate_composed_preview_inner as _generate_composed_preview_inner,
+)
+from app.services.trial_generation_service import (
+    generate_preview_images_inner as _generate_preview_images_inner,
+)
+from app.services.trial_generation_service import (
+    generate_remaining_images_inner as _generate_remaining_images_inner,
+)
 from app.services.trial_generation_service import (
     generate_trial_story_inner as _generate_trial_story_inner,
-    generate_preview_images_inner as _generate_preview_images_inner,
-    generate_composed_preview_inner as _generate_composed_preview_inner,
-    generate_remaining_images_inner as _generate_remaining_images_inner,
-    create_coloring_book_order_from_trial as _create_coloring_book_order_from_trial,
+)
+from app.services.trial_generation_service import (
     resolve_visual_style_from_db as _resolve_visual_style_from_db,
+)
+from app.services.trial_generation_service import (
     select_preview_prompts as _select_preview_prompts,
 )
 from app.services.trial_payment_service import (
@@ -34,17 +50,7 @@ from app.services.trial_payment_service import (
     get_iyzico_options,
     verify_iyzico_payment,
 )
-from app.schemas.trials import (
-    BillingData,
-    CompleteTrialRequest,
-    CreatePaymentRequest,
-    CreateTrialRequest,
-    GeneratePreviewRequest,
-    PreviewResponse,
-    StoryPageInput,
-    TrialResponse,
-    VerifyTrialPaymentRequest,
-)
+from app.services.trial_service import get_trial_service
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -162,7 +168,6 @@ async def create_trial(
             product_price=request.product_price,
             scenario_name=request.scenario_name,
             visual_style_name=request.visual_style_name,
-            learning_outcomes=request.learning_outcomes,
             child_photo_url=request.child_photo_url,
             visual_style=request.visual_style,
             scenario_id=request.scenario_id,
@@ -180,7 +185,6 @@ async def create_trial(
             "scenario_name": request.scenario_name,
             "visual_style": request.visual_style,
             "visual_style_name": request.visual_style_name,
-            "learning_outcomes": request.learning_outcomes,
             "page_count": _page_count,
             "magic_items": request.magic_items,
             "product_id": request.product_id,
@@ -294,7 +298,9 @@ async def generate_preview_from_story(
         ]
 
         # Deterministic title
-        from app.services.order_helpers import force_deterministic_title as _force_deterministic_title
+        from app.services.order_helpers import (
+            force_deterministic_title as _force_deterministic_title,
+        )
 
         det_title = _force_deterministic_title(
             child_name=request.child_name,
@@ -322,8 +328,10 @@ async def generate_preview_from_story(
         if not _effective_clothing and request.scenario_id:
             try:
                 from uuid import UUID as _UUID
-                from app.models.scenario import Scenario as _Scenario
+
                 from sqlalchemy import select as _select
+
+                from app.models.scenario import Scenario as _Scenario
                 _scen_result = await db.execute(
                     _select(_Scenario).where(_Scenario.id == _UUID(request.scenario_id))
                 )
@@ -373,7 +381,6 @@ async def generate_preview_from_story(
             story_title=det_title,
             scenario_name=request.scenario_name,
             visual_style_name=request.visual_style_name,
-            learning_outcomes=request.learning_outcomes,
             story_pages=story_pages,
             generated_prompts=story_pages,
             child_photo_url=request.child_photo_url,
@@ -991,8 +998,9 @@ async def complete_trial(
                     )
                     
                     # Enqueue coloring book generation (background task)
-                    from app.tasks.generate_coloring_book import generate_coloring_book
                     import asyncio
+
+                    from app.tasks.generate_coloring_book import generate_coloring_book
                     
                     # Create task in background (non-blocking)
                     asyncio.create_task(generate_coloring_book(coloring_order.id, db))
@@ -1136,7 +1144,6 @@ async def retry_stuck_trial(
             "scenario_name": trial.scenario_name,
             "visual_style": cache.get("visual_style"),
             "visual_style_name": trial.visual_style_name,
-            "learning_outcomes": trial.learning_outcomes,
             "page_count": cache.get("page_count") or 16,
             "magic_items": cache.get("magic_items"),
             "product_id": str(trial.product_id) if trial.product_id else None,
@@ -1316,9 +1323,12 @@ async def add_coloring_book_to_trial(
     Creates an Iyzico payment intent specifically for the coloring book price.
     """
     from decimal import Decimal
+
     import iyzipay
+
     from app.config import settings
-    from app.models.coloring_book import ColoringBookProduct
+    from app.models.product import Product as _CBProd
+    from app.models.product import ProductType as _CBType
 
     try:
         trial_uuid = uuid.UUID(trial_id)
@@ -1359,7 +1369,10 @@ async def add_coloring_book_to_trial(
 
     # Get active coloring book config for pricing
     config_result = await db.execute(
-        select(ColoringBookProduct).where(ColoringBookProduct.active == True).limit(1)
+        select(_CBProd).where(
+            _CBProd.product_type == _CBType.COLORING_BOOK.value,
+            _CBProd.is_active == True,
+        ).limit(1)
     )
     coloring_config = config_result.scalar_one_or_none()
     
@@ -1486,10 +1499,12 @@ async def add_coloring_book_callback(
     sets has_coloring_book = True on the trial, and queues generation.
     """
     import json as _json
-    import iyzipay
-    from app.config import settings
     from urllib.parse import parse_qs
+
+    import iyzipay
     from fastapi.responses import RedirectResponse
+
+    from app.config import settings
     
     # trialId might be in query params from callbackUrl
     query_params = parse_qs(str(request.query_params))

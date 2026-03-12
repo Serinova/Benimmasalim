@@ -10,12 +10,10 @@ import pytest
 
 from app.prompt.book_context import BookContext
 from app.prompt.negative_builder import (
-    ANTI_PHOTO_FACE,
-    BASE_NEGATIVE,
-    build_negative,
     _BOY_NEGATIVE,
     _GIRL_NEGATIVE,
-    _CHARACTER_CONSISTENCY_NEGATIVE,
+    BASE_NEGATIVE,
+    build_negative,
 )
 from app.prompt.style_config import STYLES
 

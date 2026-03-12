@@ -1,6 +1,7 @@
 ---
 description: How to deploy the backend to Google Cloud Production
 ---
+// turbo-all
 This workflow defines the safe, automated procedure to deploy the *Benim Masalım* backend to Google Cloud Run, ensuring the database proxy is tested and migrations are handled gracefully.
 
 1. Navigate to the root level of the project.

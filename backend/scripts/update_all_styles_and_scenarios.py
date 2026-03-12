@@ -15,13 +15,11 @@ Calistirma:
 
 import asyncio
 import uuid
-import json
 
-from sqlalchemy import select, delete
+from sqlalchemy import select
+
 from app.core.database import async_session_factory
-from app.models.visual_style import VisualStyle
 from app.models.scenario import Scenario
-
 
 # =============================================================================
 # VISUAL STYLES - BACKGROUND-FIRST OPTIMIZED
@@ -108,25 +106,7 @@ VISUAL_STYLES = [
     },
 ]
 
-# PuLID ayarlari - stil bazli
-# CRITICAL: Lower id_weight = MORE STYLE VISIBLE, higher = MORE REALISTIC FACE
-#
-# Scale:
-#   0.15-0.25 = ULTRA stylized (Anime, Ghibli)
-#   0.25-0.35 = Very stylized (Watercolor, Cartoon)
-#   0.35-0.45 = Balanced (3D Pixar)
-#   0.45-0.55 = Realistic (Cinematic)
-#
-STYLE_PULID_SETTINGS = {
-    "3D Super Kahraman": {"id_weight": 0.38, "guidance": 3.5},
-    "Cizgi Film Tarzi": {"id_weight": 0.25, "guidance": 3.5},  # LOW for cartoon
-    "Sulu Boya": {"id_weight": 0.22, "guidance": 3.5},         # VERY LOW for watercolor
-    "Vintage Retro": {"id_weight": 0.30, "guidance": 3.5},
-    "Oyun Tarzi": {"id_weight": 0.30, "guidance": 3.5},
-    "Kaligrafik": {"id_weight": 0.32, "guidance": 3.5},
-    "Anime Tarzi": {"id_weight": 0.18, "guidance": 4.0},       # ULTRA LOW for anime!
-    "Gercekci Masal": {"id_weight": 0.48, "guidance": 3.5},    # Higher for realistic
-}
+
 
 
 # =============================================================================
@@ -222,28 +202,15 @@ SCENARIOS = [
 # =============================================================================
 
 async def update_visual_styles(db):
-    """Update all visual styles."""
+    """Visual styles artık style_config.py'den yönetiliyor.
+
+    Admin panelden (/admin/visual-styles) thumbnail ve display_name ayarlanır.
+    Bu fonksiyon no-op olarak bırakılmıştır.
+    """
     print("\n" + "="*60)
-    print("VISUAL STYLES GUNCELLENIYOR")
+    print("VISUAL STYLES → style_config.py'den yönetiliyor")
+    print("Admin panelden düzenleyin: /admin/visual-styles")
     print("="*60)
-    
-    # Sil ve yeniden olustur
-    await db.execute(delete(VisualStyle))
-    
-    for style_data in VISUAL_STYLES:
-        style = VisualStyle(
-            id=uuid.uuid4(),
-            name=style_data["name"],
-            thumbnail_url=style_data["thumbnail_url"],
-            prompt_modifier=style_data["prompt_modifier"],
-            is_active=True,
-        )
-        db.add(style)
-        
-        pulid = STYLE_PULID_SETTINGS.get(style_data["name"], {})
-        print(f"  [OK] {style_data['name']} (id_weight: {pulid.get('id_weight', 0.85)})")
-    
-    print(f"\n  TOPLAM: {len(VISUAL_STYLES)} stil guncellendi")
 
 
 async def update_scenarios(db):

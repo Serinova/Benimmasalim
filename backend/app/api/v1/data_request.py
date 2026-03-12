@@ -7,7 +7,7 @@ without requiring authentication (uses email verification).
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 
 import structlog
 from fastapi import APIRouter, Depends, Request
@@ -23,7 +23,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-class DataRequestType(str, Enum):
+class DataRequestType(StrEnum):
     ACCESS = "ACCESS"          # Verilerime erişmek istiyorum
     EXPORT = "EXPORT"          # Verilerimi dışa aktarmak istiyorum
     DELETION = "DELETION"      # Verilerimin silinmesini istiyorum

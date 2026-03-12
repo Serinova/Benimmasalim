@@ -54,9 +54,7 @@ def _looks_like_prompt(text: str) -> bool:
     if any(leak in lower for leak in _INTRO_PLACEHOLDER_LEAK):
         return True
     # Senaryo description benzeri (virgülle ayrılmış özet) — karşılama sayfasında kullanma
-    if any(d in lower for d in _DESCRIPTION_STYLE_LEAK):
-        return True
-    return False
+    return bool(any(d in lower for d in _DESCRIPTION_STYLE_LEAK))
 
 
 async def generate_scenario_intro_text(

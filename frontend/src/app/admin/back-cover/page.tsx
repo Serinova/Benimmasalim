@@ -9,19 +9,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, Plus, Eye, BookOpen, QrCode, Palette, Building2, Star } from "lucide-react";
-import Link from "next/link";
+import { Save, Plus, Eye, BookOpen, QrCode, Palette, Building2, Star, Trash2 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 
 interface BackCoverConfig {
   id: string;
   name: string;
   company_name: string;
-  company_logo_url: string | null;
   company_website: string;
   company_email: string;
   company_phone: string | null;
-  company_address: string | null;
   background_color: string;
   background_gradient_end: string;
   primary_color: string;
@@ -48,11 +45,9 @@ interface BackCoverConfig {
 const defaultConfig: Omit<BackCoverConfig, "id"> = {
   name: "Varsayılan İç Kapak Arkası",
   company_name: "Benim Masalım",
-  company_logo_url: null,
   company_website: "www.benimmasalim.com.tr",
   company_email: "info@benimmasalim.com.tr",
   company_phone: null,
-  company_address: null,
   background_color: "#FDF6EC",
   background_gradient_end: "#EDE4F8",
   primary_color: "#6B21A8",
@@ -321,6 +316,7 @@ export default function BackCoverAdminPage() {
     const token = localStorage.getItem("token");
     if (!token) { window.location.href = "/auth/login"; return; }
     fetchConfigs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchConfigs = async () => {
@@ -391,26 +387,54 @@ export default function BackCoverAdminPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!selectedConfig) return;
+    if (!confirm("Bu yapılandırmayı silmek istediğinize emin misiniz?")) return;
+    
+    setSaving(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/admin/back-cover/${selectedConfig.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        toast({ title: "Silindi", description: "İç kapak arkası yapılandırması silindi." });
+        setSelectedConfig(null);
+        fetchConfigs();
+      } else {
+        toast({ title: "Hata", description: "Silme işlemi başarısız", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Hata", description: "Bağlantı hatası", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-7xl">
 
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/admin">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold">İç Kapak Arkası Yönetimi</h1>
-              <p className="text-gray-500 text-sm">
-                Kitabın ilk sayfasının arkası — marka kimliği, ebeveyn rehberi ve QR kodu
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold">İç Kapak Arkası Yönetimi</h1>
+            <p className="text-gray-500 text-sm">
+              Kitabın ilk sayfasının arkası — marka kimliği, ebeveyn rehberi ve QR kodu
+            </p>
           </div>
           <div className="flex gap-2">
+            {selectedConfig && (
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={saving}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Sil
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => {

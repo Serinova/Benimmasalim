@@ -8,12 +8,11 @@ Covers:
 - Audit log on billing update
 """
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 from uuid import uuid4
 
-from app.models.order import Order, OrderStatus
+import pytest
 
+from app.models.order import Order, OrderStatus
 
 # ─── Tax ID validation ──────────────────────────────────────────
 
@@ -216,8 +215,9 @@ class TestBillingUpdateRequest:
         assert req.billing_type == "corporate"
 
     def test_invalid_billing_type_rejected(self):
-        from app.api.v1.orders import BillingUpdateRequest
         from pydantic import ValidationError
+
+        from app.api.v1.orders import BillingUpdateRequest
 
         with pytest.raises(ValidationError):
             BillingUpdateRequest(billing_type="invalid_type")
@@ -247,7 +247,7 @@ class TestCheckoutBillingInfo:
         assert req.billing is None
 
     def test_billing_info_accepted(self):
-        from app.schemas.payments import CheckoutRequest, BillingInfo
+        from app.schemas.payments import BillingInfo, CheckoutRequest
 
         req = CheckoutRequest(
             order_id=uuid4(),
@@ -271,6 +271,7 @@ class TestStateMachineSnapshot:
     def test_snapshot_called_on_paid_transition(self):
         """Verify the state machine code calls snapshot_billing_to_order on PAID."""
         import inspect
+
         from app.services.order_state_machine import transition_order
 
         source = inspect.getsource(transition_order)
@@ -285,6 +286,7 @@ class TestKvkkBillingCleanup:
 
     def test_kvkk_clears_billing_fields(self):
         import inspect
+
         from app.tasks.kvkk_cleanup import delete_user_data
 
         source = inspect.getsource(delete_user_data)
@@ -295,16 +297,4 @@ class TestKvkkBillingCleanup:
         assert "billing_address" in source
 
 
-# ─── Admin export endpoint exists ────────────────────────────────
-
-class TestAdminBillingExport:
-    """Test that admin billing export endpoint is registered."""
-
-    def test_export_billing_endpoint_exists(self):
-        import inspect
-        from app.api.v1.admin.orders import export_billing
-
-        assert callable(export_billing)
-        sig = inspect.signature(export_billing)
-        assert "db" in sig.parameters
-        assert "admin" in sig.parameters
+# Removed TestAdminBillingExport because export_billing endpoint was deleted.

@@ -11,7 +11,6 @@ from app.prompt.book_context import BookContext
 from app.prompt.composer import PromptComposer
 from app.prompt.style_config import STYLES
 
-
 ALL_STYLES = list(STYLES.keys())  # default, pixar, watercolor, soft_pastel, anime, adventure_digital
 
 STYLE_MODIFIERS = {

@@ -59,7 +59,6 @@ export interface OrderDraft {
   faceDetected: boolean;
   selectedStyle: string;
   kvkkConsent: boolean;
-  customIdWeight: number | null;
 
   trialId: string;
   trialToken: string;
@@ -121,7 +120,6 @@ export const INITIAL_DRAFT: OrderDraft = {
   faceDetected: false,
   selectedStyle: "",
   kvkkConsent: false,
-  customIdWeight: null,
 
   trialId: "",
   trialToken: "",

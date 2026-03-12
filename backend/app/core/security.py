@@ -165,7 +165,7 @@ def create_guest_token() -> str:
 _TOKEN_BLACKLIST_PREFIX = "token_blacklist:"
 
 # Shared async Redis connection — lazy-initialized, reused across calls.
-_async_redis: "redis.asyncio.Redis | None" = None
+_async_redis: Any | None = None
 
 
 async def _get_async_redis():

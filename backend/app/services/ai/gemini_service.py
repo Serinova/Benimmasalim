@@ -29,11 +29,14 @@ import structlog
 from app.config import settings
 from app.core.exceptions import AIServiceError
 from app.core.rate_limit import rate_limit_retry
-from app.services.ai._helpers import (
-    AI_DIRECTOR_SYSTEM,
-    GEMINI_API_BASE,
+
+# Re-export helpers that external code imports directly from gemini_service
+from app.services.ai._helpers import (  # noqa: F401
     _DEFAULT_FLASH_MODEL,
+    AI_DIRECTOR_SYSTEM,
     _extract_text_from_parts,
+    _get_possessive_suffix,
+    _normalize_title_turkish,
     get_gemini_api_url,
     get_gemini_story_url,
     get_gemini_technical_url,
@@ -47,15 +50,6 @@ from app.services.ai._models import (
 )
 from app.services.ai._story_writer import _StoryWriterMixin
 from app.services.ai._visual_composer import _VisualComposerMixin
-
-# Re-export helpers that external code imports directly from gemini_service
-from app.services.ai._helpers import (  # noqa: F401
-    _get_possessive_suffix,
-    _normalize_title_turkish,
-    build_educational_prompt,
-    get_value_message_tr_for_outcomes,
-    get_value_visual_motif_for_outcomes,
-)
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -89,7 +83,7 @@ class GeminiService(_StoryWriterMixin, _VisualComposerMixin):
     Falls back to hardcoded constants if DB lookup fails.
     """
 
-    def __init__(self, db_session: "AsyncSession | None" = None):
+    def __init__(self, db_session: AsyncSession | None = None):
         """
         Initialize GeminiService.
 
@@ -313,7 +307,4 @@ __all__ = [
     "get_gemini_api_url",
     "_get_possessive_suffix",
     "_normalize_title_turkish",
-    "build_educational_prompt",
-    "get_value_visual_motif_for_outcomes",
-    "get_value_message_tr_for_outcomes",
 ]

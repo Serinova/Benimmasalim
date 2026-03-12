@@ -462,7 +462,7 @@ def scenario_to_response(scenario: Scenario) -> dict:
         (_lp.default_page_count if _lp and _lp.default_page_count else _def_page) or 6
     )
     effective_story_page_count = (
-        (_lp.default_page_count if _lp and _lp.default_page_count else _story_page)
+        _lp.default_page_count if _lp and _lp.default_page_count else _story_page
     )
 
     return {

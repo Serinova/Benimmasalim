@@ -11,8 +11,9 @@ Usage:
 
 from __future__ import annotations
 
-import structlog
 from dataclasses import dataclass, field
+
+import structlog
 
 logger = structlog.get_logger()
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -72,27 +73,12 @@ export default function AdminDashboard() {
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    checkAuth();
-    fetchOrders();
-  }, []);
+  useAdminAuth();
 
-  const checkAuth = () => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") {
-      toast({
-        title: "Yetkisiz Erişim",
-        description: "Bu sayfaya erişim yetkiniz yok",
-        variant: "destructive",
-      });
-      router.push("/");
-    }
-  };
+  useEffect(() => {
+    fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const fetchOrders = async () => {

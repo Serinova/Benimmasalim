@@ -1,15 +1,18 @@
-"""Coloring book API endpoints."""
+"""Coloring book API endpoints.
+
+Public endpoint for storefront — reads from the unified `products` table
+with `product_type = 'coloring_book'`.
+"""
 
 from decimal import Decimal
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.models.coloring_book import ColoringBookProduct
+from app.api.v1.deps import DbSession
+from app.models.product import Product, ProductType
 
 logger = structlog.get_logger()
 
@@ -29,7 +32,7 @@ class ColoringBookResponse(BaseModel):
 
 
 @router.get("/active", response_model=ColoringBookResponse)
-async def get_active_coloring_book_product(db: AsyncSession = Depends(get_db)):
+async def get_active_coloring_book_product(db: DbSession):
     """
     Get active coloring book product configuration.
 
@@ -38,21 +41,28 @@ async def get_active_coloring_book_product(db: AsyncSession = Depends(get_db)):
     Returns:
         ColoringBookResponse: Active coloring book product
     """
-    stmt = select(ColoringBookProduct).where(ColoringBookProduct.active == True).limit(1)
+    stmt = (
+        select(Product)
+        .where(
+            Product.product_type == ProductType.COLORING_BOOK.value,
+            Product.is_active == True,
+        )
+        .limit(1)
+    )
     result = await db.execute(stmt)
-    config = result.scalar_one_or_none()
+    product = result.scalar_one_or_none()
 
-    if not config:
+    if not product:
         raise HTTPException(status_code=404, detail="Coloring book product not found")
 
-    logger.info("Fetched active coloring book product", config_id=str(config.id))
+    logger.info("Fetched active coloring book product", product_id=str(product.id))
 
     return ColoringBookResponse(
-        id=str(config.id),
-        name=config.name,
-        slug=config.slug,
-        description=config.description,
-        base_price=config.base_price,
-        discounted_price=config.discounted_price,
-        active=config.active,
+        id=str(product.id),
+        name=product.name,
+        slug=product.slug,
+        description=product.description,
+        base_price=product.base_price,
+        discounted_price=product.discounted_price,
+        active=product.is_active,
     )

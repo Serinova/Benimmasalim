@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef, forwardRef, useCallback, Fragment } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useRef, useCallback, Fragment } from "react";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import HTMLFlipBook from "react-pageflip";
+import { compressImage } from "../_lib/imageUtils";
+import { DimensionCalculator } from "./_components/DimensionCalculator";
+import { FlipbookPreview } from "./_components/FlipbookPreview";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -27,7 +29,6 @@ import {
   AlertCircle,
   Sparkles,
   BookOpen,
-  Monitor,
   Star,
   Video,
   Gift,
@@ -201,229 +202,6 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
-// ============ PAGE COMPONENT FOR FLIPBOOK ============
-const FlipBookPage = forwardRef<HTMLDivElement, { imageUrl: string; pageNumber: number }>(
-  ({ imageUrl, pageNumber }, ref) => {
-    return (
-      <div ref={ref} className="h-full w-full bg-white shadow-md">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={`Sayfa ${pageNumber}`}
-            className="h-full w-full object-cover"
-            draggable={false}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 to-amber-100">
-            <div className="text-center text-amber-400">
-              <BookOpen className="mx-auto mb-2 h-8 w-8 opacity-50" />
-              <p className="text-xs">Sayfa {pageNumber + 1}</p>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-);
-FlipBookPage.displayName = "FlipBookPage";
-
-// ============ DIMENSION CALCULATOR ============
-function DimensionCalculator({ width, height }: { width: number; height: number }) {
-  const DPI = 300;
-  const pixelWidth = Math.round((width / 25.4) * DPI);
-  const pixelHeight = Math.round((height / 25.4) * DPI);
-  const orientation = width > height ? "Yatay" : width < height ? "Dikey" : "Kare";
-  const aspectRatio = (width / height).toFixed(2);
-
-  return (
-    <div className="mt-3 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Monitor className="h-4 w-4 text-blue-600" />
-        <span className="text-sm font-medium text-blue-800">Çıktı Hesaplaması</span>
-      </div>
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <p className="text-xs text-gray-500">Hedef Çözünürlük</p>
-          <p className="font-mono font-semibold text-blue-700">
-            {pixelWidth} × {pixelHeight} px
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">DPI / Oryantasyon</p>
-          <p className="font-mono font-semibold text-blue-700">
-            {DPI} DPI • {orientation}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">En-Boy Oranı</p>
-          <p className="font-mono font-semibold text-blue-700">{aspectRatio}:1</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">Tahmini Dosya Boyutu</p>
-          <p className="font-mono font-semibold text-blue-700">
-            ~{((pixelWidth * pixelHeight * 3) / 1024 / 1024).toFixed(1)} MB
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============ FLIPBOOK PREVIEW ============
-function FlipbookPreview({
-  images,
-  width,
-  height,
-  bookThickness,
-}: {
-  images: string[];
-  width: number;
-  height: number;
-  bookThickness: number;
-}) {
-  const bookRef = useRef<HTMLDivElement | null>(null);
-  const isLandscape = width > height;
-
-  // Calculate display dimensions (max 400px width)
-  const maxWidth = 350;
-  const scale = maxWidth / width;
-  const displayWidth = Math.round(width * scale);
-  const displayHeight = Math.round(height * scale);
-
-  // Ensure we have at least 4 pages for the flipbook
-  const pageImages =
-    images.length > 0
-      ? [...images, ...Array(Math.max(0, 4 - images.length)).fill("")]
-      : ["", "", "", ""];
-
-  return (
-    <div className="relative">
-      {/* Book shadow */}
-      <div
-        className="absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-[50%] opacity-40"
-        style={{
-          width: displayWidth * 1.8,
-          height: 20,
-          background: "radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, transparent 70%)",
-          filter: "blur(4px)",
-        }}
-      />
-
-      {/* Book container with 3D effect */}
-      <div
-        className="relative mx-auto"
-        style={{
-          perspective: "1500px",
-          transformStyle: "preserve-3d",
-        }}
-      >
-        {/* Book spine effect */}
-        <div
-          className="absolute left-1/2 top-0 z-10 -translate-x-1/2 rounded-sm bg-gradient-to-r from-amber-900 via-amber-800 to-amber-900"
-          style={{
-            width: bookThickness * 3,
-            height: displayHeight,
-            transform: `translateZ(-${bookThickness}px)`,
-            boxShadow: "inset 0 0 10px rgba(0,0,0,0.3)",
-          }}
-        />
-
-        {/* Flipbook */}
-        <div
-          className="relative overflow-hidden rounded-lg bg-white"
-          style={{
-            boxShadow: `
-              0 ${bookThickness}px ${bookThickness * 2}px rgba(0,0,0,0.15),
-              0 4px 6px rgba(0,0,0,0.1),
-              inset 0 0 0 1px rgba(0,0,0,0.05)
-            `,
-          }}
-        >
-          <HTMLFlipBook
-            ref={bookRef}
-            width={displayWidth / 2}
-            height={displayHeight}
-            size="fixed"
-            minWidth={displayWidth / 2}
-            maxWidth={displayWidth / 2}
-            minHeight={displayHeight}
-            maxHeight={displayHeight}
-            showCover={true}
-            mobileScrollSupport={true}
-            className="flipbook-preview"
-            style={{}}
-            startPage={0}
-            drawShadow={true}
-            flippingTime={600}
-            usePortrait={!isLandscape}
-            startZIndex={0}
-            autoSize={false}
-            maxShadowOpacity={0.4}
-            showPageCorners={true}
-            disableFlipByClick={false}
-            swipeDistance={20}
-            clickEventForward={true}
-            useMouseEvents={true}
-          >
-            {pageImages.map((img, idx) => (
-              <FlipBookPage key={idx} imageUrl={img} pageNumber={idx} />
-            ))}
-          </HTMLFlipBook>
-        </div>
-      </div>
-
-      {/* Instructions */}
-      {images.length > 0 && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mt-4 text-center text-xs text-gray-400"
-        >
-          Sayfaları çevirmek için tıklayın veya sürükleyin
-        </motion.p>
-      )}
-    </div>
-  );
-}
-
-// ============ IMAGE UPLOAD DROPZONE ============
-// Helper function to compress image
-function compressImage(file: File, maxWidth: number = 800, quality: number = 0.7): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-
-        // Scale down if too large
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          reject(new Error("Canvas context not available"));
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
-        resolve(compressedDataUrl);
-      };
-      img.onerror = () => reject(new Error("Image load failed"));
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => reject(new Error("File read failed"));
-    reader.readAsDataURL(file);
-  });
-}
 
 // Single image uploader for thumbnail
 function SingleImageUploader({
@@ -850,7 +628,6 @@ export default function AdminProductsPage() {
   const [activeSection, setActiveSection] = useState<"technical" | "marketing" | "scenarios">("technical");
   const [scenariosForProduct, setScenariosForProduct] = useState<ScenarioForProduct[]>([]);
 
-  const router = useRouter();
   const { toast } = useToast();
 
   const form = useForm<ProductFormData>({
@@ -898,28 +675,17 @@ export default function AdminProductsPage() {
   const watchWidth = form.watch("width_mm");
   const watchHeight = form.watch("height_mm");
 
+  useAdminAuth();
   useEffect(() => {
-    checkAuth();
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
   useEffect(() => {
     if (!loading) {
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProductType]);
-
-  const checkAuth = () => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") {
-      router.push("/");
-    }
-  };
 
 
   const fetchData = async () => {
@@ -1248,20 +1014,14 @@ export default function AdminProductsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <header className="sticky top-0 z-40 border-b bg-white shadow-sm">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => router.push("/admin")}>
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Geri
-            </Button>
-            <div>
-              <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-                <Book className="h-6 w-6 text-purple-600" />
-                Ürün Yönetimi
-              </h1>
-              <p className="mt-0.5 text-sm text-gray-500">
-                Kitap formatlarını ve önizleme görsellerini yönetin
-              </p>
-            </div>
+          <div>
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+              <Book className="h-6 w-6 text-purple-600" />
+              Ürün Yönetimi
+            </h1>
+            <p className="mt-0.5 text-sm text-gray-500">
+              Kitap formatlarını ve önizleme görsellerini yönetin
+            </p>
           </div>
           <Button onClick={() => openEditor()} className="bg-purple-600 hover:bg-purple-700">
             <Plus className="mr-2 h-4 w-4" />

@@ -59,8 +59,9 @@ async def _seed_missing_scenarios() -> None:
     Version-gated: skips all work if app_settings.seeded_version == _SEED_VERSION.
     Increment _SEED_VERSION whenever the creators/updaters lists change.
     """
+    from sqlalchemy import select
+
     from app.core.database import async_session_factory
-    from sqlalchemy import select, func
 
     creators: list[tuple[str, str, str]] = [
         ("gobeklitepe", "scripts.create_gobeklitepe_scenario", "create_gobeklitepe_scenario"),
@@ -86,6 +87,7 @@ async def _seed_missing_scenarios() -> None:
     try:
         import importlib
         import uuid as _uuid
+
         from app.models.app_setting import AppSetting
         from app.models.scenario import Scenario
 
@@ -316,7 +318,9 @@ async def _leader_task_wrapper(task_coro, lock_name: str, ttl: int = 120):
 async def _cleanup_stuck_payments_leader():
     """Stuck payment cleanup — single leader only."""
     from datetime import datetime, timedelta
+
     from sqlalchemy import select
+
     from app.core.database import async_session_factory
     from app.models.order import Order, OrderStatus
 
@@ -336,8 +340,8 @@ async def _cleanup_stuck_payments_leader():
                 )
                 stuck_orders = result.scalars().all()
                 for order in stuck_orders:
-                    from app.services.promo_code_service import rollback_promo_code
                     from app.services.order_state_machine import transition_order
+                    from app.services.promo_code_service import rollback_promo_code
                     await rollback_promo_code(order, db)
                     await transition_order(order, OrderStatus.COVER_APPROVED, db)
                     order.payment_status = "EXPIRED"

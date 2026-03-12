@@ -9,13 +9,12 @@ Split from page_composer.py for maintainability.
 
 from __future__ import annotations
 
-import math
-
 import numpy as np
 import structlog
 from PIL import Image, ImageDraw, ImageFont
 
 from app.services._page_helpers import (
+    _TURKISH_FALLBACK_FONTS,
     _font_supports_turkish,
     _resolve_font_path,
     _text_needs_turkish,

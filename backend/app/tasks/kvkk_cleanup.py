@@ -136,10 +136,8 @@ async def delete_user_data(user_id: str, db: AsyncSession) -> dict:
     from app.models.child_profile import ChildProfile
     from app.models.consent import ConsentRecord
     from app.models.notification_outbox import NotificationOutbox
-    from app.models.notification_preference import NotificationPreference
     from app.models.story_preview import StoryPreview
     from app.models.user import User
-    from app.models.user_address import UserAddress
 
     storage = StorageService()
     uid = UUID(user_id)

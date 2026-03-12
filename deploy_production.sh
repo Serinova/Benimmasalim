@@ -47,6 +47,7 @@ gcloud run services update benimmasalim-backend \
   --image "${BACKEND_IMAGE}" \
   --region "${REGION}" \
   --project "${PROJECT_ID}" \
+  --memory=4Gi \
   --min-instances=1 \
   --max-instances=10
 echo "  ✓ benimmasalim-backend"

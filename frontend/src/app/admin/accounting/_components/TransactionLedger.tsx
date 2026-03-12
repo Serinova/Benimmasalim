@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Search, ChevronLeft, ChevronRight, Headphones, Palette } from "lucide-react";
-import type { Transaction, TransactionsResponse } from "../_lib/accountingApi";
+import type { TransactionsResponse } from "../_lib/accountingApi";
 
 function fmt(n: number) {
   return n.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

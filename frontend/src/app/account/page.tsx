@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   getUserOrdersPaginated,
   getUserTrials,
@@ -12,7 +11,7 @@ import {
 } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import GuestConvertBanner from "@/components/GuestConvertBanner";
+
 import { AccountOrderDetailSheet } from "./_components/AccountOrderDetailSheet";
 import { AccountTrialDetailSheet } from "./_components/AccountTrialDetailSheet";
 import {
@@ -62,7 +61,6 @@ function matchesSearch(
 }
 
 export default function AccountPage() {
-  const router = useRouter();
   const [data, setData] = useState<PaginatedOrders | null>(null);
   const [trials, setTrials] = useState<UserTrial[]>([]);
   const [paidTrials, setPaidTrials] = useState<UserTrial[]>([]);
@@ -71,7 +69,6 @@ export default function AccountPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [isGuest, setIsGuest] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedTrial, setSelectedTrial] = useState<UserTrial | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -107,12 +104,6 @@ export default function AccountPage() {
 
   useEffect(() => {
     fetchOrders();
-    try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      setIsGuest(user.is_guest === true);
-    } catch {
-      /* ignore */
-    }
   }, [fetchOrders]);
 
   // Fetch trials only once on mount — not on every filter/search change
@@ -162,9 +153,7 @@ export default function AccountPage() {
 
   return (
     <div>
-      {isGuest && (
-        <GuestConvertBanner onConverted={() => { setIsGuest(false); fetchOrders(); }} />
-      )}
+
 
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-800">

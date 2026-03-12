@@ -416,11 +416,9 @@ def resize_to_target(
     else:
         # Kaynak daha uzun → yükseklikten kırp
         new_h = int(src_w / tgt_ratio)
-        if is_cover:
-            # Kapak: üstten kırpma YOK — Gemini title'ı üste koyar; alttan kırp
-            offset = src_h - new_h
-        else:
-            offset = (src_h - new_h) // 2  # iç sayfa: merkez
+        # Kapak: üstten kırpma YOK — Gemini title'ı üste koyar; alttan kırp
+        # iç sayfa: merkez
+        offset = src_h - new_h if is_cover else (src_h - new_h) // 2
         image = image.crop((0, offset, src_w, offset + new_h))
 
     return image.resize((target_width, target_height), PILImage.Resampling.LANCZOS)

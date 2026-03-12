@@ -9,11 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import async_session_factory
 from app.core.security import get_password_hash
 from app.models.book_template import PageTemplate, PageType
-from app.models.learning_outcome import LearningOutcome
 from app.models.product import Product
 from app.models.scenario import Scenario
 from app.models.user import User, UserRole
-from app.models.visual_style import VisualStyle
 
 
 async def seed_users(db: AsyncSession) -> None:
@@ -283,257 +281,22 @@ async def seed_scenarios(db: AsyncSession) -> None:
 
 
 async def seed_learning_outcomes(db: AsyncSession) -> None:
-    """Create categorized learning outcomes with AI prompts."""
-    outcomes = [
-        # ===== Öz Bakım (Self Care) =====
-        LearningOutcome(
-            name="Temizlik ve Düzen",
-            description="Kendi çevresini temiz tutmak",
-            category="SelfCare",
-            category_label="Öz Bakım",
-            ai_prompt="Hikayede karakter bulunduğu çevreyi ve kişisel eşyalarını temiz, düzenli tutmanın ona huzur ve başarı getirdiğini fark etsin.",
-            display_order=1,
-        ),
-        LearningOutcome(
-            name="Sağlıklı Beslenme",
-            description="Sebze ve meyve yemenin faydaları",
-            category="SelfCare",
-            category_label="Öz Bakım",
-            ai_prompt="Hikayede karakter sebze yemenin ona süper güç verdiğini keşfetsin ve sağlıklı beslenmeyi sevsin.",
-            display_order=2,
-        ),
-        LearningOutcome(
-            name="Düzenli Uyku",
-            description="Vaktinde uyumanın önemi",
-            category="SelfCare",
-            category_label="Öz Bakım",
-            ai_prompt="Hikayede karakter vaktinde uyumanın rüyalara açılan büyülü bir kapı olduğunu anlasın.",
-            display_order=3,
-        ),
-        LearningOutcome(
-            name="Sorumluluk Bilinci",
-            description="Kendi görevlerini yerine getirmek",
-            category="SelfCare",
-            category_label="Öz Bakım",
-            ai_prompt="Hikayede karakter kendi kararlarını alıp sonuçlarına sahip çıkmanın ve sorumluluk almanın onu nasıl büyüttüğünü görsün.",
-            display_order=4,
-        ),
-        LearningOutcome(
-            name="El Yıkama ve Hijyen",
-            description="Temizlik alışkanlıkları",
-            category="SelfCare",
-            category_label="Öz Bakım",
-            ai_prompt="Hikayede karakter mikroplardan korunmak için el yıkamanın önemini öğrensin ve bunu alışkanlık haline getirsin.",
-            display_order=5,
-        ),
-
-        # ===== Kişisel Gelişim & Duygusal (Personal Growth) =====
-        LearningOutcome(
-            name="Cesaret ve Özgüven",
-            description="Korkuları yenmek ve kendine güvenmek",
-            category="PersonalGrowth",
-            category_label="Kişisel Gelişim",
-            ai_prompt="Hikayede karakter korktuğu bir şeyin üstüne gitsin ve cesaretinin onu başarıya götürdüğünü görsün.",
-            display_order=1,
-        ),
-        LearningOutcome(
-            name="Sabırlı Olmak",
-            description="Beklemenin güzelliğini öğrenmek",
-            category="PersonalGrowth",
-            category_label="Kişisel Gelişim",
-            ai_prompt="Hikayede karakter istediği bir şey için beklemenin güzelliğini öğrensin ve sabrın ödüllendirildiğini görsün.",
-            display_order=2,
-        ),
-        LearningOutcome(
-            name="Hata Yapmaktan Korkmamak",
-            description="Hatalardan öğrenmek",
-            category="PersonalGrowth",
-            category_label="Kişisel Gelişim",
-            ai_prompt="Hikayede karakter hata yapmanın öğrenmenin doğal bir parçası olduğunu anlasın ve hatalarından ders çıkarsın.",
-            display_order=3,
-        ),
-        LearningOutcome(
-            name="Liderlik",
-            description="Sorumluluk almak ve yol göstermek",
-            category="PersonalGrowth",
-            category_label="Kişisel Gelişim",
-            ai_prompt="Hikayede karakter arkadaşlarına yol gösterip sorumluluk alsın ve lider olmanın güzelliğini keşfetsin.",
-            display_order=4,
-        ),
-        LearningOutcome(
-            name="Duygularını İfade Etme",
-            description="Duygularını sağlıklı şekilde anlatmak",
-            category="PersonalGrowth",
-            category_label="Kişisel Gelişim",
-            ai_prompt="Hikayede karakter üzüldüğünde veya kızdığında duygularını doğru şekilde ifade etmeyi öğrensin.",
-            display_order=5,
-        ),
-
-        # ===== Sosyal Beceriler (Social Skills) =====
-        LearningOutcome(
-            name="Paylaşmak Güzeldir",
-            description="Paylaşmanın mutluluğu",
-            category="SocialSkills",
-            category_label="Sosyal Beceriler",
-            ai_prompt="Hikayede karakter oyuncağını veya yiyeceğini paylaşmanın mutluluğunu yaşasın ve paylaşınca daha çok sevdiğini görsün.",
-            display_order=1,
-        ),
-        LearningOutcome(
-            name="Özür Dilemek",
-            description="Hata yapınca özür dilemenin önemi",
-            category="SocialSkills",
-            category_label="Sosyal Beceriler",
-            ai_prompt="Hikayede karakter bir hata yaptığında özür dilemenin erdem olduğunu öğrensin ve ilişkilerini düzeltsin.",
-            display_order=2,
-        ),
-        LearningOutcome(
-            name="İş Birliği ve Takım Çalışması",
-            description="Başkalarıyla uyum içinde çalışmak",
-            category="SocialSkills",
-            category_label="Sosyal Beceriler",
-            ai_prompt="Hikayede karakter karşılaştığı zorlukları yalnız başına değil, oradaki bilge rehberle veya hayvan dostuyla iş birliği yaparak aşsın ve takım çalışmasının gücünü anlasın.",
-            display_order=3,
-        ),
-        LearningOutcome(
-            name="Yardımseverlik",
-            description="Başkalarına yardım etmek",
-            category="SocialSkills",
-            category_label="Sosyal Beceriler",
-            ai_prompt="Hikayede karakter zor durumdaki birine yardım etsin ve yardım etmenin verdiği mutluluğu yaşasın.",
-            display_order=4,
-        ),
-        LearningOutcome(
-            name="Arkadaşlık Kurmak",
-            description="Yeni arkadaşlar edinmek",
-            category="SocialSkills",
-            category_label="Sosyal Beceriler",
-            ai_prompt="Hikayede karakter yeni bir arkadaş edinsin ve arkadaşlığın nasıl kurulup büyütüldüğünü öğrensin.",
-            display_order=5,
-        ),
-
-        # ===== Eğitim & Çevre (Education & Nature) =====
-        LearningOutcome(
-            name="Doğa ve Hayvan Sevgisi",
-            description="Doğayı ve hayvanları korumak",
-            category="EducationNature",
-            category_label="Eğitim & Çevre",
-            ai_prompt="Hikayede karakter doğayı korumayı ve hayvanlara nazik davranmayı öğrensin.",
-            display_order=1,
-        ),
-        LearningOutcome(
-            name="Kitap Okuma Sevgisi",
-            description="Kitapların büyülü dünyası",
-            category="EducationNature",
-            category_label="Eğitim & Çevre",
-            ai_prompt="Hikayede karakter kitapların içindeki büyülü dünyayı keşfetsin ve okumayı sevsin.",
-            display_order=2,
-        ),
-        LearningOutcome(
-            name="Ekran Süresi Dengesi",
-            description="Tablet/TV dışında aktiviteler",
-            category="EducationNature",
-            category_label="Eğitim & Çevre",
-            ai_prompt="Hikayede karakter tablet ve TV dışında oyun oynamanın daha eğlenceli olduğunu fark etsin.",
-            display_order=3,
-        ),
-        LearningOutcome(
-            name="Merak ve Keşfetmek",
-            description="Soru sorma ve öğrenme isteği",
-            category="EducationNature",
-            category_label="Eğitim & Çevre",
-            ai_prompt="Hikayede karakter meraklı sorular sorsun ve yeni şeyler keşfetmenin heyecanını yaşasın.",
-            display_order=4,
-        ),
-        LearningOutcome(
-            name="Çevre Temizliği",
-            description="Çöpleri doğru yere atmak",
-            category="EducationNature",
-            category_label="Eğitim & Çevre",
-            ai_prompt="Hikayede karakter çevreyi temiz tutmanın önemini öğrensin ve çöpleri doğru yere atmayı alışkanlık haline getirsin.",
-            display_order=5,
-        ),
-    ]
-
-    for outcome in outcomes:
-        db.add(outcome)
-    print(f"[OK] {len(outcomes)} learning outcomes created (4 categories)")
+    """Learning outcomes are removed."""
+    print("[SKIP] Learning outcomes removed")
 
 
 async def seed_visual_styles(db: AsyncSession) -> None:
-    """
-    Create default visual styles.
-    
-    OPTIMIZED FOR FAL.AI FLUX:
-    - Natural sentence format (not comma-separated tags)
-    - Describes illustration STYLE only (not content)
-    - PuLID handles face from photo, clothing added separately
-    """
-    # Yalnızca aktif 7 stil — DB ile birebir eşleşir.
-    styles = [
-        VisualStyle(
-            name="2D CHILDREN'S BOOK STYLE (Likeness-first, NOT big eyes) + NEGATIVE (copy/paste)",
-            thumbnail_url="",
-            prompt_modifier="Warm cheerful 2D hand-painted storybook illustration, vibrant yet soft color palette with cheerful hues, smooth soft shading",
-            cover_aspect_ratio="3:2",
-            page_aspect_ratio="3:2",
-        ),
-        VisualStyle(
-            name="3D Pixar-ish (daha 3D, ama hâlâ çocuk kitabı)",
-            thumbnail_url="",
-            prompt_modifier="cinematic 3D animation style, Disney Pixar quality, warm lighting, vibrant colors",
-            cover_aspect_ratio="3:2",
-            page_aspect_ratio="3:2",
-        ),
-        VisualStyle(
-            name="Adventure Digital (Macera Dijital Boyama)",
-            thumbnail_url="",
-            prompt_modifier="adventure digital painting style, vibrant warm colors, painterly rendering, bright natural lighting, rich saturated colors",
-            cover_aspect_ratio="3:2",
-            page_aspect_ratio="3:2",
-        ),
-        VisualStyle(
-            name="Default Storybook (örneğe en yakın)",
-            thumbnail_url="",
-            prompt_modifier="2D children's storybook illustration, classic picture-book style, vibrant cheerful colors",
-            cover_aspect_ratio="3:2",
-            page_aspect_ratio="3:2",
-        ),
-        VisualStyle(
-            name="Ghibli-ish (anime dokusu, çok yumuşak)",
-            thumbnail_url="",
-            prompt_modifier="Studio Ghibli anime style, cel-shaded, peaceful nature, magical atmosphere, soft colors",
-            cover_aspect_ratio="3:2",
-            page_aspect_ratio="3:2",
-        ),
-        VisualStyle(
-            name="Watercolor Storybook",
-            thumbnail_url="",
-            prompt_modifier="watercolor illustration style, soft edges, pastel colors, dreamy children's book atmosphere",
-            cover_aspect_ratio="3:2",
-            page_aspect_ratio="3:2",
-        ),
-        VisualStyle(
-            name="Yumuşak Pastel",
-            thumbnail_url="",
-            prompt_modifier="soft pastel storybook illustration, gentle hand-drawn lines, warm muted colors (beige, cream, soft coral), warm magical atmosphere, dreamy softness",
-            cover_aspect_ratio="3:2",
-            page_aspect_ratio="3:2",
-        ),
-    ]
+    """Visual styles are managed via admin panel (/admin/visual-styles).
 
-    # Duplicate koruması: aynı isimle zaten varsa ekleme (idempotent)
-    from sqlalchemy import select as _sel
-    existing_names_q = await db.execute(_sel(VisualStyle.name))
-    existing_names = {row[0] for row in existing_names_q.all()}
+    This seed function is intentionally a no-op. Styles are configured
+    through the admin UI where prompt_modifier, id_weight, true_cfg,
+    and other parameters can be fine-tuned per style.
 
-    added = 0
-    for style in styles:
-        if style.name not in existing_names:
-            db.add(style)
-            added += 1
-        else:
-            print(f"  [SKIP] Visual style '{style.name}' already exists")
-    print(f"[OK] {added}/{len(styles)} visual styles created (Flux-optimized, {len(styles) - added} skipped)")
+    If you need initial styles, use:
+        python -m scripts.update_visual_styles
+    """
+    print("[SKIP] Visual styles managed via admin panel — use /admin/visual-styles")
+
 
 
 async def seed_all() -> None:

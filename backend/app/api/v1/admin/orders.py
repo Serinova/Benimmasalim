@@ -1,27 +1,39 @@
 """Admin order management endpoints."""
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
 from sqlalchemy import String, func, select
 
 from app.api.v1.deps import AdminUser, DbSession
 from app.core.exceptions import NotFoundError
 from app.models.order import Order, OrderStatus
-from app.models.story_preview import StoryPreview
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.story_preview import StoryPreview
 from app.services.preview_display_service import (
-    append_cache_bust as _append_cache_bust,
     build_prompts_by_page as _build_prompts_by_page,
+)
+from app.services.preview_display_service import (
     detect_pipeline_version as _detect_pipeline_version,
+)
+from app.services.preview_display_service import (
     enrich_manifest_with_prompts as _enrich_manifest_with_prompts,
+)
+from app.services.preview_display_service import (
     extract_pdf_url as _extract_pdf_url,
+)
+from app.services.preview_display_service import (
     page_images_for_preview as _page_images_for_preview,
+)
+from app.services.preview_display_service import (
     page_images_with_cache_bust as _page_images_with_cache_bust,
+)
+from app.services.preview_display_service import (
     story_pages_for_display as _story_pages_for_display,
 )
 
@@ -29,11 +41,137 @@ router = APIRouter()
 logger = structlog.get_logger()
 
 
+def _compute_actual_total(preview: "StoryPreview") -> float | None:
+    """Compute actual total from base product price + addon prices.
+
+    StoryPreview.product_price stores only the base book price.
+    Audio addon and coloring book prices are added on top during payment
+    but never written back, so we recompute them here for display.
+    """
+    base = float(preview.product_price) if preview.product_price else None
+    if base is None:
+        return None
+    total = base
+    if getattr(preview, "has_audio_book", False):
+        audio_type = getattr(preview, "audio_type", "system") or "system"
+        total += 300.0 if audio_type == "cloned" else 150.0
+    if getattr(preview, "has_coloring_book", False):
+        total += 150.0
+    return total
+
+
+
+# =============================================================================
+# Helper functions for billing and invoices
+# =============================================================================
+
+async def _check_has_invoice(order_id: UUID, db: "AsyncSession") -> bool:
+    """Lightweight check: does this order have an invoice row?"""
+    from app.models.invoice import Invoice
+
+    result = await db.execute(
+        select(func.count()).where(Invoice.order_id == order_id)
+    )
+    return (result.scalar() or 0) > 0
+
+
+async def _build_admin_invoice_summary(
+    order_id: UUID, db: "AsyncSession",
+) -> dict[str, Any] | None:
+    from sqlalchemy import or_
+
+    from app.models.invoice import Invoice
+
+    result = await db.execute(
+        select(Invoice).where(
+            or_(Invoice.order_id == order_id, Invoice.story_preview_id == order_id)
+        )
+    )
+    inv = result.scalar_one_or_none()
+    if not inv:
+        return None
+    return {
+        "invoice_number": inv.invoice_number,
+        "invoice_status": inv.invoice_status,
+        "pdf_ready": inv.pdf_url is not None,
+        "pdf_version": inv.pdf_version,
+        "issued_at": inv.issued_at.isoformat() if inv.issued_at else None,
+        "last_error": inv.last_error,
+        "retry_count": inv.retry_count,
+        "needs_credit_note": inv.needs_credit_note,
+        "email_sent": inv.email_sent_at is not None,
+        "email_status": inv.email_status or "NOT_SENT",
+        "email_sent_at": inv.email_sent_at.isoformat() if inv.email_sent_at else None,
+        "email_error": inv.email_error,
+        "email_retry_count": inv.email_retry_count,
+        "email_resent_count": inv.email_resent_count,
+        "email_last_resent_at": inv.email_last_resent_at.isoformat() if inv.email_last_resent_at else None,
+    }
+
+
+async def _build_billing_summary(
+    order_id: UUID,
+    db: "AsyncSession",
+    preview: "StoryPreview | None" = None,
+) -> dict[str, Any] | None:
+    # 1) Try Order table first (legacy checkout flow)
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+    if order and order.billing_type:
+        return {
+            "billing_type": order.billing_type,
+            "billing_tc_no": getattr(order, "billing_tc_no", None),
+            "billing_full_name": order.billing_full_name,
+            "billing_email": order.billing_email,
+            "billing_phone": order.billing_phone,
+            "billing_company_name": order.billing_company_name,
+            "billing_tax_id": order.billing_tax_id,
+            "billing_tax_office": order.billing_tax_office,
+            "billing_address": order.billing_address,
+        }
+
+    # 2) Try StoryPreview.billing_data (trial/create-v2 flow)
+    bd = getattr(preview, "billing_data", None) if preview else None
+    if not bd and not preview:
+        from app.models.story_preview import StoryPreview as SP
+        sp_result = await db.execute(select(SP).where(SP.id == order_id))
+        sp = sp_result.scalar_one_or_none()
+        bd = getattr(sp, "billing_data", None) if sp else None
+
+    if bd and isinstance(bd, dict) and bd.get("billing_type"):
+        return {
+            "billing_type": bd.get("billing_type"),
+            "billing_tc_no": bd.get("billing_tc_no"),
+            "billing_full_name": bd.get("billing_full_name"),
+            "billing_email": bd.get("billing_email"),
+            "billing_phone": bd.get("billing_phone"),
+            "billing_company_name": bd.get("billing_company_name"),
+            "billing_tax_id": bd.get("billing_tax_id"),
+            "billing_tax_office": bd.get("billing_tax_office"),
+            "billing_address": bd.get("billing_address"),
+        }
+
+    # 3) Fallback: auto-fill from preview parent info
+    if preview:
+        name = getattr(preview, "parent_name", None)
+        email = getattr(preview, "parent_email", None)
+        if name or email:
+            return {
+                "billing_type": "individual",
+                "billing_full_name": name,
+                "billing_email": email,
+                "billing_phone": getattr(preview, "parent_phone", None),
+                "billing_company_name": None,
+                "billing_tax_id": None,
+                "billing_tax_office": None,
+                "billing_address": None,
+            }
+
+    return None
 
 # =============================================================================
 # STORY PREVIEWS (Pending/Confirmed Orders from Email)
 # =============================================================================
-
 
 @router.get("/previews")
 async def list_story_previews(
@@ -106,7 +244,7 @@ async def list_story_previews(
             "child_gender": p.child_gender,
             "story_title": p.story_title,
             "product_name": p.product_name,
-            "product_price": float(p.product_price) if p.product_price else None,
+            "product_price": _compute_actual_total(p),
             "scenario_name": p.scenario_name,
             "visual_style_name": p.visual_style_name,
             "page_count": len(p.story_pages) if p.story_pages else 0,
@@ -154,7 +292,7 @@ async def get_preview_detail(
         # Product
         "product_id": str(preview.product_id) if preview.product_id else None,
         "product_name": preview.product_name,
-        "product_price": float(preview.product_price) if preview.product_price else None,
+        "product_price": _compute_actual_total(preview),
         # Story
         "story_title": preview.story_title,
         "story_pages": _story_pages_for_display(preview),
@@ -163,7 +301,6 @@ async def get_preview_detail(
         # Options
         "scenario_name": preview.scenario_name,
         "visual_style_name": preview.visual_style_name,
-        "learning_outcomes": preview.learning_outcomes,
         # Audio book
         "has_audio_book": preview.has_audio_book if hasattr(preview, "has_audio_book") else False,
         "audio_type": preview.audio_type if hasattr(preview, "audio_type") else None,
@@ -347,18 +484,10 @@ async def generate_book_from_preview(
     """
     Generate a complete book from a confirmed StoryPreview.
 
-    This creates an Order from the preview and triggers book generation
-    including audio if selected.
+    This creates the audiobook (if selected), back cover, intro page, 
+    and final PDF in a single orchestrated flow.
     """
-    import structlog
-
-    from app.models.book_template import BackCoverConfig
-    from app.models.product import Product
-    from app.services.ai.elevenlabs_service import ElevenLabsService
-    from app.services.pdf_service import PDFService
-    from app.services.storage_service import StorageService
-
-    logger = structlog.get_logger()
+    from app.services.book_generation_service import BookGenerationService
 
     # Get preview
     result = await db.execute(select(StoryPreview).where(StoryPreview.id == preview_id))
@@ -373,440 +502,20 @@ async def generate_book_from_preview(
         raise ValidationError("Sadece onaylanmış siparişler için kitap oluşturulabilir")
 
     logger.info(
-        "Generating book from preview",
+        "Generating book from preview via BookGenerationService",
         preview_id=str(preview_id),
         has_audio=getattr(preview, "has_audio_book", False),
-        audio_type=getattr(preview, "audio_type", None),
     )
 
-    storage = StorageService()
-    pdf_service = PDFService()
-
-    # Generate audio if selected
-    audio_qr_url = None
-    audio_file_url = None
-
-    has_audio = getattr(preview, "has_audio_book", False)
-    audio_type = getattr(preview, "audio_type", None)
-    audio_voice_id = getattr(preview, "audio_voice_id", None)
-
-    if has_audio:
-        try:
-            elevenlabs = ElevenLabsService()
-
-            # Combine all page texts
-            full_story_text = ""
-            if preview.story_pages:
-                for page in preview.story_pages:
-                    if isinstance(page, dict) and page.get("text"):
-                        full_story_text += page["text"] + "\n\n"
-
-            if full_story_text.strip():
-                logger.info(
-                    "Generating audio book",
-                    preview_id=str(preview_id),
-                    audio_type=audio_type,
-                    text_length=len(full_story_text),
-                )
-
-                # Generate audio using ElevenLabs
-                if audio_type == "cloned" and audio_voice_id:
-                    audio_bytes = await elevenlabs.text_to_speech(
-                        text=full_story_text,
-                        voice_id=audio_voice_id,
-                    )
-                else:
-                    # Use system voice (default female)
-                    audio_bytes = await elevenlabs.text_to_speech(
-                        text=full_story_text,
-                        voice_type="female",
-                    )
-
-                # Upload audio to GCS
-                audio_file_url = storage.upload_audio(
-                    audio_bytes=audio_bytes,
-                    order_id=str(preview.id),
-                    filename="audiobook.mp3",
-                )
-
-                # Generate signed URL for QR code (valid for 1 year)
-                audio_qr_url = storage.get_signed_url(
-                    audio_file_url,
-                    expiration_hours=24 * 365,
-                )
-
-                logger.info(
-                    "Audio book generated",
-                    preview_id=str(preview_id),
-                    audio_url=audio_file_url,
-                )
-
-        except Exception as e:
-            logger.error(
-                "Audio generation failed",
-                preview_id=str(preview_id),
-                error=str(e),
-            )
-            # Don't fail - continue without audio
-
-    # Get back cover config
-    back_cover_config = None
-    try:
-        result = await db.execute(
-            select(BackCoverConfig)
-            .where(BackCoverConfig.is_active == True)
-            .where(BackCoverConfig.is_default == True)
-        )
-        back_cover_config = result.scalar_one_or_none()
-    except Exception as e:
-        logger.warning("Failed to get back cover config", error=str(e))
-
-    # Get product with inner_template eagerly loaded
-    from sqlalchemy.orm import selectinload
-
-    product = None
-    inner_template = None
-    page_width_mm = 297.0  # Varsayılan: yatay A4 (kitap formatı)
-    page_height_mm = 210.0
-    bleed_mm = 3.0
-
-    if preview.product_id:
-        result = await db.execute(
-            select(Product)
-            .where(Product.id == preview.product_id)
-            .options(selectinload(Product.inner_template), selectinload(Product.cover_template))
-        )
-        product = result.scalar_one_or_none()
-
-        if product:
-            if product.inner_template:
-                inner_template = product.inner_template
-                _w = inner_template.page_width_mm
-                _h = inner_template.page_height_mm
-                if _w < _h:
-                    from app.utils.resolution_calc import (
-                        A4_LANDSCAPE_HEIGHT_MM,
-                        A4_LANDSCAPE_WIDTH_MM,
-                    )
-                    page_width_mm, page_height_mm = A4_LANDSCAPE_WIDTH_MM, A4_LANDSCAPE_HEIGHT_MM
-                else:
-                    page_width_mm, page_height_mm = _w, _h
-                bleed_mm = inner_template.bleed_mm
-
-    template_config: dict = {
-        "page_width_mm": page_width_mm,
-        "page_height_mm": page_height_mm,
-        "bleed_mm": bleed_mm,
-        "image_x_percent": 0.0,
-        "image_y_percent": 0.0,
-        "image_width_percent": 100.0,
-        "image_height_percent": 70.0,
-        "text_x_percent": 5.0,
-        "text_y_percent": 72.0,
-        "text_width_percent": 90.0,
-        "text_height_percent": 25.0,
-        "text_position": "bottom",
-        "text_align": "center",
-        "font_family": "Arial",
-        "font_size_pt": 16,
-        "font_color": "#333333",
-        "background_color": "#FFFFFF",
-    }
-    if inner_template:
-        template_config.update({
-            "image_x_percent": inner_template.image_x_percent or 0.0,
-            "image_y_percent": inner_template.image_y_percent or 0.0,
-            "image_width_percent": inner_template.image_width_percent or 100.0,
-            "image_height_percent": inner_template.image_height_percent or 70.0,
-            "text_x_percent": inner_template.text_x_percent or 5.0,
-            "text_y_percent": inner_template.text_y_percent or 72.0,
-            "text_width_percent": inner_template.text_width_percent or 90.0,
-            "text_height_percent": inner_template.text_height_percent or 25.0,
-            "text_position": inner_template.text_position or "bottom",
-            "text_align": inner_template.text_align or "center",
-            "font_family": inner_template.font_family or "Arial",
-            "font_size_pt": inner_template.font_size_pt or 16,
-            "font_color": inner_template.font_color or "#333333",
-            "background_color": inner_template.background_color or "#FFFFFF",
-        })
-
-    # Generate PDF
-    pdf_url = None
-    pdf_error: str | None = None
-    back_cover_image_url: str | None = None
-    intro_image_url: str | None = None
-    _intro_b64: str | None = None
-    try:
-        logger.info("Generating PDF for preview", preview_id=str(preview_id))
-
-        # Get cover image from page_images (veya preview_images GCS fallback)
-        cover_image_url = None
-        page_images = _page_images_for_preview(preview) or {}
-        if page_images:
-            cover_image_url = page_images.get("0") or page_images.get(0) or page_images.get("cover")
-
-        # Build story pages with images — skip page 0 if used as cover
-        # NOTE: page_images are ALREADY composed (text overlay). Clear image_base64
-        # to prevent accidental re-composition in PDF service fallback path.
-        story_pages_with_images = []
-        raw_pages = preview.story_pages or []
-        for i, page in enumerate(raw_pages):
-            if i == 0 and cover_image_url:
-                continue
-            if isinstance(page, dict) and page.get("page_type") == "front_matter":
-                continue
-            page_data = dict(page) if isinstance(page, dict) else {"text": str(page)}
-            page_num = page.get("page_number", i) if isinstance(page, dict) else i
-            page_key = str(page_num)
-            if page_key in page_images:
-                page_data["image_url"] = page_images[page_key]
-                page_data.pop("image_base64", None)
-                page_data.pop("imageBase64", None)
-            elif page_num in page_images:
-                page_data["image_url"] = page_images[page_num]
-                page_data.pop("image_base64", None)
-                page_data.pop("imageBase64", None)
-            story_pages_with_images.append(page_data)
-
-        # Karşılama sayfası URL'i
-        dedication_image_url = page_images.get("dedication")
-
-        # Karşılama 2 + Arka kapak — paralel üret (zaman kazanmak için)
-        import asyncio as _asyncio
-        from app.models.scenario import Scenario as _Scenario
-
-        # Scenario lookup (shared by both tasks)
-        _scenario_obj_shared = None
-        _cache_shared = getattr(preview, "generated_prompts_cache", None) or {}
-        _sc_id_str = _cache_shared.get("scenario_id") if isinstance(_cache_shared, dict) else None
-        if _sc_id_str:
-            try:
-                import uuid as _uuid
-                _scenario_obj_shared = await db.get(_Scenario, _uuid.UUID(_sc_id_str))
-            except Exception:
-                pass
-        if _scenario_obj_shared is None and getattr(preview, "scenario_name", None):
-            from sqlalchemy import select as _sel_sc2
-            _sc_res2 = await db.execute(
-                _sel_sc2(_Scenario).where(_Scenario.name == preview.scenario_name).limit(1)
-            )
-            _scenario_obj_shared = _sc_res2.scalar_one_or_none()
-
-        # Dedication template (shared)
-        from app.models.book_template import PageTemplate as _PageTemplate
-        from sqlalchemy import select as _select_tpl
-        _ded_tpl_result = await db.execute(
-            _select_tpl(_PageTemplate)
-            .where(_PageTemplate.page_type == "dedication")
-            .where(_PageTemplate.is_active == True)
-            .limit(1)
-        )
-        _ded_tpl_shared = _ded_tpl_result.scalar_one_or_none()
-
-        async def _build_intro_page() -> tuple[str | None, str | None]:
-            """Returns (intro_image_url, intro_b64). Uploads to GCS so admin panel can display it."""
-            _url = page_images.get("intro")
-            if _url:
-                return _url, None
-            try:
-                from app.services.scenario_content_service import generate_scenario_intro_text as _generate_scenario_intro_text
-                from app.services.page_composer import PageComposer, build_template_config
-                from app.services.storage_service import StorageService as _IntroStorage
-                import base64 as _b64mod
-
-                _text = await _generate_scenario_intro_text(
-                    scenario=_scenario_obj_shared,
-                    child_name=preview.child_name or "",
-                    story_title=getattr(preview, "story_title", "") or "",
-                )
-                # Placeholder/senaryo description sızıntısı varsa intro metnini kullanma
-                if _text and (
-                    "[çocuk adı]" in _text.lower() or "[cocuk adi]" in _text.lower()
-                    or "kitap adı:" in _text.lower() or "kitap adi:" in _text.lower()
-                ):
-                    _text = None
-                if _text:
-                    _cfg = build_template_config(_ded_tpl_shared) if _ded_tpl_shared else {}
-                    _b64 = PageComposer().compose_dedication_page(text=_text, template_config=_cfg, dpi=300)
-                    if _b64:
-                        # Upload to GCS so admin panel can display it
-                        try:
-                            _img_bytes = _b64mod.b64decode(_b64)
-                            _intro_gcs_url = await _IntroStorage().upload_generated_image(
-                                _img_bytes, str(preview.id), page_number=9998
-                            )
-                            # Save to page_images so it persists
-                            _pi = dict(preview.page_images or {})
-                            _pi["intro"] = _intro_gcs_url
-                            preview.page_images = _pi
-                            logger.info("Scenario intro page (karşılama 2) uploaded to GCS", preview_id=str(preview_id), url=_intro_gcs_url[:80])
-                            return _intro_gcs_url, None
-                        except Exception as _upload_err:
-                            logger.warning("Intro page GCS upload failed, using base64 fallback", error=str(_upload_err))
-                            return None, _b64
-            except Exception as _e:
-                logger.warning("Scenario intro page failed", preview_id=str(preview_id), error=str(_e))
-            return None, None
-
-        async def _build_back_cover() -> str | None:
-            """Returns back_cover_image_url or None."""
-            _existing = page_images.get("backcover") or getattr(preview, "back_cover_image_url", None)
-            if _existing:
-                return _existing
-            try:
-                from app.prompt.book_context import BookContext
-                from app.prompt.cover_builder import build_back_cover_prompt
-                from app.services.ai.gemini_consistent_image import GeminiConsistentImageService
-                from app.services.storage_service import StorageService as _StorageService
-                from app.utils.resolution_calc import (
-                    A4_LANDSCAPE_HEIGHT_MM,
-                    A4_LANDSCAPE_WIDTH_MM,
-                    calculate_generation_params_from_mm,
-                )
-
-                _storage_bc = _StorageService()
-                _image_svc = GeminiConsistentImageService()
-                _style_name = getattr(preview, "visual_style_name", None) or ""
-                _scenario_name = getattr(preview, "scenario_name", None) or "magical adventure"
-                _child_gender = getattr(preview, "child_gender", None) or "child"
-                _child_name_bc = preview.child_name or "child"
-                _child_age_bc = getattr(preview, "child_age", None) or 7
-                
-                # PRIORITY 1: Try to resolve clothing from scenario (most accurate)
-                _clothing = ""
-                _scenario_id = getattr(preview, "scenario_id", None)
-                if _scenario_id:
-                    try:
-                        from app.models.scenario import Scenario as _Scen
-                        from sqlalchemy import select as _sel
-                        from uuid import UUID as _U
-                        _sc_res = await db.execute(_sel(_Scen).where(_Scen.id == _U(str(_scenario_id))))
-                        _sc = _sc_res.scalar_one_or_none()
-                        if _sc:
-                            _g = (_child_gender or "erkek").lower()
-                            if _g in ("kiz", "kız", "girl", "female"):
-                                _clothing = (getattr(_sc, "outfit_girl", None) or "").strip() or (getattr(_sc, "outfit_boy", None) or "").strip()
-                            else:
-                                _clothing = (getattr(_sc, "outfit_boy", None) or "").strip() or (getattr(_sc, "outfit_girl", None) or "").strip()
-                            if _clothing:
-                                logger.info("back_cover: clothing resolved from scenario (priority)", scenario_id=str(_scenario_id), outfit=_clothing[:60])
-                    except Exception as _ce:
-                        logger.warning("back_cover: failed to resolve clothing from scenario", error=str(_ce))
-                
-                # PRIORITY 2: Fallback to preview's clothing_description if scenario didn't have outfit
-                if not _clothing:
-                    _clothing = (getattr(preview, "clothing_description", None) or "").strip()
-                    if _clothing:
-                        logger.info("back_cover: using preview clothing_description (fallback)", outfit=_clothing[:60])
-                
-                _face_ref_url = getattr(preview, "face_crop_url", None) or getattr(preview, "child_photo_url", None)
-
-                _book_ctx = BookContext.build(
-                    child_name=_child_name_bc, child_age=_child_age_bc, child_gender=_child_gender,
-                    scenario_name=_scenario_name, clothing_description=_clothing,
-                    story_title=getattr(preview, "story_title", ""), style_modifier=_style_name,
-                )
-                _back_scene = (
-                    f"Wide panoramic view. The same young {_child_gender} seen from behind or side, "
-                    f"gazing into the distance of the {_scenario_name} world. "
-                    f"Continuation of the front cover atmosphere — same lighting, same environment, same mood."
-                )
-                _back_prompt = build_back_cover_prompt(ctx=_book_ctx, scene_description=_back_scene)
-                _params = calculate_generation_params_from_mm(A4_LANDSCAPE_WIDTH_MM, A4_LANDSCAPE_HEIGHT_MM)
-                
-                # CRITICAL: Back cover should have NO text/title, use stronger negative prompt
-                _back_negative = (
-                    "text, title, letters, words, writing, book title, story title, "
-                    "watermark, signature, logo, typography, "
-                    "close-up, portrait, headshot, face filling frame, cropped body, cut-off legs"
-                )
-                
-                _result = await _image_svc.generate_consistent_image(
-                    prompt=_back_prompt, child_face_url=_face_ref_url, clothing_prompt=_clothing,
-                    style_modifier=_style_name, width=_params["generation_width"], height=_params["generation_height"],
-                    id_weight=_book_ctx.style.id_weight, is_cover=True, template_en=None, story_title="",
-                    child_gender=_child_gender, child_age=_child_age_bc, 
-                    style_negative_en=_back_negative, base_negative_en="",
-                    skip_compose=True,  # Already composed by build_back_cover_prompt
-                    precomposed_negative="",
-                    reference_embedding=getattr(preview, "face_embedding", None),
-                    character_description=getattr(preview, "child_description", None) or "",
-                )
-                _img_url = _result[0] if isinstance(_result, tuple) else _result
-                import httpx as _httpx
-                async with _httpx.AsyncClient(timeout=60.0) as _client:
-                    _resp = await _client.get(_img_url)
-                    _img_bytes = _resp.content
-                
-                # Upscale/resize to target dimensions for print quality
-                from app.utils.resolution_calc import resize_image_bytes_to_target
-                _target_w, _target_h = _params["target_width"], _params["target_height"]
-                logger.info("back_cover: resizing to target", gen_size=f"{_params['generation_width']}x{_params['generation_height']}", target_size=f"{_target_w}x{_target_h}")
-                _img_bytes = resize_image_bytes_to_target(_img_bytes, _target_w, _target_h, output_format="JPEG", dpi=300)
-                
-                _bc_url = await _storage_bc.upload_generated_image(_img_bytes, str(preview.id), page_number=9999)
-                logger.info("Back cover image generated", preview_id=str(preview_id), url=_bc_url[:80])
-                return _bc_url
-            except Exception as _bc_err:
-                logger.warning("Back cover generation failed — continuing without it", preview_id=str(preview_id), error=str(_bc_err))
-                return None
-
-        # Run intro + back cover generation in parallel
-        (_intro_url_result, _intro_b64_result), back_cover_image_url = await _asyncio.gather(
-            _build_intro_page(),
-            _build_back_cover(),
-        )
-        intro_image_url = _intro_url_result
-        _intro_b64 = _intro_b64_result
-
-        _needs_commit = False
-        if back_cover_image_url and back_cover_image_url != getattr(preview, "back_cover_image_url", None):
-            preview.back_cover_image_url = back_cover_image_url
-            _needs_commit = True
-        if intro_image_url and intro_image_url != (preview.page_images or {}).get("intro"):
-            _needs_commit = True  # page_images already updated inside _build_intro_page
-        if _needs_commit:
-            await db.commit()
-
-        # Prepare data for PDF
-        # page_images are ALREADY composed (text overlay applied by page_composer)
-        pdf_data = {
-            "child_name": preview.child_name,
-            "story_pages": story_pages_with_images,
-            "cover_image_url": cover_image_url,
-            "dedication_image_url": dedication_image_url,
-            "intro_image_base64": _intro_b64,
-            "intro_image_url": intro_image_url,
-            "back_cover_config": back_cover_config,
-            "back_cover_image_url": back_cover_image_url,
-            "audio_qr_url": audio_qr_url,
-            "page_width_mm": page_width_mm,
-            "page_height_mm": page_height_mm,
-            "bleed_mm": bleed_mm,
-            "template_config": template_config,
-            "images_precomposed": True,
-        }
-
-        # Generate PDF bytes (run in threadpool — blocking I/O)
-        from starlette.concurrency import run_in_threadpool
-        pdf_bytes = await run_in_threadpool(pdf_service.generate_book_pdf_from_preview, pdf_data)
-
-        if pdf_bytes:
-            # Upload to GCS
-            pdf_url = storage.upload_pdf(
-                pdf_bytes=pdf_bytes,
-                order_id=str(preview.id),
-            )
-            logger.info("PDF generated and uploaded", preview_id=str(preview_id), pdf_url=pdf_url)
-        else:
-            pdf_error = "PDF üretimi boş sonuç döndürdü"
-            logger.warning("PDF generation returned empty bytes", preview_id=str(preview_id))
-    except Exception as e:
-        pdf_error = str(e)
-        logger.error("PDF generation failed", preview_id=str(preview_id), error=str(e), exc_info=True)
+    # Orchestrate everything inside the new service
+    service = BookGenerationService(db)
+    gen_result = await service.generate_full_book(preview)
 
     # Update preview with generated URLs
     notes_update = ""
+    audio_file_url = gen_result.get("audio_file_url")
+    pdf_url = gen_result.get("pdf_url")
+
     if audio_file_url:
         preview.audio_file_url = audio_file_url  # Save audio URL to preview
         notes_update += f"\n\nAudio URL: {audio_file_url}"
@@ -825,11 +534,11 @@ async def generate_book_from_preview(
     return {
         "success": True,
         "preview_id": str(preview.id),
-        "has_audio": has_audio,
+        "has_audio": gen_result.get("has_audio", False),
         "audio_url": audio_file_url,
-        "audio_qr_url": audio_qr_url,
+        "audio_qr_url": gen_result.get("audio_qr_url"),
         "pdf_url": pdf_url,
-        "pdf_error": pdf_error,
+        "pdf_error": gen_result.get("pdf_error"),
         "message": "Kitap oluşturma tamamlandı" + (" (ses dahil)" if audio_file_url else ""),
     }
 
@@ -909,9 +618,6 @@ async def trigger_coloring_book_generation(
         raise HTTPException(status_code=500, detail=f"İşlem kuyruğa eklenemedi: {e}")
 
 
-from app.services.admin_pdf_service import (
-    generate_admin_pdf_inner as _generate_admin_pdf_inner,
-)
 
 @router.get("/previews/{preview_id}/download-pdf")
 async def download_preview_pdf(
@@ -1097,11 +803,14 @@ async def get_preview_stats(
     )
     status_counts = {row[0]: row[1] for row in result.all()}
 
-    # Total revenue from confirmed orders
-    result = await db.execute(
-        select(func.sum(StoryPreview.product_price)).where(StoryPreview.status == "CONFIRMED")
+    # Total revenue from confirmed orders — compute actual totals (base + addons)
+    confirmed_result = await db.execute(
+        select(StoryPreview).where(StoryPreview.status == "CONFIRMED")
     )
-    total_revenue = result.scalar() or 0
+    confirmed_previews = confirmed_result.scalars().all()
+    total_revenue = sum(
+        _compute_actual_total(p) or 0.0 for p in confirmed_previews
+    )
 
     return {
         "total": sum(status_counts.values()),
@@ -1113,344 +822,7 @@ async def get_preview_stats(
     }
 
 
-class OrderListResponse(BaseModel):
-    """Paginated order list response."""
-
-    items: list[dict]
-    total: int
-    page: int
-    page_size: int
-
-
-class UpdateTrackingRequest(BaseModel):
-    """Update tracking number request."""
-
-    tracking_number: str
-    carrier: str
-
-
-@router.get("", response_model=OrderListResponse)
-async def list_orders(
-    db: DbSession,
-    admin: AdminUser,
-    status: OrderStatus | None = Query(None),
-    date_from: datetime | None = Query(None),
-    date_to: datetime | None = Query(None),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=100),
-) -> OrderListResponse:
-    """
-    List all orders with filters.
-
-    Admin only endpoint.
-    """
-    query = select(Order)
-
-    if status:
-        query = query.where(Order.status == status)
-    if date_from:
-        query = query.where(Order.created_at >= date_from)
-    if date_to:
-        query = query.where(Order.created_at <= date_to)
-
-    # Count total
-    count_query = select(func.count()).select_from(query.subquery())
-    total_result = await db.execute(count_query)
-    total = total_result.scalar() or 0
-
-    # Paginate
-    query = query.order_by(Order.created_at.desc())
-    query = query.offset((page - 1) * page_size).limit(page_size)
-
-    result = await db.execute(query)
-    orders = result.scalars().all()
-
-    return OrderListResponse(
-        items=[
-            {
-                "id": str(o.id),
-                "status": o.status.value,
-                "child_name": o.child_name,
-                "payment_amount": float(o.payment_amount) if o.payment_amount else None,
-                "tracking_number": o.tracking_number,
-                "created_at": o.created_at.isoformat(),
-            }
-            for o in orders
-        ],
-        total=total,
-        page=page,
-        page_size=page_size,
-    )
-
-
-@router.get("/{order_id}")
-async def get_order_detail(
-    order_id: UUID,
-    db: DbSession,
-    admin: AdminUser,
-) -> dict[str, Any]:
-    """Get detailed order information for admin."""
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    order = result.scalar_one_or_none()
-
-    if not order:
-        raise NotFoundError("Sipariş", order_id)
-
-    return {
-        "id": str(order.id),
-        "status": order.status.value,
-        "child_name": order.child_name,
-        "child_age": order.child_age,
-        "child_gender": order.child_gender,
-        "selected_outcomes": order.selected_outcomes,
-        "payment_id": order.payment_id,
-        "payment_amount": float(order.payment_amount) if order.payment_amount else None,
-        "payment_status": order.payment_status,
-        "shipping_address": order.shipping_address,
-        "tracking_number": order.tracking_number,
-        "carrier": order.carrier,
-        "has_audio_book": order.has_audio_book,
-        "audio_type": order.audio_type,
-        "cover_regenerate_count": order.cover_regenerate_count,
-        "final_pdf_url": order.final_pdf_url,
-        "delivered_at": order.delivered_at.isoformat() if order.delivered_at else None,
-        "photo_deletion_scheduled_at": (
-            order.photo_deletion_scheduled_at.isoformat()
-            if order.photo_deletion_scheduled_at
-            else None
-        ),
-        "created_at": order.created_at.isoformat(),
-        "updated_at": order.updated_at.isoformat(),
-        "billing": {
-            "billing_type": order.billing_type,
-            "billing_full_name": order.billing_full_name,
-            "billing_email": order.billing_email,
-            "billing_phone": order.billing_phone,
-            "billing_company_name": order.billing_company_name,
-            "billing_tax_id": order.billing_tax_id,
-            "billing_tax_office": order.billing_tax_office,
-            "billing_address": order.billing_address,
-        },
-        "invoice": await _build_admin_invoice_summary(order.id, db),
-    }
-
-
-async def _build_billing_summary(
-    order_id: UUID,
-    db: "AsyncSession",
-    preview: "StoryPreview | None" = None,
-) -> dict[str, Any] | None:
-    # 1) Try Order table first (legacy checkout flow)
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    order = result.scalar_one_or_none()
-    if order and order.billing_type:
-        return {
-            "billing_type": order.billing_type,
-            "billing_tc_no": getattr(order, "billing_tc_no", None),
-            "billing_full_name": order.billing_full_name,
-            "billing_email": order.billing_email,
-            "billing_phone": order.billing_phone,
-            "billing_company_name": order.billing_company_name,
-            "billing_tax_id": order.billing_tax_id,
-            "billing_tax_office": order.billing_tax_office,
-            "billing_address": order.billing_address,
-        }
-
-    # 2) Try StoryPreview.billing_data (trial/create-v2 flow)
-    bd = getattr(preview, "billing_data", None) if preview else None
-    if not bd and not preview:
-        from app.models.story_preview import StoryPreview as SP
-        sp_result = await db.execute(select(SP).where(SP.id == order_id))
-        sp = sp_result.scalar_one_or_none()
-        bd = getattr(sp, "billing_data", None) if sp else None
-
-    if bd and isinstance(bd, dict) and bd.get("billing_type"):
-        return {
-            "billing_type": bd.get("billing_type"),
-            "billing_tc_no": bd.get("billing_tc_no"),
-            "billing_full_name": bd.get("billing_full_name"),
-            "billing_email": bd.get("billing_email"),
-            "billing_phone": bd.get("billing_phone"),
-            "billing_company_name": bd.get("billing_company_name"),
-            "billing_tax_id": bd.get("billing_tax_id"),
-            "billing_tax_office": bd.get("billing_tax_office"),
-            "billing_address": bd.get("billing_address"),
-        }
-
-    # 3) Fallback: auto-fill from preview parent info
-    if preview:
-        name = getattr(preview, "parent_name", None)
-        email = getattr(preview, "parent_email", None)
-        if name or email:
-            return {
-                "billing_type": "individual",
-                "billing_full_name": name,
-                "billing_email": email,
-                "billing_phone": getattr(preview, "parent_phone", None),
-                "billing_company_name": None,
-                "billing_tax_id": None,
-                "billing_tax_office": None,
-                "billing_address": None,
-            }
-
-    return None
-
-
-async def _check_has_invoice(order_id: UUID, db: "AsyncSession") -> bool:
-    """Lightweight check: does this order have an invoice row?"""
-    from app.models.invoice import Invoice
-
-    result = await db.execute(
-        select(func.count()).where(Invoice.order_id == order_id)
-    )
-    return (result.scalar() or 0) > 0
-
-
-async def _build_admin_invoice_summary(
-    order_id: UUID, db: "AsyncSession",
-) -> dict[str, Any] | None:
-    from sqlalchemy import or_
-
-    from app.models.invoice import Invoice
-
-    result = await db.execute(
-        select(Invoice).where(
-            or_(Invoice.order_id == order_id, Invoice.story_preview_id == order_id)
-        )
-    )
-    inv = result.scalar_one_or_none()
-    if not inv:
-        return None
-    return {
-        "invoice_number": inv.invoice_number,
-        "invoice_status": inv.invoice_status,
-        "pdf_ready": inv.pdf_url is not None,
-        "pdf_version": inv.pdf_version,
-        "issued_at": inv.issued_at.isoformat() if inv.issued_at else None,
-        "last_error": inv.last_error,
-        "retry_count": inv.retry_count,
-        "needs_credit_note": inv.needs_credit_note,
-        "email_sent": inv.email_sent_at is not None,
-        "email_status": inv.email_status or "NOT_SENT",
-        "email_sent_at": inv.email_sent_at.isoformat() if inv.email_sent_at else None,
-        "email_error": inv.email_error,
-        "email_retry_count": inv.email_retry_count,
-        "email_resent_count": inv.email_resent_count,
-        "email_last_resent_at": inv.email_last_resent_at.isoformat() if inv.email_last_resent_at else None,
-    }
-
-
-@router.get("/{order_id}/download-pdf")
-async def download_pdf(
-    order_id: UUID,
-    db: DbSession,
-    admin: AdminUser,
-) -> dict:
-    """Download order PDF for printing. Returns GCS URL."""
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    order = result.scalar_one_or_none()
-
-    if not order:
-        raise NotFoundError("Sipariş", order_id)
-
-    if not order.final_pdf_url:
-        raise HTTPException(status_code=404, detail="PDF henüz oluşturulmamış")
-
-    return {"pdf_url": order.final_pdf_url}
-
-
-@router.patch("/{order_id}/tracking")
-async def update_tracking(
-    order_id: UUID,
-    request: UpdateTrackingRequest,
-    db: DbSession,
-    admin: AdminUser,
-) -> dict[str, Any]:
-    """Update tracking number and mark as shipped."""
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    order = result.scalar_one_or_none()
-
-    if not order:
-        raise NotFoundError("Sipariş", order_id)
-
-    if order.status != OrderStatus.READY_FOR_PRINT:
-        from app.core.exceptions import ValidationError
-
-        raise ValidationError("Kargo takip no sadece READY_FOR_PRINT durumunda eklenebilir")
-
-    order.tracking_number = request.tracking_number
-    order.carrier = request.carrier
-
-    # Transition to SHIPPED
-    from app.services.order_state_machine import transition_order
-
-    await transition_order(order, OrderStatus.SHIPPED, db, actor_id=admin.id)
-
-    return {
-        "id": str(order.id),
-        "status": order.status.value,
-        "tracking_number": order.tracking_number,
-        "carrier": order.carrier,
-    }
-
-
-@router.post("/{order_id}/regenerate-page")
-async def regenerate_page(
-    order_id: UUID,
-    page_number: int,
-    db: DbSession,
-    admin: AdminUser,
-) -> dict[str, Any]:
-    """Regenerate a specific page (admin only, no limit)."""
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    order = result.scalar_one_or_none()
-
-    if not order:
-        raise NotFoundError("Sipariş", order_id)
-
-    # TODO: Implement page regeneration
-    # This will be in the AI services task
-
-    return {
-        "order_id": str(order_id),
-        "page_number": page_number,
-        "status": "regenerating",
-    }
-
-
-@router.get("/export-billing")
-async def export_billing(
-    db: DbSession,
-    admin: AdminUser,
-    status: OrderStatus | None = Query(None),
-) -> list[dict[str, Any]]:
-    """Export billing data for all orders (for accounting/invoice integration)."""
-    query = select(Order).where(Order.billing_type.isnot(None))
-    if status:
-        query = query.where(Order.status == status)
-    query = query.order_by(Order.created_at.desc())
-
-    result = await db.execute(query)
-    orders = result.scalars().all()
-
-    return [
-        {
-            "order_id": str(o.id),
-            "order_no": o.order_no,
-            "status": o.status.value if hasattr(o.status, "value") else str(o.status),
-            "created_at": o.created_at.isoformat(),
-            "payment_amount": float(o.payment_amount) if o.payment_amount else None,
-            "billing_type": o.billing_type,
-            "billing_full_name": o.billing_full_name,
-            "billing_email": o.billing_email,
-            "billing_phone": o.billing_phone,
-            "billing_company_name": o.billing_company_name,
-            "billing_tax_id": o.billing_tax_id,
-            "billing_tax_office": o.billing_tax_office,
-            "billing_address": o.billing_address,
-        }
-        for o in orders
-    ]
+# Legacy Order endpoints have been removed.
 
 
 # ── Invoice admin endpoints ──────────────────────────────────────────────
@@ -1466,11 +838,10 @@ async def admin_download_invoice(
     from io import BytesIO
 
     from fastapi.responses import StreamingResponse
+    from sqlalchemy import or_
 
     from app.models.invoice import Invoice, InvoiceStatus
     from app.services.storage_service import storage_service
-
-    from sqlalchemy import or_
 
     inv_result = await db.execute(
         select(Invoice).where(
@@ -1505,7 +876,8 @@ async def admin_create_invoice(
     Zaten fatura varsa 409 döner; var olan faturayı yenilemek için /regenerate kullan.
     """
     import uuid as _uuid
-    from datetime import UTC, datetime as _dt
+    from datetime import UTC
+    from datetime import datetime as _dt
 
     from sqlalchemy import or_
     from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -1574,24 +946,24 @@ async def admin_create_invoice(
 
     if is_preview_flow:
         conflict_col = "story_preview_id"
-        values = dict(
-            id=_uuid.uuid4(),
-            order_id=None,
-            story_preview_id=order_id,
-            invoice_number=invoice_number,
-            invoice_status="PENDING",
-            issued_at=now,
-        )
+        values = {
+            "id": _uuid.uuid4(),
+            "order_id": None,
+            "story_preview_id": order_id,
+            "invoice_number": invoice_number,
+            "invoice_status": "PENDING",
+            "issued_at": now,
+        }
     else:
         conflict_col = "order_id"
-        values = dict(
-            id=_uuid.uuid4(),
-            order_id=order_id,
-            story_preview_id=None,
-            invoice_number=invoice_number,
-            invoice_status="PENDING",
-            issued_at=now,
-        )
+        values = {
+            "id": _uuid.uuid4(),
+            "order_id": order_id,
+            "story_preview_id": None,
+            "invoice_number": invoice_number,
+            "invoice_status": "PENDING",
+            "issued_at": now,
+        }
 
     stmt = pg_insert(Invoice).values(**values).on_conflict_do_nothing(
         index_elements=[conflict_col]
@@ -1857,61 +1229,7 @@ async def admin_revoke_invoice_tokens(
     }
 
 
-@router.get("/{order_id}/invoice/token-attempts")
-async def admin_invoice_token_attempts(
-    order_id: UUID,
-    db: DbSession,
-    admin: AdminUser,
-) -> list[dict[str, Any]]:
-    """Admin: list download token records for an order (last 20)."""
-    from app.models.invoice_download_token import InvoiceDownloadToken
-
-    result = await db.execute(
-        select(InvoiceDownloadToken)
-        .where(InvoiceDownloadToken.order_id == order_id)
-        .order_by(InvoiceDownloadToken.created_at.desc())
-        .limit(20)
-    )
-    tokens = result.scalars().all()
-
-    return [
-        {
-            "id": str(t.id),
-            "token_hash_prefix": t.token_hash[:8] + "...",
-            "created_at": t.created_at.isoformat() if t.created_at else None,
-            "expires_at": t.expires_at.isoformat(),
-            "max_uses": t.max_uses,
-            "used_count": t.used_count,
-            "first_used_at": t.first_used_at.isoformat() if t.first_used_at else None,
-            "last_used_at": t.last_used_at.isoformat() if t.last_used_at else None,
-            "revoked_at": t.revoked_at.isoformat() if t.revoked_at else None,
-            "created_by": t.created_by,
-            "is_active": (
-                t.revoked_at is None
-                and t.used_count < t.max_uses
-                and t.expires_at > __import__("datetime").datetime.now(__import__("datetime").UTC)
-            ),
-        }
-        for t in tokens
-    ]
-
-
-@router.post("/{order_id}/invoice/extend-token/{token_id}")
-async def admin_extend_token_ttl(
-    order_id: UUID,
-    token_id: UUID,
-    db: DbSession,
-    admin: AdminUser,
-    extra_hours: int = 48,
-) -> dict[str, Any]:
-    """Admin: extend a token's TTL."""
-    from app.services.invoice_token_service import extend_token_ttl
-
-    ok = await extend_token_ttl(token_id, db, extra_hours=extra_hours)
-    if not ok:
-        raise HTTPException(status_code=404, detail="Token bulunamadı veya iptal edilmiş")
-    await db.commit()
-    return {"status": "extended", "extra_hours": extra_hours}
+# Token attempts and extend token endpoints have been removed as part of dead code cleanup.
 
 
 # ────────────────────────────────────────────────────────
@@ -1981,7 +1299,7 @@ async def admin_invoice_dashboard(
     from app.models.invoice import Invoice, InvoiceStatus
     from app.models.invoice_download_token import InvoiceDownloadToken
 
-    now = datetime.now(UTC)
+    datetime.now(UTC)
 
     paid_statuses = [
         OrderStatus.PAID, OrderStatus.PROCESSING,

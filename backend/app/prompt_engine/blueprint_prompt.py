@@ -77,7 +77,6 @@ def build_blueprint_task_prompt(
     page_count: int,
     bible: dict | None = None,
     book_title: str = "",
-    value_name: str = "",
     story_structure: str = "",  # YENİ! story_prompt_tr buradan gelir
 ) -> str:
     """Blueprint task prompt oluşturur.
@@ -98,15 +97,11 @@ def build_blueprint_task_prompt(
     if magic_items:
         magic_str = f"\nSihirli eşyalar: {', '.join(magic_items)}"
     
-    value_str = ""
-    if value_name:
-        value_str = f"\nAna değer mesajı: {value_name}"
-    
     # KRITIK: Senaryo yapısı varsa blueprint'e dahil et
     structure_hint = ""
     if story_structure and len(story_structure) > 100:
-        # İlk 2000 karakteri kullan (blueprint için yeterli, çok uzun olmasın)
-        structure_preview = story_structure[:2000]
+        # İlk 4000 karakteri kullan (uzun senaryolarda kritik bilgi kaybolmasın)
+        structure_preview = story_structure[:4000]
         structure_hint = f"""
 🎭 SENARYO YAPISINI DİKKATE AL:
 Bu senaryo özel bir hikaye yapısına sahip. Aşağıdaki yapıyı blueprint'e UYARLA:
@@ -126,7 +121,7 @@ Bu senaryo özel bir hikaye yapısına sahip. Aşağıdaki yapıyı blueprint'e 
 - İsim: {child_name}
 - Yaş: {child_age}
 - Görünüm: {child_description if child_description else "Doğal çocuk"}
-- Konum: {location_display_name}{magic_str}{value_str}
+- Konum: {location_display_name}{magic_str}
 
 ### Görsel Stil
 {visual_style}
@@ -166,12 +161,17 @@ START   │                    END
 - **magic_item**: Sihirli eşya kullanımı (varsa)
 - **companion_action**: Yardımcı karakter durumu
 
+### Zorunlu Ek Alanlar:
+- **child_outfit**: {{ "description_en": "outfit worn throughout the story (English)", "hair_style_en": "hairstyle in English" }}
+- **side_character**: {{ "name": "companion name", "type": "species (owl, cat, dragon)", "appearance": "color, size, distinctive features — SAME on every page" }}
+
 ### ZORUNLU KURALLAR:
 1. TAM OLARAK {page_count} sayfa blueprint üret
 2. Endişe-başarı döngüsü OLMALI (sayfa 8-12 arası endişe, sonra çözüm)
 3. Epic moment en az 5 tane işaretle
 4. Progression mantıklı olsun (kademeli ilerleme)
-5. Değer mesajı ({value_name}) son 3-4 sayfada doruğa çıksın
+5. side_character alanında companion'ın appearance bilgisini MUTLAKA yaz (renk, boyut, ayırt edici özellik)
+6. child_outfit alanını MUTLAKA doldur (kıyafet + saç stili İngilizce)
 
 ## ÇIKTI:
 JSON formatında {page_count} sayfalık blueprint."""

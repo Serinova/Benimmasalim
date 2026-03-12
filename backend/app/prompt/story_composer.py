@@ -1,7 +1,7 @@
-"""PASS-1 hikaye yazım prompt'u: Senaryo + Eğitsel Değer + Çocuk Bilgisi → TR system prompt.
+"""PASS-1 hikaye yazım prompt'u: Senaryo + Çocuk Bilgisi → TR system prompt.
 
 Gemini'ye gönderilecek hikaye yazım prompt'unu oluşturur.
-Senaryo metni, öğrenme çıktıları ve çocuk bilgileri burada birleştirilir.
+Senaryo metni ve çocuk bilgileri burada birleştirilir.
 """
 
 from __future__ import annotations
@@ -14,7 +14,6 @@ import structlog
 from app.prompt.templates import STORY_NO_FIRST_DEGREE_FAMILY_TR
 
 if TYPE_CHECKING:
-    from app.models.learning_outcome import LearningOutcome
     from app.models.scenario import Scenario
 
 logger = structlog.get_logger()
@@ -22,7 +21,6 @@ logger = structlog.get_logger()
 
 def compose_story_prompt(
     scenario: Scenario,
-    outcomes: list[LearningOutcome],
     child_name: str,
     child_age: int,
     child_gender: str,
@@ -34,13 +32,6 @@ def compose_story_prompt(
         or getattr(scenario, "ai_prompt_template", None)
         or ""
     )
-
-    edu_lines: list[str] = []
-    for o in outcomes:
-        instruction = getattr(o, "effective_ai_instruction", None) or ""
-        if instruction:
-            edu_lines.append(f"- {o.name}: {instruction}")
-    educational_block = "\n".join(edu_lines) if edu_lines else ""
 
     location_en = getattr(scenario, "location_en", None) or ""
     flags: dict = getattr(scenario, "flags", None) or {}
@@ -84,15 +75,6 @@ def compose_story_prompt(
         sections.append(
             f"📍 LOKASYON: Tüm sahneler {location_en} bölgesinde geçmeli. "
             f"Lokasyonu ARKA PLAN olarak kullan, turistik bilgi verme!"
-        )
-
-    if educational_block:
-        sections.append(
-            "⭐ EĞİTSEL DEĞERLER — HİKAYENİN KALBİ:\n"
-            "Bu değerler hikayenin PLOT'UNU (olay örgüsünü) şekillendirmeli.\n"
-            "Değerleri doğrudan SÖYLEME — çocuğun bunları YAŞAMASINI ve\n"
-            "YANLIŞ YAPARAK ÖĞRENMESINI sağla! Bir METAFOR veya ARAÇ ile öğret.\n\n"
-            f"{educational_block}"
         )
 
     sections.append(
@@ -156,7 +138,6 @@ def compose_story_prompt(
     logger.info(
         "story_prompt_composed",
         scenario=getattr(scenario, "name", "?"),
-        outcome_count=len(outcomes),
         has_location=bool(location_en),
         no_family=no_family,
         prompt_length=len(prompt),

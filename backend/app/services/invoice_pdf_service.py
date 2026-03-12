@@ -14,9 +14,9 @@ import dataclasses
 import hashlib
 import io
 import os
-import uuid as _uuid_mod
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 import structlog
@@ -31,6 +31,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.invoice import Invoice, InvoiceStatus
+
+if TYPE_CHECKING:
+    from app.models.story_preview import StoryPreview
 
 logger = structlog.get_logger()
 
@@ -62,10 +65,20 @@ class _PreviewBillingAdapter:
     product_id: UUID | None = None
 
     @classmethod
-    def from_preview(cls, preview: "StoryPreview") -> "_PreviewBillingAdapter":  # type: ignore[name-defined]
+    def from_preview(cls, preview: StoryPreview) -> _PreviewBillingAdapter:  # type: ignore[name-defined]
         bd: dict = preview.billing_data or {}
         raw_price = preview.product_price
         price = Decimal(str(raw_price)) if raw_price else Decimal("0")
+
+        # Add addon prices — product_price stores only base book price
+        _has_audio = bool(getattr(preview, "has_audio_book", False))
+        _has_coloring = bool(getattr(preview, "has_coloring_book", False))
+        if _has_audio:
+            audio_type = getattr(preview, "audio_type", "system") or "system"
+            price += Decimal("300") if audio_type == "cloned" else Decimal("150")
+        if _has_coloring:
+            price += Decimal("150")
+
         raw_disc = preview.discount_applied_amount
         discount = Decimal(str(raw_disc)) if raw_disc else None
         final = price - discount if discount else price
@@ -82,8 +95,8 @@ class _PreviewBillingAdapter:
             billing_tc_no=bd.get("billing_tc_no") or bd.get("tc_no") or bd.get("identityNumber"),
             billing_address=bd.get("billing_address") or bd.get("shipping_address"),
             shipping_address=bd.get("shipping_address") or bd.get("billing_address"),
-            has_audio_book=bool(getattr(preview, "has_audio_book", False)),
-            is_coloring_book=bool(getattr(preview, "has_coloring_book", False)),
+            has_audio_book=_has_audio,
+            is_coloring_book=_has_coloring,
             subtotal_amount=price,
             final_amount=final,
             payment_amount=price,
@@ -129,8 +142,8 @@ def _build_invoice_pdf(
     order,
     *,
     scenario_name: str | None = None,
-    product_base_price: "Decimal | None" = None,
-    product_vat_rate: "Decimal | None" = None,
+    product_base_price: Decimal | None = None,
+    product_vat_rate: Decimal | None = None,
     company: dict[str, str] | None = None,
 ) -> bytes:
     """Render an A4 invoice PDF and return raw bytes."""

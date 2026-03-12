@@ -123,7 +123,6 @@ async def generate_trial_story_inner(
     from sqlalchemy import select as _sel
 
     from app.core.database import async_session_factory
-    from app.models.learning_outcome import LearningOutcome
     from app.models.scenario import Scenario
     from app.services.ai.gemini_service import PageManifest, gemini_service
     from app.services.trial_service import get_trial_service
@@ -135,7 +134,6 @@ async def generate_trial_story_inner(
     scenario_name = request_data.get("scenario_name")
     visual_style = request_data.get("visual_style")
     visual_style_name = request_data.get("visual_style_name")
-    learning_outcomes = request_data.get("learning_outcomes") or []
     page_count = request_data.get("page_count") or 16
     magic_items = request_data.get("magic_items")
     child_photo_url = request_data.get("child_photo_url")
@@ -247,31 +245,6 @@ async def generate_trial_story_inner(
 
                 scenario = _MockScenario(scenario_name or "Macera", "Büyülü bir macera hikayesi")
 
-            # %% Fetch learning outcomes %%
-            outcomes: list = []
-            if learning_outcomes:
-                lo_result = await db.execute(
-                    _sel(LearningOutcome).where(
-                        LearningOutcome.name.in_(learning_outcomes),
-                        LearningOutcome.is_active == True,  # noqa: E712
-                    )
-                )
-                outcomes = list(lo_result.scalars().all())
-                found_names = {o.name for o in outcomes}
-                missing = [n for n in learning_outcomes if n not in found_names]
-                if missing:
-                    class _FallbackOutcome:
-                        def __init__(self, name: str):
-                            self.name = name
-                            self.ai_prompt = name
-                            self.ai_prompt_instruction = None
-                            self.banned_words_tr = None
-
-                        @property
-                        def effective_ai_instruction(self) -> str:
-                            return self.ai_prompt_instruction or self.ai_prompt or self.name
-
-                    outcomes.extend(_FallbackOutcome(n) for n in missing)
 
             # Trial preview için yüz analizi gerekmez — görsel üretimde yapılacak
             _visual_char_desc = f"a {child_age}-year-old child named {child_name}"
@@ -310,7 +283,6 @@ async def generate_trial_story_inner(
                     child_name=child_name,
                     child_age=child_age,
                     child_gender=child_gender,
-                    outcomes=outcomes,
                     visual_style=visual_style or "children's book illustration, soft colors",
                     visual_character_description=_visual_char_desc,
                     page_count=page_count,
@@ -323,7 +295,9 @@ async def generate_trial_story_inner(
             )
 
             # %% Deterministic title %%
-            from app.services.order_helpers import force_deterministic_title as _force_deterministic_title
+            from app.services.order_helpers import (
+                force_deterministic_title as _force_deterministic_title,
+            )
 
             story_response.title = _force_deterministic_title(
                 child_name=child_name,
@@ -400,7 +374,7 @@ async def generate_trial_story_inner(
             )
 
             # %% QA checks %%
-            from app.prompt_engine.qa_checks import run_qa_checks
+            from app.prompt_engine import run_qa_checks
             from app.prompt_engine.scenario_bible import normalize_location_key_for_anchors
 
             _loc_key = (
@@ -475,7 +449,7 @@ async def generate_trial_story_inner(
                 preview_page_count=len(_preview_pages_text_only),
             )
 
-            from app.prompt_engine.character_bible import build_character_bible
+            from app.prompt_engine import build_character_bible
             from app.prompt_engine.scenario_bible import normalize_location_key_for_anchors
 
             _raw_loc = getattr(scenario, "theme_key", None) or getattr(scenario, "location_en", "") or scenario.name
@@ -505,7 +479,6 @@ async def generate_trial_story_inner(
                     character_bible=character_bible,
                     visual_style=visual_style or "children's book illustration",
                     location_key=location_key,
-                    value_visual_motif="",
                     likeness_hint="",
                     has_pulid=bool(child_photo_url),
                     leading_prefix_override=_story_leading_prefix_override,
@@ -619,7 +592,6 @@ async def generate_preview_images_inner(
         get_image_provider_for_generation,
     )
     from app.services.trial_service import get_trial_service
-
     from app.utils.resolution_calc import DEFAULT_GENERATION_A4_LANDSCAPE
     width, height = DEFAULT_GENERATION_A4_LANDSCAPE
 
@@ -780,8 +752,9 @@ async def generate_preview_images_inner(
                             _trial_rec = await trial_service.get_trial_by_id(uuid.UUID(trial_id))
                             _scenario_id = getattr(_trial_rec, "scenario_id", None)
                             if _scenario_id:
-                                from app.models.scenario import Scenario as _ScenBC
                                 from sqlalchemy import select as _selBC
+
+                                from app.models.scenario import Scenario as _ScenBC
                                 _sc_res = await db.execute(_selBC(_ScenBC).where(_ScenBC.id == _scenario_id))
                                 _sc = _sc_res.scalar_one_or_none()
                                 if _sc:
@@ -1214,7 +1187,9 @@ async def generate_composed_preview_inner(
 
                 if scenario_id:
                     from app.models.scenario import Scenario as _Scenario
-                    from app.services.scenario_content_service import generate_scenario_intro_text as _gen_intro
+                    from app.services.scenario_content_service import (
+                        generate_scenario_intro_text as _gen_intro,
+                    )
 
                     _sc_result = await db.execute(
                         select(_Scenario).where(_Scenario.id == uuid.UUID(scenario_id))
@@ -1352,7 +1327,6 @@ async def generate_remaining_images_inner(
         get_image_provider_for_generation,
     )
     from app.services.trial_service import get_trial_service
-
     from app.utils.resolution_calc import DEFAULT_GENERATION_A4_LANDSCAPE
     width, height = DEFAULT_GENERATION_A4_LANDSCAPE
 
@@ -1436,7 +1410,7 @@ async def generate_remaining_images_inner(
 
             if _pages_need_prompts and _trial_obj_rem:
                 try:
-                    from app.prompt_engine.character_bible import build_character_bible
+                    from app.prompt_engine import build_character_bible
                     from app.prompt_engine.scenario_bible import normalize_location_key_for_anchors
                     from app.services.ai.gemini_service import gemini_service
 
@@ -1487,7 +1461,6 @@ async def generate_remaining_images_inner(
                         character_bible=character_bible,
                         visual_style=visual_style_modifier or "children's book illustration",
                         location_key=_location_key,
-                        value_visual_motif="",
                         likeness_hint="",
                         has_pulid=bool(child_photo_url),
                         leading_prefix_override=None,
@@ -1769,8 +1742,8 @@ async def generate_remaining_images_inner(
                 from app.services.page_composer import page_composer as _pc_rem
                 from app.services.storage_service import storage_service as _ss_rem
 
-                _cover_tmpl: "_PT_rem | None" = None
-                _inner_tmpl: "_PT_rem | None" = None
+                _cover_tmpl: _PT_rem | None = None
+                _inner_tmpl: _PT_rem | None = None
                 _prod_id_rem = getattr(_trial_obj_rem, "product_id", None) if _trial_obj_rem else None
                 if _prod_id_rem:
                     from sqlalchemy.orm import selectinload as _sel_rem
@@ -2235,11 +2208,15 @@ async def create_coloring_book_order_from_trial(
     Returns:
         Coloring book Order or None if failed
     """
-    from app.models.coloring_book import ColoringBookProduct
+    from app.models.product import Product as _CBProduct
+    from app.models.product import ProductType as _CBProductType
 
     try:
         config_result = await db.execute(
-            select(ColoringBookProduct).where(ColoringBookProduct.active == True).limit(1)
+            select(_CBProduct).where(
+                _CBProduct.product_type == _CBProductType.COLORING_BOOK.value,
+                _CBProduct.is_active == True,
+            ).limit(1)
         )
         coloring_config = config_result.scalar_one_or_none()
 
@@ -2295,7 +2272,6 @@ async def create_coloring_book_order_from_trial(
             child_name=trial.child_name,
             child_age=trial.child_age,
             child_gender=trial.child_gender,
-            selected_outcomes=trial.learning_outcomes or [],
             status=OrderStatus.PAID,
             payment_amount=coloring_config.discounted_price or coloring_config.base_price,
             payment_provider="iyzico",

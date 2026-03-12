@@ -43,7 +43,6 @@ class CreateTrialRequest(BaseModel):
     scenario_id: str | None = None
     visual_style: str | None = None
     visual_style_name: str | None = None
-    learning_outcomes: list[str] | None = None
 
     # Custom variables
     custom_variables: dict | None = None
@@ -161,7 +160,6 @@ class GeneratePreviewRequest(BaseModel):
     scenario_name: str | None = None
     visual_style: str | None = None
     visual_style_name: str | None = None
-    learning_outcomes: list[str] | None = None
     clothing_description: str | None = None
     id_weight: float | None = None
 

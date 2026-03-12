@@ -12,15 +12,12 @@ from typing import TYPE_CHECKING
 
 import structlog
 
-from app.services.ai._helpers import (
-    AI_DIRECTOR_SYSTEM,
-    VALUE_EMOTION_BEATS,
-    _normalize_value_key,
-    get_value_visual_motif_for_outcomes,
-)
+from app.config import settings
+from app.core.exceptions import AIServiceError
 
 if TYPE_CHECKING:
-    pass
+    from app.models.scenario import Scenario
+    from app.schemas.story import FinalPageContent, StoryResponse
 
 logger = structlog.get_logger()
 
@@ -261,7 +258,6 @@ class _VisualComposerMixin:
         child_description: str,
         visual_style: str,
         fixed_outfit: str = "",
-        learning_outcome_visual_hints: list[str] | None = None,
         cover_template_en: str = "",
         inner_template_en: str = "",
     ) -> list[FinalPageContent]:
@@ -278,7 +274,6 @@ class _VisualComposerMixin:
             child_description: Full child description
             visual_style: Ignored here; style is applied at image generation (single point).
             fixed_outfit: Consistent clothing for all pages
-            learning_outcome_visual_hints: If set, at least one page must include one hint (e.g. toothbrush)
 
         Returns:
             List of pages with scene-only visual_prompt (no style tokens)
@@ -554,27 +549,6 @@ class _VisualComposerMixin:
                 contamination=contamination_flags if contamination_flags else "CLEAN",
             )
 
-        # ==================== LEARNING OUTCOME VISUAL: at least one page with hint ====================
-        if learning_outcome_visual_hints:
-            prompt_lowers = [fp.visual_prompt.lower() for fp in final_pages]
-            any_has_hint = any(
-                any(h.lower() in p for h in learning_outcome_visual_hints) for p in prompt_lowers
-            )
-            if not any_has_hint:
-                # Inject first hint into first inner page (page_number 1)
-                inject_phrase = f" including a {learning_outcome_visual_hints[0]}"
-                for fp in final_pages:
-                    if fp.page_number == 1:
-                        fp.visual_prompt = (
-                            fp.visual_prompt.rstrip(". ") + inject_phrase + "."
-                        ).strip()
-                        if len(fp.visual_prompt) > self.MAX_VISUAL_PROMPT_LENGTH:
-                            fp.visual_prompt = fp.visual_prompt[: self.MAX_VISUAL_PROMPT_LENGTH]
-                        logger.info(
-                            "[VISUAL] Injected learning outcome hint into page 1",
-                            hint=learning_outcome_visual_hints[0],
-                        )
-                        break
 
         return final_pages
 

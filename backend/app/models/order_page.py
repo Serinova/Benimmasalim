@@ -1,7 +1,7 @@
 """Order page model - Individual pages of a book."""
 
 import uuid
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 
-class PageStatus(str, Enum):
+class PageStatus(StrEnum):
     """Page generation status."""
 
     PENDING = "PENDING"  # Henüz işlenmedi

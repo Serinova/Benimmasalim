@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { Users as UsersIcon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { adminListUsers, type AdminUserItem } from "@/lib/api";
 
 export default function AdminUsersPage() {
@@ -15,25 +15,9 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") {
-      toast({
-        title: "Yetkisiz Erişim",
-        description: "Bu sayfaya erişim yetkiniz yok",
-        variant: "destructive",
-      });
-      router.push("/");
-    }
-  }, [router, toast]);
+  useAdminAuth();
 
   const loadUsers = useCallback(async () => {
     setLoading(true);

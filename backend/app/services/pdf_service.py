@@ -1045,38 +1045,8 @@ class PDFService:
         child_name: str | None = None,
     ):
         """
-        Render QR+text info page (formerly the back cover).
-
-        Now rendered as an inner page before the visual back cover.
-        Solid background color with company info, tips, and QR code.
-
-        Layout:
-        - Top: Company logo and tagline
-        - Middle: Parent tips
-        - Bottom: QR code (if audio), company info, copyright
-        """
-        return self.render_back_cover(
-            c=c,
-            page_width=page_width,
-            page_height=page_height,
-            config=config,
-            audio_qr_url=audio_qr_url,
-            child_name=child_name,
-            back_cover_image_url=None,
-        )
-
-    def render_back_cover(
-        self,
-        c: canvas.Canvas,
-        page_width: float,
-        page_height: float,
-        config: "BackCoverConfig",
-        audio_qr_url: str | None = None,
-        child_name: str | None = None,
-        back_cover_image_url: str | None = None,
-    ):
-        """
         Render QR+text info page matching the admin frontend preview design.
+        This is rendered as an inner page before the visual back cover.
 
         Layout (top to bottom):
         - Gradient background (background_color → background_gradient_end)
@@ -1093,9 +1063,10 @@ class PDFService:
         - Bottom: company info (left) + QR code (right)
         - Copyright
         """
-        import io as _io
         import math as _math
-        from reportlab.lib.colors import HexColor, Color as _RLColor
+
+        from reportlab.lib.colors import Color as _RLColor
+        from reportlab.lib.colors import HexColor
 
         def safe_hex(color_str: str, fallback: str = "#333333") -> HexColor:
             try:
@@ -1116,71 +1087,43 @@ class PDFService:
         margin = 15 * mm
 
         # ── Background: gradient (background_color → background_gradient_end) ──
-        _image_background_used = False
-        if back_cover_image_url:
-            try:
-                import httpx as _httpx
-                from reportlab.lib.utils import ImageReader as _IR
-                _resp = _httpx.get(back_cover_image_url, timeout=15.0)
-                _resp.raise_for_status()
-                _img_buf = _io.BytesIO(_resp.content)
-                c.drawImage(_IR(_img_buf), 0, 0, width=page_width, height=page_height,
-                            preserveAspectRatio=False)
-                _image_background_used = True
-                logger.info("BACK_COVER_AI_IMAGE_RENDERED", url=back_cover_image_url[:60])
-            except Exception as _e:
-                logger.warning("BACK_COVER_IMAGE_LOAD_FAILED", error=str(_e))
+        bg_start = safe_hex(config.background_color, "#FDF6EC")
+        bg_end_hex = getattr(config, "background_gradient_end", config.background_color)
+        bg_end = safe_hex(bg_end_hex, "#EDE4F8")
+        rs, gs, bs = hex_to_rgb01(bg_start)
+        re, ge, be = hex_to_rgb01(bg_end)
+        _steps = 60
+        for _i in range(_steps):
+            _t = _i / max(_steps - 1, 1)
+            _band_color = _RLColor(
+                rs + (re - rs) * _t,
+                gs + (ge - gs) * _t,
+                bs + (be - bs) * _t,
+            )
+            c.setFillColor(_band_color)
+            _bh = page_height / _steps
+            c.rect(0, _i * _bh, page_width, _bh + 0.5, fill=1, stroke=0)
 
-        if not _image_background_used:
-            bg_start = safe_hex(config.background_color, "#FDF6EC")
-            bg_end_hex = getattr(config, "background_gradient_end", config.background_color)
-            bg_end = safe_hex(bg_end_hex, "#EDE4F8")
-            rs, gs, bs = hex_to_rgb01(bg_start)
-            re, ge, be = hex_to_rgb01(bg_end)
-            _steps = 60
-            for _i in range(_steps):
-                _t = _i / max(_steps - 1, 1)
-                _band_color = _RLColor(
-                    rs + (re - rs) * _t,
-                    gs + (ge - gs) * _t,
-                    bs + (be - bs) * _t,
-                )
-                c.setFillColor(_band_color)
-                _bh = page_height / _steps
-                c.rect(0, _i * _bh, page_width, _bh + 0.5, fill=1, stroke=0)
-
-            # Soft corner glows
-            primary_color_str = getattr(config, "primary_color", "#6B21A8")
-            accent_color_str = getattr(config, "accent_color", "#F59E0B")
-            try:
-                _pc = safe_hex(primary_color_str, "#6B21A8")
-                _ac = safe_hex(accent_color_str, "#F59E0B")
-                _g1 = _RLColor(_pc.red, _pc.green, _pc.blue, alpha=0.08)
-                c.setFillColor(_g1)
-                c.circle(0, page_height, 30 * mm, fill=1, stroke=0)
-                _g2 = _RLColor(_ac.red, _ac.green, _ac.blue, alpha=0.07)
-                c.setFillColor(_g2)
-                c.circle(page_width, 0, 35 * mm, fill=1, stroke=0)
-            except Exception:
-                pass
-
-        if _image_background_used:
-            _panel_h = page_height * 0.42
-            _ov = _RLColor(0, 0, 0, alpha=0.55)
-            c.setFillColor(_ov)
-            c.rect(0, 0, page_width, _panel_h, fill=1, stroke=0)
+        # Soft corner glows
+        primary_color_str = getattr(config, "primary_color", "#6B21A8")
+        accent_color_str = getattr(config, "accent_color", "#F59E0B")
+        try:
+            _pc = safe_hex(primary_color_str, "#6B21A8")
+            _ac = safe_hex(accent_color_str, "#F59E0B")
+            _g1 = _RLColor(_pc.red, _pc.green, _pc.blue, alpha=0.08)
+            c.setFillColor(_g1)
+            c.circle(0, page_height, 30 * mm, fill=1, stroke=0)
+            _g2 = _RLColor(_ac.red, _ac.green, _ac.blue, alpha=0.07)
+            c.setFillColor(_g2)
+            c.circle(page_width, 0, 35 * mm, fill=1, stroke=0)
+        except Exception:
+            pass
 
         # ── Colors ──────────────────────────────────────────────────────────────
-        if _image_background_used:
-            primary_color = HexColor("#FFFFFF")
-            accent_color = HexColor("#F59E0B")
-            text_color = HexColor("#F0F0F0")
-            border_col = HexColor("#C4B5FD")
-        else:
-            primary_color = safe_hex(getattr(config, "primary_color", "#6B21A8"), "#6B21A8")
-            accent_color = safe_hex(getattr(config, "accent_color", "#F59E0B"), "#F59E0B")
-            text_color = safe_hex(config.text_color, "#2D1B4E")
-            border_col = safe_hex(config.border_color, "#C4B5FD")
+        primary_color = safe_hex(getattr(config, "primary_color", "#6B21A8"), "#6B21A8")
+        accent_color = safe_hex(getattr(config, "accent_color", "#F59E0B"), "#F59E0B")
+        text_color = safe_hex(config.text_color, "#2D1B4E")
+        border_col = safe_hex(config.border_color, "#C4B5FD")
 
         # ── Border ──────────────────────────────────────────────────────────────
         if config.show_border:
@@ -1194,7 +1137,6 @@ class PDFService:
 
         # ── Logo (üstte ortalanmış — altına beyaz arka plan ile belirginleştirildi) ──
         import os as _os
-        from reportlab.lib.utils import ImageReader as _IR2
         try:
             from PIL import Image as _PILImg2
             _pil_available = True
@@ -1467,16 +1409,15 @@ class PDFService:
             c.drawString(_info_x, _info_y, config.company_phone)
 
         # Copyright
-        c.setFillColor(HexColor("#CCCCCC") if _image_background_used else HexColor("#888888"))
+        c.setFillColor(HexColor("#888888"))
         set_font(6.5)
         c.drawCentredString(page_width / 2, margin - 2 * mm, config.copyright_text)
 
         logger.info(
-            "BACK_COVER_RENDERED",
+            "QR_INFO_PAGE_RENDERED",
             has_stars=config.show_stars,
             has_dedication=bool(_dedication),
             has_qr=_qr_rendered,
-            has_gradient=not _image_background_used,
         )
 
     def convert_to_cmyk(self, pdf_bytes: bytes) -> bytes:

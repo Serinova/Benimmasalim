@@ -1,0 +1,76 @@
+﻿
+./src/app/account/orders/[id]/page.tsx
+631:3  Warning: 'order' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/account/page.tsx
+65:9  Warning: 'router' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/account/_components/AccountOrderDetailSheet.tsx
+20:3  Warning: 'Package' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/abandoned-trials/page.tsx
+84:6  Warning: React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/accounting/_components/RevenueChart.tsx
+153:30  Warning: 'd' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/accounting/_components/TransactionLedger.tsx
+3:10  Warning: 'useState' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+5:15  Warning: 'Transaction' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/back-cover/page.tsx
+324:6  Warning: React Hook useEffect has a missing dependency: 'fetchConfigs'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/config/page.tsx
+2008:6  Warning: React Hook useEffect has a missing dependency: 'checkAuth'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/kvkk/page.tsx
+69:6  Warning: React Hook useEffect has missing dependencies: 'checkAuth' and 'loadAllData'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/learning-outcomes/page.tsx
+313:6  Warning: React Hook useEffect has missing dependencies: 'checkAuth' and 'fetchOutcomes'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/orders/_components/tabs/GeneralTab.tsx
+6:10  Warning: 'StatusBadge' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/orders/_hooks/useOrderDetail.ts
+88:6  Warning: React Hook useEffect has a missing dependency: 'detail'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/orders/_lib/adminOrdersApi.ts
+12:3  Warning: 'PaginatedResponse' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/page.tsx
+78:6  Warning: React Hook useEffect has missing dependencies: 'checkAuth' and 'fetchOrders'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/products/page.tsx
+904:6  Warning: React Hook useEffect has missing dependencies: 'checkAuth' and 'fetchData'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+910:6  Warning: React Hook useEffect has missing dependencies: 'fetchData' and 'loading'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/promo-codes/page.tsx
+127:6  Warning: React Hook useEffect has missing dependencies: 'checkAuth' and 'fetchPromoCodes'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/prompts/page.tsx
+117:6  Warning: React Hook useEffect has missing dependencies: 'checkAuth' and 'fetchPrompts'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/scenarios/page.tsx
+826:6  Warning: React Hook useEffect has missing dependencies: 'checkAuth' and 'fetchScenarios'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/visual-styles/page.tsx
+92:6  Warning: React Hook useEffect has missing dependencies: 'checkAuth' and 'fetchStyles'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/create-v2/_components/steps/PaymentStep.tsx
+4:10  Warning: 'CreditCard' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+33:3  Warning: 'childName' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+34:3  Warning: 'storyTitle' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+35:3  Warning: 'productName' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/create-v2/_lib/constants.ts
+1:15  Warning: 'ReactNode' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/components/CheckoutStep.tsx
+428:9  Warning: 'formatTimer' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/components/VisualsStep.tsx
+40:5  Warning: 'childName' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules

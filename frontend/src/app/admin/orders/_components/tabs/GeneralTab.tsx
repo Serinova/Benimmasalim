@@ -2,8 +2,8 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import type { OrderDetail } from "../../_lib/types";
-import { StatusBadge } from "../StatusBadge";
 
 interface GeneralTabProps {
   detail: OrderDetail;
@@ -12,6 +12,8 @@ interface GeneralTabProps {
   onDownloadPdf: () => void;
   onColoringBook: (id: string, url?: string | null) => void;
   pdfDownloading: boolean;
+  bookGenerating: boolean;
+  coloringGenerating: boolean;
 }
 
 export function GeneralTab({
@@ -21,6 +23,8 @@ export function GeneralTab({
   onDownloadPdf,
   onColoringBook,
   pdfDownloading,
+  bookGenerating,
+  coloringGenerating,
 }: GeneralTabProps) {
   return (
     <div className="space-y-4">
@@ -81,8 +85,11 @@ export function GeneralTab({
         )}
         {detail.status === "CONFIRMED" && (
           <>
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => onGenerateBook(detail.id)}>
-              {detail.has_audio_book ? "Kitap + Ses Üret" : "Kitap Üret"}
+            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" disabled={bookGenerating} onClick={() => onGenerateBook(detail.id)}>
+              {bookGenerating && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              {bookGenerating
+                ? "Üretiliyor..."
+                : detail.has_audio_book ? "Kitap + Ses Üret" : "Kitap Üret"}
             </Button>
             <Button size="sm" className="bg-blue-600 hover:bg-blue-700" disabled={pdfDownloading} onClick={onDownloadPdf}>
               {pdfDownloading ? "PDF Hazırlanıyor..." : "PDF İndir"}
@@ -96,9 +103,13 @@ export function GeneralTab({
           <Button
             size="sm"
             className="bg-pink-600 hover:bg-pink-700"
+            disabled={coloringGenerating}
             onClick={() => onColoringBook(detail.id, detail.coloring_pdf_url)}
           >
-            Boyama PDF {detail.coloring_pdf_url ? "İndir" : "Üret"}
+            {coloringGenerating && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            {coloringGenerating
+              ? "Üretiliyor..."
+              : `Boyama PDF ${detail.coloring_pdf_url ? "İndir" : "Üret"}`}
           </Button>
         )}
       </div>

@@ -29,7 +29,7 @@ logger = structlog.get_logger()
 async def pipeline_step_audio(
     *,
     db: object,
-    order: "Order",
+    order: Order,
     generated_pages: list[dict],
     storage: StorageService,
     order_id: str,
@@ -115,7 +115,7 @@ async def pipeline_step_back_cover_config(db: object) -> object | None:
 async def pipeline_step_dedication_pages(
     *,
     db: object,
-    order: "Order",
+    order: Order,
     story_title: str,
     scenario: object | None,
     order_id: str,
@@ -201,12 +201,12 @@ async def pipeline_step_dedication_pages(
 
 async def generate_back_cover_image(
     *,
-    order: "Order",
-    book_ctx: "BookContext",
+    order: Order,
+    book_ctx: BookContext,
     image_provider: object,
     storage: StorageService,
-    cover_template: "PageTemplate | None",
-    inner_template: "PageTemplate | None",
+    cover_template: PageTemplate | None,
+    inner_template: PageTemplate | None,
     clothing_description: str,
     style_modifier: str,
     face_ref_url: str | None,

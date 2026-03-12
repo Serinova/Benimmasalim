@@ -1,6 +1,6 @@
 """Homepage section management model."""
 
-from enum import Enum as PyEnum
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class SectionType(str, PyEnum):
+class SectionType(StrEnum):
     """Available homepage section types."""
 
     HERO = "HERO"

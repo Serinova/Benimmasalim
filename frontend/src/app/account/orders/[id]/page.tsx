@@ -628,11 +628,9 @@ function ShippingAddress({ order }: { order: OrderDetail }) {
 // ─── KVKK Card ────────────────────────────────────────────────────
 
 function KvkkCard({
-  order,
   onDelete,
   deleting,
 }: {
-  order: OrderDetail;
   onDelete: () => void;
   deleting: boolean;
 }) {
@@ -993,7 +991,6 @@ export default function OrderDetailPage() {
 
       {/* KVKK */}
       <KvkkCard
-        order={order}
         onDelete={handleDeletePhoto}
         deleting={deletingPhoto}
       />

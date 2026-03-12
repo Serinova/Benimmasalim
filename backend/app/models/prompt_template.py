@@ -4,7 +4,7 @@ Admin panelinden düzenlenebilir AI prompt şablonları.
 Eski 8 migration yerine tek clean migration ile oluşturulur.
 """
 
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class PromptCategory(str, Enum):
+class PromptCategory(StrEnum):
     """Prompt template kategorileri."""
 
     STORY_SYSTEM = "story_system"

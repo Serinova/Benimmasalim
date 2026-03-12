@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,17 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import {
-  ArrowLeft,
-  Plus,
-  Edit,
-  Trash2,
-  Ticket,
-  Search,
-  Copy,
-  Wand2,
-} from "lucide-react";
-import Link from "next/link";
+import { Copy, Wand2, Plus, Edit, Trash2, Ticket, Search } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
 
@@ -121,27 +112,12 @@ export default function AdminPromoCodesPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    checkAuth();
-    fetchPromoCodes();
-  }, [currentPage, filterActive, searchQuery]);
+  useAdminAuth();
 
-  const checkAuth = () => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") {
-      toast({
-        title: "Yetkisiz Erişim",
-        description: "Bu sayfaya erişim yetkiniz yok",
-        variant: "destructive",
-      });
-      router.push("/");
-    }
-  };
+  useEffect(() => {
+    fetchPromoCodes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, filterActive, searchQuery]);
 
 
   // ─── API Calls ────────────────────────────────────────────────
@@ -469,18 +445,11 @@ export default function AdminPromoCodesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/admin">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold">Kupon Kodları</h1>
-            <p className="text-sm text-muted-foreground">
-              Toplam {totalCount} kupon kodu
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold">Kupon Kodları</h1>
+          <p className="text-sm text-muted-foreground">
+            Toplam {totalCount} kupon kodu
+          </p>
         </div>
         <div className="flex gap-2">
           <Button

@@ -1,6 +1,6 @@
 """Book template models for configuring page layouts."""
 
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import JSON, Boolean, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class PageType(str, Enum):
+class PageType(StrEnum):
     """Page types in a book."""
 
     COVER = "cover"
@@ -17,7 +17,7 @@ class PageType(str, Enum):
     DEDICATION = "dedication"
 
 
-class TextPosition(str, Enum):
+class TextPosition(StrEnum):
     """Text position relative to image."""
 
     TOP = "top"
@@ -177,11 +177,9 @@ class BackCoverConfig(Base, UUIDMixin, TimestampMixin):
 
     # Company info
     company_name: Mapped[str] = mapped_column(String(200), default="Benim Masalım")
-    company_logo_url: Mapped[str | None] = mapped_column(Text)
     company_website: Mapped[str] = mapped_column(String(200), default="www.benimmasalim.com")
     company_email: Mapped[str] = mapped_column(String(200), default="info@benimmasalim.com")
     company_phone: Mapped[str | None] = mapped_column(String(50))
-    company_address: Mapped[str | None] = mapped_column(Text)
 
     # Colors and styling
     background_color: Mapped[str] = mapped_column(String(20), default="#FDF6EC")

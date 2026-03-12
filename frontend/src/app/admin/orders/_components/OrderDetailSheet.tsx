@@ -37,6 +37,8 @@ interface OrderDetailSheetProps {
   onDownloadAllImages: () => void;
   pdfDownloading: boolean;
   zipDownloading: boolean;
+  bookGenerating: boolean;
+  coloringGenerating: boolean;
 }
 
 export function OrderDetailSheet({
@@ -58,6 +60,8 @@ export function OrderDetailSheet({
   onDownloadAllImages,
   pdfDownloading,
   zipDownloading,
+  bookGenerating,
+  coloringGenerating,
 }: OrderDetailSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -123,6 +127,8 @@ export function OrderDetailSheet({
                     onDownloadPdf={onDownloadPdf}
                     onColoringBook={onColoringBook}
                     pdfDownloading={pdfDownloading}
+                    bookGenerating={bookGenerating}
+                    coloringGenerating={coloringGenerating}
                   />
                 </TabsContent>
 

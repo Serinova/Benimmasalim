@@ -3,29 +3,23 @@
 from __future__ import annotations
 
 import asyncio
-import re
 from datetime import UTC
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncSession
 
     from app.models.user import User
 
-import structlog
 import sqlalchemy as sa
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Query, UploadFile, status
-from pydantic import BaseModel, EmailStr, Field
+import structlog
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 
 from app.api.v1.deps import CurrentUser, CurrentUserOptional, DbSession
 from app.config import get_settings
 from app.core.exceptions import ForbiddenError, NotFoundError, ValidationError
-from app.core.image_dimensions import get_page_image_dimensions
 from app.models.order import Order, OrderStatus
-from app.prompt_engine import VisualPromptValidationError
-from app.prompt_engine import personalize_style_prompt
 from app.schemas.orders import (
     AddColoringBookRequest,
     AddColoringBookResponse,
@@ -38,24 +32,36 @@ from app.schemas.orders import (
     ProgressResponse,
     RegeneratePageRequest,
     SendPreviewRequest,
-    ShippingAddressRequest,
-    StoryPageData,
 )
 from app.services.order_helpers import (
     build_billing_summary as _build_billing_summary,
+)
+from app.services.order_helpers import (
     build_invoice_summary as _build_invoice_summary,
+)
+from app.services.order_helpers import (
     force_deterministic_title as _force_deterministic_title,
+)
+from app.services.order_helpers import (
     load_order_pages as _load_order_pages,
+)
+from app.services.order_helpers import (
     load_timeline_events as _load_timeline_events,
-    snapshot_billing_to_order,
+)
+from app.services.order_helpers import (
     validate_tax_id as _validate_tax_id,
 )
 from app.services.preview_generation_service import (
-    process_preview_background_inner as _process_preview_background_inner,
-    process_remaining_pages_inner as _process_remaining_pages_inner,
     ensure_v3_story_pages as _ensure_v3_story_pages,
+)
+from app.services.preview_generation_service import (
     page_to_dict as _page_to_dict,
-    page_version_flags as _page_version_flags,
+)
+from app.services.preview_generation_service import (
+    process_preview_background_inner as _process_preview_background_inner,
+)
+from app.services.preview_generation_service import (
+    process_remaining_pages_inner as _process_remaining_pages_inner,
 )
 
 _logger = structlog.get_logger()
@@ -389,7 +395,6 @@ async def send_preview_email(request: SendPreviewRequest, db: DbSession) -> dict
             ],
             scenario_name=request.scenario_name,
             visual_style_name=request.visual_style_name,
-            learning_outcomes=request.learning_outcomes,
             page_images=page_images_data,
             generated_prompts_cache={
                 "prompts": _prompts_for_cache,
@@ -598,7 +603,6 @@ async def submit_preview_async(
             story_pages=[_page_to_dict(p) for p in request.story_pages],
             scenario_name=request.scenario_name,
             visual_style_name=request.visual_style_name,
-            learning_outcomes=request.learning_outcomes,
             page_images=initial_page_images or {},  # İlk 3 hemen; kalanı arka planda
             generated_prompts_cache={
                 "prompts": _async_prompts_for_cache,
@@ -822,7 +826,6 @@ async def regenerate_page_image(
     from sqlalchemy import update as sa_update
     from sqlalchemy.orm import selectinload
 
-    from app.services.trial_generation_service import resolve_visual_style_from_db as _resolve_visual_style_from_db
     from app.models.book_template import PageTemplate
     from app.models.product import Product
     from app.models.story_preview import PreviewStatus, StoryPreview
@@ -843,6 +846,9 @@ async def regenerate_page_image(
     )
     from app.services.prompt_template_service import get_prompt_service
     from app.services.storage_service import storage_service
+    from app.services.trial_generation_service import (
+        resolve_visual_style_from_db as _resolve_visual_style_from_db,
+    )
     from app.utils.resolution_calc import DEFAULT_GENERATION_A4_LANDSCAPE
 
     logger = structlog.get_logger()
@@ -1533,6 +1539,7 @@ async def add_coloring_book_to_order(
     - Coloring book product must be active
     """
     from uuid import uuid4
+
     from app.models.product import Product
     
     # 1. Verify original order

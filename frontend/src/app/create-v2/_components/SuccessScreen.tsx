@@ -2,21 +2,13 @@
 
 import { motion } from "framer-motion";
 import { PartyPopper, ArrowRight, Home } from "lucide-react";
-import GuestConvertBanner from "@/components/GuestConvertBanner";
+
 
 interface SuccessScreenProps {
   orderId?: string | null;
 }
 
 export default function SuccessScreen({ orderId }: SuccessScreenProps) {
-  const isGuest = (() => {
-    try {
-      const u = JSON.parse(localStorage.getItem("user") || "{}");
-      return !!u.is_guest;
-    } catch {
-      return false;
-    }
-  })();
 
   const hasToken = typeof window !== "undefined" && !!localStorage.getItem("token");
 
@@ -51,11 +43,7 @@ export default function SuccessScreen({ orderId }: SuccessScreenProps) {
         </p>
       </div>
 
-      {isGuest && (
-        <div className="mb-5">
-          <GuestConvertBanner />
-        </div>
-      )}
+
 
       <div className="space-y-2.5">
         {hasToken && (

@@ -7,11 +7,14 @@ Split from page_composer.py for maintainability.
 
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import structlog
 from PIL import Image, ImageDraw, ImageFont
 
 from app.services._page_helpers import (
+    _TURKISH_FALLBACK_FONTS,
     _font_supports_turkish,
     _resolve_font_path,
     _text_needs_turkish,
@@ -240,7 +243,7 @@ class _TextRendererMixin:
             shadow_layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
             shadow_draw = ImageDraw.Draw(shadow_layer)
             dx, dy = drop_shadow_offset[0], drop_shadow_offset[1]
-            for (lx, ly), line in zip(line_positions, lines):
+            for (lx, ly), line in zip(line_positions, lines, strict=False):
                 shadow_draw.text((lx + dx, ly + dy), line, font=font, fill=(0, 0, 0, 255))
             shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=min(drop_shadow_blur, 30)))
             arr = np.array(shadow_layer)
@@ -251,7 +254,7 @@ class _TextRendererMixin:
             draw = ImageDraw.Draw(img)
 
         # Metin: stroke + fill (tek çizim)
-        for (line_x, line_y), line in zip(line_positions, lines):
+        for (line_x, line_y), line in zip(line_positions, lines, strict=False):
             if stroke_enabled and stroke_width_px > 0:
                 draw.text(
                     (line_x, line_y),

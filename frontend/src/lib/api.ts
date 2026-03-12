@@ -245,22 +245,14 @@ export interface LearningOutcomeCategory {
   items: LearningOutcome[];
 }
 
-/** V2: Visual style — style injection happens only on backend. */
+/** V2: Visual style — style injection happens via style_config.py on the backend. */
 export interface VisualStyle {
   id: string;
   name: string;
   /** Kullanıcıya gösterilen isim (boşsa name kullanılır). */
   display_name?: string | null;
   thumbnail_url: string;
-  prompt_modifier: string;
-  style_negative_en: string | null;
-  id_weight: number;
-  // PuLID overrides (null = style_config.py fallback)
-  true_cfg?: number | null;
-  start_step?: number | null;
-  // FLUX generation overrides (null = GenerationConfig defaults)
-  num_inference_steps?: number | null;
-  guidance_scale?: number | null;
+  is_active: boolean;
 }
 
 // ─── Story types ─────────────────────────────────────────────────
@@ -338,7 +330,7 @@ export interface SubmitPreviewV2Request {
   child_age: number;
   child_gender?: string;
   child_photo_url?: string | null;
-  clothing_description?: string; // outfit lock for FAL image generation
+  clothing_description?: string; // outfit lock for image generation
   story_title: string;
   story_pages: StoryPage[];
   product_id?: string;

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from datetime import UTC
 from uuid import UUID
 
 import httpx
@@ -13,7 +14,6 @@ from sqlalchemy import select
 from app.config import settings
 from app.core.database import async_session_factory
 from app.models.book_template import PageTemplate
-from app.models.learning_outcome import LearningOutcome
 from app.models.order import Order, OrderStatus
 from app.models.order_page import OrderPage
 from app.models.product import Product
@@ -111,13 +111,6 @@ async def generate_full_book(order_id: str) -> dict:
                 "No PageTemplate found, using defaults",
                 product_id=str(product.id),
             )
-
-        # Get learning outcomes
-        outcomes = []
-        for outcome_id in order.selected_outcomes:
-            outcome = await db.get(LearningOutcome, UUID(outcome_id))
-            if outcome:
-                outcomes.append(outcome)
 
         # Get existing pages (story text already generated)
         pages_result = await db.execute(
@@ -650,7 +643,7 @@ async def generate_full_book(order_id: str) -> dict:
             # Create StoryPreview for customer approval + send confirmation email
             try:
                 import secrets as _secrets
-                from datetime import datetime, timedelta, timezone
+                from datetime import datetime, timedelta
 
                 from app.models.story_preview import PreviewStatus, StoryPreview
                 from app.models.user import User
@@ -715,7 +708,7 @@ async def generate_full_book(order_id: str) -> dict:
                             "order_id": order_id,
                             "prompts": _story_pages_data,
                         },
-                        expires_at=datetime.now(timezone.utc) + timedelta(hours=48),
+                        expires_at=datetime.now(UTC) + timedelta(hours=48),
                     )
                     db.add(_approval_preview)
                     await db.commit()
@@ -795,7 +788,7 @@ async def generate_full_book(order_id: str) -> dict:
 # ── Private helpers ───────────────────────────────────────────────────────────
 
 
-def _resolve_scenario_outfit(scenario: object | None, order: "Order") -> str:
+def _resolve_scenario_outfit(scenario: object | None, order: Order) -> str:
     """Return the gender-specific scenario outfit string, or empty string."""
     if not scenario:
         return ""
@@ -845,10 +838,10 @@ def _extract_style_overrides(style: object | None) -> dict:
 
 async def _process_existing_cover(
     *,
-    page: "OrderPage",
+    page: OrderPage,
     order_id: str,
     story_title: str,
-    cover_template: "PageTemplate | None",
+    cover_template: PageTemplate | None,
     storage: StorageService,
 ) -> dict:
     """Download, upscale and resize an existing front cover for print quality."""

@@ -1,0 +1,71 @@
+﻿
+./src/app/account/orders/[id]/page.tsx
+631:3  Warning: 'order' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/account/page.tsx
+65:9  Warning: 'router' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+74:10  Warning: 'isGuest' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/account/_components/AccountOrderDetailSheet.tsx
+20:3  Warning: 'Package' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/abandoned-trials/page.tsx
+16:3  Warning: 'ArrowLeft' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+69:9  Warning: 'router' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+84:6  Warning: React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/accounting/_components/RevenueChart.tsx
+153:30  Warning: 'd' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/accounting/_components/TransactionLedger.tsx
+3:10  Warning: 'useState' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+5:15  Warning: 'Transaction' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/back-cover/page.tsx
+12:10  Warning: 'ArrowLeft' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+13:8  Warning: 'Link' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+324:6  Warning: React Hook useEffect has a missing dependency: 'fetchConfigs'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/kvkk/page.tsx
+6:8  Warning: 'Link' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+64:9  Warning: 'router' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+71:6  Warning: React Hook useEffect has a missing dependency: 'loadAllData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/learning-outcomes/page.tsx
+15:3  Warning: 'ArrowLeft' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+314:6  Warning: React Hook useEffect has a missing dependency: 'fetchOutcomes'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/orders/_hooks/useOrderDetail.ts
+88:6  Warning: React Hook useEffect has a missing dependency: 'detail'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/orders/_lib/adminOrdersApi.ts
+12:3  Warning: 'PaginatedResponse' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/admin/page.tsx
+80:6  Warning: React Hook useEffect has a missing dependency: 'fetchOrders'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/products/page.tsx
+632:9  Warning: 'router' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+684:6  Warning: React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+690:6  Warning: React Hook useEffect has missing dependencies: 'fetchData' and 'loading'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/promo-codes/page.tsx
+21:3  Warning: 'ArrowLeft' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+30:8  Warning: 'Link' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+129:6  Warning: React Hook useEffect has a missing dependency: 'fetchPromoCodes'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/prompts/page.tsx
+119:6  Warning: React Hook useEffect has a missing dependency: 'fetchPrompts'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/scenarios/page.tsx
+285:6  Warning: React Hook useEffect has a missing dependency: 'fetchScenarios'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/admin/visual-styles/page.tsx
+13:10  Warning: 'ArrowLeft' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+15:8  Warning: 'Link' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+94:6  Warning: React Hook useEffect has a missing dependency: 'fetchStyles'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/create-v2/_lib/constants.ts
+1:15  Warning: 'ReactNode' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules

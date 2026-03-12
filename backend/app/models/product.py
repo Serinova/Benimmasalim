@@ -11,7 +11,7 @@ PRODUCT TYPES:
 
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID as PyUUID
 
 from sqlalchemy import (
@@ -32,7 +32,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class ProductType(str, Enum):
+class ProductType(StrEnum):
     """Product type enum for different product categories."""
 
     STORY_BOOK = "story_book"

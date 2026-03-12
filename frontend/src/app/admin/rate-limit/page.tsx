@@ -1,34 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Gauge, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { adminResetRateLimits } from "@/lib/api";
 
 export default function RateLimitPage() {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") {
-      toast({
-        title: "Yetkisiz Erişim",
-        description: "Bu sayfaya erişim yetkiniz yok",
-        variant: "destructive",
-      });
-      router.push("/");
-    }
-  }, [router, toast]);
+  useAdminAuth();
 
   const handleReset = async () => {
     setLoading(true);

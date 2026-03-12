@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import base64
-import uuid
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import Response
 from sqlalchemy import select
 
@@ -16,29 +15,23 @@ from app.core.exceptions import (
 )
 from app.models.order import Order
 from app.schemas.ai import (
+    _ALLOWED_IMAGE_FORMATS,
     CloneVoiceDirectRequest,
     CloneVoiceRequest,
     CloneVoiceResponse,
-    GenerateBookRequest,
-    GenerateBookResponse,
-    GeneratedPageResponse,
-    PageGenerationStatus,
-    PartialSuccessResponse,
     PreviewVoiceRequest,
     SuggestOutfitsRequest,
     SuggestOutfitsResponse,
     SystemVoiceInfo,
+    TempImageUploadRequest,
     TestFaceAnalysisRequest,
     TestFalImageRequest,
     TestImageRequest,
     TestMultiViewFaceAnalysisRequest,
     TestStoryRequest,
     TestStructuredStoryRequest,
-    TempImageUploadRequest,
     VoiceSampleUploadRequest,
     VoiceSampleUploadResponse,
-    _ALLOWED_IMAGE_FORMATS,
-    _MAX_TEMP_IMAGE_BASE64,
 )
 from app.services.ai import (
     ImageProvider,
@@ -770,6 +763,7 @@ async def clone_voice(request: CloneVoiceRequest, db: DbSession) -> CloneVoiceRe
 async def clone_voice_direct(request: CloneVoiceDirectRequest, db: DbSession) -> CloneVoiceResponse:
     """Clone a voice directly from base64 audio (without GCS upload)."""
     import base64 as _b64
+
     import structlog
 
     from app.services.ai.elevenlabs_service import ElevenLabsService

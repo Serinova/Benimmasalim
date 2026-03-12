@@ -19,7 +19,7 @@ Yeni Provider Eklemek:
 
 import base64
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import StrEnum
 
 import httpx
 import structlog
@@ -54,7 +54,7 @@ CHARACTER_CONSISTENCY_POSITIVE = (
 )
 
 
-class ImageProvider(str, Enum):
+class ImageProvider(StrEnum):
     """Desteklenen görsel üretim servisleri."""
 
     GEMINI = "gemini"
@@ -62,7 +62,7 @@ class ImageProvider(str, Enum):
     FAL = "fal"  # Faz 2'de eklenecek
 
 
-class ImageSize(str, Enum):
+class ImageSize(StrEnum):
     """Standart görsel boyutları."""
 
     SQUARE = "1:1"  # 512x512 veya 1024x1024

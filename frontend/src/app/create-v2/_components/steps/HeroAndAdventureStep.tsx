@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Search, X, Info } from "lucide-react";
-import ScenarioDetailModal from "@/components/ScenarioDetailModal";
-import CustomInputsForm from "@/components/CustomInputsForm";
+import ScenarioDetailModal from "../ui/ScenarioDetailModal";
+import CustomInputsForm from "../ui/CustomInputsForm";
 import type { Scenario } from "@/lib/api";
 import { AGES } from "../../_lib/constants";
 import {

@@ -463,6 +463,7 @@ async def run_structured_story_generation(
     if request.visual_style_id:
         try:
             from uuid import UUID
+
             from app.models.visual_style import VisualStyle
 
             vs_result = await db.execute(
@@ -562,39 +563,6 @@ async def run_structured_story_generation(
 
         scenario_obj = scenario if scenario else MockScenario(scenario_name, scenario_description)
 
-        from app.models.learning_outcome import LearningOutcome
-
-        outcomes: list[LearningOutcome] = []
-        if request.learning_outcomes:
-            lo_result = await db.execute(
-                select(LearningOutcome).where(
-                    LearningOutcome.name.in_(request.learning_outcomes),
-                    LearningOutcome.is_active == True,  # noqa: E712
-                )
-            )
-            outcomes = list(lo_result.scalars().all())
-
-            found_names = {o.name for o in outcomes}
-            missing = [n for n in request.learning_outcomes if n not in found_names]
-            if missing:
-                logger.warning(
-                    "Some learning outcomes not found in DB — using name as fallback",
-                    missing=missing,
-                )
-
-                class _FallbackOutcome:
-                    def __init__(self, name: str):
-                        self.name = name
-                        self.ai_prompt = name
-                        self.ai_prompt_instruction = None
-                        self.banned_words_tr = None
-
-                    @property
-                    def effective_ai_instruction(self) -> str:
-                        return self.ai_prompt_instruction or self.ai_prompt or self.name
-
-                outcomes.extend(_FallbackOutcome(n) for n in missing)
-
         location_constraints = getattr(scenario_obj, "location_constraints", None)
 
         logger.info(
@@ -619,7 +587,6 @@ async def run_structured_story_generation(
             child_name=request.child_name,
             child_age=request.child_age,
             child_gender=request.child_gender,
-            outcomes=outcomes,
             visual_style=style_prompt_resolved,
             visual_character_description=child_visual_desc,
             page_count=request.page_count,

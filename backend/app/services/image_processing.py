@@ -75,7 +75,9 @@ class ImageProcessingService:
         Convert image to native line-art using Gemini Flash image-to-image.
         """
         import base64
+
         import httpx
+
         from app.config import settings
         
         try:

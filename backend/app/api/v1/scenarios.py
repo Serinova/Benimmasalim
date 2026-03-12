@@ -15,7 +15,6 @@ from sqlalchemy.orm import selectinload
 from app.api.v1.deps import DbSession
 from app.core.database import async_session_factory
 from app.core.exceptions import NotFoundError
-from app.models.learning_outcome import LearningOutcome
 from app.models.scenario import Scenario
 from app.models.visual_style import VisualStyle
 
@@ -83,55 +82,6 @@ class ScenarioResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
-# ============ LEARNING OUTCOME SCHEMAS ============
-
-
-class LearningOutcomeItem(BaseModel):
-    """Single learning outcome item with visual assets (public-safe)."""
-
-    id: str
-    name: str
-    description: str | None
-
-    # Visual Assets
-    icon_url: str | None
-    color_theme: str | None
-
-    # AI prompts intentionally excluded from public API for IP protection
-
-    class Config:
-        from_attributes = True
-
-
-class LearningOutcomeCategoryGroup(BaseModel):
-    """Learning outcomes grouped by category."""
-
-    category: str
-    category_label: str
-    items: list[LearningOutcomeItem]
-
-
-class LearningOutcomeResponse(BaseModel):
-    """Learning outcome response schema (flat) — public-safe."""
-
-    id: str
-    name: str
-    description: str | None
-
-    # Visual Assets
-    icon_url: str | None
-    color_theme: str | None
-
-    # Categorization
-    category: str
-    category_label: str | None
-    age_group: str
-
-    # AI prompts intentionally excluded from public API for IP protection
-
-    class Config:
-        from_attributes = True
 
 
 # ============ VISUAL STYLE SCHEMAS ============
@@ -375,90 +325,6 @@ async def list_featured_scenarios(
             logger.warning("list_featured_scenarios: skip scenario %s: %s", getattr(s, "id", None), e)
     return out
 
-
-# IMPORTANT: Static routes MUST come before dynamic /{id} routes!
-@router.get("/learning-outcomes", response_model=list[LearningOutcomeCategoryGroup])
-async def list_learning_outcomes_grouped(
-    db: DbSession,
-) -> list[LearningOutcomeCategoryGroup]:
-    """
-    List all active learning outcomes GROUPED BY CATEGORY.
-    Returns data structured for accordion/grouped list display.
-    """
-    result = await db.execute(
-        select(LearningOutcome)
-        .where(LearningOutcome.is_active == True)
-        .order_by(LearningOutcome.category, LearningOutcome.display_order)
-    )
-    outcomes = result.scalars().all()
-
-    # Group by category
-    grouped: dict[str, dict] = {}
-
-    # Define category order
-    category_order = ["SelfCare", "PersonalGrowth", "SocialSkills", "EducationNature"]
-
-    for outcome in outcomes:
-        cat = outcome.category
-        if cat not in grouped:
-            grouped[cat] = {
-                "category": cat,
-                "category_label": outcome.category_label or cat,
-                "items": [],
-            }
-        grouped[cat]["items"].append(
-            LearningOutcomeItem(
-                id=str(outcome.id),
-                name=outcome.name,
-                description=outcome.description,
-                icon_url=outcome.icon_url,
-                color_theme=outcome.color_theme,
-            )
-        )
-
-    # Sort by predefined order
-    result_list = []
-    for cat in category_order:
-        if cat in grouped:
-            result_list.append(LearningOutcomeCategoryGroup(**grouped[cat]))
-
-    # Add any remaining categories not in predefined order
-    for cat in grouped:
-        if cat not in category_order:
-            result_list.append(LearningOutcomeCategoryGroup(**grouped[cat]))
-
-    return result_list
-
-
-@router.get("/learning-outcomes/flat", response_model=list[LearningOutcomeResponse])
-async def list_learning_outcomes_flat(
-    db: DbSession,
-    category: str | None = Query(None, description="Filter by category"),
-) -> list[LearningOutcomeResponse]:
-    """List all active learning outcomes as flat list (for filtering)."""
-    query = select(LearningOutcome).where(LearningOutcome.is_active == True)
-
-    if category:
-        query = query.where(LearningOutcome.category == category)
-
-    result = await db.execute(
-        query.order_by(LearningOutcome.category, LearningOutcome.display_order)
-    )
-    outcomes = result.scalars().all()
-
-    return [
-        LearningOutcomeResponse(
-            id=str(o.id),
-            name=o.name,
-            description=o.description,
-            icon_url=o.icon_url,
-            color_theme=o.color_theme,
-            category=o.category,
-            category_label=o.category_label,
-            age_group=o.age_group,
-        )
-        for o in outcomes
-    ]
 
 
 @router.get("/visual-styles", response_model=list[VisualStyleResponse])

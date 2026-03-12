@@ -285,32 +285,6 @@ def sanitize_visual_style(style: str) -> str:
     )
 
 
-def sanitize_learning_outcomes(outcomes: list[str]) -> list[str]:
-    """
-    Sanitize learning outcome values.
-
-    Args:
-        outcomes: List of learning outcome strings
-
-    Returns:
-        Sanitized list
-    """
-    sanitized = []
-    for outcome in outcomes:
-        if not outcome:
-            continue
-
-        # Simple sanitization for enum-like values
-        clean = sanitize_for_prompt(outcome, max_length=100, field_name="learning_outcome")
-
-        # Check for injection
-        is_injection, _ = detect_prompt_injection(clean)
-        if not is_injection and clean:
-            sanitized.append(clean)
-
-    return sanitized
-
-
 # =============================================================================
 # INPUT VALIDATION RESULT
 # =============================================================================
@@ -333,7 +307,6 @@ def validate_story_inputs(
     child_age: int,
     scenario_prompt: str,
     visual_style: str = None,
-    learning_outcomes: list[str] = None,
 ) -> ValidationResult:
     """
     Validate all story generation inputs.
@@ -343,7 +316,6 @@ def validate_story_inputs(
         child_age: Child's age
         scenario_prompt: Story scenario/theme
         visual_style: Visual style description
-        learning_outcomes: Educational values
 
     Returns:
         ValidationResult with sanitized values or error
@@ -366,9 +338,6 @@ def validate_story_inputs(
     # Sanitize visual style
     sanitized_style = sanitize_visual_style(visual_style) if visual_style else None
 
-    # Sanitize learning outcomes
-    sanitized_outcomes = sanitize_learning_outcomes(learning_outcomes) if learning_outcomes else []
-
     return ValidationResult(
         True,
         value={
@@ -376,6 +345,5 @@ def validate_story_inputs(
             "child_age": child_age,
             "scenario_prompt": sanitized_scenario,
             "visual_style": sanitized_style,
-            "learning_outcomes": sanitized_outcomes,
         },
     )

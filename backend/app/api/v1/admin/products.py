@@ -212,6 +212,95 @@ def slugify(text: str) -> str:
 
 
 # =============================================================================
+# RESPONSE HELPERS
+# =============================================================================
+
+
+def _serialize_template(tmpl) -> dict | None:
+    """Serialize a PageTemplate relationship to a compact dict."""
+    if not tmpl:
+        return None
+    return {
+        "id": str(tmpl.id),
+        "name": tmpl.name,
+        "page_width_mm": tmpl.page_width_mm,
+        "page_height_mm": tmpl.page_height_mm,
+    }
+
+
+def _serialize_product(p: Product) -> dict:
+    """Serialize a Product ORM instance to a consistent admin response dict.
+
+    Used by both list and detail endpoints to avoid duplication.
+    Relationships (cover_template, inner_template, etc.) must be pre-loaded.
+    """
+    return {
+        "id": str(p.id),
+        "name": p.name,
+        "slug": p.slug,
+        "description": p.description,
+        "short_description": p.short_description,
+        # Product Type
+        "product_type": p.product_type,
+        "type_specific_data": p.type_specific_data,
+        # Templates (embedded objects + raw IDs for edit forms)
+        "cover_template_id": str(p.cover_template_id) if p.cover_template_id else None,
+        "inner_template_id": str(p.inner_template_id) if p.inner_template_id else None,
+        "back_template_id": str(p.back_template_id) if p.back_template_id else None,
+        "ai_config_id": str(p.ai_config_id) if p.ai_config_id else None,
+        "cover_template": _serialize_template(p.cover_template),
+        "inner_template": _serialize_template(p.inner_template),
+        "back_template": _serialize_template(p.back_template),
+        "ai_config": {
+            "id": str(p.ai_config.id),
+            "name": p.ai_config.name,
+        }
+        if p.ai_config
+        else None,
+        # Page settings
+        "default_page_count": p.default_page_count,
+        "min_page_count": p.min_page_count,
+        "max_page_count": p.max_page_count,
+        # Paper & Cover
+        "paper_type": p.paper_type,
+        "paper_finish": p.paper_finish,
+        "cover_type": p.cover_type,
+        "lamination": p.lamination,
+        # Pricing
+        "base_price": float(p.base_price),
+        "discounted_price": float(p.discounted_price) if p.discounted_price else None,
+        "extra_page_price": float(p.extra_page_price) if p.extra_page_price else 5.0,
+        "production_cost": float(p.production_cost) if p.production_cost else None,
+        "vat_rate": float(p.vat_rate) if p.vat_rate is not None else 10.0,
+        "discount_percentage": p.discount_percentage,
+        # Visibility
+        "is_active": p.is_active,
+        "is_featured": p.is_featured,
+        "display_order": p.display_order,
+        # Media
+        "thumbnail_url": p.thumbnail_url,
+        "gallery_images": p.gallery_images,
+        "video_url": p.video_url,
+        # Flipbook Preview
+        "sample_images": p.sample_images or [],
+        "orientation": p.orientation or "landscape",
+        # Marketing & Urgency
+        "promo_badge": p.promo_badge,
+        "promo_end_date": p.promo_end_date.isoformat() if p.promo_end_date else None,
+        "promo_days_remaining": p.promo_days_remaining,
+        "is_gift_wrapped": p.is_gift_wrapped,
+        # Social Proof
+        "rating": p.rating,
+        "review_count": p.review_count,
+        "social_proof_text": p.social_proof_text,
+        # Features
+        "feature_list": p.feature_list or [],
+        # Timestamps
+        "created_at": p.created_at.isoformat() if p.created_at else None,
+    }
+
+
+# =============================================================================
 # PRODUCT ENDPOINTS
 # =============================================================================
 
@@ -244,90 +333,7 @@ async def list_products(
     result = await db.execute(query)
     products = result.scalars().all()
 
-    return [
-        {
-            "id": str(p.id),
-            "name": p.name,
-            "slug": p.slug,
-            "description": p.description,
-            "short_description": p.short_description,
-            # Product Type
-            "product_type": p.product_type,
-            "type_specific_data": p.type_specific_data,
-            # Templates
-            "cover_template": {
-                "id": str(p.cover_template.id),
-                "name": p.cover_template.name,
-                "page_width_mm": p.cover_template.page_width_mm,
-                "page_height_mm": p.cover_template.page_height_mm,
-            }
-            if p.cover_template
-            else None,
-            "inner_template": {
-                "id": str(p.inner_template.id),
-                "name": p.inner_template.name,
-                "page_width_mm": p.inner_template.page_width_mm,
-                "page_height_mm": p.inner_template.page_height_mm,
-            }
-            if p.inner_template
-            else None,
-            "back_template": {
-                "id": str(p.back_template.id),
-                "name": p.back_template.name,
-                "page_width_mm": p.back_template.page_width_mm,
-                "page_height_mm": p.back_template.page_height_mm,
-            }
-            if p.back_template
-            else None,
-            "ai_config": {
-                "id": str(p.ai_config.id),
-                "name": p.ai_config.name,
-            }
-            if p.ai_config
-            else None,
-            # Page settings
-            "default_page_count": p.default_page_count,
-            "min_page_count": p.min_page_count,
-            "max_page_count": p.max_page_count,
-            # Paper & Cover
-            "paper_type": p.paper_type,
-            "paper_finish": p.paper_finish,
-            "cover_type": p.cover_type,
-            "lamination": p.lamination,
-            # Pricing
-            "base_price": float(p.base_price),
-            "discounted_price": float(p.discounted_price) if p.discounted_price else None,
-            "extra_page_price": float(p.extra_page_price) if p.extra_page_price else 5.0,
-            "production_cost": float(p.production_cost) if p.production_cost else None,
-            "vat_rate": float(p.vat_rate) if p.vat_rate is not None else 10.0,
-            "discount_percentage": p.discount_percentage,
-            # Visibility
-            "is_active": p.is_active,
-            "is_featured": p.is_featured,
-            "display_order": p.display_order,
-            # Media
-            "thumbnail_url": p.thumbnail_url,
-            "gallery_images": p.gallery_images,
-            "video_url": p.video_url,
-            # Flipbook Preview
-            "sample_images": p.sample_images or [],
-            "orientation": p.orientation or "landscape",
-            # Marketing & Urgency
-            "promo_badge": p.promo_badge,
-            "promo_end_date": p.promo_end_date.isoformat() if p.promo_end_date else None,
-            "promo_days_remaining": p.promo_days_remaining,
-            "is_gift_wrapped": p.is_gift_wrapped,
-            # Social Proof
-            "rating": p.rating,
-            "review_count": p.review_count,
-            "social_proof_text": p.social_proof_text,
-            # Features
-            "feature_list": p.feature_list or [],
-            # Timestamps
-            "created_at": p.created_at.isoformat() if p.created_at else None,
-        }
-        for p in products
-    ]
+    return [_serialize_product(p) for p in products]
 
 
 @router.get("/{product_id}")
@@ -352,57 +358,7 @@ async def get_product(
     if not product:
         raise NotFoundError("Ürün", product_id)
 
-    return {
-        "id": str(product.id),
-        "name": product.name,
-        "slug": product.slug,
-        "description": product.description,
-        "short_description": product.short_description,
-        # Product Type
-        "product_type": product.product_type,
-        "type_specific_data": product.type_specific_data,
-        # Template IDs
-        "cover_template_id": str(product.cover_template_id) if product.cover_template_id else None,
-        "inner_template_id": str(product.inner_template_id) if product.inner_template_id else None,
-        "back_template_id": str(product.back_template_id) if product.back_template_id else None,
-        "ai_config_id": str(product.ai_config_id) if product.ai_config_id else None,
-        # Page settings
-        "default_page_count": product.default_page_count,
-        "min_page_count": product.min_page_count,
-        "max_page_count": product.max_page_count,
-        # Paper & Cover
-        "paper_type": product.paper_type,
-        "paper_finish": product.paper_finish,
-        "cover_type": product.cover_type,
-        "lamination": product.lamination,
-        # Pricing
-        "base_price": float(product.base_price),
-        "discounted_price": float(product.discounted_price) if product.discounted_price else None,
-        "extra_page_price": float(product.extra_page_price) if product.extra_page_price else 5.0,
-        "production_cost": float(product.production_cost) if product.production_cost else None,
-        "vat_rate": float(product.vat_rate) if product.vat_rate is not None else 10.0,
-        # Visibility
-        "is_active": product.is_active,
-        "is_featured": product.is_featured,
-        "display_order": product.display_order,
-        # Media
-        "thumbnail_url": product.thumbnail_url,
-        "gallery_images": product.gallery_images,
-        "video_url": product.video_url,
-        # Flipbook Preview
-        "sample_images": product.sample_images or [],
-        "orientation": product.orientation or "landscape",
-        # Marketing & Urgency
-        "promo_badge": product.promo_badge,
-        "promo_end_date": product.promo_end_date.isoformat() if product.promo_end_date else None,
-        "is_gift_wrapped": product.is_gift_wrapped,
-        # Social Proof
-        "rating": product.rating,
-        "review_count": product.review_count,
-        "social_proof_text": product.social_proof_text,
-        # Features
-        "feature_list": product.feature_list or [],
-    }
+    return _serialize_product(product)
 
 
 @router.post("")

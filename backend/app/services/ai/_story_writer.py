@@ -24,53 +24,36 @@ import structlog
 from app.config import settings
 from app.core.exceptions import AIServiceError, ContentPolicyError
 from app.core.rate_limit import rate_limit_retry
-from app.core.sanitizer import sanitize_for_prompt
-from app.models.learning_outcome import LearningOutcome
 from app.models.scenario import Scenario
 from app.services.ai._helpers import (
     AI_DIRECTOR_SYSTEM,
-    DEFAULT_EDUCATIONAL_VALUES,
-    EDUCATIONAL_VALUE_PROMPTS,
-    PURE_AUTHOR_SYSTEM,
-    SCENARIO_DEFAULT_VALUE,
-    VALUE_EMOTION_BEATS,
-    VALUE_VISUAL_MOTIF_EN,
     _extract_text_from_parts,
     _get_possessive_suffix,
     _normalize_title_turkish,
-    _normalize_value_key,
-    _resolve_default_value_for_scenario,
-    build_educational_prompt,
     get_gemini_api_url,
     get_gemini_story_url,
-    get_gemini_technical_url,
-    get_value_message_tr_for_outcomes,
-    get_value_visual_motif_for_outcomes,
 )
 from app.services.ai._models import (
     FinalPageContent,
     PageContent,
-    PageManifest,
-    PageManifestEntry,
     StoryResponse,
 )
+from app.services.ai._story_blueprint import _BlueprintMixin
+from app.services.ai._story_legacy_passes import _LegacyPassesMixin
 from app.services.ai.llm_output_repair import (
     extract_and_repair_json as _enhanced_extract_json,
-    repair_blueprint as _repair_blueprint,
+)
+from app.services.ai.llm_output_repair import (
     repair_pages as _repair_pages,
 )
 
-from app.services.ai._story_blueprint import _BlueprintMixin
-from app.services.ai._story_learning_outcomes import _LearningOutcomesMixin
-from app.services.ai._story_legacy_passes import _LegacyPassesMixin
-
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncSession
+    pass
 
 logger = structlog.get_logger()
 
 
-class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMixin):
+class _StoryWriterMixin(_BlueprintMixin, _LegacyPassesMixin):
     """Story generation mixin for GeminiService.
 
     Orchestration only — educational helpers in _story_learning_outcomes,
@@ -118,14 +101,12 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
         location_display_name: str,
         magic_items: list[str],
         page_count: int,
-        outcomes: list | None = None,
         location_constraints: str = "",
         skip_visual_prompts: bool = False,
     ) -> list[dict]:
         """PASS-1: Generate story pages with text_tr + image_prompt_en + negative_prompt_en.
 
         Takes the blueprint from PASS-0 and produces the final page content.
-        outcomes: used for V3 value_message_tr injection into narrative.
         """
         import asyncio as _asyncio_pg
 
@@ -136,20 +117,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
         from app.prompt_engine.style_adapter import get_style_instructions_for_prompt
 
         style_instructions = get_style_instructions_for_prompt(visual_style)
-        value_message_tr = get_value_message_tr_for_outcomes(outcomes or [])
-
-        # Resolve 3-beat emotion arc for the selected value
-        value_emotion_beats: dict[str, str] | None = None
-        if value_message_tr:
-            for outcome in outcomes or []:
-                _name = (getattr(outcome, "name", None) or str(outcome)).lower().strip()
-                _name_norm = _normalize_value_key(_name)
-                for key, beats in VALUE_EMOTION_BEATS.items():
-                    if key in _name or _name in key or _normalize_value_key(key) in _name_norm:
-                        value_emotion_beats = beats
-                        break
-                if value_emotion_beats:
-                    break
 
         system_prompt = await self._get_prompt(
             "PAGE_GENERATION_SYSTEM_PROMPT", PAGE_GENERATION_SYSTEM_PROMPT
@@ -166,8 +133,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
             location_constraints=location_constraints,
             magic_items=magic_items,
             page_count=page_count,
-            value_message_tr=value_message_tr,
-            value_emotion_beats=value_emotion_beats,
             skip_visual_prompts=skip_visual_prompts,
         )
 
@@ -310,7 +275,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
         child_name: str,
         child_age: int,
         child_gender: str | None,
-        outcomes: list[LearningOutcome],
         visual_style: str = "children's book illustration, soft colors",
         visual_character_description: str = "",
         page_count: int = 16,
@@ -409,37 +373,8 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 child_description = ""
 
         # =====================================================================
-        # VALUE FALLBACK: default value when user selected no learning outcome
-        # =====================================================================
-        if not outcomes:
-            _fallback_value = _resolve_default_value_for_scenario(scenario)
-            logger.info(
-                "VALUE_FALLBACK_APPLIED",
-                scenario_name=getattr(scenario, "name", ""),
-                fallback_value=_fallback_value,
-            )
-
-            class _FallbackOutcome:
-                def __init__(self, name: str):
-                    self.name = name
-                    self.ai_prompt = name
-                    self.ai_prompt_instruction = None
-                    self.banned_words_tr = None
-
-                @property
-                def effective_ai_instruction(self) -> str:
-                    return self.ai_prompt_instruction or self.ai_prompt or self.name
-
-            outcomes = [_FallbackOutcome(_fallback_value)]
-
-        # =====================================================================
         # PASS-0: BLUEPRINT
         # =====================================================================
-        # Extract primary value name for blueprint hints
-        _primary_value_name = ""
-        if outcomes:
-            _primary_value_name = (getattr(outcomes[0], "name", None) or str(outcomes[0])).strip()
-
         _p0_start = time.monotonic()
         try:
             blueprint = await self._pass0_generate_blueprint(
@@ -452,7 +387,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 magic_items=magic_items or [],
                 page_count=page_count,
                 scenario=scenario,
-                value_name=_primary_value_name,
             )
             tracer.story_pass0_ok(
                 page_count=len(blueprint.get("pages", [])),
@@ -483,7 +417,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 location_display_name=location_display_name,
                 magic_items=magic_items or [],
                 page_count=page_count,
-                outcomes=outcomes,
                 location_constraints=getattr(scenario, "location_constraints", "") or "",
                 skip_visual_prompts=not generate_visual_prompts,
             )
@@ -607,8 +540,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 companion_appearance=_final_appearance,
             )
 
-        value_visual_motif = get_value_visual_motif_for_outcomes(outcomes)
-
         from app.prompt_engine.constants import LIKENESS_HINT_WHEN_REFERENCE
         _has_child_photo = bool(_child_photo_url)
         _likeness = LIKENESS_HINT_WHEN_REFERENCE if _has_child_photo else ""
@@ -625,7 +556,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 character_bible=character_bible,
                 visual_style=visual_style,
                 location_key=location_display_name,
-                value_visual_motif=value_visual_motif,
                 likeness_hint=_likeness,
                 has_pulid=_has_child_photo,
                 leading_prefix_override=leading_prefix_override,
@@ -640,7 +570,7 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
             # Visual prompt validation + auto-fix (V3: shot conflict + value motif checks)
             style_mapping = adapt_style(visual_style)
             visual_validation = validate_visual_prompts(
-                pages, character_bible, style_mapping, value_visual_motif=value_visual_motif
+                pages, character_bible, style_mapping
             )
             if not visual_validation.passed:
                 auto_fixes = autofix_visual_prompts(pages, character_bible, style_mapping, visual_validation)
@@ -744,7 +674,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
             location_constraints=getattr(scenario, "location_constraints", "") or "",
             story_title=title,
             blueprint=blueprint,
-            value_visual_motif=value_visual_motif,
             likeness_hint=_likeness,
             has_pulid=_has_child_photo,
         )
@@ -903,7 +832,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 location_key=location_display_name,
                 story_title=title,
                 blueprint=blueprint,
-                value_visual_motif=value_visual_motif,
                 likeness_hint=_likeness,
                 has_pulid=_has_child_photo,
             )
@@ -1041,7 +969,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
         child_name: str,
         child_age: int,
         child_gender: str | None,
-        outcomes: list[LearningOutcome],
         visual_style: str = "children's book illustration, soft colors",
         visual_character_description: str = "",  # DOUBLE LOCKING!
         page_count: int = 16,  # Number of story pages (from product settings)
@@ -1099,7 +1026,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 child_name=child_name,
                 child_age=child_age,
                 child_gender=child_gender,
-                outcomes=outcomes,
                 visual_style=visual_style,
                 visual_character_description=visual_character_description,
                 page_count=page_count,
@@ -1187,7 +1113,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
             for w in _no_family_words
         }
 
-        learning_keywords = self._get_learning_outcome_keywords(outcomes)
         max_pass1_attempts = 2  # Reduced from 4: free tier 15 RPM → her retry 3 Gemini çağrısı
         story_text = ""
         extra_no_family = ""
@@ -1205,7 +1130,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
 
             story_text = await self._pass1_write_story(
                 scenario=scenario,
-                outcomes=outcomes,
                 child_name=child_name,
                 child_age=child_age,
                 child_gender=gender_term,
@@ -1213,17 +1137,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                 cultural_elements=cultural_elements,
                 extra_instructions=extra_no_family,
             )
-
-            # --- check learning outcomes ---
-            learning_ok = not learning_keywords or self._story_reflects_learning_outcomes(
-                story_text, learning_keywords, min_occurrences=2
-            )
-            if not learning_ok:
-                logger.warning(
-                    "[STORY-GEN] Learning outcome not reflected, regenerating Pass1",
-                    attempt=pass1_attempt + 1,
-                    keywords=learning_keywords,
-                )
 
             # --- Aile kelimeleri kontrolü: Sadece senaryo no_family=true ise uygula
             family_ok = True
@@ -1244,17 +1157,10 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
                             "Bu kelimeleri HİÇBİR ÅEKİLDE kullanma!"
                         )
 
-            if learning_ok and family_ok:
+            if family_ok:
                 break
 
         # Post-loop validation
-        if learning_keywords and not self._story_reflects_learning_outcomes(
-            story_text, learning_keywords, min_occurrences=2
-        ):
-            logger.warning(
-                "[STORY-GEN] Learning outcome still under-represented after retries",
-                keywords=learning_keywords,
-            )
         # Aile kuralı sadece no_family senaryolarda uygulanır
         if v2_no_family:
             final_violations = [w for w, pat in _no_family_patterns.items() if pat.search(story_text)]
@@ -1340,8 +1246,7 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
             except Exception as _tpl_err:
                 logger.warning("Failed to load DB templates for compose", error=str(_tpl_err))
 
-        # Compose final pages (with optional learning-outcome visual hint, e.g. toothbrush)
-        learning_visual_hints = self._get_learning_outcome_visual_hints(outcomes)
+        # Compose final pages
         final_pages = self._compose_visual_prompts(
             story_response=story_response,
             scenario=scenario,
@@ -1350,7 +1255,6 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
             or self._build_child_description(child_name, child_age, child_gender),
             visual_style=visual_style,
             fixed_outfit=fixed_outfit,
-            learning_outcome_visual_hints=learning_visual_hints or None,
             cover_template_en=_db_cover_tpl,
             inner_template_en=_db_inner_tpl,
         )
@@ -1424,21 +1328,10 @@ class _StoryWriterMixin(_LearningOutcomesMixin, _BlueprintMixin, _LegacyPassesMi
         child_name: str,
         child_age: int,
         child_gender: str | None,
-        outcomes: list[LearningOutcome],
         visual_style: str = "children's book illustration, soft colors",
         visual_character_description: str = "",
     ) -> tuple[StoryResponse, list[FinalPageContent]]:
         """Legacy single-pass generation - kept for reference."""
-        # Build outcome descriptions with AI prompts
-        outcome_instructions = []
-        for o in outcomes:
-            if hasattr(o, "ai_prompt") and o.ai_prompt:
-                outcome_instructions.append(o.ai_prompt)
-            else:
-                outcome_instructions.append(f"Hikayede {o.name} teması işlensin.")
-
-        outcome_text = "\n".join([f"- {inst}" for inst in outcome_instructions])
-
         clothing_default = (
             "adventure clothes with a colorful jacket"
             if child_gender == "erkek"

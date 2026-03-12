@@ -2,6 +2,7 @@
 name: Project Architect
 description: Projedeki ana geliştirme mimarisini, kuralları ve standartları yürütmek için kullanılması ZORUNLU mimar danışmanlık becerisi. Herhangi bir kod yazmadan veya değişiklik yapmadan önce MUTLAKA bu beceriyi OKU ve uygula.
 ---
+// turbo-all
 
 # Project Architect (Proje Mimarı)
 

@@ -16,7 +16,6 @@ import structlog
 
 from app.core.exceptions import AIServiceError
 from app.core.sanitizer import sanitize_for_prompt
-from app.models.learning_outcome import LearningOutcome
 from app.models.scenario import Scenario
 from app.services.ai._helpers import (
     AI_DIRECTOR_SYSTEM,
@@ -36,7 +35,6 @@ class _LegacyPassesMixin:
     async def _pass1_write_story(
         self,
         scenario: Scenario,
-        outcomes: list[LearningOutcome],
         child_name: str,
         child_age: int,
         child_gender: str,
@@ -55,7 +53,7 @@ class _LegacyPassesMixin:
         from app.prompt_engine import compose_story_prompt
 
         task_prompt = compose_story_prompt(
-            scenario, outcomes, child_name, child_age, child_gender, page_count
+            scenario, child_name, child_age, child_gender, page_count
         )
         if extra_instructions:
             task_prompt = task_prompt + "\n\n" + extra_instructions.strip()

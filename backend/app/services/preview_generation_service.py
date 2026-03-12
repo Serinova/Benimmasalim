@@ -6,17 +6,18 @@ Workers should import from here, never from app.api.v1.orders.
 
 from __future__ import annotations
 
-import asyncio
+import re
 from typing import TYPE_CHECKING
 from uuid import UUID
 
 import structlog
 from fastapi import HTTPException
-from sqlalchemy import select
 
+from app.config import settings
 from app.core.exceptions import ValidationError
-from app.models.order import Order, OrderStatus
-from app.prompt_engine import personalize_style_prompt
+from app.core.image_dimensions import get_page_image_dimensions
+from app.prompt_engine import VisualPromptValidationError, personalize_style_prompt
+from app.schemas.orders import StoryPageData
 
 if TYPE_CHECKING:
     pass
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 _logger = structlog.get_logger()
 _V3_BLOCK_MSG = "V2_LABEL_BLOCKED: expected v3"
 
-def page_version_flags(p: "StoryPageData") -> tuple[str, str]:
+def page_version_flags(p: StoryPageData) -> tuple[str, str]:
     """Resolve pipeline/composer flags and hard-block non-v3 payloads."""
     pipe = (getattr(p, "pipeline_version", "") or "").strip().lower()
     comp = (getattr(p, "composer_version", "") or "").strip().lower() or "v3"
@@ -43,7 +44,7 @@ def page_version_flags(p: "StoryPageData") -> tuple[str, str]:
     return ("v3", "v3")
 
 
-def page_to_dict(p: "StoryPageData", *, include_image: bool = False) -> dict:
+def page_to_dict(p: StoryPageData, *, include_image: bool = False) -> dict:
     """Build story page dict for persistence / worker payload (with pipeline_version)."""
     pipe, comp = page_version_flags(p)
     d: dict = {
@@ -62,7 +63,7 @@ def page_to_dict(p: "StoryPageData", *, include_image: bool = False) -> dict:
     return d
 
 
-def ensure_v3_story_pages(story_pages: list["StoryPageData"], *, route: str) -> None:
+def ensure_v3_story_pages(story_pages: list[StoryPageData], *, route: str) -> None:
     """Hard-fail non-v3 page payloads with explicit 400 error."""
     for p in story_pages:
         try:
@@ -1080,7 +1081,9 @@ async def process_remaining_pages_inner(preview_id: str) -> None:
                                 # Upscale for print quality (Real-ESRGAN if configured)
                                 if _rem_upscale_params and _rem_upscale_params.get("needs_upscale") and _rem_upscale_params.get("upscale_factor", 1) > 1:
                                     try:
-                                        from app.services.upscale_service import upscale_image_bytes_safe
+                                        from app.services.upscale_service import (
+                                            upscale_image_bytes_safe,
+                                        )
                                         raw_bytes = await upscale_image_bytes_safe(
                                             raw_bytes,
                                             upscale_factor=_rem_upscale_params["upscale_factor"],

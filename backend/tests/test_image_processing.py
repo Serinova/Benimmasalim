@@ -1,8 +1,9 @@
 """Tests for image processing service (line-art conversion)."""
 
 import io
-from PIL import Image
+
 import pytest
+from PIL import Image
 
 from app.services.image_processing import image_processing_service
 

@@ -6,7 +6,6 @@ so the endpoint handlers stay thin.
 
 from __future__ import annotations
 
-import uuid
 from decimal import Decimal
 from typing import Any
 
@@ -209,9 +208,12 @@ async def create_iyzico_checkout(
     # ── Boyama kitabı fiyatı ──
     coloring_book_price = Decimal("0")
     if getattr(trial, "has_coloring_book", False):
-        from app.models.coloring_book import ColoringBookProduct
+        from app.models.product import Product, ProductType
         coloring_config_result = await db.execute(
-            select(ColoringBookProduct).where(ColoringBookProduct.active == True).limit(1)
+            select(Product).where(
+                Product.product_type == ProductType.COLORING_BOOK.value,
+                Product.is_active == True,
+            ).limit(1)
         )
         coloring_config = coloring_config_result.scalar_one_or_none()
         if coloring_config:
@@ -405,7 +407,7 @@ async def verify_iyzico_payment(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
 
-    settings = get_settings()
+    get_settings()
 
     try:
         verify_result = iyzipay.CheckoutForm().retrieve(

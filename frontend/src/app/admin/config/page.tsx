@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
 import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 
 // Türkçe ş/ğ/Ş/Ğ/İ render EDEMEYEN fontlar (mask_size test ile doğrulanmış)
 const FONTS_NO_TURKISH = new Set([
@@ -2001,28 +2002,14 @@ export default function AdminConfigPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  useAdminAuth();
+
   useEffect(() => {
-    checkAuth();
     fetchData();
     fetchInvoiceSettings();
   }, []);
 
-  const checkAuth = () => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") {
-      toast({
-        title: "Yetkisiz Erişim",
-        description: "Bu sayfaya erişim yetkiniz yok",
-        variant: "destructive",
-      });
-      router.push("/");
-    }
-  };
+
 
 
   const fetchInvoiceSettings = async () => {
@@ -2230,12 +2217,7 @@ export default function AdminConfigPage() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => router.push("/admin")}>
-              ← Geri
-            </Button>
-            <h1 className="text-2xl font-bold text-purple-800">Kitap Yapılandırması</h1>
-          </div>
+          <h1 className="text-2xl font-bold text-purple-800">Kitap Yapılandırması</h1>
         </div>
       </header>
 

@@ -7,8 +7,8 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.story_preview import StoryPreview
 from app.models.product import Product
+from app.models.story_preview import StoryPreview
 from app.services.image_processing import image_processing_service
 from app.services.pdf_service import PDFService
 from app.services.storage_service import storage_service

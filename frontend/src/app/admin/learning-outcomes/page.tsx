@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { API_BASE_URL } from "@/lib/api";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,7 +12,6 @@ import {
   Pencil,
   Trash2,
   Copy,
-  ArrowLeft,
   Palette,
   Sparkles,
   Brain,
@@ -58,7 +57,7 @@ import {
 } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
+import { getAdminHeaders as getAuthHeaders, API_BASE_URL } from "@/lib/adminFetch";
 
 // ============ TYPES ============
 interface LearningOutcome {
@@ -284,7 +283,7 @@ export default function AdminLearningOutcomesPage() {
 
   const router = useRouter();
   const { toast } = useToast();
-  const _iconInputRef = useRef<HTMLInputElement>(null);
+
 
   const form = useForm<OutcomeFormData>({
     resolver: zodResolver(outcomeSchema),
@@ -306,23 +305,13 @@ export default function AdminLearningOutcomesPage() {
 
   const watchedValues = form.watch();
 
+  useAdminAuth();
+
   useEffect(() => {
-    checkAuth();
     fetchOutcomes();
     fetchSyncStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const checkAuth = () => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") {
-      router.push("/");
-    }
-  };
 
 
   const fetchOutcomes = async () => {
@@ -559,20 +548,14 @@ export default function AdminLearningOutcomesPage() {
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-white shadow-sm">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => router.push("/admin")}>
-              <ArrowLeft className="mr-1 h-4 w-4" />
-              Geri
-            </Button>
-            <div>
-              <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-                <Target className="h-6 w-6 text-purple-600" />
-                Kazanım Yönetimi
-              </h1>
-              <p className="mt-0.5 text-sm text-gray-500">
-                Hikaye eğitim kazanımlarını ve AI talimatlarını yönetin
-              </p>
-            </div>
+          <div>
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+              <Target className="h-6 w-6 text-purple-600" />
+              Kazanım Yönetimi
+            </h1>
+            <p className="mt-0.5 text-sm text-gray-500">
+              Hikaye eğitim kazanımlarını ve AI talimatlarını yönetin
+            </p>
           </div>
           <Button onClick={() => openEditor()} className="bg-purple-600 hover:bg-purple-700">
             <Plus className="mr-2 h-4 w-4" />

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
+import { compressImage } from "../_lib/imageUtils";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +13,6 @@ import {
   Pencil,
   Trash2,
   Copy,
-  ArrowLeft,
   X,
   Upload,
   Image as ImageIcon,
@@ -26,11 +27,6 @@ import {
   LayoutGrid,
   GripVertical,
   Variable,
-  Type,
-  Hash,
-  List,
-  AlignLeft,
-  HelpCircle,
   TrendingUp,
   Star,
   Video,
@@ -58,84 +54,10 @@ import { API_BASE_URL } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { getAdminHeaders as getAuthHeaders } from "@/lib/adminFetch";
+import type { CustomInputField, Scenario } from "./_lib/types";
+import { VariableManager } from "./_components/VariableManager";
+import { ScenarioPreview } from "./_components/ScenarioPreview";
 
-// ============ TYPES ============
-
-// Custom Input Field Schema
-interface CustomInputField {
-  key: string; // Variable key used in templates, e.g., "spaceship_name"
-  label: string; // Display label for users, e.g., "Uzay Gemisi Adı"
-  type: "text" | "number" | "select" | "textarea";
-  default?: string;
-  options?: string[]; // For "select" type
-  required?: boolean;
-  placeholder?: string;
-  help_text?: string;
-}
-
-interface Scenario {
-  id: string;
-  name: string;
-  description: string | null;
-  thumbnail_url: string;
-  // V2: Story-only fields
-  story_prompt_tr: string | null;
-  location_en: string | null;
-  default_page_count: number | null;
-  /** Gösterim için: linked product varsa ürünün sayfa sayısı (tutarlı 22 vb.) */
-  effective_default_page_count?: number;
-  effective_story_page_count?: number | null;
-  flags: Record<string, boolean> | null;
-  // Legacy (kept for compat, hidden from UI)
-  cover_prompt_template: string;
-  page_prompt_template: string;
-  ai_prompt_template?: string | null;
-  // Dynamic Variables / Custom Inputs
-  custom_inputs_schema?: CustomInputField[];
-  available_variables?: string[];
-  // Media
-  gallery_images: string[];
-  // Marketing Fields
-  marketing_video_url?: string | null;
-  marketing_gallery?: string[];
-  marketing_price_label?: string | null;
-  marketing_features?: string[];
-  marketing_badge?: string | null;
-  age_range?: string | null;
-  estimated_duration?: string | null;
-  tagline?: string | null;
-  rating?: number | null;
-  review_count?: number;
-  // Book Structure (marketing display)
-  story_page_count?: number | null;
-  cover_count?: number | null;
-  greeting_page_count?: number | null;
-  back_info_page_count?: number | null;
-  total_page_count?: number | null;
-  // Outfit Design (scenario-specific, gender-specific)
-  outfit_girl?: string | null;
-  outfit_boy?: string | null;
-  // Product Link & Override Settings
-  linked_product_id?: string | null;
-  linked_product_name?: string | null;
-  price_override_base?: number | null;
-  price_override_extra_page?: number | null;
-  cover_template_id_override?: string | null;
-  inner_template_id_override?: string | null;
-  back_template_id_override?: string | null;
-  ai_config_id_override?: string | null;
-  paper_type_override?: string | null;
-  paper_finish_override?: string | null;
-  cover_type_override?: string | null;
-  lamination_override?: string | null;
-  orientation_override?: string | null;
-  min_page_count_override?: number | null;
-  max_page_count_override?: number | null;
-  // Display
-  is_active: boolean;
-  display_order: number;
-  created_at: string | null;
-}
 
 // ============ FORM SCHEMA (V2) ============
 const scenarioSchema = z.object({
@@ -165,19 +87,25 @@ function GalleryImageUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = useCallback(
-    (files: FileList | null) => {
+    async (files: FileList | null) => {
       if (!files) return;
 
-      Array.from(files).forEach((file) => {
+      for (const file of Array.from(files)) {
         if (file.type.startsWith("image/")) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const result = e.target?.result as string;
-            onImagesChange([...images, result]);
-          };
-          reader.readAsDataURL(file);
+          try {
+            const compressed = await compressImage(file, 800, 0.7);
+            onImagesChange([...images, compressed]);
+          } catch {
+            // Fallback to original if compression fails
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const result = e.target?.result as string;
+              onImagesChange([...images, result]);
+            };
+            reader.readAsDataURL(file);
+          }
         }
-      });
+      }
     },
     [images, onImagesChange]
   );
@@ -251,476 +179,6 @@ function GalleryImageUploader({
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ============ VARIABLE MANAGER COMPONENT ============
-function VariableManager({
-  variables,
-  onVariablesChange,
-}: {
-  variables: CustomInputField[];
-  onVariablesChange: (variables: CustomInputField[]) => void;
-}) {
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [newField, setNewField] = useState<Partial<CustomInputField>>({
-    key: "",
-    label: "",
-    type: "text",
-    required: true,
-  });
-  const [showAddForm, setShowAddForm] = useState(false);
-
-  const inputTypeOptions = [
-    { value: "text", label: "Metin", icon: Type },
-    { value: "number", label: "Sayı", icon: Hash },
-    { value: "select", label: "Seçenek", icon: List },
-    { value: "textarea", label: "Uzun Metin", icon: AlignLeft },
-  ];
-
-  const addVariable = () => {
-    if (!newField.key || !newField.label) return;
-
-    // Sanitize key (remove spaces, special chars)
-    const sanitizedKey = newField.key
-      .toLowerCase()
-      .replace(/\s+/g, "_")
-      .replace(/[^a-z0-9_]/g, "");
-
-    const field: CustomInputField = {
-      key: sanitizedKey,
-      label: newField.label,
-      type: (newField.type as CustomInputField["type"]) || "text",
-      default: newField.default || undefined,
-      options: newField.type === "select" ? newField.options || [] : undefined,
-      required: newField.required ?? true,
-      placeholder: newField.placeholder || undefined,
-      help_text: newField.help_text || undefined,
-    };
-
-    onVariablesChange([...variables, field]);
-    setNewField({ key: "", label: "", type: "text", required: true });
-    setShowAddForm(false);
-  };
-
-  const updateVariable = (index: number, updates: Partial<CustomInputField>) => {
-    const updated = [...variables];
-    updated[index] = { ...updated[index], ...updates };
-    onVariablesChange(updated);
-  };
-
-  const removeVariable = (index: number) => {
-    onVariablesChange(variables.filter((_, i) => i !== index));
-  };
-
-  const moveVariable = (index: number, direction: "up" | "down") => {
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= variables.length) return;
-
-    const updated = [...variables];
-    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
-    onVariablesChange(updated);
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Existing Variables */}
-      {variables.length > 0 && (
-        <div className="space-y-2">
-          {variables.map((variable, index) => (
-            <div
-              key={variable.key}
-              className="rounded-lg border bg-white p-3 transition-colors hover:border-purple-300"
-            >
-              {editingIndex === index ? (
-                // Edit Mode
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Değişken Anahtarı</Label>
-                      <Input
-                        value={variable.key}
-                        onChange={(e) =>
-                          updateVariable(index, {
-                            key: e.target.value
-                              .toLowerCase()
-                              .replace(/\s+/g, "_")
-                              .replace(/[^a-z0-9_]/g, ""),
-                          })
-                        }
-                        className="mt-1 font-mono text-sm"
-                        placeholder="favorite_toy"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Kullanıcı Etiketi</Label>
-                      <Input
-                        value={variable.label}
-                        onChange={(e) => updateVariable(index, { label: e.target.value })}
-                        className="mt-1"
-                        placeholder="En Sevdiği Oyuncak"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Tür</Label>
-                      <select
-                        value={variable.type}
-                        onChange={(e) =>
-                          updateVariable(index, {
-                            type: e.target.value as CustomInputField["type"],
-                          })
-                        }
-                        className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                      >
-                        {inputTypeOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Varsayılan</Label>
-                      <Input
-                        value={variable.default || ""}
-                        onChange={(e) => updateVariable(index, { default: e.target.value })}
-                        className="mt-1"
-                        placeholder="Varsayılan değer"
-                      />
-                    </div>
-                  </div>
-
-                  {variable.type === "select" && (
-                    <div>
-                      <Label className="text-xs">Seçenekler (virgülle ayırın)</Label>
-                      <Input
-                        value={(variable.options || []).join(", ")}
-                        onChange={(e) =>
-                          updateVariable(index, {
-                            options: e.target.value
-                              .split(",")
-                              .map((s) => s.trim())
-                              .filter(Boolean),
-                          })
-                        }
-                        className="mt-1"
-                        placeholder="Seçenek 1, Seçenek 2, Seçenek 3"
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={variable.required ?? true}
-                        onChange={(e) => updateVariable(index, { required: e.target.checked })}
-                        className="rounded"
-                      />
-                      Zorunlu
-                    </label>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => setEditingIndex(null)}
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      <CheckCircle2 className="mr-1 h-3 w-3" />
-                      Tamam
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                // Display Mode
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex flex-col gap-1">
-                      <button
-                        type="button"
-                        onClick={() => moveVariable(index, "up")}
-                        disabled={index === 0}
-                        className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                      >
-                        <GripVertical className="h-3 w-3" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {inputTypeOptions.find((t) => t.value === variable.type)?.icon && (
-                        <div className="flex h-8 w-8 items-center justify-center rounded bg-purple-100">
-                          {(() => {
-                            const IconComp =
-                              inputTypeOptions.find((t) => t.value === variable.type)?.icon || Type;
-                            return <IconComp className="h-4 w-4 text-purple-600" />;
-                          })()}
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <code className="rounded bg-purple-50 px-1.5 py-0.5 font-mono text-sm text-purple-600">
-                            {`{${variable.key}}`}
-                          </code>
-                          {!variable.required && (
-                            <Badge variant="outline" className="text-[10px]">
-                              Opsiyonel
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-xs text-gray-500">{variable.label}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setEditingIndex(index)}
-                      className="h-7 w-7 p-0"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeVariable(index)}
-                      className="h-7 w-7 p-0 text-red-500 hover:bg-red-50 hover:text-red-700"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Add New Variable Form */}
-      {showAddForm ? (
-        <div className="space-y-3 rounded-lg border-2 border-dashed border-purple-300 bg-purple-50/50 p-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-purple-700">
-            <Variable className="h-4 w-4" />
-            Yeni Değişken Ekle
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-xs">Değişken Anahtarı *</Label>
-              <Input
-                value={newField.key || ""}
-                onChange={(e) =>
-                  setNewField({
-                    ...newField,
-                    key: e.target.value
-                      .toLowerCase()
-                      .replace(/\s+/g, "_")
-                      .replace(/[^a-z0-9_]/g, ""),
-                  })
-                }
-                className="mt-1 font-mono text-sm"
-                placeholder="favorite_toy"
-              />
-              <p className="mt-0.5 text-[10px] text-gray-400">
-                Promptta {`{${newField.key || "key"}}`} olarak kullanılır
-              </p>
-            </div>
-            <div>
-              <Label className="text-xs">Kullanıcı Etiketi *</Label>
-              <Input
-                value={newField.label || ""}
-                onChange={(e) => setNewField({ ...newField, label: e.target.value })}
-                className="mt-1"
-                placeholder="En Sevdiği Oyuncak"
-              />
-              <p className="mt-0.5 text-[10px] text-gray-400">Kullanıcının göreceği etiket</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <Label className="text-xs">Tür</Label>
-              <select
-                value={newField.type || "text"}
-                onChange={(e) =>
-                  setNewField({ ...newField, type: e.target.value as CustomInputField["type"] })
-                }
-                className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                {inputTypeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label className="text-xs">Varsayılan</Label>
-              <Input
-                value={newField.default || ""}
-                onChange={(e) => setNewField({ ...newField, default: e.target.value })}
-                className="mt-1"
-                placeholder="Opsiyonel"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Placeholder</Label>
-              <Input
-                value={newField.placeholder || ""}
-                onChange={(e) => setNewField({ ...newField, placeholder: e.target.value })}
-                className="mt-1"
-                placeholder="İpucu metni"
-              />
-            </div>
-          </div>
-
-          {newField.type === "select" && (
-            <div>
-              <Label className="text-xs">Seçenekler (virgülle ayırın)</Label>
-              <Input
-                value={(newField.options || []).join(", ")}
-                onChange={(e) =>
-                  setNewField({
-                    ...newField,
-                    options: e.target.value
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  })
-                }
-                className="mt-1"
-                placeholder="Kedi, Köpek, Kuş"
-              />
-            </div>
-          )}
-
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={newField.required ?? true}
-                onChange={(e) => setNewField({ ...newField, required: e.target.checked })}
-                className="rounded"
-              />
-              Zorunlu Alan
-            </label>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setShowAddForm(false);
-                setNewField({ key: "", label: "", type: "text", required: true });
-              }}
-            >
-              İptal
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={addVariable}
-              disabled={!newField.key || !newField.label}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              <Plus className="mr-1 h-3 w-3" />
-              Ekle
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setShowAddForm(true)}
-          className="w-full border-dashed hover:border-purple-400 hover:bg-purple-50"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Yeni Değişken Ekle
-        </Button>
-      )}
-
-      {/* Usage hint */}
-      {variables.length > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <div className="flex items-start gap-2">
-            <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-            <div className="text-xs text-amber-800">
-              <p className="font-medium">Kullanım:</p>
-              <p className="mt-1">
-                Bu değişkenleri prompt şablonlarında{" "}
-                <code className="rounded bg-amber-100 px-1">{`{değişken_adı}`}</code> formatında
-                kullanabilirsiniz.
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {variables.map((v) => (
-                  <Badge key={v.key} variant="outline" className="bg-white font-mono text-[10px]">
-                    {`{${v.key}}`}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============ SCENARIO CARD PREVIEW ============
-function ScenarioPreview({ scenario }: { scenario: Partial<Scenario> }) {
-  return (
-    <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-600 to-pink-500">
-      {/* Thumbnail */}
-      <div className="relative aspect-[4/3]">
-        {scenario.thumbnail_url ? (
-          <img
-            src={scenario.thumbnail_url}
-            alt={scenario.name || "Preview"}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-purple-200">
-            <ImageIcon className="h-12 w-12 text-purple-400" />
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="bg-white p-3">
-        <h3 className="font-bold text-gray-900">{scenario.name || "Senaryo Adı"}</h3>
-        <p className="mt-1 line-clamp-2 text-sm text-gray-500">
-          {scenario.description || "Açıklama..."}
-        </p>
-
-        {/* Gallery preview */}
-        {scenario.gallery_images && scenario.gallery_images.length > 0 && (
-          <div className="mt-2 flex gap-1">
-            {scenario.gallery_images.slice(0, 3).map((img, i) => (
-              <div key={i} className="h-8 w-8 overflow-hidden rounded">
-                <img src={img} alt={`Gallery ${i}`} className="h-full w-full object-cover" />
-              </div>
-            ))}
-            {scenario.gallery_images.length > 3 && (
-              <span className="flex items-center text-xs text-gray-400">
-                +{scenario.gallery_images.length - 3}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -819,23 +277,13 @@ export default function AdminScenariosPage() {
 
   const watchedValues = form.watch();
 
+  useAdminAuth();
+
   useEffect(() => {
-    checkAuth();
     fetchScenarios();
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const checkAuth = () => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") {
-      router.push("/");
-    }
-  };
 
 
   const fetchScenarios = async () => {
@@ -1162,20 +610,14 @@ export default function AdminScenariosPage() {
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-white shadow-sm">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => router.push("/admin")}>
-              <ArrowLeft className="mr-1 h-4 w-4" />
-              Geri
-            </Button>
-            <div>
-              <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-                <Wand2 className="h-6 w-6 text-purple-600" />
-                Senaryo Yönetimi
-              </h1>
-              <p className="mt-0.5 text-sm text-gray-500">
-                Hikaye temalarını, videoları ve promosyonları yönetin
-              </p>
-            </div>
+          <div>
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+              <Wand2 className="h-6 w-6 text-purple-600" />
+              Senaryo Yönetimi
+            </h1>
+            <p className="mt-0.5 text-sm text-gray-500">
+              Hikaye temalarını, videoları ve promosyonları yönetin
+            </p>
           </div>
           <Button onClick={() => openEditor()} className="bg-purple-600 hover:bg-purple-700">
             <Plus className="mr-2 h-4 w-4" />

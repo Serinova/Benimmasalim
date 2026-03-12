@@ -9,7 +9,6 @@ import type {
   OrderStats,
   InvoiceDashboard,
   BackCoverConfig,
-  PaginatedResponse,
 } from "./types";
 
 // ── List ──────────────────────────────────────────────────────────────

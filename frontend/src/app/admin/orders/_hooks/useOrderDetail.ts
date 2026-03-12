@@ -85,6 +85,7 @@ export function useOrderDetail() {
       pollTickRef.current += 1;
     }, delay);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, detail?.status, detail?.page_count, detail?.page_images, loadDetail]);
 
   return {

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -60,30 +59,14 @@ export default function KVKKPage() {
   const [loading, setLoading] = useState(true);
   const [cleanupLoading, setCleanupLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
-  const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    checkAuth();
-    loadAllData();
-  }, []);
+  useAdminAuth();
 
-  const checkAuth = () => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") {
-      toast({
-        title: "Yetkisiz Erişim",
-        description: "Bu sayfaya erişim yetkiniz yok",
-        variant: "destructive",
-      });
-      router.push("/");
-    }
-  };
+  useEffect(() => {
+    loadAllData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const loadAllData = async () => {
@@ -289,18 +272,11 @@ export default function KVKKPage() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/admin">
-              <Button variant="ghost" size="sm">
-                ← Geri
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-purple-800">KVKK Yönetimi</h1>
-              <p className="text-sm text-gray-500">
-                Kişisel Verilerin Korunması Kanunu Uyumluluk Paneli
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-purple-800">KVKK Yönetimi</h1>
+            <p className="text-sm text-gray-500">
+              Kişisel Verilerin Korunması Kanunu Uyumluluk Paneli
+            </p>
           </div>
           <Button
             variant="outline"

@@ -15,11 +15,8 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 from uuid import uuid4
 
-import pytest
-
 from app.models.invoice import InvoiceStatus
 from app.models.order import OrderStatus
-
 
 # ─── Helpers ──────────────────────────────────────────────────────
 

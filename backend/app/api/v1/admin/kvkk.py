@@ -10,6 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import AdminUser, get_db
+from app.config import settings
 from app.models.audit_log import AuditLog
 from app.models.order import Order, OrderStatus
 from app.models.user import User
@@ -37,7 +38,7 @@ class KVKKStats(BaseModel):
     pending_deletions: int  # Silinme sırasında bekleyenler
     deleted_last_30_days: int
     next_scheduled_deletion: str | None
-    kvkk_retention_days: int = 30
+    kvkk_retention_days: int = settings.kvkk_retention_days
 
 
 class DeletionQueueItem(BaseModel):
@@ -408,7 +409,25 @@ async def list_users_for_kvkk(
     admin: AdminUser, db: AsyncSession = Depends(get_db), search: str | None = None, limit: int = 50
 ) -> list[UserListItem]:
     """KVKK yönetimi için kullanıcı listesi."""
-    query = select(User)
+    # Subquery: her kullanıcının sipariş ve fotoğraf sayısı (N+1 yerine tek sorgu)
+    order_stats = (
+        select(
+            Order.user_id,
+            func.count(Order.id).label("orders_count"),
+            func.count(Order.child_photo_url).label("photos_count"),
+        )
+        .group_by(Order.user_id)
+        .subquery()
+    )
+
+    query = (
+        select(
+            User,
+            func.coalesce(order_stats.c.orders_count, 0).label("orders_count"),
+            func.coalesce(order_stats.c.photos_count, 0).label("photos_count"),
+        )
+        .outerjoin(order_stats, User.id == order_stats.c.user_id)
+    )
 
     if search:
         query = query.where(
@@ -418,28 +437,17 @@ async def list_users_for_kvkk(
     query = query.order_by(User.created_at.desc()).limit(limit)
 
     result = await db.execute(query)
-    users = result.scalars().all()
+    rows = result.all()
 
-    user_items = []
-    for user in users:
-        # Her kullanıcı için sipariş ve fotoğraf sayısını al
-        orders_count = await db.scalar(select(func.count(Order.id)).where(Order.user_id == user.id))
-        photos_count = await db.scalar(
-            select(func.count(Order.id)).where(
-                Order.user_id == user.id, Order.child_photo_url.isnot(None)
-            )
+    return [
+        UserListItem(
+            id=str(user.id),
+            email=user.email,
+            full_name=user.full_name,
+            orders_count=orders_count,
+            photos_count=photos_count,
+            created_at=user.created_at.isoformat() if user.created_at else "",
+            is_active=user.is_active,
         )
-
-        user_items.append(
-            UserListItem(
-                id=str(user.id),
-                email=user.email,
-                full_name=user.full_name,
-                orders_count=orders_count or 0,
-                photos_count=photos_count or 0,
-                created_at=user.created_at.isoformat() if user.created_at else "",
-                is_active=user.is_active,
-            )
-        )
-
-    return user_items
+        for user, orders_count, photos_count in rows
+    ]

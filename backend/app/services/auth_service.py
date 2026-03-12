@@ -1,12 +1,12 @@
 """Authentication business logic: registration, login, guest conversion."""
 
-import secrets
 from datetime import UTC, datetime
 
-import structlog
 import sqlalchemy as sa
+import structlog
 from fastapi import HTTPException, Request
-from sqlalchemy import func as sa_func, select
+from sqlalchemy import func as sa_func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.audit import record_audit

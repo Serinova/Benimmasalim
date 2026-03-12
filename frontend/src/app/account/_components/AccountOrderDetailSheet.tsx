@@ -17,7 +17,6 @@ import {
   type InvoiceSummary,
 } from "@/lib/api";
 import {
-  Package,
   Truck,
   CheckCircle,
   Download,

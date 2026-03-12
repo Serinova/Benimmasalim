@@ -1,6 +1,5 @@
 """Authentication endpoints."""
 
-from datetime import UTC, datetime
 from uuid import UUID
 
 import structlog
@@ -31,7 +30,6 @@ from app.schemas.auth import (
     ResetPasswordRequest,
     TokenResponse,
     UpdateProfileRequest,
-    UserInfo,
     UserResponse,
 )
 from app.services.auth_service import (

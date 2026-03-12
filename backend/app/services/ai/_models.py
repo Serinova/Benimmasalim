@@ -115,7 +115,7 @@ class PageManifest(BaseModel):
                 _ai_dedication_text = fp.text or ""
                 break
 
-        _backcover_from_final: "PageManifestEntry | None" = None
+        _backcover_from_final: PageManifestEntry | None = None
 
         for fp in final_pages:
             # Skip front_matter pages — they're represented by the dedication slot

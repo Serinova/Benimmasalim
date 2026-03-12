@@ -1,6 +1,7 @@
 ---
 description: Geliştirme sürecinde beyin fırtınası (brainstorm) oturumu başlatma yönergesi. Yeni özellik, UX iyileştirmesi, mimari karar veya problem çözümü için yapılandırılmış bir fikir üretme süreci.
 ---
+// turbo-all
 Bu workflow, "Benim Masalım" projesi üzerinde yapılandırılmış bir beyin fırtınası (brainstorm) oturumu yürütmek için kullanılır.
 
 **Nasıl Kullanılır:**

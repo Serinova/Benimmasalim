@@ -24,6 +24,8 @@ export function useOrderActions({
   const { toast } = useToast();
   const [pdfDownloading, setPdfDownloading] = useState(false);
   const [zipDownloading, setZipDownloading] = useState(false);
+  const [bookGenerating, setBookGenerating] = useState(false);
+  const [coloringGenerating, setColoringGenerating] = useState(false);
 
   const handleAuthExpired = useCallback(() => {
     toast({ title: "Oturum süresi doldu", description: "Lütfen tekrar giriş yapın.", variant: "destructive" });
@@ -43,12 +45,14 @@ export function useOrderActions({
   }, [toast, refreshList, refreshDetail]);
 
   const handleGenerateBook = useCallback(async (previewId: string) => {
+    if (bookGenerating) return;
+    setBookGenerating(true);
     try {
-      toast({ title: "Kitap oluşturuluyor...", description: "Bu işlem birkaç dakika sürebilir." });
+      toast({ title: "Kitap oluşturuluyor...", description: "Bu işlem birkaç dakika sürebilir. Lütfen bekleyin." });
       const data = await api.generateBook(previewId);
       if (data.pdf_url) {
         updateDetailLocal(prev => prev ? { ...prev, pdf_url: data.pdf_url } : prev);
-        toast({ title: "Kitap Hazır!", description: "PDF indirme bağlantısı açılıyor..." });
+        toast({ title: "✅ Kitap Hazır!", description: "PDF indirme bağlantısı açılıyor..." });
         window.open(data.pdf_url, "_blank");
       } else if (data.pdf_error) {
         toast({ title: "PDF oluşturulamadı", description: `Hata: ${data.pdf_error}`, variant: "destructive" });
@@ -62,8 +66,10 @@ export function useOrderActions({
         return;
       }
       toast({ title: "Hata", description: err instanceof Error ? err.message : "Kitap oluşturma başarısız", variant: "destructive" });
+    } finally {
+      setBookGenerating(false);
     }
-  }, [toast, refreshDetail, updateDetailLocal, handleAuthExpired]);
+  }, [bookGenerating, toast, refreshDetail, updateDetailLocal, handleAuthExpired]);
 
   const handleDownloadPdf = useCallback(async () => {
     if (!detail || pdfDownloading) return;
@@ -127,20 +133,24 @@ export function useOrderActions({
       toast({ title: "Açılıyor", description: "Boyama Kitabı PDF'i yeni sekmede açılıyor." });
       return;
     }
-    toast({ title: "Başlatılıyor...", description: "Boyama kitabı üretimi arka planda tetikleniyor." });
+    if (coloringGenerating) return;
+    setColoringGenerating(true);
+    toast({ title: "Başlatılıyor...", description: "Boyama kitabı üretimi başlatılıyor. Lütfen bekleyin." });
     try {
       const data = await api.generateColoringBook(previewId);
       if (data.coloring_pdf_url) {
         window.open(data.coloring_pdf_url, "_blank");
         updateDetailLocal(prev => prev ? { ...prev, coloring_pdf_url: data.coloring_pdf_url } : prev);
-        toast({ title: "Boyama Kitabı Hazır!", description: "PDF yeni sekmede açılıyor." });
+        toast({ title: "✅ Boyama Kitabı Hazır!", description: "PDF yeni sekmede açılıyor." });
       } else {
         toast({ title: "Başlatıldı", description: data.message || "Arka planda üretiliyor, birkaç dakika bekleyin." });
       }
     } catch (err) {
       toast({ title: "Hata", description: err instanceof Error ? err.message : "Sunucuya bağlanılamadı", variant: "destructive" });
+    } finally {
+      setColoringGenerating(false);
     }
-  }, [toast, updateDetailLocal]);
+  }, [coloringGenerating, toast, updateDetailLocal]);
 
   const handleInvoiceAction = useCallback(async (
     orderId: string,
@@ -252,6 +262,8 @@ export function useOrderActions({
   return {
     pdfDownloading,
     zipDownloading,
+    bookGenerating,
+    coloringGenerating,
     updateStatus,
     handleGenerateBook,
     handleDownloadPdf,

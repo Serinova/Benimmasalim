@@ -12,6 +12,7 @@ Provides:
 
 import asyncio
 import itertools
+import random
 import time
 from collections import defaultdict
 from collections.abc import Callable
@@ -146,38 +147,9 @@ def _build_rotators() -> dict[str, APIKeyRotator]:
 _key_rotators: dict[str, APIKeyRotator] | None = None
 
 
-async def get_rotated_key(service: str) -> str | None:
-    """Get the next API key for *service* via round-robin rotation."""
-    global _key_rotators
-    if _key_rotators is None:
-        _key_rotators = _build_rotators()
-    rotator = _key_rotators.get(service)
-    if rotator is None:
-        return None
-    return await rotator.next_key()
-
-
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
-
-
-def is_rate_limit_error(exception: Exception) -> bool:
-    """Check if exception is a 429 rate limit error."""
-    if isinstance(exception, httpx.HTTPStatusError):
-        return exception.response.status_code == 429
-    return False
-
-
-def is_retryable_error(exception: Exception) -> bool:
-    """Check if exception should trigger a retry."""
-    if isinstance(exception, httpx.TimeoutException):
-        return True
-    if isinstance(exception, httpx.HTTPStatusError):
-        status = exception.response.status_code
-        # Retry on: 429 (rate limit), 500-599 (server errors), 408 (timeout)
-        return status == 429 or status == 408 or 500 <= status < 600
-    return False
 
 
 def get_retry_after(response: httpx.Response) -> int | None:
@@ -232,7 +204,6 @@ def calculate_backoff(attempt: int, is_rate_limit: bool = False) -> float:
     wait_time = base * (2**attempt)
 
     # Add jitter (±20%)
-    import random
 
     jitter = wait_time * 0.2 * (random.random() * 2 - 1)
     wait_time += jitter
@@ -514,23 +485,3 @@ async def get_rate_limit_status() -> dict[str, Any]:
     """Get current rate limit status for monitoring."""
     tracker = await RateLimitTracker.get_instance()
     return tracker.get_status()
-
-
-def create_rate_limited_client(
-    service: str,
-    timeout: float = 120.0,
-) -> httpx.AsyncClient:
-    """
-    Create an httpx client with rate limit aware settings.
-
-    Usage:
-        async with create_rate_limited_client("gemini") as client:
-            response = await client.post(...)
-    """
-    return httpx.AsyncClient(
-        timeout=httpx.Timeout(timeout),
-        limits=httpx.Limits(
-            max_keepalive_connections=20,
-            max_connections=100,
-        ),
-    )

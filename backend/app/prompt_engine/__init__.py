@@ -421,17 +421,6 @@ def get_style_instructions_for_prompt(*args, **kwargs) -> str:
     return ""
 
 
-def validate_story_output(*args, **kwargs) -> StoryValidationReport:
-    report = StoryValidationReport()
-    report.all_passed = True
-    return report
-
-
-def apply_all_fixes(*args, **kwargs):
-    pages = args[0] if args else []
-    return (pages, [])
-
-
 def build_blueprint_task_prompt(*args, **kwargs) -> str:
     return ""
 
@@ -448,9 +437,8 @@ def build_page_task_prompt(
     location_constraints: str = "",
     magic_items: list | None = None,
     page_count: int = 16,
-    value_message_tr: str = "",
-    value_emotion_beats: dict | None = None,
     skip_visual_prompts: bool = False,
+    companion_info: str = "",
     **_kwargs,
 ) -> str:
     """Build the PASS-1 task prompt for story page generation.
@@ -467,13 +455,6 @@ def build_page_task_prompt(
     magic_str = ""
     if magic_items:
         magic_str = f"\nSihirli eşyalar: {', '.join(magic_items)}"
-
-    value_str = ""
-    if value_message_tr:
-        value_str = f"\nİletilecek değer mesajı: {value_message_tr}"
-        if value_emotion_beats:
-            beats_str = ", ".join(f"{k}: {v}" for k, v in value_emotion_beats.items())
-            value_str += f"\nDuygusal ilerleme: {beats_str}"
 
     location_str = ""
     if location_constraints:
@@ -503,9 +484,8 @@ Tam olarak {page_count} sayfa üret. JSON array formatında:
 1. HER sayfa için {child_name} isimli çocuğu merkeze al
 2. text_tr: Türkçe, akıcı, çocuk diline uygun, 50-100 kelime
 3. Blueprint'teki scene_goal, role, emotional_state alanlarını kullan
-{f"4. Değer mesajını ({value_message_tr}) son 3 sayfada organik şekilde işle" if value_message_tr else ""}
-{"5" if value_message_tr else "4"}. Sayfa 1 hikayenin GİRİŞ sahnesini içerir (kapak/karşılama sayfalarından SONRAKİ ilk hikaye sayfası)
-{"6" if value_message_tr else "5"}. Son sayfa ({page_count}) için mutlu bir kapanış yaz
+4. Sayfa 1 hikayenin GİRİŞ sahnesini içerir (kapak/karşılama sayfalarından SONRAKİ ilk hikaye sayfası)
+5. Son sayfa ({page_count}) için mutlu bir kapanış yaz
 
 ⛔ page 0 DÖNDÜRME! Kapak sayfası (page 0) SİSTEM tarafından ayrıca üretilir. Sen SADECE page 1'den page {page_count}'e kadar üret.
 TAM OLARAK {page_count} SAYFA ÜRET. Daha az veya fazla sayfa YASAK."""
@@ -517,7 +497,7 @@ Tam olarak {page_count} sayfa üret. JSON array formatında:
   {{
     "page": 1,
     "text_tr": "Türkçe hikaye metni (50-100 kelime, çocuğa uygun, akıcı)",
-    "image_prompt_en": "Kısa görsel sahne tanımı. ÇOCUĞUN FİZİKSEL ÖZELLİKLERİNİ YAZMA. SADECE EYLEM VE MEKAN. LOKASYONU (örn: {location_display_name}) HER SAYFADA MUTLAKA BELİRT."
+    "image_prompt_en": "Kısa görsel sahne tanımı. Çocuğun saç/göz/ten rengini kendin UYDURMA ama Görünüm bilgisindeki tanımı AYNEN kullan. SADECE EYLEM VE MEKAN. LOKASYONU (örn: {location_display_name}) HER SAYFADA MUTLAKA BELİRT."
   }},
   ...
 ]
@@ -525,15 +505,18 @@ Tam olarak {page_count} sayfa üret. JSON array formatında:
         rules = f"""### KURALLAR
 1. HER sayfa için {child_name} isimli çocuğu merkeze al
 2. text_tr: Türkçe, akıcı, çocuk diline uygun, 50-100 kelime
-3. image_prompt_en: Kısa görsel sahne tanımı. ÇOCUĞUN FİZİKSEL ÖZELLİKLERİNİ VEYA KIYAFETİNİ YAZMA! METİN İLE BİREBİR UYUMLU OLSUN (ör. metinde kelebek varsa promptta kesinlikle butterfly olmalı). SADECE YAPTIĞI EYLEMİ VE MEKANI YAZ.
+3. image_prompt_en: Kısa görsel sahne tanımı. Çocuğun saç/göz/ten rengini kendin UYDURMA — Görünüm bilgisinde verilmişse AYNEN kullan, verilmemişse HİÇ YAZMA. Kıyafet bilgisini de kendin uydurma. METİN İLE BİREBİR UYUMLU OLSUN (ör. metinde kelebek varsa promptta kesinlikle butterfly olmalı). SADECE YAPTIĞI EYLEMİ VE MEKANI YAZ.
 4. Blueprint'teki scene_goal, role, emotional_state alanlarını kullan
 5. LOKASYON DEVAMLILIĞI (ÇOK ÖNEMLİ): {location_display_name or "hikaye ortamı"} — Yapay zeka her resmi bağımsız çizer. Bu yüzden HER SAYFANIN `image_prompt_en` kısmında {location_display_name or "hikaye ortamı"} mekanını KESİNLİKLE tekrar et. DİKKAT: Çocuğun mekanla ilişkisini mantıklı kur! Dışarıdaysa "in front of...", içerisindeyse "inside the ancient stone walls of...", tepesindeyse "on the balcony of..." gibi konumunu netleştir ki absürt görüntüler oluşmasın.
-{f"6. Değer mesajını ({value_message_tr}) son 3 sayfada organik şekilde işle" if value_message_tr else ""}
-7. Sayfa 1 hikayenin GİRİŞ sahnesini içerir (kapak/karşılama sayfalarından SONRAKİ ilk hikaye sayfası)
-8. Son sayfa ({page_count}) için mutlu bir kapanış yaz
+6. Sayfa 1 hikayenin GİRİŞ sahnesini içerir (kapak/karşılama sayfalarından SONRAKİ ilk hikaye sayfası)
+7. Son sayfa ({page_count}) için mutlu bir kapanış yaz
 
 ⛔ page 0 DÖNDÜRME! Kapak sayfası (page 0) SİSTEM tarafından ayrıca üretilir. Sen SADECE page 1'den page {page_count}'e kadar üret.
 TAM OLARAK {page_count} SAYFA ÜRET. Daha az veya fazla sayfa YASAK."""
+
+    companion_str = ""
+    if companion_info:
+        companion_str = f"\n\n### Yardımcı Karakter (Companion)\n{companion_info}\n⚠️ Bu karakterin görünümü TÜM SAYFALARDA AYNI OLMALI. Renk, boyut ve tür DEĞİŞMEYECEK."
 
     return f"""## GÖREV: Hikaye Sayfaları Üret
 
@@ -542,7 +525,7 @@ TAM OLARAK {page_count} SAYFA ÜRET. Daha az veya fazla sayfa YASAK."""
 - Yaş: {child_age}
 {f"- Görünüm: {child_description}" if child_description else ""}
 {f"- Konum/Lokasyon: {location_display_name}" if location_display_name else ""}
-{magic_str}{value_str}
+{magic_str}{companion_str}
 
 ### Görsel Stil
 {visual_style or "Çocuk kitabı illüstrasyon stili"}
@@ -580,48 +563,8 @@ def lint_prompt_corruption(*args, **kwargs) -> list:
     return []
 
 
-def validate_visual_prompts(*args, **kwargs):
-    return VisualValidationReport()
-
-
-def autofix_visual_prompts(*args, **kwargs):
-    return []
-
-
-def validate_banned_words(*args, **kwargs) -> bool:
-    return True
-
-
-def validate_cover_inner_phrases(*args, **kwargs) -> bool:
-    return True
-
-
-def validate_no_placeholders(*args, **kwargs) -> bool:
-    return True
-
-
 def run_qa_checks(*args, **kwargs) -> dict:
     return {"passed": True, "issues": []}
-
-
-def build_fal_request(*args, **kwargs) -> dict:
-    return {}
-
-
-def build_debug_output(*args, **kwargs) -> dict:
-    return {}
-
-
-def pick_anchors(*args, **kwargs) -> list:
-    return []
-
-
-def build_shot_plan(*args, **kwargs):
-    return None
-
-
-def validate_shot_diversity(*args, **kwargs) -> bool:
-    return True
 
 
 LOCATION_ANCHORS: dict = {}
@@ -640,16 +583,17 @@ TÜRKÇE METİN KURALLARI:
 - Her sayfada aksiyonu ilerlet, tekrar etme
 - SUBLİMİNAL DEĞER AKTARIMI (CRITICAL): Çocuğa özgüven, cesaret, empati gibi değerleri ASLA doğrudan öğüt vererek ("şunu öğrenmeli", "böyle yapmalı", "anlamıştı") anlatma. Mesajları YALNIZCA karakterin cesur eylemleri, metaforlar ve hikayenin doğal akışı üzerinden, dolaylı (subliminal) bir dille hissettir.
 
-GÖRSEL SAHNE TANIMLARI (İngilizce veya Türkçe olabilir, Gemini için kısa ve öz):
+GÖRSEL SAHNE TANIMLARI (İngilizce, Gemini Imagen 3 için kısa ve öz):
 - LOKASYON DEVAMLILIĞI: Yapay zeka her resmi sıfırdan çizer. Bu yüzden ANA LOKASYONU (örneğin Galata Kulesi, Kapadokya vb.) her sayfanın `image_prompt_en` kısmında tekrar et. DİKKAT: Çocuğun mekanla ilişkisini doğru kur! Dışarıdaysa "in front of Galata Tower", içerisindeyse "inside the ancient stone walls of Galata Tower", tepesindeyse "on the balcony of Galata Tower" gibi detaylandır ki mekanın içinde tekrar aynı mekan mantıksızlığı (inception) oluşmasın.
 - METİN VE GÖRSEL UYUMU (CRITICAL): `text_tr` metninde hangi hayvanlar, eşyalar veya olaylar varsa, `image_prompt_en` kısmında KESİNLİKLE onlara yer ver. (Örn: Metinde "kartal" diyorsa, görsel tanımında "butterfly" veya alakasız şeyler YAZMA, kesinlikle "eagle" yaz).
 - Çocuğun NE YAPTIĞINI netleştir (eylem/action odaklı). SADECE EYLEM VE MEKAN BELİRT.
 - Ortamı (arka plan, ışık, renkler) tanımla
 - Sihirli unsurları veya önemli objeleri dahil et
-- KESİNLİKLE YAPILMAMASI GEREKEN: Çocuğun kıyafetini, saç rengini, göz rengini veya ırkını ASLA yazma. Sadece "{child_name} is..." diyerek eyleme başla."""
+- KARAKTER TUTARLILIĞI: Çocuğun saç rengini, göz rengini, ten rengini kendin UYDURMA. Eğer "Çocuk Bilgileri" bölümünde Görünüm bilgisi verilmişse o bilgiyi HER SAYFADA AYNEN kullan. Verilmemişse hiç yazma — sistem sonradan ekleyecek. Kıyafet bilgisini de kendin uydurma.
+- YARDIMCI KARAKTER TUTARLILIĞI: Eğer bir yardımcı karakter (companion) tanımlanmışsa, bu karakterin rengini, boyutunu ve türünü TÜM SAYFALARDA AYNI yaz. Kendin değiştirme."""
 
 
-# Enum/dataclass stubs
+# Enum/dataclass stubs for backward compatibility
 class ShotPlan:
     pass
 

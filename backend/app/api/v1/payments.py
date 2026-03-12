@@ -9,9 +9,8 @@ from sqlalchemy import select
 
 from app.api.v1.deps import CurrentUser, DbSession
 from app.core.exceptions import ForbiddenError, NotFoundError, ValidationError
-from app.models.order import Order, OrderStatus
+from app.models.order import Order
 from app.schemas.payments import (
-    BillingInfo,
     CheckoutRequest,
     CheckoutResponse,
     PaymentStatusResponse,

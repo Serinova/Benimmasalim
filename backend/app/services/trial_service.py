@@ -25,28 +25,6 @@ class TrialService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    @staticmethod
-    def _compute_outcomes_hash(outcomes: list[str] | None) -> str:
-        """
-        Compute a hash of learning outcomes for cache invalidation.
-
-        If outcomes change, the cache should be regenerated.
-
-        Args:
-            outcomes: List of learning outcome names
-
-        Returns:
-            Hash string
-        """
-        import hashlib
-
-        if not outcomes:
-            return "none"
-        # Sort for consistency, join with separator
-        sorted_outcomes = sorted(outcomes)
-        content = "|".join(sorted_outcomes)
-        return hashlib.md5(content.encode()).hexdigest()[:12]
-
     # =========================================================================
     # PHASE 0: Quick Lead Capture (no Gemini call — returns < 1s)
     # =========================================================================
@@ -69,7 +47,6 @@ class TrialService:
         # Story options (stored for async generation)
         scenario_name: str | None,
         visual_style_name: str | None,
-        learning_outcomes: list[str] | None,
         # Photo (needed for image generation)
         child_photo_url: str | None = None,
         visual_style: str | None = None,
@@ -106,9 +83,8 @@ class TrialService:
             # Placeholder story data — will be filled by worker
             story_title=f"{child_name}'in Masalı",
             scenario_name=scenario_name,
-            visual_style_name=visual_style_name,
-            learning_outcomes=learning_outcomes,
-            story_pages=[],
+        visual_style_name=visual_style_name,
+        story_pages=[],
             generated_prompts_cache={
                 "pending": True,
                 "visual_style": visual_style,
@@ -179,9 +155,7 @@ class TrialService:
         trial.generated_prompts_cache = {
             "style_id": style_id,
             "scenario_id": scenario_id,
-            "outcomes_hash": outcomes_hash or self._compute_outcomes_hash(
-                trial.learning_outcomes
-            ),
+            "outcomes_hash": outcomes_hash or "none",
             "prompts": generated_prompts,
             "clothing_description": clothing_description or "",
             "pipeline_version": pipeline_version,
@@ -228,7 +202,6 @@ class TrialService:
         story_title: str,
         scenario_name: str | None,
         visual_style_name: str | None,
-        learning_outcomes: list[str] | None,
         # Generated content (from Gemini)
         story_pages: list[dict],  # Full 16 pages with text
         generated_prompts: list[dict],  # Full 16 prompts for images
@@ -260,7 +233,6 @@ class TrialService:
             story_title: Generated story title
             scenario_name: Selected scenario
             visual_style_name: Selected visual style
-            learning_outcomes: Selected learning outcomes
             story_pages: Full story pages (text only)
             generated_prompts: Full visual prompts (16 prompts)
 
@@ -301,7 +273,6 @@ class TrialService:
             story_title=story_title,
             scenario_name=scenario_name,
             visual_style_name=visual_style_name,
-            learning_outcomes=learning_outcomes,
             # Full story pages (text)
             story_pages=story_pages,
             # CRITICAL: Cache all prompts for later use
@@ -309,7 +280,7 @@ class TrialService:
             generated_prompts_cache={
                 "style_id": style_id,
                 "scenario_id": scenario_id,
-                "outcomes_hash": self._compute_outcomes_hash(learning_outcomes),
+                "outcomes_hash": "none",
                 "prompts": generated_prompts,
                 "clothing_description": clothing_description or "",
                 "pipeline_version": pipeline_version,

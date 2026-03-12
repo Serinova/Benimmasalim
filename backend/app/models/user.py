@@ -1,7 +1,7 @@
 """User model - supports email, Google OAuth, and guest checkout."""
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import Boolean, DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     """User roles for authorization."""
 
     USER = "user"

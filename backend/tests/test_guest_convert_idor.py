@@ -10,13 +10,11 @@ Unit-level tests that validate:
 
 import inspect
 import uuid
-from datetime import UTC, datetime
 
 import pytest
 
 from app.models.order import Order, OrderStatus
 from app.models.user import User
-
 
 # ── IDOR: _verify_order_ownership ──────────────────────────────────────────
 
@@ -147,9 +145,10 @@ class TestIDOREndpointPatterns:
 
     def test_payment_checkout_uses_verify_helper(self):
         source = inspect.getsource(
-            __import__("app.api.v1.payments", fromlist=["create_checkout"]).create_checkout
+            __import__("app.services.checkout_service", fromlist=["process_checkout"]).process_checkout
         )
-        assert "_verify_order_ownership_payment" in source
+        assert "ForbiddenError" in source
+        assert "order.user_id != current_user.id" in source
 
     def test_payment_apply_promo_uses_verify_helper(self):
         source = inspect.getsource(
@@ -176,8 +175,8 @@ class TestConvertGuestSecurity:
         """Non-guest users should be rejected (unless idempotent same-email)."""
         source = inspect.getsource(
             __import__(
-                "app.api.v1.auth", fromlist=["convert_guest_to_user"]
-            ).convert_guest_to_user
+                "app.services.auth_service", fromlist=["perform_convert_guest"]
+            ).perform_convert_guest
         )
         assert "is_guest" in source
 
@@ -185,8 +184,8 @@ class TestConvertGuestSecurity:
         """Race condition: two concurrent converts with same email → IntegrityError handled."""
         source = inspect.getsource(
             __import__(
-                "app.api.v1.auth", fromlist=["convert_guest_to_user"]
-            ).convert_guest_to_user
+                "app.services.auth_service", fromlist=["perform_convert_guest"]
+            ).perform_convert_guest
         )
         assert "IntegrityError" in source
 
@@ -194,8 +193,8 @@ class TestConvertGuestSecurity:
         """Error message must NOT reveal whether email exists."""
         source = inspect.getsource(
             __import__(
-                "app.api.v1.auth", fromlist=["convert_guest_to_user"]
-            ).convert_guest_to_user
+                "app.services.auth_service", fromlist=["perform_convert_guest"]
+            ).perform_convert_guest
         )
         # Must NOT contain "Bu email adresi zaten kullanımda"
         assert "Bu email adresi zaten kullanımda" not in source
@@ -206,8 +205,8 @@ class TestConvertGuestSecurity:
         """If already converted with same email, return tokens (no error)."""
         source = inspect.getsource(
             __import__(
-                "app.api.v1.auth", fromlist=["convert_guest_to_user"]
-            ).convert_guest_to_user
+                "app.services.auth_service", fromlist=["perform_convert_guest"]
+            ).perform_convert_guest
         )
         assert "current_user.email == body.email" in source
 
@@ -215,8 +214,8 @@ class TestConvertGuestSecurity:
         """Audit log should record how many orders were preserved."""
         source = inspect.getsource(
             __import__(
-                "app.api.v1.auth", fromlist=["convert_guest_to_user"]
-            ).convert_guest_to_user
+                "app.services.auth_service", fromlist=["perform_convert_guest"]
+            ).perform_convert_guest
         )
         assert "orders_preserved" in source
 
@@ -224,8 +223,8 @@ class TestConvertGuestSecurity:
         """Flush first (to catch IntegrityError), audit, then commit."""
         source = inspect.getsource(
             __import__(
-                "app.api.v1.auth", fromlist=["convert_guest_to_user"]
-            ).convert_guest_to_user
+                "app.services.auth_service", fromlist=["perform_convert_guest"]
+            ).perform_convert_guest
         )
         flush_pos = source.index("await db.flush()")
         audit_pos = source.index("record_audit")
@@ -323,7 +322,7 @@ class TestGuestLifecycle:
     def test_register_error_prevents_email_enumeration(self):
         """Register endpoint must use generic error for duplicate email."""
         source = inspect.getsource(
-            __import__("app.api.v1.auth", fromlist=["register"]).register
+            __import__("app.services.auth_service", fromlist=["perform_register"]).perform_register
         )
         assert "Kayıt işlemi tamamlanamadı" in source
 

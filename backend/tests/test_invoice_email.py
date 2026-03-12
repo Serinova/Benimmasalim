@@ -19,13 +19,12 @@ import pytest
 
 from app.models.invoice import Invoice, InvoiceStatus
 
-
 # ─── Helpers ──────────────────────────────────────────────────────
 
 def _make_order(**overrides) -> MagicMock:
     order = MagicMock()
     order.id = overrides.get("id", uuid4())
-    order.user_id = overrides.get("user_id", None)
+    order.user_id = overrides.get("user_id")
     order.billing_email = overrides.get("billing_email", "guest@test.com")
     order.billing_full_name = overrides.get("billing_full_name", "Test User")
     order.final_amount = overrides.get("final_amount", Decimal("149.90"))
@@ -41,13 +40,13 @@ def _make_invoice(**overrides) -> MagicMock:
     inv.invoice_status = overrides.get("invoice_status", InvoiceStatus.PDF_READY.value)
     inv.pdf_url = overrides.get("pdf_url", "gs://bucket/invoices/test.pdf")
     inv.issued_at = overrides.get("issued_at", datetime(2026, 2, 28, tzinfo=UTC))
-    inv.email_sent_at = overrides.get("email_sent_at", None)
-    inv.email_status = overrides.get("email_status", None)
-    inv.email_error = overrides.get("email_error", None)
+    inv.email_sent_at = overrides.get("email_sent_at")
+    inv.email_status = overrides.get("email_status")
+    inv.email_error = overrides.get("email_error")
     inv.email_retry_count = overrides.get("email_retry_count", 0)
     inv.email_resent_count = overrides.get("email_resent_count", 0)
-    inv.email_last_resent_at = overrides.get("email_last_resent_at", None)
-    inv.email_resent_by_admin_id = overrides.get("email_resent_by_admin_id", None)
+    inv.email_last_resent_at = overrides.get("email_last_resent_at")
+    inv.email_resent_by_admin_id = overrides.get("email_resent_by_admin_id")
     inv.needs_credit_note = overrides.get("needs_credit_note", False)
     inv.pdf_version = overrides.get("pdf_version", 1)
     return inv

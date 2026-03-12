@@ -12,12 +12,9 @@ import numpy as np
 import structlog
 from PIL import Image, ImageDraw, ImageFont
 
-from app.models.book_template import PageTemplate
 from app.utils.resolution_calc import (
     A4_LANDSCAPE_HEIGHT_MM,
     A4_LANDSCAPE_WIDTH_MM,
-    DEFAULT_DPI,
-    mm_to_px,
 )
 
 logger = structlog.get_logger()

@@ -61,7 +61,6 @@ def build_cover_prompt(
     location_constraints: str = "",
     story_title: str = "",
     blueprint: dict | None = None,
-    value_visual_motif: str = "",
     likeness_hint: str = "",
     has_pulid: bool = False,
     **kwargs,
@@ -123,9 +122,6 @@ def build_cover_prompt(
                 + (f" ({comp_appearance})" if comp_appearance else "")
             )
 
-    if value_visual_motif:
-        scene_parts.append(value_visual_motif)
-
     scene_description = ". ".join(scene_parts) if scene_parts else "A child on a magical adventure"
 
     composer = PromptComposer(ctx, cover_template=DEFAULT_COVER_TEMPLATE)
@@ -151,7 +147,6 @@ def build_back_cover_prompt(
     location_key: str = "",
     story_title: str = "",
     blueprint: dict | None = None,
-    value_visual_motif: str = "",
     likeness_hint: str = "",
     has_pulid: bool = False,
     **kwargs,
@@ -202,8 +197,6 @@ def build_back_cover_prompt(
             f"arms slightly raised in a happy farewell gesture. The adventure is complete, "
             f"golden warm light surrounds the child. Peaceful, magical atmosphere."
         )
-        if value_visual_motif:
-            back_cover_scene += f" {value_visual_motif}"
 
     composer = PromptComposer(ctx, cover_template=DEFAULT_BACK_COVER_TEMPLATE)
     result = composer.compose_cover(back_cover_scene)
@@ -226,7 +219,6 @@ def enhance_all_pages(
     character_bible: Any = None,
     visual_style: str = "",
     location_key: str = "",
-    value_visual_motif: str = "",
     likeness_hint: str = "",
     has_pulid: bool = False,
     leading_prefix_override: str | None = None,
@@ -272,7 +264,9 @@ def enhance_all_pages(
             companion_suffix = (
                 f" {_comp_name_str} the {_comp_species_str}{_comp_desc} is present in the scene. "
                 f"IMPORTANT: {_comp_name_str} is a {_comp_species_str} (an animal/creature, NOT a human child). "
-                f"Draw {_comp_name_str} as a {_comp_species_str} only."
+                f"Draw {_comp_name_str} as a {_comp_species_str} only. "
+                f"CONSISTENCY LOCK: {_comp_name_str} must have the EXACT SAME appearance "
+                f"(color, size, features) on EVERY page. NEVER change colors, size, or species."
             )
 
     ctx = BookContext.build(
@@ -315,9 +309,6 @@ def enhance_all_pages(
         scene = raw_prompt
         if companion_suffix and companion_suffix not in scene:
             scene = scene.rstrip(".") + "." + companion_suffix
-
-        if value_visual_motif and value_visual_motif not in scene:
-            scene = scene.rstrip(".") + ". " + value_visual_motif
 
         # Inject location if Gemini omitted it from the scene description
         if _loc_words and not any(kw in scene.lower() for kw in _loc_words):

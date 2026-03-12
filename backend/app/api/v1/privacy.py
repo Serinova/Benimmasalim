@@ -4,16 +4,13 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import structlog
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import CurrentUser, DbSession
-from app.config import settings
 from app.core.audit import record_audit
 from app.core.exceptions import NotFoundError, ValidationError
-from app.models.audit_log import AuditLog
 from app.models.consent import ConsentRecord
 from app.models.notification_outbox import NotificationOutbox
 from app.models.order import Order

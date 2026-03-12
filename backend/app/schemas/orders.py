@@ -39,7 +39,6 @@ class SendPreviewRequest(BaseModel):
     product_price: float | None = None
     scenario_name: str | None = None
     visual_style_name: str | None = None
-    learning_outcomes: list[str] | None = None
     has_audio_book: bool = False
     audio_type: str | None = None
     audio_voice_id: str | None = None
@@ -69,7 +68,6 @@ class AsyncPreviewRequest(BaseModel):
     product_price: float | None = None
     scenario_name: str | None = None
     visual_style_name: str | None = None
-    learning_outcomes: list[str] | None = None
     visual_style: str | None = None
     id_weight: float | None = None
     has_audio_book: bool = False
@@ -93,7 +91,6 @@ class OrderInitRequest(BaseModel):
     child_name: str = Field(..., min_length=2, max_length=100)
     child_age: int = Field(..., ge=5, le=10)
     child_gender: str | None = None
-    selected_outcomes: list[UUID] = Field(..., max_length=3)
 
 
 class ShippingAddressRequest(BaseModel):

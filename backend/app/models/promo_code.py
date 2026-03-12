@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -22,7 +22,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class DiscountType(str, Enum):
+class DiscountType(StrEnum):
     """Discount type for promo codes."""
 
     PERCENT = "PERCENT"

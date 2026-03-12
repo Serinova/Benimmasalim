@@ -117,7 +117,7 @@ def snapshot_billing_to_order(order: Order) -> None:
 
 
 async def build_invoice_summary(
-    order_id: UUID, db: "AsyncSession",
+    order_id: UUID, db: AsyncSession,
 ) -> dict[str, Any] | None:
     """Build invoice summary for order detail response."""
     from sqlalchemy import select
@@ -144,7 +144,7 @@ async def build_invoice_summary(
 # ---------------------------------------------------------------------------
 
 
-async def load_order_pages(order_id: UUID, db: "AsyncSession") -> list[dict[str, Any]]:
+async def load_order_pages(order_id: UUID, db: AsyncSession) -> list[dict[str, Any]]:
     """Load page-level status for an order (separate query, only when requested)."""
     from sqlalchemy import select
 
@@ -173,7 +173,7 @@ async def load_order_pages(order_id: UUID, db: "AsyncSession") -> list[dict[str,
     ]
 
 
-async def load_timeline_events(order: Order, db: "AsyncSession") -> list[dict[str, Any]]:
+async def load_timeline_events(order: Order, db: AsyncSession) -> list[dict[str, Any]]:
     """Load timeline events from audit log (separate query, only when requested)."""
     from sqlalchemy import select
 

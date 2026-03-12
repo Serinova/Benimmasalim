@@ -132,8 +132,9 @@ async def generate_coloring_book(order_id: UUID, db: AsyncSession):
         logger.info("All pages converted to line-art", count=len(line_art_pages))
 
         # Get product for PDF generation
-        from app.models.product import Product
         from sqlalchemy.orm import selectinload
+
+        from app.models.product import Product
         product_result = await db.execute(
             select(Product)
             .options(selectinload(Product.inner_template), selectinload(Product.cover_template))

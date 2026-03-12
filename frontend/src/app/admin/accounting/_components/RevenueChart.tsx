@@ -150,7 +150,7 @@ export default function RevenueChart({ data, period, loading }: Props) {
           ))}
 
         {/* Bar chart bars (subtle, behind line) */}
-        {points.map(({ x, y, d }, i) => {
+        {points.map(({ x, y }, i) => {
           const bw = Math.max(4, (INNER_W / points.length) * 0.5);
           const bh = PAD_T + INNER_H - y;
           return (

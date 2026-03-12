@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 export const STEP_COUNT = 5;
 
 export interface StepDef {

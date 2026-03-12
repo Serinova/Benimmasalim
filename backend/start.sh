@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-echo "?? Starting backend..."
+echo "🚀 Starting backend..."
 echo "Running database migrations..."
 
 alembic upgrade head
 
-echo "? Migrations complete. Starting server..."
+echo "✅ Migrations complete. Starting server..."
 
 exec python -m gunicorn app.main:app \
      --bind 0.0.0.0:8000 \

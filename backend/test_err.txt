@@ -1,0 +1,31 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\yusuf\OneDrive\Belgeler\BenimMasalim\backend
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 37 items
+
+tests\test_invoice.py .........FF..........................              [100%]
+
+================================== FAILURES ===================================
+_ TestInvoiceIdempotency.test_create_invoice_generates_correct_number_format __
+tests\test_invoice.py:98: in test_create_invoice_generates_correct_number_format
+    assert "BM-{year}-{serial:06d}" in source
+E   assert 'BM-{year}-{serial:06d}' in 'async def _create_invoice_if_not_exists(order: Order, db: AsyncSession) -> None:\n    """Create an invoice record ide...ING",\n        issued_at=now,\n    ).on_conflict_do_nothing(index_elements=["order_id"])\n    await db.execute(stmt)\n'
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+_______ TestInvoiceIdempotency.test_create_invoice_uses_yearly_sequence _______
+tests\test_invoice.py:108: in test_create_invoice_uses_yearly_sequence
+    assert "invoice_serial_" in source
+E   assert 'invoice_serial_' in 'async def _create_invoice_if_not_exists(order: Order, db: AsyncSession) -> None:\n    """Create an invoice record ide...ING",\n        issued_at=now,\n    ).on_conflict_do_nothing(index_elements=["order_id"])\n    await db.execute(stmt)\n'
+---------------------------- Captured stdout setup ----------------------------
+Using proactor: IocpProactor
+----------------------------- Captured log setup ------------------------------
+DEBUG    asyncio:proactor_events.py:633 Using proactor: IocpProactor
+=========================== short test summary info ===========================
+FAILED tests/test_invoice.py::TestInvoiceIdempotency::test_create_invoice_generates_correct_number_format
+FAILED tests/test_invoice.py::TestInvoiceIdempotency::test_create_invoice_uses_yearly_sequence
+======================== 2 failed, 35 passed in 0.20s =========================

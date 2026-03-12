@@ -143,6 +143,9 @@ RUN chmod +x /app/start.sh
 # Switch to non-root user
 USER appuser
 
+# Pre-download InsightFace model (buffalo_l ~281MB) to avoid runtime download & OOM
+RUN python -c "from insightface.app import FaceAnalysis; FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])"
+
 # Expose port
 EXPOSE 8000
 

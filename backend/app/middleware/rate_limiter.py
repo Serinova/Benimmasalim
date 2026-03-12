@@ -300,32 +300,35 @@ def _is_story_endpoint(path: str) -> bool:
     return path == STORY_ENDPOINT_KEY or path.rstrip("/").endswith("ai/test-story-structured")
 
 
+# Dynamic trial sub-endpoints — suffix → canonical ENDPOINT_LIMITS key
+_TRIAL_SUFFIX_MAP = {
+    "/status": "/api/v1/trials/status",
+    "/create-payment": "/api/v1/trials/create-payment",
+    "/complete": "/api/v1/trials/complete",
+    "/verify-payment": "/api/v1/trials/verify-payment",
+    "/preview": "/api/v1/trials/preview",
+}
+
+
 def _endpoint_limit_key(path: str) -> str:
     """Canonical key for ENDPOINT_LIMITS lookup.
 
     Handles dynamic path parameters by falling back to prefix matching
     (e.g. ``/api/v1/trials/abc-123/retry`` → ``/api/v1/trials``).
 
-    Special case: trial status polling gets a dedicated high-limit bucket
-    (``/api/v1/trials/{id}/status`` → ``/api/v1/trials/status``).
+    Special case: trial sub-endpoints (status, create-payment, …) get
+    dedicated high-limit buckets via ``_TRIAL_SUFFIX_MAP``.
     """
     if _is_story_endpoint(path):
         return STORY_ENDPOINT_KEY
     # Exact match first
     if path in ENDPOINT_LIMITS:
         return path
-    # Trial status polling — lightweight GET, needs separate high-limit bucket
-    if path.startswith("/api/v1/trials/") and path.endswith("/status"):
-        return "/api/v1/trials/status"
-    # Trial payment endpoints — must be checked before generic /api/v1/trials catch-all
-    if path.startswith("/api/v1/trials/") and path.endswith("/create-payment"):
-        return "/api/v1/trials/create-payment"
-    if path.startswith("/api/v1/trials/") and path.endswith("/complete"):
-        return "/api/v1/trials/complete"
-    if path.startswith("/api/v1/trials/") and path.endswith("/verify-payment"):
-        return "/api/v1/trials/verify-payment"
-    if path.startswith("/api/v1/trials/") and path.endswith("/preview"):
-        return "/api/v1/trials/preview"
+    # Trial sub-endpoints — data-driven suffix matching
+    if path.startswith("/api/v1/trials/"):
+        for suffix, key in _TRIAL_SUFFIX_MAP.items():
+            if path.endswith(suffix):
+                return key
     # Prefix match for dynamic paths (e.g. /api/v1/ai/orders/{id}/regenerate-cover)
     for key in ENDPOINT_LIMITS:
         if path.startswith(key + "/"):
@@ -470,7 +473,7 @@ class RateLimitMiddleware:
 # =============================================================================
 
 
-async def get_rate_limit_status(client_ip: str) -> dict:
+async def get_ip_rate_limit_status(client_ip: str) -> dict:
     """Get current rate limit status for an IP."""
     storage = await _get_storage()
     if storage is None:

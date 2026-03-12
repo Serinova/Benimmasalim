@@ -59,11 +59,6 @@ class TestStructuredStoryRequest(BaseModel):
         max_length=500,
         description="Scenario description (max 500 chars)",
     )
-    learning_outcomes: list[str] = Field(
-        ...,
-        min_length=1,
-        description="Eğitsel hedefler (zorunlu).",
-    )
     visual_style: str = Field(
         default="children's book illustration, soft colors",
         max_length=2000,

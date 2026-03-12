@@ -9,7 +9,6 @@ from app.models.consent import ConsentRecord
 from app.models.homepage import HomepageSection, SectionType
 from app.models.invoice import Invoice, InvoiceStatus
 from app.models.invoice_download_token import InvoiceDownloadToken
-from app.models.learning_outcome import LearningOutcome
 from app.models.notification_outbox import NotificationOutbox, OutboxStatus
 from app.models.notification_preference import NotificationPreference
 from app.models.order import Order, OrderStatus
@@ -34,7 +33,6 @@ __all__ = [
     "ChildProfile",
     "Product",
     "Scenario",
-    "LearningOutcome",
     "VisualStyle",
     "Order",
     "OrderStatus",
@@ -54,4 +52,5 @@ __all__ = [
     "ColoringBookProduct",
     "Invoice",
     "InvoiceStatus",
+    "InvoiceDownloadToken",
 ]

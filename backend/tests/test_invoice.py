@@ -14,14 +14,13 @@ Covers:
 import re
 from datetime import UTC, datetime
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
 
 from app.models.invoice import Invoice, InvoiceStatus
-from app.models.order import Order, OrderStatus
-
+from app.models.order import Order
 
 # ─── Invoice number format ───────────────────────────────────────
 
@@ -81,6 +80,7 @@ class TestInvoiceIdempotency:
     async def test_create_invoice_uses_pg_upsert(self):
         """Verify the function uses ON CONFLICT DO NOTHING."""
         import inspect
+
         from app.services.order_state_machine import _create_invoice_if_not_exists
 
         source = inspect.getsource(_create_invoice_if_not_exists)
@@ -91,20 +91,23 @@ class TestInvoiceIdempotency:
     async def test_create_invoice_generates_correct_number_format(self):
         """Verify the generated invoice number matches BM-YYYY-NNNNNN."""
         import inspect
-        from app.services.order_state_machine import _create_invoice_if_not_exists
 
-        source = inspect.getsource(_create_invoice_if_not_exists)
-        assert "BM-{year}-{serial:06d}" in source
+        from app.services.invoice_number_service import next_invoice_number
+
+        source = inspect.getsource(next_invoice_number)
+        assert "{prefix}-{year}-{serial:06d}" in source
 
     @pytest.mark.asyncio
     async def test_create_invoice_uses_yearly_sequence(self):
-        """Verify the function creates/uses a yearly sequence."""
+        """Verify the function creates/uses a yearly gap-free sequence."""
         import inspect
-        from app.services.order_state_machine import _create_invoice_if_not_exists
 
-        source = inspect.getsource(_create_invoice_if_not_exists)
-        assert "invoice_serial_" in source
-        assert "nextval" in source
+        from app.services.invoice_number_service import next_invoice_number
+
+        source = inspect.getsource(next_invoice_number)
+        assert "invoice_serial_counters" in source
+        assert "UPDATE" in source
+        assert "last_serial = last_serial + 1" in source
 
 
 # ─── PDF generation service ──────────────────────────────────────
@@ -215,6 +218,7 @@ class TestInvoicePdfGeneration:
     def test_pdf_hash_is_sha256(self):
         """PDF hash should be SHA-256 hex digest."""
         import hashlib
+
         from app.services.invoice_pdf_service import _build_invoice_pdf
 
         inv = Invoice()
@@ -357,6 +361,7 @@ class TestInvoiceIdorPrevention:
     def test_download_endpoint_requires_auth(self):
         """download_invoice uses CurrentUser (required auth)."""
         import inspect
+
         from app.api.v1.orders import download_invoice
 
         sig = inspect.signature(download_invoice)
@@ -425,6 +430,7 @@ class TestInvoiceCancelRefund:
     def test_state_machine_calls_cancel_on_cancelled(self):
         """transition_order should call _cancel_invoice_if_exists for CANCELLED."""
         import inspect
+
         from app.services.order_state_machine import transition_order
 
         source = inspect.getsource(transition_order)
@@ -434,6 +440,7 @@ class TestInvoiceCancelRefund:
     def test_state_machine_calls_cancel_on_refunded(self):
         """transition_order should call _cancel_invoice_if_exists for REFUNDED."""
         import inspect
+
         from app.services.order_state_machine import transition_order
 
         source = inspect.getsource(transition_order)
@@ -474,6 +481,7 @@ class TestRetryWorker:
     def test_retry_only_failed_with_low_count(self):
         """Verify the query filters FAILED + retry_count < 3."""
         import inspect
+
         from app.services.invoice_pdf_service import retry_failed_invoices
 
         source = inspect.getsource(retry_failed_invoices)

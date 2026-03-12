@@ -1,16 +1,14 @@
 """Profile management endpoints: addresses, notification preferences, child profiles."""
 
 import uuid
-from datetime import datetime
 
 import structlog
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import CurrentUser, DbSession
-from app.core.audit import record_audit
 from app.core.exceptions import NotFoundError, ValidationError
 from app.models.child_profile import ChildProfile
 from app.models.notification_preference import NotificationPreference

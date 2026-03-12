@@ -1,7 +1,7 @@
 """
 Görsel üretim sağlayıcı seçimi ve effective config.
 
-- get_image_provider_for_generation(provider_name) -> Fal veya Gemini servisi
+- get_image_provider_for_generation(provider_name) -> Gemini servisi
 - get_effective_ai_config(db, product_id?) -> AIGenerationConfig (varsayılan veya ürün)
 """
 
@@ -13,9 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.book_template import AIGenerationConfig
 from app.models.product import Product
 
-# Provider name normalization: admin'de "gemini_flash" / "gemini" / "fal" kullanılıyor
+# Provider name normalization
 GEMINI_PROVIDER_VALUES = ("gemini", "gemini_flash")
-FAL_PROVIDER_VALUE = "fal"
 DEFAULT_PROVIDER_FALLBACK = "gemini"
 
 
@@ -24,7 +23,7 @@ _gemini_service = None  # Singleton — connection pool paylasilsin
 
 def get_image_provider_for_generation(provider_name: str):
     """
-    Sadece Gemini servisini döndürür. Fal AI tamamen kaldırıldı.
+    Sadece Gemini servisini döndürür.
     """
     global _gemini_service
     if _gemini_service is None:
@@ -64,7 +63,7 @@ async def get_effective_image_provider_name(
 ) -> str:
     """
     Effective AIGenerationConfig'ten image_provider döndürür.
-    Config yoksa DEFAULT_PROVIDER_FALLBACK ("fal").
+    Config yoksa DEFAULT_PROVIDER_FALLBACK ("gemini").
     """
     config = await get_effective_ai_config(db, product_id=product_id)
     if not config:

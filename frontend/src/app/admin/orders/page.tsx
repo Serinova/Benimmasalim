@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { useOrdersList } from "./_hooks/useOrdersList";
 import { useOrderDetail } from "./_hooks/useOrderDetail";
 import { useOrderActions } from "./_hooks/useOrderActions";
@@ -12,7 +11,6 @@ import { OrdersTable } from "./_components/OrdersTable";
 import { OrderDetailSheet } from "./_components/OrderDetailSheet";
 
 export default function AdminOrdersPage() {
-  const router = useRouter();
   const [compact, setCompact] = useState(false);
 
   // Auto-compact on small screens
@@ -24,13 +22,7 @@ export default function AdminOrdersPage() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Auth check
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (!user) { router.push("/auth/login"); return; }
-    const userData = JSON.parse(user);
-    if (userData.role !== "admin") router.push("/");
-  }, [router]);
+  useAdminAuth();
 
   const list = useOrdersList();
   const detailHook = useOrderDetail();
@@ -42,23 +34,16 @@ export default function AdminOrdersPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div>
       {/* Header */}
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => router.push("/admin")}>
-              ← Geri
-            </Button>
-            <h1 className="text-xl font-bold text-slate-800">Sipariş Yönetimi</h1>
-          </div>
-          <div className="text-xs text-slate-400">
-            {list.total} sipariş
-          </div>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-slate-800">Sipariş Yönetimi</h1>
+        <div className="text-xs text-slate-400">
+          {list.total} sipariş
         </div>
-      </header>
+      </div>
 
-      <main className="mx-auto max-w-[1600px] space-y-4 px-6 py-4">
+      <div className="space-y-4">
         {/* Stats */}
         <StatsCards
           stats={list.stats}
@@ -102,7 +87,7 @@ export default function AdminOrdersPage() {
           onPageChange={list.goToPage}
           compact={compact}
         />
-      </main>
+      </div>
 
       {/* Detail Sheet */}
       <OrderDetailSheet
@@ -124,6 +109,8 @@ export default function AdminOrdersPage() {
         onDownloadAllImages={actions.downloadAllImages}
         pdfDownloading={actions.pdfDownloading}
         zipDownloading={actions.zipDownloading}
+        bookGenerating={actions.bookGenerating}
+        coloringGenerating={actions.coloringGenerating}
       />
     </div>
   );

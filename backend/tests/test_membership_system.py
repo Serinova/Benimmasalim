@@ -10,14 +10,12 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from app.core.exceptions import InvalidStateTransition, ValidationError
 from app.models.child_profile import ChildProfile
 from app.models.notification_preference import NotificationPreference
 from app.models.order import Order, OrderStatus
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.models.user_address import UserAddress
 from app.services.order_state_machine import VALID_TRANSITIONS, can_transition
-
 
 # ── Model instantiation tests ────────────────────────────────────────────────
 
@@ -303,7 +301,7 @@ class TestEmailTriggers:
             OrderStatus.CANCELLED,
             OrderStatus.REFUNDED,
         }
-        assert _EMAIL_TRIGGER_STATUSES == expected
+        assert expected == _EMAIL_TRIGGER_STATUSES
 
     def test_no_email_for_draft_transitions(self):
         from app.services.order_state_machine import _EMAIL_TRIGGER_STATUSES
@@ -373,6 +371,7 @@ class TestOutboxIdempotency:
     def test_outbox_uses_pg_upsert_in_state_machine(self):
         """Verify that the state machine uses ON CONFLICT DO NOTHING."""
         import inspect
+
         from app.services.order_state_machine import transition_order
 
         source = inspect.getsource(transition_order)
@@ -382,6 +381,7 @@ class TestOutboxIdempotency:
     def test_state_machine_no_fire_and_forget(self):
         """Verify asyncio.create_task is NOT used for email sending."""
         import inspect
+
         from app.services import order_state_machine
 
         source = inspect.getsource(order_state_machine)
@@ -430,6 +430,7 @@ class TestEmailTemplateSafety:
     def test_tracking_number_is_escaped(self):
         """Verify tracking_number is HTML-escaped before use in template."""
         import inspect
+
         from app.services.email_service import EmailService
 
         source = inspect.getsource(EmailService._send_order_status_email)
@@ -517,6 +518,7 @@ class TestTimelineEvents:
     def test_audit_log_written_in_same_transaction(self):
         """Verify audit log and outbox are in the same function (no separate task)."""
         import inspect
+
         from app.services.order_state_machine import transition_order
 
         source = inspect.getsource(transition_order)
@@ -534,6 +536,7 @@ class TestExportDataNotifications:
     def test_export_endpoint_includes_notifications(self):
         """Verify the export-data endpoint includes notification outbox data."""
         import inspect
+
         from app.api.v1 import privacy
 
         source = inspect.getsource(privacy.export_data)
@@ -580,6 +583,7 @@ class TestTokenVersionMechanism:
     def test_auth_guard_checks_tv(self):
         """Verify the auth guard source code checks token_version."""
         import inspect
+
         from app.api.v1.deps import get_current_user
 
         source = inspect.getsource(get_current_user)
@@ -589,6 +593,7 @@ class TestTokenVersionMechanism:
     def test_auth_guard_checks_deletion_scheduled(self):
         """Verify the auth guard blocks users with pending deletion."""
         import inspect
+
         from app.api.v1.deps import get_current_user
 
         source = inspect.getsource(get_current_user)
@@ -601,6 +606,7 @@ class TestDeleteAccountSecurity:
     def test_delete_account_increments_token_version(self):
         """Verify source code increments token_version."""
         import inspect
+
         from app.api.v1.privacy import delete_account
 
         source = inspect.getsource(delete_account)
@@ -610,6 +616,7 @@ class TestDeleteAccountSecurity:
     def test_delete_account_allows_guest_without_password(self):
         """Verify guest users (no password) can delete without providing password."""
         import inspect
+
         from app.api.v1.privacy import delete_account
 
         source = inspect.getsource(delete_account)
@@ -650,6 +657,7 @@ class TestLoginRestoreGracePeriod:
 
     def test_login_source_has_restore_logic(self):
         import inspect
+
         from app.api.v1.auth import login
 
         source = inspect.getsource(login)
@@ -688,6 +696,7 @@ class TestRefreshTokenSecurity:
 
     def test_refresh_checks_tv(self):
         import inspect
+
         from app.api.v1.auth import refresh_token
 
         source = inspect.getsource(refresh_token)
@@ -696,6 +705,7 @@ class TestRefreshTokenSecurity:
 
     def test_refresh_blocks_deleted_users(self):
         import inspect
+
         from app.api.v1.auth import refresh_token
 
         source = inspect.getsource(refresh_token)
@@ -708,6 +718,7 @@ class TestDeletePhotoIdempotency:
 
     def test_delete_photo_accepts_child_profile_id(self):
         import inspect
+
         from app.api.v1.privacy import delete_photo_now
 
         source = inspect.getsource(delete_photo_now)
@@ -717,6 +728,7 @@ class TestDeletePhotoIdempotency:
     def test_delete_photo_idempotent(self):
         """Second call should not raise error when photo already deleted."""
         import inspect
+
         from app.api.v1.privacy import delete_photo_now
 
         source = inspect.getsource(delete_photo_now)
@@ -744,6 +756,7 @@ class TestPurgeJob:
     def test_purge_registered_in_daily_cron(self):
         """Verify purge_deleted_accounts is called in the KVKK leader task."""
         import inspect
+
         from app.main import _kvkk_daily_cleanup_leader
 
         source = inspect.getsource(_kvkk_daily_cleanup_leader)
@@ -752,6 +765,7 @@ class TestPurgeJob:
     def test_delete_user_data_handles_all_models(self):
         """Verify delete_user_data cleans up all related data."""
         import inspect
+
         from app.tasks.kvkk_cleanup import delete_user_data
 
         source = inspect.getsource(delete_user_data)
@@ -767,6 +781,7 @@ class TestPurgeJob:
     def test_delete_user_data_anonymizes_audit_logs(self):
         """Verify audit log user_id is set to None after purge."""
         import inspect
+
         from app.tasks.kvkk_cleanup import delete_user_data
 
         source = inspect.getsource(delete_user_data)
@@ -776,6 +791,7 @@ class TestPurgeJob:
     def test_delete_user_data_anonymizes_orders(self):
         """Verify order personal data is cleared."""
         import inspect
+
         from app.tasks.kvkk_cleanup import delete_user_data
 
         source = inspect.getsource(delete_user_data)

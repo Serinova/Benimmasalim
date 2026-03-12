@@ -340,6 +340,25 @@ export default function ConfirmPage() {
     if (!preview || regeneratingKey !== null) return;
     setRegeneratingKey(pageKey);
     setError(null);
+
+    // Save current image URL to detect changes after timeout
+    const previousImageUrl = preview.page_images?.[pageKey] || "";
+
+    const controller = new AbortController();
+    // 5-minute timeout for the regeneration request
+    const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+
+    // Safety net: always clear spinner after 6 minutes no matter what
+    const safetyTimeout = setTimeout(() => {
+      setRegeneratingKey((current) => {
+        if (current === pageKey) {
+          setError("İşlem çok uzun sürdü. Sayfayı yenileyerek sonucu kontrol edin.");
+          return null;
+        }
+        return current;
+      });
+    }, 6 * 60 * 1000);
+
     try {
       const res = await fetch(
         `${API_BASE_URL}/orders/preview-by-token/${token}/regenerate-page`,
@@ -347,8 +366,10 @@ export default function ConfirmPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ page_number: pageKey }),
+          signal: controller.signal,
         },
       );
+      clearTimeout(timeoutId);
       if (!res.ok) {
         const err = await res.json().catch(() => null);
         setError(err?.detail || "Yeniden çizim başarısız oldu.");
@@ -372,9 +393,45 @@ export default function ConfirmPage() {
         setSuccessMessage(`${getPageLabel(data.page_number)} yeniden çizildi!${suffix}`);
         setTimeout(() => setSuccessMessage(null), 4000);
       }
-    } catch {
-      setError("Yeniden çizim sırasında hata oluştu.");
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      // On timeout: poll the preview to check if the backend actually succeeded
+      if (err instanceof DOMException && err.name === "AbortError") {
+        try {
+          const pollRes = await fetch(`${API_BASE_URL}/orders/preview-by-token/${token}`);
+          if (pollRes.ok) {
+            const pollData: PreviewData = await pollRes.json();
+            const newUrl = pollData.page_images?.[pageKey];
+            if (newUrl && newUrl !== previousImageUrl) {
+              // Backend succeeded — image was updated
+              const bustUrl = newUrl.includes("?")
+                ? `${newUrl}&_t=${Date.now()}`
+                : `${newUrl}?_t=${Date.now()}`;
+              setPreview((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  page_images: { ...prev.page_images, [pageKey]: bustUrl },
+                  page_regenerate_count: pollData.page_regenerate_count,
+                };
+              });
+              setSuccessMessage(`${getPageLabel(pageKey)} yeniden çizildi!`);
+              setTimeout(() => setSuccessMessage(null), 4000);
+            } else {
+              // Backend still processing or failed
+              setError("İşlem devam ediyor. Birkaç dakika sonra sayfayı yenileyin.");
+            }
+          } else {
+            setError("Bağlantı zaman aşımına uğradı. Sayfayı yenileyerek kontrol edin.");
+          }
+        } catch {
+          setError("Bağlantı zaman aşımına uğradı. Sayfayı yenileyerek kontrol edin.");
+        }
+      } else {
+        setError("Yeniden çizim sırasında hata oluştu.");
+      }
     } finally {
+      clearTimeout(safetyTimeout);
       setRegeneratingKey(null);
     }
   };
@@ -629,7 +686,7 @@ export default function ConfirmPage() {
                       alt={label}
                       width={900}
                       height={600}
-                      className={`aspect-[3/2] w-full object-cover transition ${isThisRegen ? "opacity-40" : ""}`}
+                      className={`aspect-[3/4] w-full object-contain bg-gray-50 transition ${isThisRegen ? "opacity-40" : ""}`}
                       unoptimized
                     />
                     {isThisRegen ? (
@@ -646,7 +703,7 @@ export default function ConfirmPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="flex aspect-[3/2] items-center justify-center bg-gray-100 text-gray-400">
+                  <div className="flex aspect-[3/4] items-center justify-center bg-gray-100 text-gray-400">
                     Gorsel yok
                   </div>
                 )}

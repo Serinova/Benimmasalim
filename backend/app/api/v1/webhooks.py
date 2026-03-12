@@ -216,6 +216,7 @@ async def payment_webhook(
         # Fire-and-forget invoice PDF generation
         try:
             import asyncio as _aio
+
             from app.services.invoice_pdf_service import generate_invoice_pdf
             _aio.create_task(generate_invoice_pdf(order.id, db))
         except Exception as _inv_err:
@@ -224,8 +225,9 @@ async def payment_webhook(
         # Enqueue AFTER commit so that the worker sees PAID status
         try:
             if order.is_coloring_book:
-                from app.tasks.generate_coloring_book import generate_coloring_book
                 import asyncio
+
+                from app.tasks.generate_coloring_book import generate_coloring_book
                 asyncio.create_task(generate_coloring_book(order.id, db))
                 logger.info(
                     "WEBHOOK_COLORING_BOOK_GENERATION_TRIGGERED",

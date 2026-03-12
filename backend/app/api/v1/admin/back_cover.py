@@ -7,7 +7,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
-from app.api.v1.deps import AdminUser, DbSession
+from app.api.v1.admin.book_config import _ensure_single_default
+from app.api.v1.deps import DbSession, SuperAdminUser
 from app.core.exceptions import NotFoundError
 from app.models.book_template import BackCoverConfig
 
@@ -24,15 +25,13 @@ def _to_response(c: BackCoverConfig) -> "BackCoverConfigResponse":
         id=str(c.id),
         name=c.name,
         company_name=c.company_name,
-        company_logo_url=c.company_logo_url,
         company_website=c.company_website,
         company_email=c.company_email,
         company_phone=c.company_phone,
-        company_address=c.company_address,
         background_color=c.background_color,
-        background_gradient_end=getattr(c, "background_gradient_end", "#EDE4F8"),
+        background_gradient_end=c.background_gradient_end,
         primary_color=c.primary_color,
-        accent_color=getattr(c, "accent_color", "#F59E0B"),
+        accent_color=c.accent_color,
         text_color=c.text_color,
         qr_enabled=c.qr_enabled,
         qr_size_mm=c.qr_size_mm,
@@ -42,12 +41,12 @@ def _to_response(c: BackCoverConfig) -> "BackCoverConfigResponse":
         tips_content=c.tips_content,
         tips_font_size=c.tips_font_size,
         tagline=c.tagline,
-        dedication_text=getattr(c, "dedication_text", ""),
+        dedication_text=c.dedication_text,
         copyright_text=c.copyright_text,
         show_stars=c.show_stars,
         show_border=c.show_border,
         border_color=c.border_color,
-        show_decorative_lines=getattr(c, "show_decorative_lines", True),
+        show_decorative_lines=c.show_decorative_lines,
         is_active=c.is_active,
         is_default=c.is_default,
     )
@@ -60,11 +59,9 @@ def _to_response(c: BackCoverConfig) -> "BackCoverConfigResponse":
 class BackCoverConfigCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     company_name: str = "Benim Masalım"
-    company_logo_url: str | None = None
     company_website: str = "www.benimmasalim.com.tr"
     company_email: str = "info@benimmasalim.com.tr"
     company_phone: str | None = None
-    company_address: str | None = None
 
     background_color: str = "#FDF6EC"
     background_gradient_end: str = "#EDE4F8"
@@ -107,11 +104,9 @@ class BackCoverConfigCreate(BaseModel):
 class BackCoverConfigUpdate(BaseModel):
     name: str | None = None
     company_name: str | None = None
-    company_logo_url: str | None = None
     company_website: str | None = None
     company_email: str | None = None
     company_phone: str | None = None
-    company_address: str | None = None
 
     background_color: str | None = None
     background_gradient_end: str | None = None
@@ -145,11 +140,9 @@ class BackCoverConfigResponse(BaseModel):
     id: str
     name: str
     company_name: str
-    company_logo_url: str | None
     company_website: str
     company_email: str
     company_phone: str | None
-    company_address: str | None
 
     background_color: str
     background_gradient_end: str
@@ -189,7 +182,7 @@ class BackCoverConfigResponse(BaseModel):
 @router.get("", response_model=list[BackCoverConfigResponse])
 async def list_back_cover_configs(
     db: DbSession,
-    admin: AdminUser,
+    admin: SuperAdminUser,
     include_inactive: bool = False,
 ):
     """List all back cover configurations."""
@@ -202,7 +195,7 @@ async def list_back_cover_configs(
 
 
 @router.get("/default", response_model=BackCoverConfigResponse | None)
-async def get_default_back_cover_config(db: DbSession, _admin: AdminUser):
+async def get_default_back_cover_config(db: DbSession, _admin: SuperAdminUser):
     """Get the default back cover configuration."""
     result = await db.execute(
         select(BackCoverConfig)
@@ -217,17 +210,11 @@ async def get_default_back_cover_config(db: DbSession, _admin: AdminUser):
 async def create_back_cover_config(
     request: BackCoverConfigCreate,
     db: DbSession,
-    admin: AdminUser,
+    admin: SuperAdminUser,
 ):
     """Create a new back cover configuration."""
     if request.is_default:
-        existing_defaults = (
-            (await db.execute(select(BackCoverConfig).where(BackCoverConfig.is_default == True)))  # noqa: E712
-            .scalars()
-            .all()
-        )
-        for existing in existing_defaults:
-            existing.is_default = False
+        await _ensure_single_default(db, BackCoverConfig)
 
     config = BackCoverConfig(**request.model_dump())
     db.add(config)
@@ -239,7 +226,7 @@ async def create_back_cover_config(
 
 
 @router.get("/{config_id}", response_model=BackCoverConfigResponse)
-async def get_back_cover_config(config_id: UUID, db: DbSession, admin: AdminUser):
+async def get_back_cover_config(config_id: UUID, db: DbSession, admin: SuperAdminUser):
     """Get a specific back cover configuration."""
     config = await db.get(BackCoverConfig, config_id)
     if not config:
@@ -252,7 +239,7 @@ async def update_back_cover_config(
     config_id: UUID,
     request: BackCoverConfigUpdate,
     db: DbSession,
-    admin: AdminUser,
+    admin: SuperAdminUser,
 ):
     """Update a back cover configuration."""
     config = await db.get(BackCoverConfig, config_id)
@@ -260,19 +247,7 @@ async def update_back_cover_config(
         raise NotFoundError("BackCoverConfig", config_id)
 
     if request.is_default:
-        existing_defaults = (
-            (
-                await db.execute(
-                    select(BackCoverConfig)
-                    .where(BackCoverConfig.is_default == True)  # noqa: E712
-                    .where(BackCoverConfig.id != config_id)
-                )
-            )
-            .scalars()
-            .all()
-        )
-        for existing in existing_defaults:
-            existing.is_default = False
+        await _ensure_single_default(db, BackCoverConfig, exclude_id=config_id)
 
     update_data = request.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -286,7 +261,7 @@ async def update_back_cover_config(
 
 
 @router.delete("/{config_id}")
-async def delete_back_cover_config(config_id: UUID, db: DbSession, admin: AdminUser):
+async def delete_back_cover_config(config_id: UUID, db: DbSession, admin: SuperAdminUser):
     """Delete (soft) a back cover configuration."""
     config = await db.get(BackCoverConfig, config_id)
     if not config:

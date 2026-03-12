@@ -1,6 +1,7 @@
 ---
 description: Projeyi baştan sona (Frontend veya Backend) Google Cloud'a yayımlama (Deploy) yönergesi
 ---
+// turbo-all
 Bu workflow, "Benim Masalım" projesinin Backend ve/veya Frontend kısımlarını canlıya (Production) almak için gerekli adımları içermektedir.
 
 **Nasıl Kullanılır:**

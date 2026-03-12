@@ -11,7 +11,7 @@ Implements "Try Before You Buy" flow:
 import secrets
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -20,7 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class PreviewStatus(str, Enum):
+class PreviewStatus(StrEnum):
     """Preview status - "Try Before You Buy" flow."""
 
     # New statuses for staged generation

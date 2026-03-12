@@ -1,4 +1,0 @@
-STYLE: 3D Pixar-ish (daha 3D, ama hâlâ çocuk kitabı)
-DISPLAY_NAME: Sihirli Animasyon
-MODIFIER: cinematic 3D animation style, Disney Pixar quality, warm lighting, vibrant colors, smooth 3D surfaces, subsurface scattering
-NEGATIVE: big eyes, chibi, oversized head, bobblehead, close-up, portrait, headshot, selfie, face filling frame, looking at camera, stiff pose, empty background, blurred background, bokeh, blurry, depth of field, low quality, deformed hands, extra fingers, reversed hand, text, watermark, unrecognizable face, bad anatomy, text overlay, logo, letters on image, head rotated, 2d, flat, flat shading, lineart, hand-drawn, hand-painted, watercolor, gouache, oil paint, pencil sketch, paper texture, brush strokes, cartoon 2d, anime, manga, cel-shaded, photorealistic, hyperreal, real human skin, wrong hair color, wrong skin color, different hair length, inconsistent hairstyle

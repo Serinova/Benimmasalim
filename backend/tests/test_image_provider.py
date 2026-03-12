@@ -7,6 +7,11 @@ Imagen 3.0 URL doğru mu?
 
 import pytest
 
+from app.services.ai.gemini_consistent_image import (
+    GEMINI_IMAGE_API_URL,
+    GEMINI_IMAGE_MODEL,
+    GeminiConsistentImageService,
+)
 from app.services.ai.image_generator import (
     GeminiFlashImageGenerator,
     GeminiImageGenerator,
@@ -15,14 +20,8 @@ from app.services.ai.image_generator import (
 )
 from app.services.ai.image_provider_dispatch import (
     DEFAULT_PROVIDER_FALLBACK,
-    FAL_PROVIDER_VALUE,
     GEMINI_PROVIDER_VALUES,
     get_image_provider_for_generation,
-)
-from app.services.ai.gemini_consistent_image import (
-    GeminiConsistentImageService,
-    GEMINI_IMAGE_MODEL,
-    GEMINI_IMAGE_API_URL,
 )
 
 
@@ -108,11 +107,6 @@ class TestProviderDispatch:
         service = get_image_provider_for_generation("gemini_flash")
         assert isinstance(service, GeminiConsistentImageService)
 
-    def test_dispatch_fal_still_returns_consistent_service(self):
-        """'fal' argümanı da GeminiConsistentImageService döndürür (Fal kaldırıldı)."""
-        service = get_image_provider_for_generation(FAL_PROVIDER_VALUE)
-        assert isinstance(service, GeminiConsistentImageService)
-
     def test_dispatch_is_singleton(self):
         """Aynı servis instance'ı döner (connection pool paylaşılır)."""
         s1 = get_image_provider_for_generation("gemini")
@@ -126,9 +120,6 @@ class TestProviderConstants:
     def test_gemini_provider_values_contains_both(self):
         assert "gemini" in GEMINI_PROVIDER_VALUES
         assert "gemini_flash" in GEMINI_PROVIDER_VALUES
-
-    def test_fal_provider_value(self):
-        assert FAL_PROVIDER_VALUE == "fal"
 
     def test_default_fallback_is_gemini(self):
         """Default fallback Imagen 3.0 (gemini) olmalı — Gemini Flash değil.

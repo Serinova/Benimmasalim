@@ -10,7 +10,7 @@ Idempotency: unique(order_id) ensures at most one invoice per order.
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -20,7 +20,6 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -29,7 +28,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
 
-class InvoiceStatus(str, Enum):
+class InvoiceStatus(StrEnum):
     PENDING = "PENDING"
     ISSUED = "ISSUED"
     PDF_READY = "PDF_READY"
