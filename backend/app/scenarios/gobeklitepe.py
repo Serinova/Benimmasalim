@@ -38,6 +38,7 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 ---
 
 ### Bölüm 1 — Göbeklitepe'de İlk Adımlar (Sayfa 1-4) 🎯 Duygu: MERAK + hafif TEDİRGİNLİK
+🌍 MEKAN: ARKEOLOJİK ALAN dış — koruma çatısı, T-şekilli taş dikmeler, step ovası. SİHİR YOK.
 - {child_name} yanında {animal_friend} ile Şanlıurfa'da, Göbeklitepe arkeolojik alanına gelir. Biraz çekiniyor — ilk kez böyle eski, dev taşlarla dolu bir yerde.
 - 🔊 Rüzgar bozkırdan esiyor, kuru toprak kokusu. Dev T-sütunlarını ilk gördüğünde duraksayıp gözlerini kocaman açar. "Bunlar gerçekten 12.000 yaşında mı?" diye fısıldar. {animal_friend} kulağını dikip heyecanla kuyruk/kanat sallar.
 - Taşların etrafında dolaşırken {animal_friend} birden durup bir yöne bakar — taşların arasında gizli bir geçit fark ederler. "Buraya bak! Bu geçit daha önce var mıydı?"
@@ -46,7 +47,8 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 
 ---
 
-### Bölüm 2 — Geçit: 12.000 Yıl Öncesine (Sayfa 5-8) 🎯 Duygu: HEYECAN → ŞAŞKInlık
+### Bölüm 2 — Geçit: 12.000 Yıl Öncesine (Sayfa 5-8) 🎯 Duygu: HEYECAN → ŞAŞKınlık
+🌍 MEKAN: 12.000 YIL ÖNCE — canlı taş çemberi, meşale ışığı, neolitik insanlar. Modern alan değil.
 - Geçitte yürürler; ışık değişir, sesler farklılaşır. 🔊 Adım sesleri taş duvarlara yankılanıyor. Hava nemli toprak ve küflü taş kokuyor. {animal_friend} tedirginleşir ama {child_name}'in yanından ayrılmaz.
 - Çıktıklarında manzara tamamen değişmiştir: aynı tepe ama inşaat hâlinde! İnsanlar dev taşları halatlarla çekiyor. "İnanabiliyor musun? Zaman değişti!" diye haykırır {child_name}, gözleri parlayarak.
 - Gizlenirler, bir taş bloğun arkasından izlerler. 🔊 İnsanlar birbirine seslenirken, taşlar sürtünme sesiyle yerde kayıyor. {child_name} heyecanını zor bastırır: "İşte 12.000 yıl önce insanlar böyle bir şey inşa etmiş!"
@@ -56,6 +58,7 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 ---
 
 ### Bölüm 3 — Sırrı Yerine Koyma (Sayfa 9-12) 🎯 Duygu: GERİLİM → CESARET → ZAFER
+🌍 MEKAN: TAŞ DİKME BÖLGESİ — T-şekilli taşların arası, ritual alanı, gece ateşi. Çember içi.
 - Taşların arkasında kalıp avcı-toplayıcıların günlük işlerini izlerler.
 - Yaşlı bir şefin endişeli yüzünü görürler. Şef, T-sütununun üzerindeki özel bir yuvaya oturması gereken kutsal oyma taşını bulamamaktadır.
 - {animal_friend} burnuyla otları karıştırırken bir şeye takılır! Kutsal oyma taşı oradaymış! {child_name} bu sefer tereddüt ETMİYOR — cesaret toplayıp görünmeden taşı alıyor ve T-sütunundaki o küçük gediğe YERLEŞTİRİYOR. Elleri artık titremiyordu.
@@ -65,6 +68,7 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 ---
 
 ### Bölüm 4 — Dairesel Yapı ve Hayvan Kabartmaları (Sayfa 13-16) 🎯 Duygu: MERAK → VEDAlaşma
+🌍 MEKAN: DAİRESEL YAPI İÇİ — hayvan kabartmalı t-taşları, tilki/turna/yılan figürleri. Dış alan değil.
 - Dairesel taş yapının etrafında sessizce dolaşırlar. Hayvan kabartmaları: tilki, aslan, yılan, akbaba. {child_name} parmağıyla kabartmayı takip eder. 🔊 Parmağı altında taşın soğuk ve pürüzlü dokusu.
 - {animal_friend} bir kabartmanın önünde birden durur — tilki kabartmasına bakıp şaşkınlıkla kafasını eğer! Sanki kendini tanımış gibi! {child_name} kahkahayla güler: "Bu sen misin yoksa?"
 - Avcı-toplayıcı çocuk tekrar belirir! El işaretiyle selamlaşırlar. Ama tam o an arka taraftaki taşlar gürültüyle sallanır — bir engel! Dar bir çıkış yolundan koşarak geçmeleri gerekiyor.
@@ -73,12 +77,14 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 
 ---
 
-### Bölüm 5 — Bugüne Dönüş (Sayfa 17-20) 🎯 Duygu: ŞAŞKInlık → KAVRAYIŞ
+### Bölüm 5 — Bugüne Dönüş (Sayfa 17-20) 🎯 Duygu: ŞAŞKınlık → KAVRAYIŞ
+🌍 MEKAN: MODERN arkeolojik alan — koruma çatısı, bilgi tabelaları, açık hava. Geçmiş değil.
 - Geçitten çıkınca her şey tekrar bugünkü hâline dönmüştür. {child_name} bir an duraksayıp etrafına bakar: "Gerçek miydi yoksa hayal mi?" 🔊 Uzaktan bir kuş ötüyor, rüzgar kuru otları sallıyor.
 - O kutsal oyma taşının tam olarak az önce yerleştirdikleri yerde, 12.000 yıldır durduğunu fark edince gözleri büyür. Parmağını taşa dokunduruyor — sıcak, güneşten ısınmış.
 - Gün batımının altın ışığı dikilitaşları boyar. {child_name} ile {animal_friend} alandan ayrılırken son bir kez arkalarına dönerler.
 
 ### Bölüm 6 — Kapanış (Sayfa 21-22) 🎯 Duygu: HUZUR + GURUR
+🌍 MEKAN: TEPE üstü gün batımı — step panoraması, turuncu gökyüzü, taş dikmeler silueti.
 - Harran Ovası'nın altın bozkırında yürürler. {child_name} {animal_friend}'a bakıp gülümsüyor: "Biz iyi bir ekibiz."
 - Son adımını atarken ufka bakıyor. Gözlerinde artık tedirginlik yok — parlak, meraklı bir ışık var. "Bir dahaki macera nereye olacak acaba?"
 
@@ -107,7 +113,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── F: Görsel Prompt Şablonları ──
     cover_prompt_template=(
-        'An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
+        'EXACTLY ONE {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
         'wearing {clothing_description}. {scene_description}. Ancient Gobeklitepe T-shaped megalithic '
         'pillars with animal carvings in background, amazed expression. Harran Plain steppe, '
         'warm cinematic lighting on limestone, rich stone texture. Wide shot: child 30%, ancient '
@@ -210,6 +216,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── I: Scenario Bible ──
     scenario_bible={
+        "no_magic": True,
         "companion_pack": {
             "cesur_step_tilkisi": {
                 "species": "fox",
@@ -261,6 +268,8 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Companion animal MUST have EXACTLY the same species, color, and size on EVERY page",
             "Sacred carved stone tablet MUST have the same geometric patterns on pages 9-12",
             "Child's explorer outfit MUST NOT change between time periods",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — realistic adventure only"
         ],
     
         "companions": "see_scenario_companions_list",

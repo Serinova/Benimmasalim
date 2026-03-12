@@ -35,12 +35,14 @@ Hikayenin sonunda {child_name} artık derinlikten korkmayan, bilinmeze merakla b
 **AKIŞ (6 BÖLÜM):**
 
 ### BÖLÜM 1 — Dalış Başlıyor (Sayfa 1-3) 🎯 Duygu: MERAK + hafif TEDİRGİNLİK
+🌍 MEKAN: Deniz yüzeyi → ilk dalış noktası — turkuaz su, güneş ışınları suyun içine süzülüyor.
 - {child_name} küçük denizaltı aracının camından okyanus yüzeyine bakıyor. Su masmavi, güneş ışınları dalgaların arasından süzülüyor.
 - Dalga cam dışından yüzdüğünü gösteriyor — burnunu cama değdiriyor, {child_name} gülerek karşılık veriyor. "Seninle geleceğim" diyor fısıldayarak.
 - Su yüzeyinin altına dalış — ışık değişiyor, her şey mavi-yeşil tonlara dönüyor. {child_name} yutkunuyor ama gözlerini ayıramıyor.
 - 🔊 Denizaltının hafif motor sesi, baloncukların şıpırtısı. Cam soğuk ve nemli.
 
 ### BÖLÜM 2 — Mercan Resifi (Sayfa 4-7) 🎯 Duygu: HEYECAN → ŞAŞKınlık
+🌍 MEKAN: MERCAN RESİFİ — renkli mercanlar, tropikal balıklar, denizanaları, sığ su. Derin değil.
 - İlk mercan resifi görünüyor — mor, turuncu, pembe mercanlar. Palyaço balıkları anemoneler arasında saklanıyor.
 - {child_name} burnunu cama yapıştırıyor: "Bak Dalga! Renkli çiçeklere benziyorlar!" Dalga sevinçle takla atıyor.
 - Deniz yıldızları kayaların üzerinde yavaşça hareket ediyor. Dev bir deniz kaplumbağası uzaktan süzülüp geçiyor.
@@ -49,6 +51,7 @@ Hikayenin sonunda {child_name} artık derinlikten korkmayan, bilinmeze merakla b
 - 🪝 HOOK: "Ama pusulanın iğnesi, ışığın ulaşamadığı karanlık derinliklere doğru dönüyordu..."
 
 ### BÖLÜM 3 — Batık Gemi (Sayfa 8-11) 🎯 Duygu: GİZEM → KEŞİF COŞKUSU
+🌍 MEKAN: Batık gemi İÇİ — yosunlu ahşap, kırık pencereler, sandık, kaptın kabini. Resif değil.
 - Pusulayı takip ederek eski bir batık gemiye ulaşıyorlar. Direkler yosunla kaplı, güverte kumu kabarık.
 - Geminin içi — mürekkepli şişeler, eski haritalar, kapalı sandıklar. Işık lombozlardan süzülüyor, yeşil-mavi gölgeler dans ediyor.
 - {child_name} bir sandığı açıyor — içinde kristal bir küre! Beyzbol topu büyüklüğünde, içi mavi ışıkla dolu, okyanus akıntılarının haritası parlıyor.
@@ -57,6 +60,7 @@ Hikayenin sonunda {child_name} artık derinlikten korkmayan, bilinmeze merakla b
 - 🪝 HOOK: "Kristal küredeki sinyal gittikçe hızlanıyordu — sanki bir şey onları bekliyormuş gibi..."
 
 ### BÖLÜM 4 — Karanlık Derinlik (Sayfa 12-15) 🎯 Duygu: KORKU → CESARET
+🌍 MEKAN: DERİN okyanus — karanlık, biyoüminesans ışıklar, dev eski kaya oluşumları. Sığ değil.
 - Daha derine dalış — güneş ışığı kayboluyor, etraf karanlığa gömülüyor. {child_name} koltuğunda geriye yaslanıyor, kalbi hızlanıyor.
 - 🔊 Derin denizin sessizliği — sadece denizaltının motor uğultusu ve kendi nefes sesi.
 - Biyolüminesans yaratıklar beliriyor — parıldayan jellyfish'ler, ışıklı anglerfish'ler. {child_name} önce irkiliyor, sonra "Kendi ışıklarını kendileri yapıyorlar..." diye fısıldıyor.
@@ -66,6 +70,7 @@ Hikayenin sonunda {child_name} artık derinlikten korkmayan, bilinmeze merakla b
 - 🪝 HOOK: "Kürenin ışığı devasa bir kaya duvarını aydınlattığında, {child_name} nefesini tuttu..."
 
 ### BÖLÜM 5 — Mercan Şehri (Sayfa 16-19) 🎯 Duygu: ŞAŞKınlık → HAYRANLIK → SEVİNÇ
+🌍 MEKAN: MERCAN ŞEHRİ — devasa mercan yapılar, parlayan organizmalar, yıldız deniz. Derin değil, yeni keşif.
 - Kaya duvarında bir geçit — geçince devasa bir sualtı mağarası! Tavanı biyolüminesans planktonlarla kaplanmış, yıldızlı gökyüzü gibi parlıyor.
 - İçeride antik yapılar — mercan sütunlar, kabukla kaplı kemerler, taş duvarlarında okyanus motifleri (balıklar, dalgalar, güneş).
 - Kristal küre bir taş yuvaya tam oturuyor — tıklama sesi! Mağara canlanıyor — tüm duvarlar ışıkla dolup taşıyor.
@@ -75,6 +80,7 @@ Hikayenin sonunda {child_name} artık derinlikten korkmayan, bilinmeze merakla b
 - {child_name} avucunu mozaiğin üzerine koyuyor — sıcak ve titreşiyor. "Anlıyorum," diyor yumuşakça. "Burası canlı."
 
 ### BÖLÜM 6 — Yüzeye Dönüş ve Gurur (Sayfa 20-22) 🎯 Duygu: HUZUR + GURUR
+🌍 MEKAN: YÜZEYE çıkış — kumsala dönüş, gün batımı parlaması, dalga sesleri. Suyaltı değil.
 - Kristal küreyi yuvadan dikkatle alıyor — hatıra olarak. Pusulayı da cebine koyuyor.
 - Yüzeye çıkış — ışık adım adım artıyor, karanlık mavi→turkuaz→açık mavi. {child_name} gülümsüyor: "Dönüyoruz Dalga."
 - 🔊 Su yüzeyine çıkınca dalga sesi, martı çığlıkları, tuzlu rüzgar yüzünü yalıyor.
@@ -130,7 +136,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'Space for title at top. {STYLE}'
     ),
     page_prompt_template=(
-        'A young child {scene_description}, wearing {clothing_description}. '
+        'EXACTLY ONE young child {scene_description}, wearing {clothing_description}. '
         'Setting elements (choose relevant based on scene): '
         'SHALLOW: [colorful coral reef, tropical fish, sea stars, anemones, '
         'golden sunbeams filtering through turquoise water, sandy ocean floor]. '
@@ -143,6 +149,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'SURFACE: [ocean surface at sunset, golden-orange light on waves, seabirds silhouettes, '
         'calm turquoise water transitioning to deep blue]. '
         'Shot variety: [close-up detail / medium action / wide epic / interior submarine / underwater panoramic]. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Composition: full body visible in action, cool ocean palette (deep blue, teal, coral pink, '
         'bioluminescent purple, golden surface light). Text overlay space at bottom. {STYLE}'
     ),
@@ -288,6 +295,8 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
             "Derinlik arttıkça ortam KARARIR, biyolüminesans ARTAR",
             "Yüzeye çıkışta ışık ADIM ADIM döner (karanlık→mavi→turkuaz→altın)",
             "Çocuğun dalış kıyafeti TÜM SAYFALARDA birebir aynı",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — realistic adventure only"
         ],
         "no_family": True,
         "no_magic": True,

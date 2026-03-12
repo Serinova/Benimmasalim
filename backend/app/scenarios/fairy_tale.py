@@ -39,6 +39,7 @@ Hikayenin sonunda {child_name} artık kitaplara bambaşka bakan bir çocuk — a
 ---
 
 ### BÖLÜM 1 — Kitabın İçine (Sayfa 1-4) 🎯 Duygu: MERAK + ŞAŞKINLIK
+🌍 MEKAN: ODA → büyülü orman geçişi — dev mantarlar, konuşan çiçekler, altın ışık. FANTASTİK DÜNYA.
 - {child_name} odasında tozlu bir raf arasında büyük, eski bir masal kitabı buluyor. Kapağı kabartma, kenarları altın yaldızlı.
 - ✋ Kitabın kapağına dokunuyor — kabartmalar pürüzlü ve sıcak, sayfalar eski kağıt kokuyor.
 - Kitabı açıp ilk sayfaya parmağını koyuyor — sayfalar parıldamaya başlıyor! "Ne oluyor?!" diyor {child_name}, gözleri kocaman.
@@ -48,6 +49,7 @@ Hikayenin sonunda {child_name} artık kitaplara bambaşka bakan bir çocuk — a
 - 🪝 HOOK: "İlk anahtar şeker kokulu bir yolun sonundaydı — ama yol birdenbire iki kola ayrılıyordu..."
 
 ### BÖLÜM 2 — Şeker Evi (Sayfa 5-9) 🎯 Duygu: HEYECAN → EĞLENCELİ GERİLİM
+🌍 MEKAN: TATLI DÜNYASI — çikolata ağaçları, marshmallow taşlar, kurabiye ev İÇİ. Orman değil.
 - Dev çikolata ağaçları, marshmallow taşlar, lolipop çiçekler — tatlı dünyası! 👃 Her yer karamel ve vanilya kokuyor.
 - {child_name}: "Her şey yenilebilir mi?!" Bilge kanatlarını sallıyor: "Dokunmadan önce düşün."
 - Kurabiye bir ev — ama terk edilmiş, çatısı çökmüş, kapısı aralık. ✋ Kapı kolunu tutuyor — kurabiye, sıcak ve gevrek.
@@ -58,6 +60,7 @@ Hikayenin sonunda {child_name} artık kitaplara bambaşka bakan bir çocuk — a
 - 🪝 HOOK: "Ama ikinci anahtar şeker dünyasında değildi — harita taş bir kalenin kulelerine doğru uzanıyordu..."
 
 ### BÖLÜM 3 — Ejderha Kalesi (Sayfa 10-14) 🎯 Duygu: GERİLİM → KORKU → CESARET
+🌍 MEKAN: TAŞ KALE İÇİ — gotik kuleler, uyuyan mor ejderha, mozaik tavan, meşale ışığı. Tatlı dünyası değil.
 - İkinci dünya: devasa taş kale, gotik kuleler, rüzgarda dalgalanan bayraklar. 🔊 Rüzgar uluyor, zincirler şıngırdıyor.
 - Kale kapısı açık — içeride dev bir ejderha uyuyor! Mor pulları parıldıyor, burunlarından duman çıkıyor.
 - {child_name} donup kalıyor. Kalbi küt küt atıyor. Bilge kulağına fısıldıyor: "Sakin. Uyuyor."
@@ -69,6 +72,7 @@ Hikayenin sonunda {child_name} artık kitaplara bambaşka bakan bir çocuk — a
 - 🪝 HOOK: "Son anahtar yukarıda bir yerdeydi — bulutların arasında, gökkuşağının ötesinde..."
 
 ### BÖLÜM 4 — Bulutlar Krallığı (Sayfa 15-18) 🎯 Duygu: HAYRANLIK → ENDİŞE → KARLILIK
+🌍 MEKAN: BULUT ÜSTÜ — pamuk zemin, kristal saray, gökkuşağı labirent. Kale değil.
 - Üçüncü dünya: pamuk bulutların üstünde yürüyorlar! 🔊 Rüzgar fısıltısı, uzaktan çan sesleri. Gökkuşağı köprüleri, uçan balinalar.
 - {child_name}: "Bulutların üstünde yürüyorum!" ✋ Bulut yumuşak ve serin, ayak batıyor ama düşmüyor.
 - Bulut sarayına giriyorlar — kristal duvarlar, gökkuşağı yansımaları. Son anahtar bir labirentin ortasında!
@@ -79,6 +83,7 @@ Hikayenin sonunda {child_name} artık kitaplara bambaşka bakan bir çocuk — a
 - 🪝 HOOK: "Üç anahtar bir araya gelince avuçlarında titreşmeye başladı — bir şeyi bekliyorlardı..."
 
 ### BÖLÜM 5 — Kitabın Kurtuluşu (Sayfa 19-22) 🎯 Duygu: SEVİNÇ → HUZUR → GURUR
+🌍 MEKAN: Büyülü orman GERİ → kutlama → ODA dönüş — kitap önünde açık. Bulut değil.
 - Büyülü ormana geri dönüyorlar — tahtada şimdi bir kilit var, 3 anahtar deliği!
 - {child_name} anahtarları sırayla takıyor — altın çiçek, gümüş yıldız, kristal gökkuşağı. 🔊 Her anahtar dönüşünde müzik gibi bir ses.
 - Sayfalar canlanıyor — masal karakterleri resimlerden fırlıyor! Kutlama, konfeti, müzik.
@@ -132,7 +137,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'Space for title at top. {STYLE}'
     ),
     page_prompt_template=(
-        'A young child {scene_description}, wearing {clothing_description}. '
+        'EXACTLY ONE young child {scene_description}, wearing {clothing_description}. '
         'Setting elements (choose relevant based on scene): '
         'ENCHANTED FOREST: [giant colorful mushrooms, talking flowers, fairy dust particles, '
         'soft magical sunlight, wooden signpost]. '
@@ -146,6 +151,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'glowing storybook pages, warm golden light]. '
         'Shot variety: [close-up puzzle solving / medium action / wide fantasy panoramic / '
         'interior moody castle / low-angle hero / bird-eye cloud view]. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Composition: full body visible, fantasy palette (deep plum, warm gold, candy pink, '
         'crystal blue, enchanted green). Text overlay space at bottom. {STYLE}'
     ),
@@ -293,6 +299,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
             "Ejderha DOSTÇA — korkunç değil, komik (hapşırınca alev çıkarır)",
             "Bulut labirentinde Bilge KAYIP — çocuk YALNIZ",
             "Çocuğun ortaçağ tarzı kıyafeti TÜM SAYFALARDA birebir aynı",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child"
         ],
         "no_family": True,
     

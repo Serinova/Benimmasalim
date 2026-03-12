@@ -36,6 +36,7 @@ Sonunda {child_name} gözlerinde artık korku değil, parlak bir ışık var —
 ---
 
 ### Bölüm 1 — Gizemli Madalyon (Sayfa 1-3) 🎯 Duygu: MERAK + hafif TEDİRGİNLİK
+🌍 MEKAN: Altındere Vadisi, çam ormanı, hediyelik eşya dükkanı. GERÇEKÇİ sahne. SİHİR YOK.
 - {child_name} Altındere Vadisi'nde yürüyor. 🔊 Derin vadi, çam ormanı, kuş sesleri, ıslak yaprak kokusu. Sis parmaklarını soğuk gibi dokunuyor.
 - Hediyelik eşya dükkanında eski bronz madalyon buluyor — üzerinde üç sembol: kartal, anahtar, spiral. Dokunduğunda "tık" diye atıyor. "Bu nedir?" diye fısıldar. {animal_friend} merakla omzuna tırmanıp madalyona burnunu sürter.
 - Sümela'ya çıkan dik taş yolda rüzgar sertleşiyor, sis sarıyor. {child_name} biraz çekiniyor — yol çok dik ve taşlar ıslak. Ama {animal_friend} çoktan ileride, dal daldan sıçrayarak yol gösteriyor! "Tamam tamam, geliyorum!" diye gülerek peşinden koşuyor.
@@ -44,6 +45,7 @@ Sonunda {child_name} gözlerinde artık korku değil, parlak bir ışık var —
 ---
 
 ### Bölüm 2 — Zaman Kapısı (Sayfa 4-6) 🎯 Duygu: HEYECAN → ŞAŞKINLIK
+🌍 MEKAN: Sümela Manastırı içi, fresk duvarları, oyuk. GERÇEKÇİ sahne.
 - Manastır içinde silik fresk duvarlarının arasında — hava eski taş ve balmumu kokuyor. {child_name} madalyondaki sembolün aynısını duvardaki oyukta görüyor! "Bak {animal_friend}, aynı şekil!"
 - Bir an tereddüt eder — ya tehlikeli bir şey olursa? {animal_friend} cesaretlendirmek ister gibi omzunda hafifçe pençesiyle sıkıyor. {child_name} madalyonu oyuğa yerleştiriyor — IŞIK SELİ! 🔊 "Vuuuş!" sesi, taşlar titriyor.
 - Gözlerini açtığında HER ŞEY DEĞİŞMİŞ: mum ışıkları, telaşlı insanlar! Bir yazıcı koşarak geçiyor: "Kayıp el yazması yok olursa bilgimiz biter!" {child_name} {animal_friend}'a bakıyor: "Biz yardım edebiliriz!"
@@ -52,6 +54,7 @@ Sonunda {child_name} gözlerinde artık korku değil, parlak bir ışık var —
 ---
 
 ### Bölüm 3 — İpuçlarının Peşinde (Sayfa 7-10) 🎯 Duygu: GERİLİM → KEŞF
+🌍 MEKAN: Gizli taş koridor, sembol kapı, merdiven. GERÇEKÇİ sahne.
 - Spiral ipucu! {animal_friend} duvardaki spirale pençesiyle dokunuyor — gizli bir koridor açılıyor! "Sen nasıl gördün bunu?" diye şaşırır {child_name}. {animal_friend} kuyruğunu sallayarak ilerliyor.
 - Dar taş merdivenlere açılan karanlık geçit. 🔊 Su damlaları yankılanıyor, ✋ taşlar soğuk ve kaygan. {child_name} derin nefes alıp ilerliyor — artık tereddüt etmiyor.
 - Üç sembollu ağır kapı — doğru sıralama bulmacası! {child_name} düşünüyor... "Yüksekte uçan — kartal! Ortada dönen — spiral! Aşağıyı açan — anahtar!" Sembolleri sırayla basıyor.
@@ -61,6 +64,7 @@ Sonunda {child_name} gözlerinde artık korku değil, parlak bir ışık var —
 ---
 
 ### Bölüm 4 — Gizemli Takip (Sayfa 11-14) 🎯 Duygu: ADRENALİN → CESARET
+🌍 MEKAN: Dar koridorlar, uçurum köprüsü, gizli oda. GERÇEKÇİ sahne.
 - Gizli depo odası — el yazması burada DEĞİL! 🔊 Uzaktan su damlası sesi... bir yöne doğru çekiyor. {animal_friend} kulağını dikip sesi takip ediyor.
 - Dar koridorlarda koşuyorlar — gizemli bir gölge onları takip ediyor! Hızlı adımlar, çatlak taşlardan atlama. {child_name} korkmuyor artık, KOŞUYOR.
 - Dar uçurum köprüsü! Aşağıda derin vadi, rüzgar saçlarını savuruyor. {animal_friend} çantaya sığınıyor, başını dışarı çıkarıp endişeyle bakıyor. {child_name} derin nefes alıyor: "Sen bende güvendesin. Ben geçebilirim." Ve geçiyor — ELLERI TİTREMİYOR ARTIK.
@@ -70,6 +74,7 @@ Sonunda {child_name} gözlerinde artık korku değil, parlak bir ışık var —
 ---
 
 ### Bölüm 5 — Bulmacanın Sonu (Sayfa 15-18) 🎯 Duygu: ÇÖZÜM → ZAFER
+🌍 MEKAN: Gizli oda, sandık, el yazması. GERÇEKÇİ sahne.
 - Anahtar sembolü parladığında gizli çıkıntıda gerçek bir anahtar! {child_name} sandığı açıyor — EL YAZMASI BURADA! Ama sayfalar kopuk ve karışık.
 - Hız bulmacası! {animal_friend} sayfaları küçük pençeleriyle tutuyor, {child_name} kartal-spiral dizilimlerinden doğru sırayı çözüyor. 🔊 Kağıtların hışırtısı, eski mürekkep kokusu — zamanın kendisinin kokusu gibi.
 - "Tamam! Son sayfa da yerinde!" {child_name} el yazmasını tamamlıyor. {animal_friend} sevinçle kuyruğunu sallıyor ve {child_name}'in omzuna atlayıp yanağını sürter.
@@ -79,6 +84,7 @@ Sonunda {child_name} gözlerinde artık korku değil, parlak bir ışık var —
 ---
 
 ### Bölüm 6 — Geri Dönüş (Sayfa 19-22) 🎯 Duygu: HEYECAN → HUZUR + GURUR
+🌍 MEKAN: Manastır koridorları, güneş ışığı, modern manastır. GERÇEKÇİ sahne.
 - Madalyon ISINIYOR — dönüş kapısı! Rüzgar fırtınaya dönüşmüş. "Koşmalıyız {animal_friend}!" 🔊 Rüzgar uğultusu, taşların çatırdaması.
 - Koridorlardan koşuyorlar. {animal_friend} yol gösteriyor, dal daldan sıçrayarak. {child_name} artık karanlık koridorlardan KORKMUYOR — hızlı ve kararlı.
 - Madalyonu yuvasında çeviriyor — FLAŞ! 🔊 Sessizlik. Gözlerini açtığında modern manastırda, güneş ışığı freskleri aydınlatıyor. Avucunda mühür izi yadigâr kalmış.
@@ -107,7 +113,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── F: Görsel Prompt Şablonları ──
     cover_prompt_template=(
-        'An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
+        'EXACTLY ONE {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
         'wearing {clothing_description}. {scene_description}. Sumela Monastery carved into a sheer '
         'cliff face at 1200m altitude. Misty Altindere Valley pine forest below. Child holding an '
         'ancient bronze amulet with golden glow. Dramatic low-angle hero shot: child 25% foreground, '
@@ -122,6 +128,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
         'INTERIOR elements: [Faded fresco walls, candlelit stone corridors, hidden passages, '
         'carved stone doors with symbols, ancient wooden chests]. '
         'ATMOSPHERIC: [mountain mist, flickering candlelight, wet stone surfaces, moss on ancient walls]. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Shot variety: Wide establishing / Medium action / Close-up detail / Low angle vertigo. '
         'Color palette: deep forest green, slate grey, warm bronze, cream, ethereal white mist. '
         'Cinematic atmospheric lighting, detailed ancient stone texture. '
@@ -193,6 +200,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── I: Scenario Bible (genişletilmiş) ──
     scenario_bible={
+        "no_magic": True,
         "companion_pack": {
             "findik": {
                 "species": "squirrel",
@@ -230,6 +238,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Squirrel companion MUST have EXACTLY the same hazelnut-brown color and bushy tail on EVERY page",
             "Bronze amulet MUST have the same three symbols (eagle, key, spiral) on pages 2-21",
             "Child's modern outfit MUST NOT change between time periods",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — time travel is triggered by physical amulet mechanism",
+            "Setting MUST be Sümela Monastery / Altındere Valley — no unrelated forest or island",
         ],
     
         "companions": "see_scenario_companions_list",

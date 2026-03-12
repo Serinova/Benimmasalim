@@ -36,6 +36,7 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 ---
 
 ### Bölüm 1 — Gizemli Keşif (Sayfa 1-3) 🎯 Duygu: MERAK + hafif TEDİRGİNLİK
+🌍 MEKAN: EFES ören yeri DIŞ — mermer sütunlar, Celsus Kütüphanesi cephesi, taş yol. SİHİR YOK.
 - {child_name} yanında {animal_friend} ile Efes harabeleri arasında yürür. 🔊 Ayakları altında çıtırdayan mermer kırıntıları, uzaktan ağustosböceği sesi. Kuru ot ve sıcak taş kokusu.
 - Biraz çekiniyor — dev sütunlar koskocaman, gölgeler uzun. {animal_friend} ama rahat, mermer bir sütunun çevresinde tırmalanıyor / süzülüyor, {child_name}'i cesaretlendirmek ister gibi.
 - Harabelerde gezerken {child_name}'in ayağı bir taşa takılır. Sıradan bir taş değil — üzerinde antik semboller parlamaya başlar! "Bu da ne?" diye fısıldar. {animal_friend} merakla yaklaşıp koklayarak inceliyor.
@@ -45,6 +46,7 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 ---
 
 ### Bölüm 2 — Zaman Kapısı (Sayfa 4-6) 🎯 Duygu: HEYECAN → ŞAŞKINLIK
+🌍 MEKAN: ANTİK EFES İÇİ — canlı mermer cadde, Helenistik dükkanlar, hareketli pazar. Modern ören yeri değil.
 - Celsus Kütüphanesi'nin önüne gelirler. {animal_friend} bir sütundaki boşluğa doğru ilerler — tam taşın şekline uyan bir yuva! "Nasıl gördün bunu?" der {child_name} şaşkınlıkla.
 - Bir an tereddüt eder — ya tehlikeli bir şey olursa? Ama {animal_friend} cesaretlendirmek ister gibi yanına gelip burnunu eline sürter. {child_name} cesaretini toplar ve taşı yuvasına yerleştirir.
 - GOZ KAMAŞTIRICI IŞIK! 🔊 Taş zemine sürtünme sesi, derin bir uğultu. Gözlerini açtığında HER ŞEY DEĞİŞMİŞ: turistler gitmiş, etrafta antik Roma pazar yeri, tunik giymiş insanlar, at arabaları! "İnanabiliyor musun? Zamanda yolculuk yaptık!" diye haykırır.
@@ -53,6 +55,7 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 ---
 
 ### Bölüm 3 — Kuruyan Çeşmeler (Sayfa 7-9) 🎯 Duygu: ENDİŞE → KARARLLIK
+🌍 MEKAN: Celsus Kütüphanesi İÇİ + kuruyan çeşme yakını — taş kanal, su izleri. Cadde değil.
 - Pazar yerinde panik var. Genç bir Romalı çırak koşarak geçer: "Su kemeri bozuldu! Şehrin çeşmeleri durdu!" 🔊 Kuru taş kanallardan boş damla sesleri yankılanıyor.
 - {child_name} çırağın peşine düşer, {animal_friend} hemen yanında. Kurumuş taş kanallarını inceler. Parmaklarını kanalın içinden geçirir — kuru, tozlu, sıcak.
 - Tabletteki sembollerin su kanalının üzerindeki işaretlerle AYNI olduğunu fark eder! "Bu taş buranın haritası olabilir!" {animal_friend} heyecanla sıçrar / kanat çırpar.
@@ -61,6 +64,7 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 ---
 
 ### Bölüm 4 — Antik Bulmaca ve Kovalamaca (Sayfa 10-13) 🎯 Duygu: GERİLİM → ADRENALİN
+🌍 MEKAN: YERALTI GEÇİDİ — taş tünel, su kanalları, dim meşale ışığı. Yüzey değil.
 - 🔊 Adımları taş duvarlara yankılanıyor. Hava nemli ve küflü. {animal_friend} öncü olur — karanlıkta gözleri parlayan bir rehber.
 - 3 sütundaki sembolleri hizalayan bulmacayı çözer, gizli bakım tüneli açılır! {child_name} bu sefer TEREDDÜT ETMİYOR — hemen içeri dalıyor.
 - Kovalamaca — dar geçit, tavandan tozlar, kapı kapanıyor! {animal_friend} son anda altından kayarak geçer. {child_name} de peşinden! "Az kalsın sıkışıyorduk!" diye nefes nefese güler.
@@ -70,6 +74,7 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 ---
 
 ### Bölüm 5 — Mühendislik ve Başarı (Sayfa 14-17) 🎯 Duygu: ÇÖZÜM → ZAFER
+🌍 MEKAN: SU KEMERİ alanı — antik su mekaniği, taş vanalar, tıkalı kanal. Yeraltı değil.
 - Antik usta yetişir: "Bu vanayı tek kişi çeviremez." {child_name} etrafına bakınır — bir direk ve halat! Kaldıraç planı kurar. {animal_friend} halatı yakalar / çeker / taşır.
 - Birlikte vana döner! 🔊 Metal gıcırtısı ve sonra... SU SESİ! Ama yeni bir sorun: çatlak var ve su yanlış kanala kaçıyor!
 - Kilit taşı eksik. {child_name} bir an düşünür — sonra avucuna bakar. KENDİ TAŞI! "Bu taş... tam buraya uyuyor!" Ellerini uzatır ve taşı kanala YERLEŞTİRİR. Elleri artık titremiyordu.
@@ -79,6 +84,7 @@ Hikayenin sonunda {child_name} gözlerinde artık tedirginlik değil, parlak bir
 ---
 
 ### Bölüm 6 — İz Bırakmak ve Günümüze Dönüş (Sayfa 18-22) 🎯 Duygu: MİNNET → HUZUR + GURUR
+🌍 MEKAN: MODERN ören yeri dönüş — taş kalıntılar, gün batımı, sessiz antik tiyatro. Antik canlı şehir değil.
 - Pazar yerine gürül gürül su geliyor. Herkes minnettar. Romalı çırak {child_name}'e bir parça bal ikram eder — tadı tatlı ve çiçek kokulu.
 - Çantasındaki TAŞ YOK artık — su kanalına yerleştirdi! Ama {animal_friend} avucunu yalar / gagalar ve {child_name} avucunda küçük bir iz görür — eski çağdan kalma bir hatıra işareti.
 - Gün batımının altın ışığı antik mermer sütunları boyar. {child_name} ile {animal_friend} modern dünyanın harabeleri arasında yürürler. {child_name} {animal_friend}'a bakıp gülümser: "Biz iyi bir ekibiz."
@@ -107,7 +113,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── F: Görsel Prompt Şablonları ──
     cover_prompt_template=(
-        'An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
+        'EXACTLY ONE {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
         'wearing {clothing_description}. {scene_description}. Magnificent Library of Celsus facade '
         'with tall Corinthian columns, a glowing time-rift portal shimmering between the ancient '
         'pillars. Golden hour Aegean sunlight, warm rim lighting. Low-angle hero shot: child 25% '
@@ -122,6 +128,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
         'INTERIOR elements: [Hidden aqueduct tunnels, stone mechanisms, Roman market stalls, '
         'ancient water channels, lever and rope contraptions]. '
         'ATMOSPHERIC: [dust motes floating in golden sunbeams, warm marble texture, cicada ambiance]. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Shot variety: Wide establishing / Medium action / Close-up detail / Low angle hero. '
         'Color palette: honey gold, ivory marble, terracotta, olive green, deep azure. '
         'Cinematic action lighting, warm golden glow, detailed marble texture. '
@@ -190,6 +197,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── I: Scenario Bible ──
     scenario_bible={
+        "no_magic": True,
         "companion_pack": {
             "efes_kedisi": {
                 "species": "cat",
@@ -227,6 +235,8 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Stone tablet MUST have the same crack pattern and Greek symbols on pages 1-17",
             "Child's modern outfit MUST NOT change between time periods",
             "Roman characters MUST wear the same tunic/toga on every appearance",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — realistic adventure only"
         ],
     
         "companions": "see_scenario_companions_list",

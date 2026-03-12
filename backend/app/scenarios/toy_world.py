@@ -39,6 +39,7 @@ Hikayenin sonunda oyuncaklarına bambaşka bakıyor — ama bu DEĞİŞİM ASLA 
 ---
 
 ### BÖLÜM 1 — Küçülme (Sayfa 1-4) 🎯 Duygu: MERAK + ŞAŞKINLIK
+🌍 MEKAN: Çocuk ODASI → küçülmüş ODA (dev oyuncaklar, LEGO duvarları, devasa halı). BÜYÜLÜ.
 - {child_name} odasında oyuncakları dağınık yerde. Ponçik rafta, düğme gözleriyle bakıyor.
 - Dolabın arkasında eski bir oyuncak kutusu — üzerinde yıldız desenleri, kenarları altın boyalı. {child_name} kapağı açıyor.
 - 🔊 Tıng! Kutudan ışık fışkırıyor — her şey dönmeye başlıyor! {child_name}: "Noluyor?!" diye bağırıyor.
@@ -49,6 +50,7 @@ Hikayenin sonunda oyuncaklarına bambaşka bakıyor — ama bu DEĞİŞİM ASLA 
 - 🪝 HOOK: "LEGO şehrinden gelen tuhaf bir vızıltı duyuluyordu — ama şehrin ışıkları yanıp sönüyordu..."
 
 ### BÖLÜM 2 — LEGO Şehri (Sayfa 5-9) 🎯 Duygu: HEYECAN → KEŞİF COŞKUSU → ENDİŞE
+🌍 MEKAN: LEGO ŞEHRİ İÇİ — renkli blok binalar, saat kulesi, oyuncak askerler, tren istasyonu. Oda değil.
 - LEGO şehrine giriyorlar — minik evler, mağazalar, parklar. Her şey renkli bloklardan! Oyuncak askerler devriye geziyor.
 - 🔊 Küçük kurmalı müzik kutusu sesi, ama YANLIŞ çalıyor — notalar atlıyor, ritim bozuk. Askerler de yavaş hareket ediyor.
 - "Bir şey bozulmuş" diyor {child_name}. Ponçik endişeyle kulağını çekiştiriyor.
@@ -60,6 +62,7 @@ Hikayenin sonunda oyuncaklarına bambaşka bakıyor — ama bu DEĞİŞİM ASLA 
 - 🪝 HOOK: "Tren peluş dağlara doğru tırmanırken gittikçe yavaşlıyordu — durur muydu?"
 
 ### BÖLÜM 3 — Peluş Dağları (Sayfa 10-14) 🎯 Duygu: GERİLİM → KARARLILIK → ŞAŞKınlık
+🌍 MEKAN: PELUŞ DAĞ TEPESİ — kumaş dağlar, dev çark mekanizması, pamuk bulutlar. LEGO şehri değil.
 - Tren durdu! Son durağı — peluş dağların eteği. Dağlar kumaştan, yumuşak, renkli. Pamuk bulutlar, düğme güneş.
 - ✋ Peluş dağı tırmanmak ilginç — ayak batıyor, yumuşak, sıcak. Ponçik yuvarlanarak çıkıyor, {child_name} gülüyor.
 - Dağın tepesinde devasa bir mekanizma — dev dişli çarklar, yaylar, kurma anahtarları. ANA ÇARK durmuş!
@@ -71,6 +74,7 @@ Hikayenin sonunda oyuncaklarına bambaşka bakıyor — ama bu DEĞİŞİM ASLA 
 - 🪝 HOOK: "Üçüncü çarkı takarken altın çark anahtarı cebinde ısınmaya başladı..."
 
 ### BÖLÜM 4 — Büyük Canlanma (Sayfa 15-18) 🎯 Duygu: KEŞİF → PATLAMALI SEVİNÇ
+🌍 MEKAN: TÜM OYUNCAK DÜNYASI — canlanan mekanizma, ışıklar, trenler, kutlama. Her yer canlı.
 - {child_name} cebinden altın çark anahtarını çıkarıyor — tam üçüncü çarkın yerine uyuyor! Takıyor ve çeviriyor.
 - 🔊 Vınnn! Tüm mekanizma dönmeye başlıyor — çarklar birbirine geçiyor, yaylar titreşiyor, müzik yükseliyor!
 - Oyuncak dünyası CANLANIYOR! Işıklar yanıyor, trenler çalışıyor, müzik kutuları doğru çalıyor, askerler koşuyor.
@@ -81,6 +85,7 @@ Hikayenin sonunda oyuncaklarına bambaşka bakıyor — ama bu DEĞİŞİM ASLA 
 - 🪝 HOOK: "Oyuncak kutusu tekrar parıldamaya başlamıştı — eve dönme zamanıydı..."
 
 ### BÖLÜM 5 — Normal Boyuta Dönüş (Sayfa 19-22) 🎯 Duygu: HUZUR → GURUR → BİLGELİK
+🌍 MEKAN: Çocuk ODASI gerçek boyut — oyuncaklar yerde, rafükları yerli yerinde, güneş pencereden.
 - Parıldayan oyuncak kutusu yere iniyor — kapağı açılıyor, ışık yükseliyor.
 - {child_name} Ponçik'e bakıyor. "Seni unutmayacağım" diyor. Ponçik düğme gözleriyle göz kırpıyor — ya da belki sadece ışık öyle yansımıştı.
 - Işık sarıyor — ve oda. Normal boyut. Her şey yerli yerinde.
@@ -148,6 +153,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'confetti, music notes in air, bright festive lighting]. '
         'Shot variety: [close-up detail / medium action / wide panoramic / '
         'interior room / low-angle hero / bird-eye toy world]. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Composition: full body visible, toy palette (bright yellow, candy red, LEGO blue, '
         'plush pink, wooden brown, golden accents). Text overlay space at bottom. {STYLE}'
     ),
@@ -297,6 +303,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
             "LEGO şehri bozukken ışıklar sönük, tamir sonrası parlak ve canlı",
             "Müzik kutusu bozukken yanlış nota, tamir sonrası doğru melodi",
             "Çocuğun renkli kıyafeti TÜM SAYFALARDA birebir aynı",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child"
         ],
         "no_family": True,
     

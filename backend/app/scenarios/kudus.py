@@ -33,11 +33,15 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, anlayış var — a
 
 **DİNİ HASSASİYET:** Tarafsız, saygılı, kültürel zenginlik vurgusu. Dini polemik YOK. Politik referans YOK. Sadece mimari, doğa ve insan hikayeleri.
 
-**YASAK:** Korku/şiddet YASAK. Didaktik nasihat YASAK.
+**YARDIMCI KARAKTER:** {animal_friend} = Zeytin Dalı Serçesi. Bu bir KUŞ. Sihirli yaratık, kelebek, peri YASAK.
+**ÖNEMLİ OBJE:** Antik Harita — sararmış parşömen, 4 sembol. ASLA değişmez, ASLA başka obje ile yer değiştirmez.
+
+**YASAK:** Korku/şiddet YASAK. Didaktik nasihat YASAK. Büyü/sihir/doğaüstü güç YASAK — GERÇEKÇİ macera.
 
 ---
 
 ### Bölüm 1 — Eski Şehir'de İlk Adımlar (Sayfa 1-4) 🎯 Duygu: MERAK + hafif TEDİRGİNLİK
+🌍 MEKAN: Kudüs Eski Şehir surları, dar taş sokaklar, baharat çarşısı. GERÇEKÇİ sahne. SİHİR YOK.
 - {child_name} Kudüs Eski Şehri'nin taş sokaklarına giriyor. 🔊 Uzaktan çan sesi, ezan, sokak satıcılarının sesleri iç içe. Hava kuru taş, baharat ve taze ekmek kokuyor. Biraz çekiniyor — sokaklar dar ve kalabalık.
 - {animal_friend} daldan dala atlayarak gelip {child_name}'in omzuna konuyor! "Sen de mi burayı merak ediyorsun?" diye gülümser. {animal_friend} gagasındaki küçük zeytin dalını sallıyor.
 - Bir taş duvardaki çatlakta katlanmış eski bir harita buluyorlar! {child_name} dikkatlice açıyor — sararmış kağıt, ✋ dokusu pürüzlü ve kırılgan. Üzerinde dört sembol: güneş, su damlası, yaprak, yıldız. "Bu bir bilmece haritası!" diye fısıldar.
@@ -47,6 +51,7 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, anlayış var — a
 ---
 
 ### Bölüm 2 — Taş Sokaklar ve Bilmeceler (Sayfa 5-9) 🎯 Duygu: HEYECAN → KEŞİF
+🌍 MEKAN: Baharatçı çarşısı, taş çeşme, gizli avlu, eski kapı. GERÇEKÇİ sahne.
 - Dar taş sokaklarda ilerliyor. 🔊 Ayakları altında eski taşların tıkırtısı. Baharatçı çarşısında renkli tezgahlar — zerdeçal, kırmızıbiber, kimyon yığınları. Bir satıcı {child_name}'e küçük bir kuru incir uzatıyor — tadı tatlı ve güneşli.
 - İlk bilmece: bir taş çeşmenin yanında oyma — "Suyu takip et, kaynak seni bekler." {animal_friend} çeşmenin oluğundaki su izini fark ediyor! Birlikte izliyorlar → gizli bir avlu!
 - İkinci bilmece: eski bir kapının üzerindeki taş oymalar — güneş sembolü ve bir ok. {child_name} düşünüyor... "Güneşin doğduğu yöne bak!" Doğuya dönünce duvarın arkasında gizli bir geçit görüyor.
@@ -56,6 +61,7 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, anlayış var — a
 ---
 
 ### Bölüm 3 — Zeytin Ağacı ve Sabır (Sayfa 10-14) 🎯 Duygu: HUZUR → ANLAYIŞ
+🌍 MEKAN: Kadim zeytin bahçesi, şehir surları panoraması. GERÇEKÇİ sahne.
 - Eski bir zeytin ağacının altına geliyorlar. 🔊 Yaprakların hışırtısı, uzaktan güvercin sesleri. Ağacın gövdesi kocaman — belki binlerce yaşında! ✋ {child_name} parmaklarını kabuğuna dokunduruyor — sert, sıcak, yılların izleriyle dolu.
 - Üçüncü bilmece ağacın kökünde gizli — küçük bir taş plaka: "Sabırla büyüyen, herkese gölge veren..." {child_name} ağaca bakıyor: "Bu ağaç! Binlerce yıldır burada duruyor ve herkes altında dinleniyor." {animal_friend} dalında neşeyle zıplıyor!
 - Taş surların üstüne çıkıyorlar — şehrin panoraması! Kubbeler, minareler, çan kuleleri hep birlikte, altın güneş ışığında. {child_name} bir an duraksıyor: "Hepsi bir arada... ne güzel."
@@ -65,6 +71,7 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, anlayış var — a
 ---
 
 ### Bölüm 4 — Sırrın Açılması (Sayfa 15-18) 🎯 Duygu: KEŞF → ZAFER
+🌍 MEKAN: Gizli oda, antik mozaik, taş duvarlar. GERÇEKÇİ sahne.
 - Gizli odaya giriyorlar — duvarda muhteşem eski bir mozaik! 🔊 İçeride derin bir sessizlik, sadece kendi nefes sesleri. Farklı kültürlerin sembolleri bir arada: güneş, ay, yıldız, zeytin dalı, su damlası.
 - Son bilmece mozaiğin ortasında: boş bir yer var, tam haritanın boyutunda! {child_name} anlıyor — "Harita buraya ait!"
 - {child_name} TEREDDÜT ETMİYOR. Haritayı mozaiğin ortasına YERLEŞTİRİYOR. 🔊 Mozaik bir an parıldıyor — tüm semboller birbirine bağlanıyor!
@@ -74,6 +81,7 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, anlayış var — a
 ---
 
 ### Bölüm 5 — Kapanış (Sayfa 19-22) 🎯 Duygu: HUZUR + GURUR
+🌍 MEKAN: Şehir surları, gün batımı, zeytin ağaçları. GERÇEKÇİ sahne.
 - Gün batımında surlardan şehre bakış — altın ışıkta kubbeler ve ağaçlar. 🔊 Uzaktan akşam sesleri, kuşların yuvaya dönüşü. Hava serin ve temiz.
 - Haritayı güvenli bir yere saklıyor — duvardaki çatlağa geri koyuyor. "Bu herkesin haritası. Burada kalsın."
 - {child_name} {animal_friend}'a bakıp gülümsüyor: "Biz iyi bir ekibiz." {animal_friend} gagasındaki zeytin dalını {child_name}'in avucuna bırakıyor — küçük bir hediye.
@@ -102,7 +110,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── F: Görsel Prompt Şablonları (genişletilmiş) ──
     cover_prompt_template=(
-        'An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
+        'EXACTLY ONE {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
         'wearing {clothing_description}. {scene_description}. Ancient Jerusalem Old City stone walls '
         'and golden dome in background. Warm golden sunset light, ancient olive trees. '
         'Low-angle hero shot: child 25% foreground, ancient city walls 75%. Rich warm palette: '
@@ -116,6 +124,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
         'INTERIOR elements: [Hidden rooms with ancient mosaics, carved stone doors, '
         'candlelit corridors, faded wall symbols]. '
         'ATMOSPHERIC: [warm golden sunlight on limestone, dust motes, olive leaves, spice aromas]. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Shot variety: Wide establishing / Medium action / Close-up detail / Low angle hero. '
         'Color palette: honey gold, cream limestone, olive green, terracotta, warm brown. '
         'Cinematic warm lighting, detailed ancient stone texture. '
@@ -188,6 +197,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── I: Scenario Bible (genişletilmiş) ──
     scenario_bible={
+        "no_magic": True,
         "companion_pack": {
             "zeytin_sercesi": {
                 "species": "sparrow",
@@ -226,6 +236,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Ancient map MUST have the same four symbols on pages 3-18",
             "Child's outfit MUST NOT change throughout the story",
             "City architecture shown respectfully — all traditions represented equally",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — realistic adventure only",
+            "Setting MUST be Jerusalem Old City — no forest, no tropical island, no fantasy realm",
         ],
     
         "companions": "see_scenario_companions_list",

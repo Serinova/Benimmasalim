@@ -41,6 +41,7 @@ Hikayenin sonunda {child_name} müzedeki fosillere artık "sadece taş" olarak b
 **AKIŞ (6 BÖLÜM):**
 
 ### BÖLÜM 1 — Müzede Keşif (Sayfa 1-3) 🎯 Duygu: SIKINTI → MERAK
+🌍 MEKAN: Doğa tarihi MÜZE İÇİ — dinozor iskeletleri, vitrinler, tozlu köşe. Dışarı değil.
 - {child_name} bir doğa tarihi müzesinde, sıkılmış yüzüyle dinozor iskeletlerine bakıyor. "Bunlar sadece eski kemikler" diye düşünüyor. {animal_friend} çantasından kafasını çıkarıp merakla etrafa bakınıyor.
 - 🔊 Müzenin sessizliğinde ayak sesleri yankılanıyor. Havada eski ahşap ve toz kokusu. Bir vitrin dikkatini çekiyor — içinde kehribar renkli bir fosil var ve garip bir ışık saçıyor.
 - {child_name} cama yaklaşıyor; fosil PARILDIYIYOR. "Bu normal değil..." diye fısıldıyor. {animal_friend} heyecanla sıçrayıp vitrine yaklaşıyor. {child_name} elini uzatıp dokunuyor — parmakları kehribara değdiğinde IŞIK SELİ! Etraf bulanıklaşıyor...
@@ -49,6 +50,7 @@ Hikayenin sonunda {child_name} müzedeki fosillere artık "sadece taş" olarak b
 ---
 
 ### BÖLÜM 2 — Prehistorik Dünyaya Geçiş (Sayfa 4-7) 🎯 Duygu: ŞAŞKINLIK → hafif KORKU
+🌍 MEKAN: Prehistorik ORMAN — dev eğreltiler, volkanik göl, otçul dinozorlar. Müze değil.
 - VIIIZ! Gözlerini açtığında HER ŞEY DEĞİŞMİŞ. Devasa eğrelti otları, ağaç tepelerine uzanan kozalaklı çamlar, sıcak nemli hava. 🔊 Böcek vızıltıları, uzaktan kuş çığlıkları — ama bunlar tanıdık kuşlar değil. Hava baharatlı, ıslak toprak ve çürüyen yaprak kokuyor.
 - {child_name} bir an donakalıyor — "Neredeyiz?" Sesi titriyor. {animal_friend} yanına sokulup bacağına yaslanıyor, cesaretlendirmek ister gibi. "Tamam, korkma. Birlikte çözeriz" diye fısıldıyor ama elleri titriyor.
 - Devasa bir Diplodocus sürüsü uzakta — boyunları ağaç tepelerini aşıyor! {child_name}'in ağzı açık kalıyor. "İnanılmaz... Gerçek dinozorlar!" 🔊 Yeri titreten adım sesleri, yaprakların hışırtısı.
@@ -58,6 +60,7 @@ Hikayenin sonunda {child_name} müzedeki fosillere artık "sadece taş" olarak b
 ---
 
 ### BÖLÜM 3 — Kayıp Yuva (Sayfa 8-11) 🎯 Duygu: EMPATİ → KARARLILIK
+🌍 MEKAN: Taşlık KANYON — yıkılmış yuva, bebek dinozor, taş ve toprak. Orman değil.
 - Çığlıkların kaynağını buluyorlar: küçük bir bebek Triceratops, devrilmiş bir kütüğün altında sıkışmış! Gözleri kocaman ve korkudan titriyor. "Aman! Yardım etmeliyiz!" diyor {child_name}, bu sefer SESİ TİTREMİYOR.
 - Kütük çok ağır — {child_name} var gücüyle itiyor ama kımıldamıyor. {animal_friend} bir dal bulup kaldıraç olarak kullanmayı gösteriyor! {child_name}: "Dahisin sen!" Dalı kütüğün altına yerleştirip bastırıyor — kütük devrildi!
 - Bebek Triceratops kurtulunca {child_name}'e yaklaşıp burnunu eline sürtüyor. "Yuvan nerede küçük?" {animal_friend} yerde izler fark ediyor — büyük Triceratops ayak izleri! Sürünün yolu.
@@ -67,6 +70,7 @@ Hikayenin sonunda {child_name} müzedeki fosillere artık "sadece taş" olarak b
 ---
 
 ### BÖLÜM 4 — T-Rex Karşılaşması (Sayfa 12-15) 🎯 Duygu: GERİLİM → CESARET → RAHATLA
+🌍 MEKAN: Yoğun EĞRELİT ormanı — T-Rex bölgesi, yüksek ağaçlar, gölgeli patika. Kanyon değil.
 - Nehir kıyısında izleri arıyorlar. 🔊 Yaprak yiyen bir Stegosaurus nehrin öbür tarafında — zırhlı sırtı güneşte parlıyor. Pteranodon'lar gökyüzünde süzülüyorlar, kanatları rüzgarı kesiyor.
 - Birden YER TİTRİYOR. Ağır adım sesleri! Dev bir gölge ağaçların arasından beliriyor — T-REX! {child_name} donup kalıyor, yutkunuyor. {animal_friend} çırpınarak çantaya sığınıyor.
 - Ama T-Rex onlara bakmıyor bile — nehirden su içiyor! Devasa başı suya eğilirken güneş ışığı pullu derisinde parlıyor. {child_name} derin nefes alıyor: "Korkma, bize ilgilenmiyor. Sadece susuz." Sessizce, eğrelti otlarının arasından GİZLENEREK geçiyorlar — {child_name} bebek dinozorun ağzını eliyle kapatıyor.
@@ -76,6 +80,7 @@ Hikayenin sonunda {child_name} müzedeki fosillere artık "sadece taş" olarak b
 ---
 
 ### BÖLÜM 5 — Yuva Bulunuyor (Sayfa 16-19) 🎯 Duygu: HEYECAN → SEVİNÇ → ACELECİLİK
+🌍 MEKAN: Volkanik VADİ — anne dinozor yuvası, sıcak buhar, lav akıntısı uzakta. Orman değil.
 - Nehri geçtikten sonra izler tekrar beliriyor — daha taze! Bebek Triceratops heyecanla koşmaya başlıyor, {child_name} peşinden. {animal_friend} ağaç dallarından sıçrayarak yol gösteriyor.
 - 🔊 Uzaktan boğuk böğürme sesleri — Triceratops sürüsü! Açık bir ovada, dev eğrelti otlarının arasında anne Triceratops ve sürüsü! Bebek dinozor çığlık atarak annesine koşuyor. Anne Triceratops başını eğip bebeğini burnuyla itiyor — KAVUŞTULAR!
 - {child_name}'in gözleri doluyor ama gülümsüyor. "Evine döndün küçük" diye fısıldıyor. {animal_friend} çocuğun omzuna çıkıp başını yanağına yasıyor. Sürü çevresinde topraktan toz bulutları kalkıyor, 🔊 memnun böğürmeler yankılanıyor.
@@ -85,6 +90,7 @@ Hikayenin sonunda {child_name} müzedeki fosillere artık "sadece taş" olarak b
 ---
 
 ### BÖLÜM 6 — Müzeye Dönüş (Sayfa 20-22) 🎯 Duygu: ŞAŞkınlık → HUZUR + GURUR
+🌍 MEKAN: Müze İÇİ geri dönüş — dinozor iskeleti, parlayan vitrin. Dışarı değil.
 - Müzeye geri dönüş — her şey normal, dinozor iskeleti yerli yerinde. 🔊 Müzenin sessizliği, uzaktan ziyaretçi sesleri. Ama avucunda küçük bir trilobit fosili var — sıcacık, gerçek!
 - {child_name} vitrindeki kehribar fosile bakıyor — artık parıldamıyor. Sonra dev Diplodocus iskeletine yürüyor, iskeleti BAŞTAN SONA inceliyor. Parmağıyla bilgi tabelasını okuyor. Gözleri parlıyor. "Bunların bir zamanlar GERÇEKTEN yaşadığını biliyorum artık" diye fısıldıyor. Ama SÖYLEMİYOR bunu — sadece GÜLÜMSÜYOR.
 - Son sahne: {child_name} müzeden çıkarken güneş ışığı yüzüne vuruyor. {animal_friend} omzunda, avucundaki trilobit fosili sıcacık parlıyor. Cebine koyup gülümsüyor. "Bir dahaki sefer nereye gideriz acaba?" diye fısıldıyor {animal_friend}'a. Adımları artık daha kararlı, gözlerinde meraklı bir ışık var.
@@ -125,7 +131,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle (30-55 kelime),
         'Space for title at top. {STYLE}'
     ),
     page_prompt_template=(
-        'A young child {scene_description}, wearing {clothing_description}. '
+        'EXACTLY ONE young child {scene_description}, wearing {clothing_description}. '
         'Setting elements (choose relevant based on scene): '
         'MUSEUM: [natural history museum hall with dinosaur skeletons, glass display cases, '
         'marble floor, warm overhead lighting, fossil exhibits]. '
@@ -140,6 +146,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle (30-55 kelime),
         'Shot variety: [close-up detail / medium action / wide epic / dramatic low-angle / aerial]. '
         'Composition: full body visible in action, warm prehistoric palette '
         '(amber, forest green, volcanic orange, warm gold). '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Text overlay space at bottom. {STYLE}'
     ),
 
@@ -226,6 +233,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle (30-55 kelime),
 
     # ── I: Scenario Bible ──
     scenario_bible={
+        "no_magic": True,
         "companion_pack": {
             "minik_bebek_dinozor": {
                 "species": "baby dinosaur",
@@ -285,6 +293,8 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle (30-55 kelime),
             "Child's explorer outfit MUST NOT change between time periods",
             "T-Rex is NOT threatening — drinking water, ignoring child",
             "Volcano is ALWAYS in background during prehistoric scenes — increasing activity",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — realistic adventure only"
         ],
     
         "companions": "see_scenario_companions_list",

@@ -1104,10 +1104,11 @@ class PDFService:
             _bh = page_height / _steps
             c.rect(0, _i * _bh, page_width, _bh + 0.5, fill=1, stroke=0)
 
-        # Soft corner glows
+        # Soft corner glows — saveState/restoreState ile alpha leak engellenir
         primary_color_str = getattr(config, "primary_color", "#6B21A8")
         accent_color_str = getattr(config, "accent_color", "#F59E0B")
         try:
+            c.saveState()
             _pc = safe_hex(primary_color_str, "#6B21A8")
             _ac = safe_hex(accent_color_str, "#F59E0B")
             _g1 = _RLColor(_pc.red, _pc.green, _pc.blue, alpha=0.08)
@@ -1116,8 +1117,12 @@ class PDFService:
             _g2 = _RLColor(_ac.red, _ac.green, _ac.blue, alpha=0.07)
             c.setFillColor(_g2)
             c.circle(page_width, 0, 35 * mm, fill=1, stroke=0)
+            c.restoreState()
         except Exception:
-            pass
+            try:
+                c.restoreState()
+            except Exception:
+                pass
 
         # ── Colors ──────────────────────────────────────────────────────────────
         primary_color = safe_hex(getattr(config, "primary_color", "#6B21A8"), "#6B21A8")
@@ -1168,6 +1173,7 @@ class PDFService:
                     # Logo altına TAM OPAK beyaz arka plan (silik görünmeyi önler)
                     _logo_bg_pad = 8 * mm
                     c.saveState()
+                    c.setFillAlpha(1.0)  # ← önceki alpha leak'i sıfırla
                     c.setFillColor(_RLColor(1, 1, 1, alpha=1.0))
                     c.roundRect(
                         _logo_x - _logo_bg_pad,
@@ -1177,7 +1183,6 @@ class PDFService:
                         3 * mm,
                         fill=1, stroke=0,
                     )
-                    c.restoreState()
 
                     # PIL ile alpha-compositing: şeffaf pikselleri beyaz arka plana yapıştır
                     # → %100 opak JPEG oluştur → mask="auto" KULLANMA!
@@ -1199,6 +1204,7 @@ class PDFService:
                         preserveAspectRatio=True,
                     )
                     _logo_buf.close()
+                    c.restoreState()  # ← saveState'e karşılık gelen restoreState
 
                     y_pos -= _logo_h_pt + 5 * mm
                     _logo_rendered = True
@@ -1368,11 +1374,19 @@ class PDFService:
         # ── Bottom section: company info (left) + QR code (right) ─────────────────
         _bottom_base = margin + 4 * mm
 
-        # QR Code
+        # QR Code — audio URL yoksa website URL'ine fallback
         _qr_rendered = False
-        if audio_qr_url and config.qr_enabled:
+        _qr_target_url = audio_qr_url
+        _qr_display_label = config.qr_label  # varsayılan: "Sesli Kitabı Dinle"
+        if not _qr_target_url:
+            # Fallback: şirket web sitesi QR kodu
+            _website = getattr(config, "company_website", "www.benimmasalim.com") or "www.benimmasalim.com"
+            _qr_target_url = _website if _website.startswith("http") else f"https://{_website}"
+            _qr_display_label = "Web Sitemizi Ziyaret Edin"
+
+        if _qr_target_url and config.qr_enabled:
             _qr_sz = config.qr_size_mm * mm
-            _qr_reader, _qr_buf = self._generate_qr_image(audio_qr_url)
+            _qr_reader, _qr_buf = self._generate_qr_image(_qr_target_url)
             _qr_x = page_width - _qr_sz - margin
             _qr_y = _bottom_base + 3 * mm
             # White rounded box
@@ -1384,7 +1398,7 @@ class PDFService:
             _qr_rendered = True
             c.setFillColor(primary_color)
             set_font(6.5)
-            c.drawCentredString(_qr_x + _qr_sz / 2, _qr_y + _qr_sz + 1.5 * mm, config.qr_label)
+            c.drawCentredString(_qr_x + _qr_sz / 2, _qr_y + _qr_sz + 1.5 * mm, _qr_display_label)
 
         # Company info (left side)
         c.setFillColor(primary_color)

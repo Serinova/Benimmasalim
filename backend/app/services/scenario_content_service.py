@@ -98,9 +98,13 @@ async def generate_scenario_intro_text(
         return None
 
     prompt = (
-        f"'{story_title}' adlı kitabın karşılama sayfası için 2-4 cümlelik edebi bir tanıtım paragrafı yaz. "
+        f"'{story_title}' adlı çocuk kitabının karşılama sayfası için 3-5 cümlelik edebi bir tanıtım paragrafı yaz. "
         f"Konu: '{scenario_name}'. "
-        f"Metinde kitabın içeriğini tanıt: Bu yolculukta okuyucu neler görecek, neler keşfedecek? "
+        f"Bu paragrafta şunları içer: "
+        f"(1) Hikayenin geçtiği yerin büyüsünü ve atmosferini hissettir, "
+        f"(2) Çocuğun yaşayacağı macera türünü ve keşfedeceği yerleri anlat, "
+        f"(3) Okuyucuyu heyecanlandıracak bir davet cümlesiyle bitir. "
+        f"Paragraf en az 50 kelime olsun. "
         f"Çocuk dostu, akıcı ve merak uyandıran bir dil kullan. "
         f"Türkçe yaz. Sadece düz metin — başlık, madde işareti, parantez içi açıklama veya '[Çocuk adı]' gibi placeholder EKLEME."
     )
@@ -111,7 +115,7 @@ async def generate_scenario_intro_text(
     )
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 200},
+        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 400},
     }
 
     try:

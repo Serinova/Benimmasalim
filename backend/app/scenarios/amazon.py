@@ -39,6 +39,7 @@ Hikayenin sonunda {child_name} artık ormandan korkmayan, doğanın dilini anlay
 ---
 
 ### BÖLÜM 1 — Ormana Giriş (Sayfa 1-4) 🎯 Duygu: MERAK + hafif TEDİRGİNLİK
+🌍 MEKAN: Orman KENARI → orman İÇİ giriş — devasa ağaçlar, sarmaşıklar, benekli ışık. SİHİR YOK.
 - {child_name} Amazon yağmur ormanının kenarında duruyor. Devasa ağaçlar gökyüzünü kapatmış, yüzlerce yeşil ton birbiriyle yarışıyor.
 - 🔊 Kuş cıvıltıları, uzak maymun çığlıkları, yaprakların hışırtısı. 👃 Hava ıslak toprak, yosun ve tropikal çiçek kokuyor.
 - Bir ağaç dalından renkli bir papağan süzülüyor — Kızıl! Kanat çırparak {child_name}'in omzuna konuyor. Gagasıyla kulağını dürtüyor.
@@ -48,6 +49,7 @@ Hikayenin sonunda {child_name} artık ormandan korkmayan, doğanın dilini anlay
 - 🪝 HOOK: "Karanlık yaprak örtüsünün arasından garip bir ışık süzülüyordu — sanki orman onları çağırıyormuş gibi..."
 
 ### BÖLÜM 2 — Nehir ve Keşif (Sayfa 5-9) 🎯 Duygu: HEYECAN → ŞAŞKınlık
+🌍 MEKAN: Geniş Amazon NEHRİ — dev nilüferler, pembe yunuslar, nehir kıyısında taş harita. Orman içi değil.
 - Ormandan çıkıyorlar — geniş bir Amazon nehri! Güneş suyun üzerinde dans ediyor, dev Victoria nilüferleri su yüzeyinde.
 - {child_name} nilüferlerin üzerinden atlayarak karşıya geçmeye çalışıyor — Kızıl yukarıdan rehberlik ediyor: "Kak-kak!" diye çığlık atıyor tehlikeli olanları göstermek için.
 - ✋ Nilüferin üzeri kaygan ve serin. {child_name} dengesini kaybediyor — kollarını açarak son an durmanı başarıyor! Kalbi küt küt atıyor.
@@ -57,6 +59,7 @@ Hikayenin sonunda {child_name} artık ormandan korkmayan, doğanın dilini anlay
 - 🪝 HOOK: "Haritadaki son sembol bir kalp şeklindeydi — ve şelalenin arkasını işaret ediyordu..."
 
 ### BÖLÜM 3 — Gizli Vadi (Sayfa 10-14) 🎯 Duygu: GİZEM → KEŞİF COŞKUSU → ENDİŞE
+🌍 MEKAN: Şelale ARKASI geçit → GİZLİ VADİ — biyoüminesans mantarlar, antik taş yapı kalıntıları. Nehir değil.
 - Şelaleye ulaşıyorlar — su perdesi parıldıyor. {child_name} derin bir nefes alıp su perdesinin arkasına geçiyor. ✋ Soğuk su yüzünü yalıyor.
 - Arkada gizli bir geçit! Kayalık tünel — duvarlar parıldayan yosunlarla kaplı, doğal biyolüminesans ışıkla aydınlanıyor.
 - Tünelden çıkınca gizli bir vadi — hiç görülmemiş bitkiler! Parıldayan mantarlar, dev kelebekler, turkuaz çiçekler.
@@ -68,6 +71,7 @@ Hikayenin sonunda {child_name} artık ormandan korkmayan, doğanın dilini anlay
 - 🪝 HOOK: "Taş haritadaki son işaret — su kaynağı — madalyonun gösterdiği yöndeydi, ama orman neden susmuştu?"
 
 ### BÖLÜM 4 — Su Kaynağı Krizi (Sayfa 15-18) 🎯 Duygu: KORKU → CESARET → KARLILIK
+🌍 MEKAN: Dev KAPOK AĞACI dibi — tıkalı su kaynağı, kuruyan toprak, çatl ak dallar. Vadi değil.
 - Madalyonun yönlendirmesiyle ilerlerken orman değişiyor — yapraklar solmuş, toprak çatlamış. {child_name} yutkunuyor.
 - Dev bir kapok ağacının dipine ulaşıyorlar — ağacın kökleri arasından çıkan su kaynağı bir kaya ve dal yığınıyla tıkanmış!
 - Kızıl telaşla etrafta uçuyor ama dalları kaldıracak gücü yok. 🔊 {child_name}'in nefes sesi, kendi kalp atışı, çıtırdayan dallar.
@@ -78,6 +82,7 @@ Hikayenin sonunda {child_name} artık ormandan korkmayan, doğanın dilini anlay
 - 🪝 HOOK: "Madalyon avucunda sıcacık titreşirken, ormanın tamamı yavaş yavaş yeşile dönmeye başlıyordu..."
 
 ### BÖLÜM 5 — Ormanın Şarkısı (Sayfa 19-22) 🎯 Duygu: SEVİNÇ → HUZUR → GURUR
+🌍 MEKAN: Canlı yeşil orman → orman KENAR gün batımı — turuncu-mor gökyüzü. Nehir/vadi değil.
 - Orman yeniden canlanıyor — çiçekler açıyor, kelebekler uçuşuyor, maymunlar daldan dala atlıyor. 🔊 Her yerde yaşam sesleri.
 - Kızıl sevinçle takla atıyor havada — tüyleri güneşte altın gibi parlıyor. {child_name} gülümseyerek alkışlıyor.
 - Madalyonun ortasındaki yeşil taş güneş ışığında parlıyor — {child_name} onu dikkatle boynuna takıyor.
@@ -134,7 +139,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'Space for title at top. {STYLE}'
     ),
     page_prompt_template=(
-        'A young child {scene_description}, wearing {clothing_description}. '
+        'EXACTLY ONE young child {scene_description}, wearing {clothing_description}. '
         'Setting elements (choose relevant based on scene): '
         'FOREST ENTRY: [massive Amazon trees with buttress roots, hanging vines and lianas, '
         'dense understory ferns, dappled green sunlight through canopy, misty forest floor]. '
@@ -148,6 +153,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'renewal and green growth spreading]. '
         'Shot variety: [close-up detail / medium action / wide panoramic / '
         'interior cave moody / low-angle hero / bird-eye canopy]. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Composition: full body visible, tropical palette (emerald green, golden sunlight, '
         'earth brown, turquoise, warm amber). Text overlay space at bottom. {STYLE}'
     ),
@@ -297,6 +303,8 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
             "Orman derinleştikçe ışık AZALIR, gizli vadide biyolüminesans ARTAR",
             "Su kaynağı açıldıktan sonra orman CANLANIR (kurumuş→yeşil geçişi)",
             "Çocuğun kaşif kıyafeti TÜM SAYFALARDA birebir aynı",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — realistic adventure only"
         ],
         "no_family": True,
         "no_magic": True,

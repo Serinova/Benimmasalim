@@ -39,6 +39,7 @@ Hikayenin sonunda {child_name} artık tarihe saygıyla ve merakla bakan bir çoc
 ---
 
 ### BÖLÜM 1 — Tapınağın Kapısında (Sayfa 1-4) 🎯 Duygu: MERAK + KÜÇÜKLÜK HİSSİ
+🌍 MEKAN: Abu Simbel DIŞ CEPHE — çöl kumu, 4 dev Ramses heykeli, tapınak giriş kapısı. İÇERİ DEĞİL.
 - {child_name} sıcak çöl kumlarında yürüyor. Güneş tepede, kum altın gibi parlıyor. Önde devasa Abu Simbel tapınağı yükseliyor.
 - Dört dev Ramses heykeli kapının iki yanında — her biri bir bina yüksekliğinde! {child_name} başını kaldırıp bakıyor, ağzı açık kalıyor.
 - 🔊 Çöl rüzgarı kumları savuruyor, uzaktan bir şahin çığlığı. Horus gökyüzünden süzülerek {child_name}'in koluna konuyor.
@@ -48,6 +49,7 @@ Hikayenin sonunda {child_name} artık tarihe saygıyla ve merakla bakan bir çoc
 - 🪝 HOOK: "Güneş diskleri tapınağın karanlık içine doğru sıralanıyordu — sanki bir sırrı gösteriyorlardı..."
 
 ### BÖLÜM 2 — Sütunlu Salon (Sayfa 5-9) 🎯 Duygu: HEYECAN → KEŞİF COŞKUSU
+🌍 MEKAN: Tapınak İÇİ — sütunlu salon, hiyeroglif duvarlar, loş ışık huzmesi. DIŞ CEPHE DEĞİL.
 - Tapınağın içine giriş — birden serin ve loş. Devasa sütunlar, duvarlarında savaş sahneleri ve tanrı figürleri.
 - 🔊 Adımları taş zeminde yankılanıyor. 👃 Hava eski taş ve kuru toprak kokuyor. Horus kanatlarını gergin tutuyor.
 - Duvardaki bir panelde hiyeroglifler arasında bir harita! {child_name} parmaklarıyla izliyor — tapınağın iç odalarını gösteren bir plan.
@@ -58,6 +60,7 @@ Hikayenin sonunda {child_name} artık tarihe saygıyla ve merakla bakan bir çoc
 - 🪝 HOOK: "Koridorun sonundaki ışık titreşiyordu — sanki güneş taşın içine hapsolmuş gibi..."
 
 ### BÖLÜM 3 — Karanlık Koridor (Sayfa 10-14) 🎯 Duygu: GERİLİM → KORKU → CESARET
+🌍 MEKAN: Tapınak İÇİ — dar taş koridor, bronz aynalar, düşük tavan. Çok karanlık.
 - Karanlık koridor — duvarlar daralıyor, tavan alçalıyor. 🔊 Kendi nefes sesi ve kalp atışı. Hava serin ve durgun.
 - {child_name} duraksıyor. Karanlıktan korkuyor — ama haritadaki güneş odası çok yakın.
 - Horus omzundan havalanıp koridorda ilerliyor, amber gözleri karanlıkta parlıyor. "Tamam, geliyorum" diyor {child_name}, sesi titriyor.
@@ -69,6 +72,7 @@ Hikayenin sonunda {child_name} artık tarihe saygıyla ve merakla bakan bir çoc
 - 🪝 HOOK: "Madalyondaki kristal güneş ışığını yakaladığında, taş kapıdaki güneş diski parlamaya başladı..."
 
 ### BÖLÜM 4 — Güneş Odası (Sayfa 15-18) 🎯 Duygu: ŞAŞKınlık → HAYRANLIK → KEŞİF
+🌍 MEKAN: Tapınak EN DERİN ODA — altın kaplı duvarlar, 4 tanrı heykeli, yıldız haritaslı tavan. Gökkuşağı ışık.
 - Taş kapı açılıyor — içeride küçük ama muhteşem bir oda! Duvarlarda altın kaplama, tavanda yıldız haritası.
 - Odanın merkezinde dört heykel — dört tanrı figürü yan yana oturuyor. Birinin kucağında boş bir oyuk!
 - {child_name} madalyonu çıkarıyor — kristal tam oyuğa uyuyor! Yerleştirince tavan deliğinden bir güneş ışını sızıyor.
@@ -79,6 +83,7 @@ Hikayenin sonunda {child_name} artık tarihe saygıyla ve merakla bakan bir çoc
 - 🪝 HOOK: "Güneş ışığı yavaş yavaş kayarken, {child_name} bu anın sonsuza kadar sürmeyeceğini biliyordu..."
 
 ### BÖLÜM 5 — Gün Batımı ve Veda (Sayfa 19-22) 🎯 Duygu: HUZUR → GURUR
+🌍 MEKAN: Tapınak DIŞI — çöl gün batımı, kırmızı-altın kum, dev heykellerin gölgeleri. İÇERİ DEĞİL.
 - Güneş kayıyor, oda yavaşça karanlığa gömülüyor. {child_name} madalyonu yuvadan çıkarıp boynuna geri takıyor.
 - Koridordan çıkış — bu sefer karanlıktan korkmuyor. Aynalardan sızan son ışıklarla yolunu buluyor.
 - Tapınağın dışına çıkıyor — gün batımı! Çöl kırmızı ve altın renklerine boyanmış. Dev heykeller gölgelerini uzatıyor.
@@ -130,7 +135,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'Space for title at top. {STYLE}'
     ),
     page_prompt_template=(
-        'A young child {scene_description}, wearing {clothing_description}. '
+        'EXACTLY ONE young child {scene_description}, wearing {clothing_description}. '
         'Setting elements (choose relevant based on scene): '
         'EXTERIOR: [colossal Abu Simbel temple facade with four giant Ramesses statues, '
         'golden desert sand dunes, deep blue sky, harsh sunlight, dramatic shadows]. '
@@ -144,6 +149,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'long dramatic shadows on golden sand, warm cinematic light]. '
         'Shot variety: [close-up hieroglyphs / medium action / wide temple panoramic / '
         'interior dramatic lighting / low-angle hero / silhouette sunset]. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Composition: full body visible, ancient Egypt palette (golden amber, desert sand, '
         'deep blue, bronze, warm terracotta). Text overlay space at bottom. {STYLE}'
     ),
@@ -294,6 +300,8 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
             "Karanlık koridorda tek ışık kaynağı bronz aynalardan yansıyan güneş ışığı",
             "Güneş odasında kristal sayesinde gökkuşağı yansımaları",
             "Çocuğun keten kıyafeti TÜM SAYFALARDA birebir aynı",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — realistic adventure only"
         ],
         "no_family": True,
         "no_magic": True,

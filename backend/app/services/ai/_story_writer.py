@@ -443,6 +443,7 @@ class _StoryWriterMixin(_BlueprintMixin, _LegacyPassesMixin):
             blueprint=blueprint,
             magic_items=magic_items or [],
             expected_page_count=page_count,
+            scenario=scenario,
         )
 
         if not report.all_passed:
@@ -458,6 +459,7 @@ class _StoryWriterMixin(_BlueprintMixin, _LegacyPassesMixin):
                     blueprint=blueprint,
                     magic_items=magic_items or [],
                     expected_page_count=page_count,
+                    scenario=scenario,
                 )
 
             if not report.all_passed:
@@ -581,6 +583,7 @@ class _StoryWriterMixin(_BlueprintMixin, _LegacyPassesMixin):
                 blueprint=blueprint,
                 magic_items=magic_items or [],
                 expected_page_count=page_count,
+                scenario=scenario,
                 character_prompt_block=character_bible.prompt_block,
             )
 

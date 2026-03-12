@@ -36,6 +36,7 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bir kararlı
 ---
 
 ### Bölüm 1 — Gizemli Çark (Sayfa 1-4) 🎯 Duygu: MERAK + hafif TEDİRGİNLİK
+🌍 MEKAN: Sultanahmet Meydanı, Dikilitaş, kaldırım. GERÇEKÇİ sahne. SİHİR YOK.
 - {child_name} akşamüzeri Sultanahmet Meydanı'nda yürüyor. 🔊 Güvercinlerin kanat çırpışları, uzaktan tramvay zili, çocuk kahkahaları. Dikilitaş'ın devasa gölgesi kaldırıma uzanıyor. 👃 Simit arabasından sıcak susam kokusu geliyor.
 - {animal_friend} kaldırım taşlarının arasında bir şey gagalıyor — eski bir rehber kitap! İçinden pirinç bir mekanik ses çarkı düşüyor. {child_name} eğilip alıyor, elleri biraz titriyor: "Dikkatli olmalıyım, çok eski görünüyor..." ✋ Çarkın dişlileri parmak uçlarında pürüzlü ve soğuk.
 - Çarkı yavaşça çevirdiğinde ince bir melodi yükseliyor — 🔊 tınnn tınnn tınnn! Etraf bir an titriyor, taşlar eski zamanmış gibi parlıyor! {animal_friend} heyecanla kanatlarını çırpıp omzuna konuyor.
@@ -45,6 +46,7 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bir kararlı
 ---
 
 ### Bölüm 2 — Zaman Kırpışması (Sayfa 5-8) 🎯 Duygu: HEYECAN → ŞAŞKINLIK
+🌍 MEKAN: Alman Çeşmesi, Arasta Çarşısı, taş sokaklar. GERÇEKÇİ sahne.
 - Haritadaki ilk işareti takip ediyorlar. Alman Çeşmesi'nin altın mozaikli kubbesinin altında duruyorlar. 🔊 Su şırıltısı, güvercin sesleri. ✋ Mermer sütun soğuk ve pürüzsüz.
 - {child_name} çarkı tekrar çevirince — FLAŞ! Kalabalık bir anlığına değişiyor: Osmanlı kaftanlı insanlar, atlar, ahşap arabalar! {animal_friend} şaşkınlıkla bir daire çizip geri omzuna konuyor. {child_name} gözlerini kocaman açıyor: "Sen de gördün mü bunu?!"
 - Koşan birinin elinden küçük bir mühür kılıfı düşüyor — ama görüntü günümüze dönüyor! {child_name} düşme noktasını haritaya işaretliyor. "Hızlı olmalıyız {animal_friend}, ipucu kaybolmadan!"
@@ -54,6 +56,7 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bir kararlı
 ---
 
 ### Bölüm 3 — Kayıp Görev (Sayfa 9-12) 🎯 Duygu: GERİLİM → KEŞF
+🌍 MEKAN: Hipodrom kalıntıları, Osmanlı kemer kapı, taş oymalar. GERÇEKÇİ sahne.
 - Taş desenlerin köşesinde mühür kılıfı duruyor — ama içi boş! {child_name} hayal kırıklığıyla kılıfı çevirip bakıyor. {animal_friend} kılıfın içini gagalıyor ve minik bir kağıt parçası çıkarıyor! "Aferin sana!" diye sevinçle söylüyor {child_name}.
 - Kağıtta Osmanlıca bir not: "Sergiye ait önemli mühür kayboldu!" — görev artık net. {child_name} haritadaki ikinci işarete bakıyor: kapı kemeri. "İkinci ipucu orada olmalı."
 - Hipodrom kalıntılarının yanından geçerken çark cebinde titriyor. 🔊 Uzaktan yankılanan nallar, su satıcısının sesi... Zaman kırpışması! Bir anlığına taş sütunların etrafında renkli kumaşlar, bayraklar ve kalabalık bir pazar canlanıyor. ✋ Rüzgar yüzüne eski zamanların tozunu fısıldıyor.
@@ -63,6 +66,7 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bir kararlı
 ---
 
 ### Bölüm 4 — Gölgenin Oyunu (Sayfa 13-16) 🎯 Duygu: ADRENALİN → CESARET
+🌍 MEKAN: Dikilitaş gölgesi, Arnavut kaldırım, eski ahşap bank. GERÇEKÇİ sahne.
 - Yeni ok işareti: "Gölge nereye düşerse, emanet orada gizlidir." {child_name} başını kaldırıp güneşe bakıyor. Akşam güneşi alçalmış, gölgeler uzamış! "Güneş batmadan bulmalıyız!" diye koşmaya başlıyor.
 - Dikilitaş'ın devasa gölgesi Arnavut kaldırımda uzun bir çizgi oluşturmuş. {child_name} gölge çizgisini takip ediyor — {animal_friend} havada süzülerek yön gösteriyor. 🔊 Ayak sesleri taş kaldırımda yankılanıyor, kalbi hızla çarpıyor.
 - Gölge çizgisi eski bir ahşap bankın altına uzanıyor! {child_name} dizlerinin üzerine çöküp bakıyor. ✋ Soğuk taş, ıslak toprak, parmakları bir keseye dokunuyor! "BULDUM!" diye bağırıyor. {animal_friend} sevinçle etrafında daireler çiziyor.
@@ -72,6 +76,7 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bir kararlı
 ---
 
 ### Bölüm 5 — Birleşen Yapboz (Sayfa 17-19) 🎯 Duygu: ÇÖZÜM → ZAFER
+🌍 MEKAN: Arasta Çarşısı dükkanları. GERÇEKÇİ sahne.
 - Çarkı ters çevirince zaman dalgası daha güçlü geliyor! 🔊 VUUUŞ! Bir anlığına geçmişte mührün ikiye ayrılıp savrulma anını görüyor — bir parça bankın altına, diğeri bir seyyar tüccarın tezgahına düşüyor.
 - Günümüze dönüp Arasta Çarşısı'nın turistik dükkanlarında arıyorlar. {animal_friend} bir dükkanın camına konup gagasıyla tık tık vuruyor. {child_name} içeri bakıyor — nostaljik çanta püsküllerinin arasında pirinç bir parça parlıyor! "İşte orada!" 👃 Dükkan eski ahşap ve nane yağı kokuyor.
 - Dükkancı amca gülümsüyor: "Bu parçayı yıllardır kimse sormamıştı!" {child_name} iki parçayı yan yana koyuyor. ✋ Parçalar mıknatıs gibi birbirine çekiliyor — KLIK! Mühür TAMAMLANDI! Haritadaki tüm semboller altın gibi parlıyor! {animal_friend} mutlulukla kanatlarını açıp havada bir tur atıyor.
@@ -80,6 +85,7 @@ Sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bir kararlı
 ---
 
 ### Bölüm 6 — Geriye Kalan İmza (Sayfa 20-22) 🎯 Duygu: HEYECAN → HUZUR + GURUR
+🌍 MEKAN: Sultanahmet Meydanı, Ayasofya silueti, akşam. GERÇEKÇİ sahne.
 - Koşuyorlar! {child_name} mührü avucunda sıkıca tutarak Sultanahmet Meydanı'na doğru koşuyor. {animal_friend} önden süzülerek yol açıyor. 🔊 Güvercinler kanat çırpıyor, akşam ezanı yankılanıyor, adımları taş kaldırımda tıkırdıyor.
 - Meydanın köşesindeki geçici sergi çadırına ulaşıyor — nefes nefese! Sergi görevlisi gözlerine inanamıyor: "Bu... bu kayıp Osmanlı mührü! Yıllardır arıyorduk!" {child_name} mührü uzatıyor, avuçları sıcacık. "Sultanahmet onu bize teslim etti" diyor gülümseyerek.
 - Akşam güneşi Ayasofya'nın kubbesini altın rengine boyarken, {child_name} bankta oturuyor. Ses çarkı cebinde son kez ninni gibi bir melodi çalıyor — 🔊 tınnn... tınnn... Sanki eski zamanlardan bir selam, bir teşekkür. Sonra çark susuyor.
@@ -112,7 +118,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── F: Görsel Prompt Şablonları ──
     cover_prompt_template=(
-        'An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
+        'EXACTLY ONE {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
         'wearing {clothing_description}. {scene_description}. Child holding a small mechanical music '
         'wheel glowing golden. Sultanahmet Square with Hagia Sophia dome silhouetted against amber '
         'sunset, white pigeons mid-flight. Warm cinematic golden hour lighting. Low-angle: child 30%, '
@@ -126,6 +132,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
         'INTERIOR elements: [Historic bazaar shops, lantern-lit corridors, old wooden displays]. '
         'ATMOSPHERIC: [golden hour amber sunset, long dramatic shadows on cobblestone, '
         'white pigeon flocks in flight, warm light on ancient stone, evening glow]. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Shot variety: Wide establishing / Medium action / Close-up detail / Low angle hero. '
         'Color palette: amber gold, Ottoman blue tile, ivory marble, warm sunset orange, '
         'deep burgundy accents. '
@@ -207,6 +214,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── I: Scenario Bible (zenginleştirilmiş — Sümela formatı) ──
     scenario_bible={
+        "no_magic": True,
         "companion_pack": {
             "beyaz_guvercin": {
                 "species": "dove",
@@ -265,6 +273,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Brass music wheel MUST have the same golden glow and tiny gears on pages 1-22",
             "Ottoman seal MUST have the same crescent-star carving once found (pages 7-22)",
             "Child's outfit MUST NOT change during time flickers",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — time flickers are brief sensory flashes, NOT actual teleportation",
+            "Setting MUST be Sultanahmet/Historic Peninsula Istanbul — no forest, no tropical island",
         ],
     
         "companions": "see_scenario_companions_list",

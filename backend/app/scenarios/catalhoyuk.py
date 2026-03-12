@@ -36,6 +36,7 @@ Hikayenin sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bi
 ---
 
 ### Bölüm 1 — Kazı Alanı (Sayfa 1-4) 🎯 Duygu: MERAK + hafif TEDİRGİNLİK
+🌍 MEKAN: KAZI ALANI dış — toprak çukurlar, arkeoloji aletleri, Konya ovası panorama. Ev içi değil.
 - {child_name} Çatalhöyük arkeolojik kazı alanına gelir. 🔊 Rüzgar bozkırdan esiyor, kuru toprak ve sıcak taş kokusu. Toprak duvarlar, eski temel kalıntıları. Biraz çekiniyor — derin çukurlar var, etraf ıssız.
 - {animal_friend} kazı alanının kenarında belirir! Kuyruk sallayarak / merakla {child_name}'e yaklaşır. "Sen de mi burayı merak ediyorsun?" diye gülümser {child_name}. {animal_friend} burnunu eline sürtüyor.
 - Birlikte dolaşırken {animal_friend} bir çukura atlar ve bir şeye bakar — parıldayan siyah bir taş! {child_name} eğilip alır: küçük, cilalı bir obsidyen ayna. "Bu çok eski görünüyor..." Üzerindeki yansıma tuhaf, titreşiyor.
@@ -45,6 +46,7 @@ Hikayenin sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bi
 ---
 
 ### Bölüm 2 — Çatıdan Giren Evler (Sayfa 5-9) 🎯 Duygu: ŞAŞKINLIK → HEYECAN
+🌍 MEKAN: Neolitik EV İÇİ — çatı deliğinden merdiven, kerpiç duvarlar, ocak, duvar resimleri. Dışarı değil.
 - Etrafta sıralı kerpiç evler — ama KAPI YOK! Herkes çatılardan tahta merdivenleri kullanarak giriyor. "Bu evlerin kapısı yok!" diye haykırır {child_name}. {animal_friend} şaşkınlıkla kulağını dikip etrafa bakıyor.
 - Bir evin çatısına tırmanması gerekiyor — {child_name} bir an tereddüt eder. Ama {animal_friend} çoktan tırmanmış, yukarıdan bakıp havlayarak / miyavlayarak cesaret veriyor! {child_name} gülümseyerek merdivene yapışıyor.
 - İçeri baktığında hayranlıkla duraksıyor: duvarlarda kırmızı ve siyah boyayla çizilmiş av sahneleri! Küçük bir ocak, yanında tahıl sepetleri. 🔊 Ocağın çıtırdama sesi ve hamurun taze kokusu. ✋ Duvarın yüzeyine dokunuyor — sıcak, pürüzlü, toprak hissedilen kerpiç.
@@ -55,6 +57,7 @@ Hikayenin sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bi
 ---
 
 ### Bölüm 3 — Boğa Kabartması ve Gizem (Sayfa 10-14) 🎯 Duygu: GİZEM → CESARET → ZAFER
+🌍 MEKAN: GİZLİ ODA — boğa başı kabartmalı duvar, taş taş sır, çakmaktaşı ışığı. Normal ev değil.
 - Büyük bir eve girerler — devasa boğa başı kabartması iki yanı süslüyor. Kutsal bir yer olduğu hissediliyor. 🔊 İçeride derin bir sessizlik var, sadece uzaktan çocukların sesleri.
 - Yaşlı bir kadın duvara kırmızı toprağıyla resim yapıyor — {child_name} büyülenmiş gibi izliyor. "Nasıl bu kadar güzel çizebiliyorsunuz?" der sessizce. Kadın gülümseyip elini uzatıyor, {child_name}'e toprak boyayı gösteriyor.
 - Ama kadının yüzünde endişe var — kutsal odadaki özel nişte bir boşluk! Bir şey eksik. {child_name} avucundaki obsidyen aynaya bakıyor — AYNI BOYUT, AYNI ŞEKİL! "Bu... buraya mı ait?"
@@ -65,6 +68,7 @@ Hikayenin sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bi
 ---
 
 ### Bölüm 4 — Dönüş (Sayfa 15-18) 🎯 Duygu: VEDA → KAVRAYIŞ
+🌍 MEKAN: Çatı ÜSTÜ / köy panoraması — kerpiç çatılar, Konya ovası, gün batımı. Ev içi değil.
 - {animal_friend} geçiş noktasını gösteriyor — kazı alanına dönen bir ışık. "Geri dönme zamanı geldi," der {child_name} sessizce.
 - Neolitik çocukla vedalaşma — çocuk küçük bir obsidyen parça hediye ediyor. {child_name} gülümseyerek alıyor: "Seni unutmayacağım."
 - Işığa doğru yürürler. 🔊 Geçidin uğultusu ve sonra... sessizlik. Modern kazı alanında geri döndüler!
@@ -74,6 +78,7 @@ Hikayenin sonunda {child_name} gözlerinde artık çekingenlik değil, parlak bi
 ---
 
 ### Bölüm 5 — Kapanış (Sayfa 19-22) 🎯 Duygu: HUZUR + GURUR
+🌍 MEKAN: MODERN kazı alanı — koruma çatısı altı, arkeolojik kalıntılar, güneş.
 - Gün batımında kazı alanını son kez geziyor. 🔊 Ağustosböcekleri, uzakta bir çoban düdüğü. Altın ışık toprak duvarları boyuyor.
 - {child_name} {animal_friend}'a bakıp parmağını dudağına koyuyor: "Bu bizim sırrımız." {animal_friend} anlayışla kuyruk sallıyor / başını {child_name}'in eline yasıyor.
 - Avucundaki obsidyen parçayı sıkıyor. 🔊 Taşın pürüzsüz yüzeyi sıcakmış — güneşten mi, yoksa 9.000 yıllık bir hatıradan mı?
@@ -103,7 +108,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── F: Görsel Prompt Şablonları (genişletilmiş) ──
     cover_prompt_template=(
-        'An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
+        'EXACTLY ONE {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
         'wearing {clothing_description}. {scene_description}. Ancient Neolithic Catalhoyuk mudbrick '
         'houses with rooftop entries and wooden ladders, bull head relief on wall. '
         'Golden sunset light on warm earthy tones. Low-angle hero shot: child 30% foreground, '
@@ -117,6 +122,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
         'INTERIOR elements: [Wall paintings (red-black hunting scenes, geometric patterns), '
         'bull head reliefs (bucrania), clay oven, grain baskets, obsidian tools]. '
         'ATMOSPHERIC: [warm earth tones, dust motes in shaft of light, mudbrick texture]. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Shot variety: Wide establishing / Medium action / Close-up detail / Low angle hero. '
         'Color palette: terracotta, ochre, warm brown, cream, burnt sienna, golden hour glow. '
         'Cinematic warm lighting, detailed earthy texture. '
@@ -185,6 +191,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
 
     # ── I: Scenario Bible (genişletilmiş) ──
     scenario_bible={
+        "no_magic": True,
         "companion_pack": {
             "kopek": {
                 "species": "dog",
@@ -223,6 +230,8 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Child's modern outfit MUST NOT change between time periods",
             "Neolithic characters MUST wear the same woven tunic on every appearance",
             "Wall paintings MUST use same red-black color scheme in all interior scenes",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — realistic adventure only"
         ],
     
         "companions": "see_scenario_companions_list",

@@ -39,12 +39,14 @@ Büyü, sihir YOK — bilimsel merak ve gerçekçi uzay macerası.
 **AKIŞ (6 BÖLÜM):**
 
 ### BÖLÜM 1 — Kalkış ve İlk Hayranlık (Sayfa 1-3) 🎯 Duygu: MERAK + HEYECAN + hafif TEDİRGİNLİK
+🌍 MEKAN: Uzay mekiği KOKPİT İÇİ — gösterge paneli, koltuk, pencereden yıldızlar. DIŞARI DEĞİL.
 - {child_name} uzay mekiğinin kokpitinde, koltuk kemerini sıkıyor. {animal_friend} gösterge panelindeki düğmeleri kontrol ediyor, anteni hızla dönüyor.
 - 🔊 Motor gümbürtüsü, geri sayım sesi: "3... 2... 1..." Koltuk titriyor, bulutlar hızla geçiyor, sonra — sessizlik.
 - İlk kez uzay: Pencereden sonsuz karanlık ve milyonlarca yıldız. {child_name} yutkunuyor: "Bu kadar... büyükmüş." {animal_friend}'ın gözleri mavi parıldıyor.
 - 🪝 HOOK: "Ama kontrol panelinde bir ışık yanıp sönmeye başladı — 'BİLİNMEYEN SİNYAL' yazıyordu..."
 
 ### BÖLÜM 2 — Ay ve Mars Keşfi (Sayfa 4-8) 🎯 Duygu: HEYECAN → MERAK → ŞAŞkınlık
+🌍 MEKAN: Ay yüzeyi (gri krater) → Mars yüzeyi (kızıl kanyon, mağara içi kristaller). DIŞ GEZEGEN.
 - Ay'ın yanından geçerken kraterler yakından görünüyor — {child_name}: "Sanki dev ayak izleri!"
 - Mars'a iniş: Kızıl toprak, devasa kanyonlar. Uzay giysisinin vizörüne kum taneleri yapışıyor. 🔊 Botların kızıl toprağı çıtırdatması, rüzgarın hafif uğultusu.
 - ✋ Mars toprağı ayaklarının altında çatırdıyor. Hava soğuk ve metalik kokuyor.
@@ -55,6 +57,7 @@ Büyü, sihir YOK — bilimsel merak ve gerçekçi uzay macerası.
 - 🪝 HOOK: "Mağaranın derinliğinden gelen zayıf radyo sinyali, {animal_friend}'ın antenini çılgınca döndürüyordu..."
 
 ### BÖLÜM 3 — Asteroid Kuşağı KRİZİ (Sayfa 9-13) 🎯 Duygu: GERİLİM → KORKU → PANIK → CESARET
+🌍 MEKAN: Asteroid kuşağı — uçan kayalar, buzlu asteroid yüzeyi, gemi içi alarm ışıkları.
 - Mekikle asteroid kuşağına giriş. Dev kayalar dans ediyor, 🔊 çarpışma sesleri uzaktan gümbürdüyor.
 - {animal_friend} hesaplıyor: "Güvenli rota — sağ 40 derece, yukarı 15!" {child_name} direksiyonu çeviriyor ama elleri titriyor.
 - Bir asteroide zorlu iniş — buz ve metalden bir dünya. Yüzeyin altında ritmik ışık yanıp sönüyor — doğal bir fenomen.
@@ -65,6 +68,7 @@ Büyü, sihir YOK — bilimsel merak ve gerçekçi uzay macerası.
 - 🪝 HOOK: "Tam o sırada {animal_friend}'ın gözleri söndü. Ekranında tek bir kelime belirdi: AŞIRI YÜK..."
 
 ### BÖLÜM 4 — Tek Başına Kahraman (Sayfa 14-16) 🎯 Duygu: YALNIZLIK → KARARLILIK → ZAFER
+🌍 MEKAN: Gemi İÇİ — kokpit, tamir paneli, kablolar, aletler. Acil durum amber ışık.
 - {animal_friend} aşırı yükten kapanmış! {child_name} şimdi TAMAMEN YALNIZ. Kalbi gümbürdüyor.
 - "Yapamam... yapamam..." fısıldıyor. Ama sonra kristale bakıyor — mor ışık kararlı yanıyor.
 - {child_name} derin nefes alıyor. Robot'un tamir panelini açıyor. Elleri artık TİTREMİYOR. Kabloları kontrol ediyor, bağlantıları sıkıştırıyor. 🔧
@@ -74,6 +78,7 @@ Büyü, sihir YOK — bilimsel merak ve gerçekçi uzay macerası.
 - {animal_friend}'ın gözleri yeniden mavi yanıyor. Anteni yavaşça dönüyor. {child_name} robotu kucaklıyor.
 
 ### BÖLÜM 5 — Uzay İstasyonu (Sayfa 17-19) 🎯 Duygu: ŞAŞkınlık → SEVİNÇ → HUZUR
+🌍 MEKAN: Uzay istasyonu İÇİ — sera bahçesi, süzülen bitkiler, dev pencereden nebula manzarası.
 - Uzay istasyonuna yanaşma — devasa, dönen yapı, güneş panelleri altın gibi parlıyor.
 - İçeride sera bahçesi — uzayda yetişen bitkiler! 👃 Hava çiçek ve nemli toprak kokuyor. Yeşil yapraklar sıfır yerçekiminde süzülüyor.
 - İstasyonun dev penceresinden nebula manzarası — mor, turuncu, mavi renklerin kozmik dansı.
@@ -81,6 +86,7 @@ Büyü, sihir YOK — bilimsel merak ve gerçekçi uzay macerası.
 - {child_name} Yıldız Pusulasını çıkarıyor ve nebulayı işaret ediyor. Pusulanın ibresi parıldıyor — "Evren ne kadar büyük... ama ben de buradayım."
 
 ### BÖLÜM 6 — Eve Dönüş ve Gurur (Sayfa 20-22) 🎯 Duygu: ÖZLEM + GURUR + HUZUR
+🌍 MEKAN: Uzay → atmosfer girişi → okyanus inişi. Mavi Dünya pencereden büyüyor.
 - Dünya'ya dönüş — mavi gezegen pencereden büyüyor. 👁️ Okyanusların mavisi, bulutların beyazı. {child_name}: "Evimiz ne kadar güzelmiş..."
 - 🔊 Atmosfere giriş — ateş parçacıkları pencereden akıyor. Koltuk sarsılıyor. {child_name} bu sefer korkmuyor, gülümsüyor.
 - Paraşütlerle okyanus inişi. {animal_friend}'ın anteni son bir kez hızla dönüyor — "Görev tamamlandı!" 🏆
@@ -121,7 +127,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'Space for title at top.'
     ),
     page_prompt_template=(
-        'A young child {scene_description}, wearing {clothing_description}. '
+        'EXACTLY ONE young child {scene_description}, wearing {clothing_description}. '
         'Setting elements (choose relevant based on scene): '
         'LAUNCH: [spaceship cockpit with glowing panels, launch flames, clouds rushing past]. '
         'MOON/MARS: [grey moon craters, red Mars canyons, dusty rocky terrain, space suit visor]. '
@@ -133,6 +139,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'Shot variety: [close-up helmet visor / medium spacewalk / wide epic planet / '
         'cockpit interior POV / bird-eye asteroid field]. '
         'Composition: full body visible in action, sci-fi color palette (deep blue, purple, silver, warm amber). '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Text overlay space at bottom.'
     ),
 
@@ -231,6 +238,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
 
     # ── I: Scenario Bible ──
     scenario_bible={
+        "no_magic": True,
         "companions": [
             {
                 "name_tr": "Gümüş Robot Nova",
@@ -296,6 +304,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
             "NO aliens, NO ET-type creatures, NO space monsters",
             "NO family members — child + Nova robot ONLY",
             "NO magic — scientific realism with sense of wonder",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child"
         ],
         "emotional_arc": {
             "pages_1_3": "Wonder + mild anxiety at vastness of space",

@@ -45,6 +45,7 @@ Kıyafeti: "elderly man in brown leather apron and white cotton shirt, round spe
 ---
 
 ### BÖLÜM 1 — Kule'de Keşif (Sayfa 1-4) 🎯 Duygu: MERAK + hafif TEDİRGİNLİK
+🌍 MEKAN: Galata Kulesi İÇİ — dar taş merdiven, kulenin tepesi panorama penceresi. DIŞARI DEĞİL.
 - {child_name} Galata Kulesi'nin dar taş merdivenlerini tırmanıyor. Nefes nefese ama meraklı.
 - 🔊 Adımları taş basamaklarda yankılanıyor. Duvarlardan serin, nemli bir taş kokusu geliyor.
 - Kulenin tepesinde yaşlı fenerci fenerleri parlatıyor. {child_name}'e kısa bir bakış atıp gülümsüyor: "Dikkatli bak, bu duvarlar konuşur."
@@ -54,6 +55,7 @@ Kıyafeti: "elderly man in brown leather apron and white cotton shirt, round spe
 - 🪝 HOOK: "Ama haritadaki ilk sembol kulenin tam karşısını gösteriyordu — aşağıda, dar sokaklarda bir yerde..."
 
 ### BÖLÜM 2 — Karaköy'de İpuçları (Sayfa 5-9) 🎯 Duygu: HEYECAN → hafif ENDİŞE
+🌍 MEKAN: Karaköy dar sokaklar, pirinc çeşme, gizli avlu, Karaköy rıhtımı. Kule görünmüyor.
 - {child_name} kuleden iniyor, dar Galata sokaklarına dalıyor. 🔊 Uzaktan martı çığlıkları, yakından kedi miyavlamaları.
 - 👃 Hava taze simit ve deniz kokusuyla karışık. Parke taşlar ayağının altında ıslak ve kaygan.
 - İlk işaret: eski bir çeşmenin pirinç aynasında yansıyan güneş ışığı. Ama ayna kırık — ışığı doğru yere yönlendirmesi gerekiyor!
@@ -65,6 +67,7 @@ Kıyafeti: "elderly man in brown leather apron and white cotton shirt, round spe
 - 🪝 HOOK: "Parşömen her çözülen sembolle biraz daha renkleniyor... ama dördüncü işaret en kalabalık caddedeydi."
 
 ### BÖLÜM 3 — Beyoğlu'nda Kovalamaca (Sayfa 10-14) 🎯 Duygu: GERİLİM → KORKU → CESARET
+🌍 MEKAN: İstiklal Caddesi kalabalık, kırmızı tramvay, Tünel yeraltı geçidi (KARANLIK). Kule görünmüyor.
 - İstiklal Caddesi'nde kalabalık arasında ilerliyor. 🔊 Tramvay zili çalıyor — "Dıng dıng dıng!"
 - Kırmızı tramvay geçerken camında anlık bir yansıma — dördüncü sembol! Ama tramvay hızla uzaklaşıyor.
 - {child_name} kalabalığı yararak tramvayın arkasından koşuyor: "Dur! Durun!" Nefes nefese, bacakları ağrıyor.
@@ -77,6 +80,7 @@ Kıyafeti: "elderly man in brown leather apron and white cotton shirt, round spe
 - 🪝 HOOK: "Ama güneş batmak üzereydi — Kule'ye geri dönmek için çok az zamanı vardı..."
 
 ### BÖLÜM 4 — Kule'ye Dönüş (Sayfa 15-18) 🎯 Duygu: KARARLILIK → ŞAŞkınlık → KAVRAYIŞ
+🌍 MEKAN: Galata Kulesi İÇİ — merdiven tekrar, tepedeki pencere, gün batımı ışığı içerden.
 - {child_name} sokaklarda koşuyor, gölgeler uzuyor, gökyüzü turuncuya dönüyor.
 - Galata Kulesi'ne geri tırmanıyor — bu sefer merdivenleri iki iki çıkıyor, artık nefes nefese değil, KARALI.
 - Kulenin tepesinde parşömeni büyük pencereye tutuyor. Son ışık parşömenden geçiyor ve —
@@ -85,6 +89,7 @@ Kıyafeti: "elderly man in brown leather apron and white cotton shirt, round spe
 - 🔊 Akşam ezanı uzaktan yükseliyor, martılar son turlarını atıyor, hava tuzlu deniz kokuyor.
 
 ### BÖLÜM 5 — Kapanış (Sayfa 19-22) 🎯 Duygu: HUZUR → GURUR
+🌍 MEKAN: Galata Kulesi tepesi — gün batımı manzarası, İstanbul silueti. Kulenin DIŞINDAN değil, tepesinden bakış.
 - Gün batımında kuleden İstanbul manzarası — altın, kırmızı, mor ışıklar suyun üzerinde dans ediyor.
 - Yaşlı fenerci gülümseyerek yaklaşıyor: "Haritayı buldun demek. Uzun zamandır biri bulsun diye bekliyordu."
 - {child_name}: "Bunu ben mi saklayayım?" Fenerci başını sallıyor: "Ya da bir dahaki kaşif bulsun diye yerine koy."
@@ -133,7 +138,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'Space for title at top.'
     ),
     page_prompt_template=(
-        'A young child {scene_description}, wearing {clothing_description}. '
+        'EXACTLY ONE young child {scene_description}, wearing {clothing_description}. '
         'Setting elements (choose relevant based on scene): '
         'TOWER: [Galata Tower interior stone spiral staircase, medieval stone walls, '
         'panoramic windows with Istanbul view, old oil lanterns]. '
@@ -149,6 +154,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'Shot variety: [close-up detail / medium action / wide panoramic / '
         'interior moody / low-angle hero / bird-eye Istanbul]. '
         'Composition: full body visible, warm palette (golden, amber, terracotta, deep blue). '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Text overlay space at bottom.'
     ),
 
@@ -217,6 +223,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
 
     # ── I: Scenario Bible ──
     scenario_bible={
+        "no_magic": True,
         "key_objects": [
             {
                 "name_tr": "Işık Haritası Parşömeni",
@@ -254,6 +261,8 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
             "Companion appearance must remain IDENTICAL across all pages",
             "Child outfit must remain EXACTLY the same on every page",
             "Key objects maintain consistent appearance throughout",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — realistic adventure only"
         ],
     },
 

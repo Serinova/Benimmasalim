@@ -38,6 +38,7 @@ Hikayenin sonunda {child_name} artık karanlıktan korkmayan, sessizliği dinlem
 ---
 
 ### BÖLÜM 1 — Sarnıca İniş (Sayfa 1-4) 🎯 Duygu: MERAK + TEDİRGİNLİK
+🌍 MEKAN: Bina girişi → taş merdiven aşağı → ilk sarnıç görünümü. YERALTI. SİHİR YOK.
 - {child_name} Sultanahmet'te eski bir binanın kapısından giriyor. Taş merdivenler aşağıya iniyor — her adımda hava serinliyor.
 - 🔊 Su damlaları yankılanıyor, uzaktan hafif bir akıntı sesi. 👃 Nemli, serin, yosunlu taş kokusu. ✋ Duvar soğuk ve kaygan.
 - Merdivenin sonunda devasa bir yeraltı mekanı açılıyor — yüzlerce sütun suyun üzerinde! Kırmızımsı ışıklar sütunlara yansıyor.
@@ -47,6 +48,7 @@ Hikayenin sonunda {child_name} artık karanlıktan korkmayan, sessizliği dinlem
 - 🪝 HOOK: "Gölge bir sütunun arkasında kayboldu — ama tuhaf olan, sütunun üzerindeki semboller hafifçe parlıyordu..."
 
 ### BÖLÜM 2 — Sütunlar Arası (Sayfa 5-9) 🎯 Duygu: HEYECAN → KEŞİF COŞKUSU
+🌍 MEKAN: Sarnıç İÇİ — sütunlar arası, su üzerinde yürüme, gözyaşı sütunu. YERALTI.
 - Sütunların arasında yürüyor — her biri farklı! Bazıları düz, bazıları oymalı, bazılarında kuş ve yaprak motifleri.
 - 🔊 Her adımda su şıpırtısı, sütunlardan ters yansıyan kendi ayak sesleri. Gölge sessizce yanında, patileri ıslak taşta iz bırakmıyor.
 - Bir sütunun tabanında hiyeroglif benzeri kazımalar — ama Bizans dönemi! Bir su haritası: sarnıcın gizli bölümlerini gösteren bir plan.
@@ -58,6 +60,7 @@ Hikayenin sonunda {child_name} artık karanlıktan korkmayan, sessizliği dinlem
 - 🪝 HOOK: "Madalyon yeşil bir ışık saçmaya başladı — ve aynı renk ışık sarnıcın en derininden yanıt veriyordu..."
 
 ### BÖLÜM 3 — Medusa'nın Bölgesi (Sayfa 10-14) 🎯 Duygu: GERİLİM → KORKU → CESARET
+🌍 MEKAN: Sarnıç EN DERİN BÖLGE — Medusa taş blokları, sıklaşan sütunlar, yükselen su. ÇOK KARANLIK.
 - Sarnıcın en derin köşesine doğru ilerliyor — sütunlar sıklaşıyor, tavan alçalıyor, su derinleşiyor.
 - 🔊 Kendi nefes sesi ve su damlaları — başka hiç ses yok. Gölge'nin yeşil gözleri karanlıkta iki küçük fener gibi parlıyor.
 - İki devasa taş blok! Birinin üzerinde yan dönmüş, diğerinin üzerinde ters duran Medusa başı! Taştan ama yüz ifadeleri canlı gibi.
@@ -69,6 +72,7 @@ Hikayenin sonunda {child_name} artık karanlıktan korkmayan, sessizliği dinlem
 - 🪝 HOOK: "Geçidin sonundaki ışık sıcak ve altın rengiydi — sarnıcın bilinen bölümlerinden değildi bu..."
 
 ### BÖLÜM 4 — Kayıp Işık Kaynağı (Sayfa 15-18) 🎯 Duygu: ŞAŞKınlık → HAYRANLIK
+🌍 MEKAN: GİZLİ ODA — küçük Bizans mozaik odası, mermer çeşme, altın-mavi tesseralar. Sarnıç değil.
 - Geçitten küçük bir gizli odaya giriyor — tavan yüksek, duvarlarda Bizans mozaikleri! Altın, mavi, kırmızı tesseralar ışıldıyor.
 - Odanın ortasında eski bir mermer çeşme — çeşmenin ortasında cam bir lamba yuvası. Madalyon tam yuvaya uyuyor!
 - {child_name} madalyonu yerleştirince yeşil ışık mozaiklerden yansıyor — tüm oda canlı bir resim gibi parlıyor!
@@ -78,6 +82,7 @@ Hikayenin sonunda {child_name} artık karanlıktan korkmayan, sessizliği dinlem
 - Mozaikler yavaşça kararıyor — ışık azalıyor ama {child_name}'in kalbinde sıcaklık kalıyor.
 
 ### BÖLÜM 5 — Yüzeye Çıkış (Sayfa 19-22) 🎯 Duygu: HUZUR → GURUR
+🌍 MEKAN: Sarnıç çıkış → Sultanahmet YÜZEYİ — güneş, martılar, meydan. YERALTI → DIŞARI kontrastı.
 - Madalyonu yuvadan çıkarıp boynuna geri takıyor — hatıra olarak.
 - Geçitten geri dönüş — su çekilmiş! Medusa başları sakin ve sessiz. {child_name} bu sefer duraksıyor ve bakıyor — korkmuyor.
 - Sütunların arasından çıkış merdivenleri — yukarıya doğru, ışığa doğru. Gölge önden gidiyor, kuyruğu havada.
@@ -129,7 +134,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'Space for title at top. {STYLE}'
     ),
     page_prompt_template=(
-        'A young child {scene_description}, wearing {clothing_description}. '
+        'EXACTLY ONE young child {scene_description}, wearing {clothing_description}. '
         'Setting elements (choose relevant based on scene): '
         'ENTRANCE: [stone staircase descending underground, cool damp air, '
         'dim amber lighting, ancient stone walls with moisture]. '
@@ -148,6 +153,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'low-angle dramatic / intimate mosaic room / bright exit contrast]. '
         'Composition: full body visible, cistern palette (warm amber, deep shadow, '
         'reddish gold, mossy green, Byzantine gold-blue). '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Text overlay space at bottom. {STYLE}'
     ),
 
@@ -297,6 +303,8 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
             "Medusa başları sadece taş heykel — korkutucu yapma, tarihi anlatım",
             "Yeraltından yüzeye geçişte karanlık → aydınlık kontrast",
             "Çocuğun kıyafeti TÜM SAYFALARDA birebir aynı",
+            "ONLY ONE CHILD in every scene — no duplicate, no twin, no second child",
+            "NO magic, NO supernatural powers — realistic adventure only"
         ],
         "no_family": True,
         "no_magic": True,

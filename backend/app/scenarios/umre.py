@@ -124,7 +124,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
 
     # ── F: Görsel Prompt Şablonları ──
     cover_prompt_template=(
-        'An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
+        'EXACTLY ONE {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
         'wearing {clothing_description}. {scene_description}. Standing in the grand white marble '
         'courtyard before the magnificent black Kaaba draped in ornate golden Kiswah calligraphy '
         'embroidery. Towering golden minarets and grand Ottoman domes rising against a deep twilight '
@@ -136,7 +136,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'Prophet/angel depictions.'
     ),
     page_prompt_template=(
-        'An {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
+        'EXACTLY ONE {child_age}-year-old {child_gender} named {child_name} with {hair_description}, '
         'wearing {clothing_description}. {scene_description}. Locations: [Kaaba: black with golden '
         'Kiswah, white marble courtyard / Safa-Marwa: marble corridor with fluorescent lighting / '
         'Masjid Nabawi: green dome, grand interior / Zemzem: marble area near Kaaba / '
@@ -145,6 +145,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         'golden glow, detailed marble texture, volumetric light through domes. Close-up on the '
         'child\'s expressive face for emotional moments, wide for sacred architecture. Expressive '
         'emotion (amazed, teary, smiling, determined, peaceful). No eye contact with camera. '
+        'IMPORTANT: Only ONE child in the entire image, no second child, no twin, no duplicate. '
         'Reverent and realistic. NO glowing lights, NO magic, NO fairies, NO Prophet depictions. '
         '{STYLE}'
     ),
@@ -218,6 +219,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
     scenario_bible={
         "no_companion": True,
         "child_solo_with_group": True,
+        "no_magic": True,
         "special_rules": {
             "ihram_rules": (
                 "Pages 3-10: IHRAM. Men: Rida (upper) + Izar (lower), 2 unsewn white cloth pieces. "
