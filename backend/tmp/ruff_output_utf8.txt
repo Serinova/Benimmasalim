@@ -1,0 +1,132 @@
+﻿I001 [*] Import block is un-sorted or un-formatted
+  --> app\prompt_engine\constants.py:9:1
+   |
+ 8 |   # Re-export everything from the parent package ÔÇö single source of truth
+ 9 | / from app.prompt_engine import (  # noqa: F401
+10 | |     ANTI_ANIME_NEGATIVE,
+11 | |     ANTI_PHOTO_FACE,
+12 | |     ANTI_REALISTIC_NEGATIVE,
+13 | |     BASE_NEGATIVE,
+14 | |     BODY_PROPORTION,
+15 | |     BODY_PROPORTION_DIRECTIVE,
+16 | |     COVER_ONLY_PHRASES,
+17 | |     DEFAULT_COVER_TEMPLATE,
+18 | |     DEFAULT_COVER_TEMPLATE_EN,
+19 | |     DEFAULT_INNER_TEMPLATE,
+20 | |     DEFAULT_INNER_TEMPLATE_EN,
+21 | |     INNER_ONLY_PHRASES,
+22 | |     LIKENESS_HINT,
+23 | |     MAX_BODY_CHARS,
+24 | |     MAX_PROMPT_CHARS,
+25 | |     NEGATIVE_PROMPT,
+26 | |     NO_FAMILY_BANNED_WORDS_TR,
+27 | |     SHARPNESS,
+28 | |     SHARPNESS_BACKGROUND_DIRECTIVE,
+29 | |     STRICT_NEGATIVE_ADDITIONS,
+30 | |     STYLE_NEGATIVE_DEFAULTS,
+31 | |     STYLE_PULID_CONFIGS,
+32 | |     STYLE_PULID_WEIGHTS,
+33 | |     STYLES,
+34 | |     StyleConfig,
+35 | |     StylePuLIDConfig,
+36 | |     get_pulid_config_for_style,
+37 | |     get_pulid_weight_for_style,
+38 | |     get_style_anchor,
+39 | |     get_style_config,
+40 | |     get_style_leading_prefix,
+41 | |     get_style_negative_default,
+42 | |     get_style_specific_negative,
+43 | |     get_strict_negative_additions,
+44 | |     resolve_style,
+45 | | )
+   | |_^
+46 |
+47 |   # Additional aliases only used via constants.py path
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> app\scenarios\__init__.py:16:1
+   |
+14 |   """
+15 |
+16 | / from app.scenarios._base import (  # noqa: F401
+17 | |     CompanionAnchor,
+18 | |     ObjectAnchor,
+19 | |     ScenarioContent,
+20 | | )
+21 | | from app.scenarios._registry import (  # noqa: F401
+22 | |     get_all_companions,
+23 | |     get_all_scenarios,
+24 | |     get_companion_map,
+25 | |     get_scenario_content,
+26 | |     register,
+27 | | )
+28 | |
+29 | | # Eagerly load all scenario modules so the registry is fully populated
+30 | | # before any pipeline code tries to look up companions.
+31 | | from app.scenarios._registry import _load_all_scenarios as _load
+   | |________________________________________________________________^
+32 |
+33 |   _load()
+   |
+help: Organize imports
+
+F821 Undefined name `outcome_text`
+    --> app\services\ai\_story_writer.py:1355:2
+     |
+1353 | G├ûRSEL ST─░L: {visual_style}
+1354 | E├ä┬Ş─░TSEL HEDEFLER:
+1355 | {outcome_text}"""
+     |  ^^^^^^^^^^^^
+1356 |
+1357 |         user_prompt = f"""SENARYO: {scenario.name}
+     |
+
+F821 Undefined name `LearningOutcome`
+    --> app\services\ai\_story_writer.py:1472:24
+     |
+1470 |         child_age: int,
+1471 |         child_gender: str | None,
+1472 |         outcomes: list[LearningOutcome],
+     |                        ^^^^^^^^^^^^^^^
+1473 |     ) -> str:
+1474 |         """
+     |
+
+F821 Undefined name `LearningOutcome`
+    --> app\services\ai\_story_writer.py:1501:24
+     |
+1499 |         child_age: int,
+1500 |         child_gender: str | None,
+1501 |         outcomes: list[LearningOutcome],
+     |                        ^^^^^^^^^^^^^^^
+1502 |         visual_style: str = "children's book illustration, soft colors",
+1503 |     ) -> tuple[str, list[FinalPageContent]]:
+     |
+
+I001 [*] Import block is un-sorted or un-formatted
+    --> app\services\pdf_service.py:1139:9
+     |
+1138 |           # ÔöÇÔöÇ Logo (├╝stte ortalanm─▒┼ş ÔÇö PIL alpha-compositing ile %100 opak) ÔöÇÔöÇ
+1139 | /         import os as _os
+1140 | |         from PIL import Image as _PILImg2
+     | |_________________________________________^
+1141 |
+1142 |           _logo_h_pt = 65.0 * mm  # Maksimum belirginlik
+     |
+help: Organize imports
+
+F401 [*] `uuid.UUID` imported but unused
+  --> app\tasks\_coloring_shared.py:8:18
+   |
+ 7 | import asyncio
+ 8 | from uuid import UUID
+   |                  ^^^^
+ 9 |
+10 | import httpx
+   |
+help: Remove unused import: `uuid.UUID`
+
+Found 7 errors.
+[*] 4 fixable with the `--fix` option.

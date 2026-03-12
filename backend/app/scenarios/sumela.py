@@ -231,6 +231,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Bronze amulet MUST have the same three symbols (eagle, key, spiral) on pages 2-21",
             "Child's modern outfit MUST NOT change between time periods",
         ],
+    
+        "companions": "see_scenario_companions_list",
+        "locations": "see_location_constraints",
     },
 
     # ── J: Custom Inputs — SABİT companion ──

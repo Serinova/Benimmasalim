@@ -228,6 +228,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Child's modern outfit MUST NOT change between time periods",
             "Roman characters MUST wear the same tunic/toga on every appearance",
         ],
+    
+        "companions": "see_scenario_companions_list",
+        "locations": "see_location_constraints",
     },
 
     # ── J: Custom Inputs — SABİT companion (kullanıcıya seçtirilmez) ──

@@ -79,8 +79,10 @@ class TestResolveCompanionPlaceholder:
             "Cesur Yılkı Atı", "Cesur Step Tilkisi",
             "Cesur Dağ Kartalı", "Minik Beyaz Güvercin",
             "Renkli Papağan", "Gümüş Robot Nova", "Pelüş Ayıcık",
-            "Parıltılı Mini Ejderha", "Köpek", "Efes Kedisi",
+            "Köpek", "Efes Kedisi",
             "Sevimli Zeytin Dalı Serçesi",
+            "Altın Çöl Şahini", "Gizemli Sarnıç Kedisi",
+            "Konuşan Masal Baykuşu", "Dostça Yunus",
         ]
 
         for companion_tr in known_companions:
@@ -149,9 +151,12 @@ class TestExtractCompanionFromPages:
             "Renkli Papağan": "macaw parrot",
             "Gümüş Robot Nova": "robot",
             "Pelüş Ayıcık": "teddy bear plushie",
-            "Parıltılı Mini Ejderha": "tiny dragon",
             "Köpek": "dog",
             "Efes Kedisi": "cat",
+            "Altın Çöl Şahini": "hawk",
+            "Gizemli Sarnıç Kedisi": "cat",
+            "Konuşan Masal Baykuşu": "owl",
+            "Dostça Yunus": "dolphin",
         }
 
         for companion_tr, expected_species in companions_to_test.items():

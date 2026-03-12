@@ -1137,6 +1137,7 @@ class PDFService:
 
         # ── Logo (üstte ortalanmış — PIL alpha-compositing ile %100 opak) ──
         import os as _os
+
         from PIL import Image as _PILImg2
 
         _logo_h_pt = 65.0 * mm  # Maksimum belirginlik

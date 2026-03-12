@@ -227,6 +227,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Child's outfit MUST NOT change throughout the story",
             "City architecture shown respectfully — all traditions represented equally",
         ],
+    
+        "companions": "see_scenario_companions_list",
+        "locations": "see_location_constraints",
     },
 
     # ── J: Custom Inputs — SABİT companion ──

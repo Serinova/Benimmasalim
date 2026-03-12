@@ -36,6 +36,10 @@ import {
   BookOpen,
   Lock,
   Code2,
+  Activity,
+  Heart,
+  FlaskConical,
+  Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -213,6 +217,11 @@ export default function AdminScenariosPage() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingScenario, setEditingScenario] = useState<Scenario | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Dry-run state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [dryRunResult, setDryRunResult] = useState<any>(null);
+  const [dryRunLoading, setDryRunLoading] = useState<string | null>(null); // scenario ID being tested
 
   // Image states
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -633,7 +642,7 @@ export default function AdminScenariosPage() {
 
       <main className="mx-auto max-w-[1600px] px-6 py-8">
         {/* Stats */}
-        <div className="mb-8 grid grid-cols-3 gap-4">
+        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
             { label: "Toplam", value: scenarios.length, icon: LayoutGrid, color: "purple" },
             {
@@ -647,6 +656,31 @@ export default function AdminScenariosPage() {
               value: scenarios.filter((s) => !s.is_active).length,
               icon: EyeOff,
               color: "gray",
+            },
+            {
+              label: "Ort. Sağlık",
+              value: (() => {
+                const scored = scenarios.filter((s) => s.health_score != null);
+                if (scored.length === 0) return "—";
+                const avg = Math.round(scored.reduce((sum, s) => sum + (s.health_score ?? 0), 0) / scored.length);
+                return `${avg}/100`;
+              })(),
+              icon: Activity,
+              color: "emerald",
+            },
+            {
+              label: "🐾 Companion",
+              value: (() => {
+                const set = new Set<string>();
+                scenarios.forEach((s) => {
+                  if (s.companions) {
+                    s.companions.forEach((c) => set.add(c.name_tr));
+                  }
+                });
+                return set.size || "—";
+              })(),
+              icon: Heart,
+              color: "amber",
             },
           ].map((stat) => (
             <Card key={stat.label} className="border-0 shadow-sm">
@@ -722,6 +756,23 @@ export default function AdminScenariosPage() {
                       {scenario.marketing_badge && (
                         <Badge className="bg-orange-500 text-white shadow-sm">
                           {scenario.marketing_badge}
+                        </Badge>
+                      )}
+                      {scenario.health_grade && (
+                        <Badge
+                          className={`shadow-sm text-white ${
+                            scenario.health_grade === "A"
+                              ? "bg-emerald-500"
+                              : scenario.health_grade === "B"
+                                ? "bg-yellow-500"
+                                : scenario.health_grade === "C"
+                                  ? "bg-orange-500"
+                                  : "bg-red-500"
+                          }`}
+                          title={`Sağlık Puanı: ${scenario.health_score ?? 0}/100`}
+                        >
+                          <Heart className="mr-1 h-3 w-3" />
+                          {scenario.health_grade}
                         </Badge>
                       )}
                     </div>
@@ -804,6 +855,41 @@ export default function AdminScenariosPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        className="text-xs"
+                        disabled={dryRunLoading === scenario.id}
+                        onClick={async () => {
+                          setDryRunLoading(scenario.id);
+                          try {
+                            const res = await fetch(
+                              `${API_BASE_URL}/admin/scenarios/${scenario.id}/dry-run`,
+                              {
+                                method: "POST",
+                                headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+                                body: JSON.stringify({ child_name: "Yusuf", child_age: 7, child_gender: "erkek" }),
+                              }
+                            );
+                            if (res.ok) {
+                              setDryRunResult(await res.json());
+                            } else {
+                              alert(`Dry-run başarısız: ${res.status}`);
+                            }
+                          } catch (e) {
+                            alert(`Dry-run hatası: ${e}`);
+                          } finally {
+                            setDryRunLoading(null);
+                          }
+                        }}
+                      >
+                        {dryRunLoading === scenario.id ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <FlaskConical className="mr-1 h-3 w-3" />
+                        )}
+                        Test
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         className="flex-1 text-xs"
                         onClick={() => openEditor(scenario)}
                       >
@@ -882,6 +968,130 @@ export default function AdminScenariosPage() {
                   </Button>
                 </div>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Dry-Run Results Modal */}
+      <AnimatePresence>
+        {dryRunResult && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={() => setDryRunResult(null)}
+          >
+            <div className="absolute inset-0 bg-black/50" />
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+            >
+              {/* Header */}
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold flex items-center gap-2">
+                    <FlaskConical className="h-5 w-5 text-purple-600" />
+                    Dry-Run Sonucu
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {dryRunResult.scenario_name} — {dryRunResult.elapsed_seconds}sn
+                  </p>
+                </div>
+                <Badge
+                  className={`text-lg px-3 py-1 ${
+                    dryRunResult.story_quality?.grade === "A" ? "bg-emerald-500 text-white" :
+                    dryRunResult.story_quality?.grade === "B" ? "bg-yellow-500 text-white" :
+                    dryRunResult.story_quality?.grade === "C" ? "bg-orange-500 text-white" :
+                    "bg-red-500 text-white"
+                  }`}
+                >
+                  {dryRunResult.story_quality?.fun_score}/10 ({dryRunResult.story_quality?.grade})
+                </Badge>
+              </div>
+
+              {/* Story Title */}
+              <div className="mb-4 rounded-lg bg-purple-50 p-3">
+                <p className="text-sm font-medium text-purple-900">
+                  📖 {dryRunResult.title}
+                </p>
+                <p className="text-xs text-purple-600 mt-1">
+                  {dryRunResult.inner_page_count} iç sayfa üretildi
+                </p>
+              </div>
+
+              {/* Quality Breakdown */}
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold mb-2">📊 Kalite Analizi</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { key: "repetition", label: "Tekrar", icon: "🔁" },
+                    { key: "dialogue", label: "Diyalog", icon: "💬" },
+                    { key: "emotional_arc", label: "Duygusal Yay", icon: "📈" },
+                    { key: "rhythm", label: "Sayfa Ritmi", icon: "📏" },
+                    { key: "hooks", label: "Hook'lar", icon: "🪝" },
+                  ].map((item) => {
+                    const data = dryRunResult.story_quality?.[item.key];
+                    const score = data?.score ?? 0;
+                    return (
+                      <div key={item.key} className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
+                        <span>{item.icon}</span>
+                        <span className="text-xs flex-1">{item.label}</span>
+                        <span className={`text-xs font-bold ${
+                          score >= 8 ? "text-emerald-600" : score >= 6 ? "text-yellow-600" : "text-red-600"
+                        }`}>
+                          {score}/10
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Audit Results */}
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold mb-2">🔍 Denetim</h4>
+                <div className="space-y-1">
+                  {Object.entries(dryRunResult.audit || {}).map(([key, val]: [string, any]) => (
+                    <div key={key} className="flex items-center gap-2 text-xs">
+                      <span className={val.status === "PASS" ? "text-emerald-600" : "text-red-600"}>
+                        {val.status === "PASS" ? "✅" : "❌"}
+                      </span>
+                      <span className="capitalize">{key.replace(/_/g, " ")}</span>
+                      {val.issue_count > 0 && (
+                        <span className="text-red-500">({val.issue_count} sorun)</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pages Preview */}
+              <details className="mb-4">
+                <summary className="cursor-pointer text-sm font-semibold text-gray-600 hover:text-gray-900">
+                  📄 Sayfa İçerikleri ({dryRunResult.inner_page_count} sayfa)
+                </summary>
+                <div className="mt-2 max-h-64 overflow-y-auto space-y-2">
+                  {(dryRunResult.pages || []).filter((p: any) => p.page_type === "inner").map((p: any) => (
+                    <div key={p.page_number} className="rounded-lg bg-gray-50 p-2">
+                      <p className="text-xs font-medium text-gray-500 mb-1">Sayfa {p.page_number}</p>
+                      <p className="text-xs text-gray-800">{(p.text || "").slice(0, 200)}...</p>
+                    </div>
+                  ))}
+                </div>
+              </details>
+
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => setDryRunResult(null)}
+              >
+                Kapat
+              </Button>
             </motion.div>
           </motion.div>
         )}

@@ -142,28 +142,28 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             name_tr="Cesur Step Tilkisi",
             name_en="brave steppe fox",
             species="fox",
-            appearance="small reddish-brown steppe fox with bushy tail and bright eyes",
+            appearance="small reddish-brown steppe fox with bushy tail, bright amber eyes, pointed ears, and a white-tipped snout",
             short_name="Step Tilkisi",
         ),
         CompanionAnchor(
             name_tr="Step Kartalı",
             name_en="majestic dark brown steppe eagle",
             species="eagle",
-            appearance="majestic dark brown steppe eagle with golden-tipped feathers and piercing amber eyes",
+            appearance="majestic dark brown steppe eagle with golden-tipped feathers, piercing amber eyes, broad powerful wings, and sharp curved talons",
             short_name="Step Kartalı",
         ),
         CompanionAnchor(
             name_tr="Neolitik Keçi",
             name_en="small brown Neolithic wild goat kid",
             species="goat",
-            appearance="small brown Neolithic wild goat kid with curved tiny horns and a white chest patch",
+            appearance="small brown Neolithic wild goat kid with curved tiny horns, a white chest patch, soft woolly coat, and curious dark eyes",
             short_name="Neolitik Keçi",
         ),
         CompanionAnchor(
             name_tr="Yabani Kedi",
             name_en="small striped tawny wildcat",
             species="wildcat",
-            appearance="small striped tawny wildcat with green eyes and a bushy ringed tail",
+            appearance="small striped tawny wildcat with bright green eyes, a bushy ringed tail, pointed tufted ears, and silent soft paws",
             short_name="Yabani Kedi",
         ),
     ],
@@ -262,6 +262,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Sacred carved stone tablet MUST have the same geometric patterns on pages 9-12",
             "Child's explorer outfit MUST NOT change between time periods",
         ],
+    
+        "companions": "see_scenario_companions_list",
+        "locations": "see_location_constraints",
     },
 
     # ── J: Custom Inputs — SABİT companion (kullanıcıya seçtirilmez) ──

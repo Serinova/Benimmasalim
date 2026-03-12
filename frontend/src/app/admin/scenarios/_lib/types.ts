@@ -88,4 +88,7 @@ export interface Scenario {
   // Registry metadata — tells the frontend which fields are read-only
   is_code_managed?: boolean;
   code_managed_fields?: string[];
+  // Health scoring
+  health_score?: number | null;
+  health_grade?: string | null;
 }

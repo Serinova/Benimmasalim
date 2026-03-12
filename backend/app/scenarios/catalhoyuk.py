@@ -143,7 +143,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             name_tr="Köpek",
             name_en="small playful sandy-brown village dog",
             species="dog",
-            appearance="small playful sandy-brown village dog with floppy ears and a short tail",
+            appearance="small playful sandy-brown village dog with floppy ears, a short wagging tail, warm brown eyes, and a dusty tan muzzle",
             short_name="Köy Köpeği",
         ),
     ],
@@ -224,6 +224,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Neolithic characters MUST wear the same woven tunic on every appearance",
             "Wall paintings MUST use same red-black color scheme in all interior scenes",
         ],
+    
+        "companions": "see_scenario_companions_list",
+        "locations": "see_location_constraints",
     },
 
     # ── J: Custom Inputs — SABİT companion ──

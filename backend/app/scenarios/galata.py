@@ -16,7 +16,7 @@ GALATA = register(ScenarioContent(
     # ── B: Teknik ──
     location_en="Galata Tower",
     default_page_count=22,
-    flags={"no_family": False},
+    flags={"no_family": True},
 
     # ── E: Hikaye Promptu (iyileştirilmiş — ~750 kelime) ──
     story_prompt_tr="""\
@@ -191,9 +191,11 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
             "Old Genoese stone walls with carved symbols",
             "Bosphorus golden light reflections on water",
             "Istanbul sunset panorama from tower top",
-            "Ottoman-era hidden courtyards",
+            "Ottoman-era hidden courtyards with ivy walls",
             "Ancient mosaic walls in underground passages",
             "Traditional simit vendors and street cats",
+            "Wet cobblestone reflections after rain",
+            "Old brass oil lanterns in tower staircase",
         ],
         "colors": "warm golden, amber, terracotta, deep sunset orange, twilight purple",
         "atmosphere": "Mysterious, light-filled, urban solo adventure, cinematic Istanbul",
@@ -247,6 +249,12 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         ],
         "no_companion": True,
         "child_solo": True,
+    
+        "consistency_rules": [
+            "Companion appearance must remain IDENTICAL across all pages",
+            "Child outfit must remain EXACTLY the same on every page",
+            "Key objects maintain consistent appearance throughout",
+        ],
     },
 
     # ── J: Custom Inputs — companion yok ──

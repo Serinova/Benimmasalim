@@ -6,7 +6,11 @@ frozen, immutable Python objects — no DB round-trips, no admin-panel corruptio
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
+
+# Turkish characters that must NOT appear in English-only fields (Flux AI)
+_TR_CHARS = set("çşğüöıÇŞĞÜÖİ")
 
 
 # ─────────────────────────────────────────────
@@ -98,6 +102,35 @@ class ScenarioContent:
 
     # ── J: Custom Inputs Schema ──
     custom_inputs_schema: list[dict] = field(default_factory=list)
+
+    # ── Build-time validation ──
+
+    def __post_init__(self) -> None:
+        """Validate scenario content at import time.
+
+        Only raises ValueError for issues that produce genuinely broken output
+        (Turkish chars in outfit → Flux AI generates garbage).
+        All other issues emit warnings — existing scenarios are NOT broken.
+        """
+        # HARD ERROR: Turkish chars in outfit fields (Flux needs English)
+        for fname in ("outfit_girl", "outfit_boy"):
+            val = getattr(self, fname)
+            if val and _TR_CHARS.intersection(val):
+                found = "".join(sorted(_TR_CHARS.intersection(val)))
+                raise ValueError(
+                    f"[{self.theme_key}] {fname} contains Turkish characters "
+                    f"({found}). Flux AI requires English-only outfit descriptions."
+                )
+
+        # SOFT WARNING: Story prompt too short
+        if self.story_prompt_tr:
+            wc = len(self.story_prompt_tr.split())
+            if 0 < wc < 300:
+                warnings.warn(
+                    f"[{self.theme_key}] story_prompt_tr = {wc} words "
+                    f"(minimum 300 recommended)",
+                    stacklevel=2,
+                )
 
     # ── Computed helpers ──
 

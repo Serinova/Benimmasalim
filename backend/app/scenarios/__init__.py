@@ -18,17 +18,18 @@ from app.scenarios._base import (  # noqa: F401
     ObjectAnchor,
     ScenarioContent,
 )
-from app.scenarios._registry import (  # noqa: F401
-    get_all_companions,
-    get_all_scenarios,
-    get_companion_map,
-    get_scenario_content,
-    register,
-)
 
 # Eagerly load all scenario modules so the registry is fully populated
 # before any pipeline code tries to look up companions.
 from app.scenarios._registry import _load_all_scenarios as _load
+from app.scenarios._registry import (  # noqa: F401
+    get_all_companions,
+    get_all_scenarios,
+    get_companion_library,
+    get_companion_map,
+    get_scenario_content,
+    register,
+)
 
 _load()
 del _load

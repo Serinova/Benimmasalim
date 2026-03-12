@@ -292,6 +292,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         "no_family": True,
         "no_magic": True,
         "child_solo": True,
+    
+        "companions": "see_scenario_companions_list",
+        "locations": "see_location_constraints",
     },
 
     # ── J: Custom Inputs — SABİT companion (kullanıcıya seçtirilmez) ──

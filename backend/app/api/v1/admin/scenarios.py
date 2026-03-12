@@ -466,6 +466,7 @@ def scenario_to_response(scenario: Scenario) -> dict:
     no base64 data leaks into the response (can be 30MB+ per scenario).
     """
     from app.scenarios import get_scenario_content
+    from app.services.scenario_health_service import score_scenario
 
     thumb = scenario.thumbnail_url
     if thumb and _is_base64(thumb):
@@ -474,6 +475,14 @@ def scenario_to_response(scenario: Scenario) -> dict:
     # Try to fetch code-managed content from the registry
     theme_key = getattr(scenario, "theme_key", None) or ""
     registry_content = get_scenario_content(theme_key) if theme_key else None
+
+    # Health score (from registry content if available)
+    health_score: int | None = None
+    health_grade: str | None = None
+    if registry_content:
+        _health = score_scenario(registry_content)
+        health_score = _health.total_score
+        health_grade = _health.grade
 
     # Decide source for each code-managed field
     if registry_content:
@@ -603,10 +612,116 @@ def scenario_to_response(scenario: Scenario) -> dict:
         # Registry metadata — tells the frontend which fields are read-only
         "is_code_managed": is_code_managed,
         "code_managed_fields": sorted(_CODE_MANAGED_FIELDS) if is_code_managed else [],
+        # Health score
+        "health_score": health_score,
+        "health_grade": health_grade,
     }
 
 
 # ============ ENDPOINTS ============
+
+
+@router.get("/companions")
+async def list_companions(_user: SuperAdminUser):
+    """Companion kütüphanesindeki tüm companion'ları listele."""
+    from app.scenarios._companions import COMPANIONS
+    from app.scenarios._registry import get_all_scenarios
+
+    # Hangi companion hangi senaryolarda kullanılıyor?
+    scenario_map: dict[str, list[str]] = {}
+    for theme_key, sc in get_all_scenarios().items():
+        for comp in sc.companions:
+            key = comp.name_tr.lower().strip()
+            scenario_map.setdefault(key, []).append(theme_key)
+
+    result = []
+    for cid, anchor in COMPANIONS.all().items():
+        used_in = scenario_map.get(anchor.name_tr.lower().strip(), [])
+        result.append({
+            "companion_id": cid,
+            "name_tr": anchor.name_tr,
+            "name_en": anchor.name_en,
+            "species": anchor.species,
+            "short_name": anchor.short_name,
+            "appearance": anchor.appearance,
+            "used_in_scenarios": used_in,
+        })
+
+    return {
+        "total": len(result),
+        "companions": result,
+    }
+
+
+@router.get("/health")
+async def scenario_health_dashboard(
+    admin: SuperAdminUser,
+) -> dict:
+    """Get health dashboard for all registered scenarios.
+
+    Returns aggregate stats + per-scenario health reports.
+    No DB access — reads from the in-memory Scenario Registry.
+    """
+    from dataclasses import asdict
+
+    from app.services.scenario_health_service import get_all_scenario_health, get_health_summary
+
+    summary = get_health_summary()
+    reports = get_all_scenario_health()
+
+    return {
+        "summary": summary,
+        "reports": [asdict(r) for r in reports],
+    }
+
+
+class DryRunRequest(BaseModel):
+    """Optional parameters for dry-run."""
+
+    child_name: str = "Yusuf"
+    child_age: int = Field(default=7, ge=3, le=12)
+    child_gender: str = Field(default="erkek", pattern="^(erkek|kiz|girl|boy)$")
+
+
+@router.post("/{scenario_id}/dry-run")
+async def run_dry_run(
+    scenario_id: UUID,
+    db: DbSession,
+    admin: SuperAdminUser,
+    request: DryRunRequest | None = None,
+) -> dict:
+    """Run V3 pipeline dry-run for a scenario (no image generation).
+
+    ⚠️ This calls the real Gemini API and takes 30-60 seconds.
+    """
+    # Resolve theme_key from scenario ID
+    result = await db.execute(select(Scenario).where(Scenario.id == scenario_id))
+    scenario = result.scalar_one_or_none()
+    if not scenario:
+        raise NotFoundError("Senaryo", scenario_id)
+
+    theme_key = scenario.theme_key
+    if not theme_key:
+        raise ConflictError("Bu senaryonun theme_key'i tanımlı değil, dry-run çalıştırılamaz")
+
+    params = request or DryRunRequest()
+
+    from app.services.scenario_dry_run_service import run_scenario_dry_run
+
+    try:
+        result_data = await run_scenario_dry_run(
+            db=db,
+            theme_key=theme_key,
+            child_name=params.child_name,
+            child_age=params.child_age,
+            child_gender=params.child_gender,
+        )
+        return result_data
+    except ValueError as e:
+        raise NotFoundError("Senaryo", str(e))
+    except Exception as e:
+        logger.error("Dry-run failed", scenario_id=str(scenario_id), error=str(e))
+        raise ConflictError(f"Dry-run başarısız: {str(e)[:200]}")
 
 
 @router.get("")

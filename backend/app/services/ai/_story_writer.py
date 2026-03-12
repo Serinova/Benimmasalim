@@ -1343,6 +1343,8 @@ Bu açıklamayı HER visual_prompt'ta TAM OLARAK KULLAN!'''
         else:
             character_instruction = f"""KARAKTER: A {child_age}-year-old child named {child_name}"""
 
+        outcome_text = ""  # Legacy stub - LearningOutcome removed
+
         system_prompt = f"""Sen bir UZMAN SANAT YÖNETMENİSİN.
 
 {AI_DIRECTOR_SYSTEM}
@@ -1469,7 +1471,7 @@ KARAKTER: {child_name}, {child_age} yaş
         child_name: str,
         child_age: int,
         child_gender: str | None,
-        outcomes: list[LearningOutcome],
+        outcomes: list,
     ) -> str:
         """
         Legacy method: Generate story as plain text.
@@ -1498,7 +1500,7 @@ KARAKTER: {child_name}, {child_age} yaş
         child_name: str,
         child_age: int,
         child_gender: str | None,
-        outcomes: list[LearningOutcome],
+        outcomes: list,
         visual_style: str = "children's book illustration, soft colors",
     ) -> tuple[str, list[FinalPageContent]]:
         """

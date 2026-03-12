@@ -77,6 +77,12 @@ def get_companion_map() -> dict[str, dict[str, str]]:
     return result
 
 
+def get_companion_library():
+    """Return the global CompanionLibrary singleton."""
+    from app.scenarios._companions import COMPANIONS
+    return COMPANIONS
+
+
 def _load_all_scenarios() -> None:
     """Import all scenario modules to trigger registration."""
     # Import each scenario module — their top-level register() calls populate _REGISTRY

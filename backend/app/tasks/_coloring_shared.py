@@ -5,7 +5,6 @@ and generate_coloring_book_for_trial.py.
 """
 
 import asyncio
-from uuid import UUID
 
 import httpx
 import structlog

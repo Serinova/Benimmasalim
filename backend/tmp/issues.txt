@@ -1,0 +1,20 @@
+catalhoyuk|companions|1 companion var ama appearance açýklamalarý kýsa
+catalhoyuk|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 5)
+sultanahmet|companions|1 companion var ama appearance açýklamalarý kýsa
+sultanahmet|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 8)
+gobeklitepe|companions|4 companion, 3 tanesi kýsa appearance
+gobeklitepe|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 5)
+dinosaur|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 5)
+ephesus|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 5)
+kudus|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 6)
+sumela|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 6)
+cappadocia|companions|4 companion, 3 tanesi kýsa appearance
+cappadocia|bible_keys|Bible eksik key: consistency_rules
+abusimbel|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 7)
+amazon|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 7)
+fairy_tale_world|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 6)
+ocean|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 8)
+toy_world|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 6)
+yerebatan|bible_keys|Bible'da companion bilgisi yok (key sayýsý: 7)
+galata|bible_keys|Bible eksik key: consistency_rules
+umre_pilgrimage|bible_keys|Bible eksik key: locations

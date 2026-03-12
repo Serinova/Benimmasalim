@@ -155,21 +155,21 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
             name_tr="Sevimli Kapadokya Tilkisi",
             name_en="small reddish-orange Cappadocian fox",
             species="fox",
-            appearance="small reddish-orange Cappadocian fox with fluffy tail, bright green eyes, and white chest patch",
+            appearance="small reddish-orange Cappadocian fox with fluffy tail, bright green eyes, white chest patch, and pointed alert ears",
             short_name="Tilki",
         ),
         CompanionAnchor(
             name_tr="Cesur Dağ Kartalı",
             name_en="brave mountain eagle",
             species="eagle",
-            appearance="brave dark brown mountain eagle with wide wingspan and piercing golden eyes",
+            appearance="brave dark brown mountain eagle with wide powerful wingspan, piercing golden eyes, sharp curved beak, and white-tipped tail feathers",
             short_name="Kartal",
         ),
         CompanionAnchor(
             name_tr="Sevimli Step Tavşanı",
             name_en="small sandy-brown steppe rabbit with long ears",
             species="rabbit",
-            appearance="small sandy-brown steppe rabbit with long ears and white cotton tail",
+            appearance="small sandy-brown steppe rabbit with long upright ears, white cotton tail, bright curious dark eyes, and soft fluffy fur",
             short_name="Tavşan",
         ),
     ],
@@ -246,6 +246,12 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 1-3 cümle (25-50 kelime).
         "no_family": True,
         "no_magic": True,
         "child_solo": True,
+    
+        "consistency_rules": [
+            "Companion appearance must remain IDENTICAL across all pages",
+            "Child outfit must remain EXACTLY the same on every page",
+            "Key objects maintain consistent appearance throughout",
+        ],
     },
 
     # ── J: Custom Inputs — SABİT companion (kullanıcıya seçtirilmez) ──

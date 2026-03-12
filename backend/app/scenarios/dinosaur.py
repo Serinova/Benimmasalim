@@ -286,6 +286,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle (30-55 kelime),
             "T-Rex is NOT threatening — drinking water, ignoring child",
             "Volcano is ALWAYS in background during prehistoric scenes — increasing activity",
         ],
+    
+        "companions": "see_scenario_companions_list",
+        "locations": "see_location_constraints",
     },
 
     # ── J: Custom Inputs — SABİT companion (kullanıcıya seçtirilmez) ──

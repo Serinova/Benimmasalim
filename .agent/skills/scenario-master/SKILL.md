@@ -45,23 +45,24 @@ description: >
 backend/app/scenarios/
 ├── _base.py          # ScenarioContent, CompanionAnchor, ObjectAnchor dataclass'ları
 ├── _registry.py      # register() fonksiyonu ve get_scenario_content()
-├── cappadocia.py     # Kapadokya Macerası
-├── gobeklitepe.py    # Göbeklitepe Macerası
+├── _companions.py    # 🐾 COMPANION KÜTÜPHANESİ — tüm companion'lar burada
+├── cappadocia.py     # Kapadokya Macerası (4 companion seçenekli)
+├── gobeklitepe.py    # Göbeklitepe Macerası (4 companion seçenekli)
 ├── ephesus.py        # Efes'in Zaman Kapısı
 ├── catalhoyuk.py     # Çatalhöyük'ün Çatı Yolu
 ├── sumela.py         # Sümela'nın Kayıp Mührü
 ├── galata.py         # Galata'nın Gizemli Kedileri
-├── solar_system.py   # Güneş Sistemi Macerası
+├── space.py          # Uzay Macerası
 ├── dinosaur.py       # Dinozor Çağı Macerası
 ├── ocean.py          # Okyanusun Derinlikleri
-├── fairy_garden.py   # Peri Bahçesi
-├── pamukkale.py      # Pamukkale'nin Sırrı
-├── troy.py           # Truva'nın Gizemi
-├── antalya.py        # Antalya Sualtı Macerası
-├── nemrut.py         # Nemrut'un Devleri
-├── mardin.py         # Mardin'in Taş Evleri
-├── rainbow.py        # Gökkuşağı Adası
-└── yerebatan.py      # Yerebatan'ın Sırrı
+├── fairy_tale.py     # Masal Dünyası Macerası
+├── toy_world.py      # Oyuncak Dünyası Macerası
+├── sultanahmet.py    # Sultanahmet'te Zamanın Fısıltısı
+├── kudus.py          # Kudüs Macerası
+├── amazon.py         # Amazon'un Gizli Çağrısı
+├── abusimbel.py      # Abu Simbel Macerası
+├── yerebatan.py      # Yerebatan'ın Kayıp Işığı
+└── umre.py           # Umre Macerası
 ```
 
 ### 🔍 Senaryo İnceleme Yöntemi
@@ -77,12 +78,12 @@ Her dosya bir `ScenarioContent` dataclass içerir:
 - `cover_prompt_template` — kapak görseli promptu
 - `page_prompt_template` — sayfa görseli promptu
 - `outfit_girl` / `outfit_boy` — kıyafet tanımları
-- `companions` — `CompanionAnchor` listesi
+- `companions` — `CompanionAnchor` listesi (🐾 `_companions.py` havuzundan alınır)
 - `objects` — `ObjectAnchor` listesi
 - `cultural_elements` — kültürel öğeler dict
 - `location_constraints` — sayfa bazlı lokasyon
 - `scenario_bible` — side characters, zone map, consistency rules
-- `custom_inputs_schema` — companion seçimi (`type: "hidden"` ZORUNLU)
+- `custom_inputs_schema` — companion seçimi (`type: "hidden"` SABİT veya `type: "select"` SEÇİMLİ)
 - `flags` — `no_family`, vb.
 
 ---
@@ -117,7 +118,7 @@ Bu skill 4 modülden oluşur. Her modül bağımsız çalışabilir:
 | A | Temel Kimlik | İsim, tagline, yaş aralığı | ✅ |
 | B | Teknik Bilgi | theme_key, location_en, flags | ✅ |
 | C | Kültürel Atlas | Min. 10 mekan/öğe + hikayedeki rolleri | ✅ |
-| D | Yardımcı Karakter Kadrosu | Min. 4 seçenek + görsel ANCHOR | ✅ |
+| D | Yardımcı Karakter Kadrosu | 🐾 `_companions.py` kütüphanesinden seç VEYA yeni tanımla | ✅ |
 | E | story_prompt_tr | Min. 400 kelime + DOĞRU/YANLIŞ örnekler | ✅ |
 | F | Görsel Prompt Şablonları | cover + page prompt template | ✅ |
 | G | Kahraman Kıyafeti | outfit_girl + outfit_boy (İngilizce) | ✅ |
@@ -146,10 +147,8 @@ Her companion seçeneği için şu formatı doldur:
 └── consistency_rule: "Bu tanım TÜM SAYFALARDA AYNI — DEĞİŞTİRME"
 ```
 
-**Pipeline bağlantısı:** Bu bilgi `_extract_companion_from_pages()` fonksiyonundaki
-`_COMPANION_MAP` sözlüğüne eklenir. Yeni companion ekleniyorsa bu sözlük
-güncellenmeli: `backend/app/tasks/generate_book.py` ve
-`backend/app/services/ai/_story_blueprint.py`
+**Pipeline bağlantısı:** Companion tanımları artık `_companions.py` havuzundadır.
+Yeni companion ekleniyorsa **önce havuza**, sonra senaryo dosyasına eklenir.
 
 #### G2-b: Önemli Obje ANCHOR Kartı
 
@@ -196,55 +195,152 @@ Her story_prompt_tr şunları İÇERMELİ:
    - Gezi rehberi formatı YASAK
 ```
 
-### Adım 1.5 — Companion SABİTLEME Kuralı
+### Adım 1.5 — 🐾 Companion Kütüphanesinden Seçim (YENİ!)
 
 > [!IMPORTANT]
-> **Kullanıcıya companion SEÇTİRME!** Her senaryonun TEK SABİT companion'ı olmalı.
-> Companion senaryo tasarımında belirlenir ve tüm siparişlerde aynı kullanılır.
-> Bu sayede:
-> - Pipeline her zaman hangi companion'ı kilitleyeceğini bilir
-> - CAST LOCK her sayfada aynı hayvanı/karakteri zorlar
-> - `[object Object]` gibi frontend bug'ları oluşmaz
-> - Görsel tutarlılık %100 garanti
+> **Companion'lar artık merkezi bir kütüphanede (`_companions.py`) tanımlıdır.**
+> Yeni senaryo oluştururken veya mevcut senaryoya companion eklerken
+> **önce kütüphaneye bak** — uygun companion varsa yeniden kullan!
 
-#### Senaryo'da Companion Tanımlama
+#### 🐾 Companion Kütüphanesi (`_companions.py`)
+
+Kütüphane 21 companion içerir. Her biri benzersiz ID ile tanımlıdır:
+
+| ID | Adı | Tür | Senaryo |
+|---|---|---|---|
+| `abusimbel_hawk` | Altın Çöl Şahini | hawk | Abu Simbel |
+| `amazon_parrot` | Renkli Papağan | macaw parrot | Amazon |
+| `cappadocia_horse` | Cesur Yılkı Atı | wild horse | Kapadokya |
+| `cappadocia_fox` | Sevimli Kapadokya Tilkisi | fox | Kapadokya |
+| `cappadocia_eagle` | Cesur Dağ Kartalı | eagle | Kapadokya |
+| `cappadocia_rabbit` | Sevimli Step Tavşanı | rabbit | Kapadokya |
+| `catalhoyuk_dog` | Köpek | dog | Çatalhöyük |
+| `dinosaur_baby` | Minik Bebek Dinozor | baby dinosaur | Dinozor |
+| `ephesus_cat` | Efes Kedisi | cat | Efes |
+| `fairy_tale_owl` | Konuşan Masal Baykuşu | owl | Masal Dünyası |
+| `gobeklitepe_fox` | Cesur Step Tilkisi | fox | Göbeklitepe |
+| `gobeklitepe_eagle` | Step Kartalı | eagle | Göbeklitepe |
+| `gobeklitepe_goat` | Neolitik Keçi | goat | Göbeklitepe |
+| `gobeklitepe_wildcat` | Yabani Kedi | wildcat | Göbeklitepe |
+| `kudus_sparrow` | Sevimli Zeytin Dalı Serçesi | sparrow | Kudüs |
+| `ocean_dolphin` | Dostça Yunus | dolphin | Okyanus |
+| `space_robot` | Gümüş Robot Nova | robot | Uzay |
+| `sultanahmet_dove` | Minik Beyaz Güvercin | dove | Sultanahmet |
+| `sumela_squirrel` | Fındık | squirrel | Sümela |
+| `toy_world_teddy` | Pelüş Ayıcık | teddy bear | Oyuncak Dünyası |
+| `yerebatan_cat` | Gizemli Sarnıç Kedisi | cat | Yerebatan |
+
+#### Kütüphane API Kullanımı
+
+```python
+from app.scenarios._companions import COMPANIONS
+
+# Senaryo dosyasında kullanım:
+companions=[
+    COMPANIONS.get("cappadocia_fox"),     # Kütüphaneden al
+    COMPANIONS.get("cappadocia_eagle"),    # Birden fazla companion
+]
+
+# Tür bazında filtrele:
+cats = COMPANIONS.by_species("cat")     # ephesus_cat, yerebatan_cat
+
+# Tümünü listele:
+all_companions = COMPANIONS.all()        # {id: CompanionAnchor}
+
+# Yeni companion eklemek için _companions.py'ye kayıt:
+_r("yeni_senaryo_companion", CompanionAnchor(
+    name_tr="...", name_en="...", species="...",
+    appearance="...", short_name="...",
+))
+```
+
+#### Companion Seçim Stratejisi: SABİT vs SEÇİMLİ
+
+| Mod | Ne zaman? | `custom_inputs_schema` |
+|---|---|---|
+| **SABİT** (önerilen) | Companion hikayeye entegre ise | `type: "hidden"` |
+| **SEÇİMLİ** | Senaryo birden fazla companion ile çalışıyorsa | `type: "select"` + `companion_ref: true` |
+
+##### MOD A: SABİT Companion (tek companion — kullanıcı seçemez)
+
+```python
+# Senaryo dosyasında:
+companions=[
+    COMPANIONS.get("ephesus_cat"),  # Tek companion
+]
+
+custom_inputs_schema=[{
+    "key": "animal_friend",
+    "type": "hidden",           # Kullanıcıya gösterilmez
+    "default": "Efes Kedisi",   # Sabit değer
+}]
+```
+
+> **Ne zaman SABİT?** Companion hikayeye ENTEGRE ise:
+> - Hikaye promptunda companion'ın adı, kişiliği, rolleri anlatılıyorsa
+> - Companion kayboluyor/dönüşüyor gibi plot device ise
+> - Örnek: Masal Dünyası'nda "Bilge" baykuşun labirentte KAYBOLMASI hikayenin parçası
+
+##### MOD B: SEÇİMLİ Companion (birden fazla — kullanıcı seçer)
+
+```python
+# Senaryo dosyasında:
+companions=[
+    COMPANIONS.get("cappadocia_horse"),    # Varsayılan
+    COMPANIONS.get("cappadocia_fox"),      # Alternatif 1
+    COMPANIONS.get("cappadocia_eagle"),    # Alternatif 2
+    COMPANIONS.get("cappadocia_rabbit"),   # Alternatif 3
+]
+
+custom_inputs_schema=[{
+    "key": "animal_friend",
+    "type": "select",                # Kullanıcıya kart olarak gösterilir
+    "companion_ref": True,           # build_custom_inputs_for_api() otomatik doldurur
+    "label_tr": "Macera arkadaşını seç!",
+    "default": "Cesur Yılkı Atı",    # Başlangıç seçimi
+}]
+```
+
+> **Ne zaman SEÇİMLİ?** Companion hikayeye genel olarak dahilse:
+> - story_prompt_tr'de `{animal_friend}` placeholder ile companion-agnostic yazılmışsa
+> - Companion'ın türü hikayenin akışını DEĞİŞTİRMİYORSA
+> - Örnek: Kapadokya — at, tilki, kartal veya tavşan, hepsi aynı hikayede çalışır
+
+> [!WARNING]
+> SEÇİMLİ modda `story_prompt_tr`'de companion'ın ADI yazılmamalı!
+> Her zaman `{animal_friend}` placeholder kullanılmalı.
+> Pipeline `_resolve_companion_placeholder()` ile otomatik çözümler.
+
+#### Yeni Companion Nasıl Eklenir?
 
 ```
-1. story_prompt_tr'de companion'ı SABİT yaz:
-   "Yol arkadaşı: Cesur Yılkı Atı — küçük, kahverengi, uzun yeleli bir yılkı atı."
-
-2. custom_inputs_schema'da type="hidden" kullan:
-   [{"key": "animal_friend", "type": "hidden", "default": "Cesur Yılkı Atı"}]
-
-3. _COMPANION_MAP sözlüğüne ekle (generate_book.py + _story_blueprint.py)
-
-4. G2-a kartını doldur (ANCHOR tanım)
+1. ✅ _companions.py'ye kayıt et (benzersiz ID ile)
+2. ✅ Senaryo dosyasında companions listesine ekle
+3. ✅ custom_inputs_schema'da default veya select ayarla
+4. ✅ G2-a ANCHOR kartını doldur
+5. ✅ scenario_bible'da companion detayını ekle
 ```
 
 #### Placeholder Kuralı
 
 > [!CAUTION]
-> **`{animal_friend}` placeholder** otomatik replace edilir:
-> 1. `custom_inputs_schema`'da `default` alanı DOLU olmalı 
-> 2. `default` değer `_COMPANION_MAP` sözlüğünde tanımlı olmalı
-> 3. Sözlükte yoksa generic fallback kullanılır (kötü tutarlılık!)
+> **`{animal_friend}` placeholder** `_resolve_companion_placeholder()` ile otomatik replace edilir:
+> 1. `custom_inputs_schema`'da `default` alanı DOLU olmalı
+> 2. `default` değer **`_companions.py` kütüphanesinde** tanımlı olmalı
+> 3. Kütüphanede yoksa generic fallback kullanılır (kötü tutarlılık!)
 
 ### Adım 1.6 — custom_inputs_schema Formatı
 
+#### SABİT Companion:
 ```json
-[
-  {
-    "key": "animal_friend",
-    "type": "hidden",
-    "default": "Cesur Yılkı Atı"
-  }
-]
+[{"key": "animal_friend", "type": "hidden", "default": "Cesur Yılkı Atı"}]
 ```
 
-> [!WARNING]
-> `type: "select"` KULLANMA — kullanıcıya seçim sunma.
-> Companion senaryo tasarımcısı tarafından belirlenir, kullanıcıya bırakılmaz.
-> Bu, görsel tutarlılık için kritik bir tasarım kararıdır.
+#### SEÇİMLİ Companion:
+```json
+[{"key": "animal_friend", "type": "select", "companion_ref": true,
+  "label_tr": "Macera arkadaşını seç!", "default": "Cesur Yılkı Atı"}]
+```
 
 ---
 
@@ -893,8 +989,9 @@ Image Generation:
 ```
 story_prompt_tr → {animal_friend} placeholder
   ↓ _resolve_companion_placeholder()
-custom_inputs_schema → default value ("Cesur Yılkı Atı")
-  ↓ _TR_TO_EN mapping
+custom_inputs_schema → default value VEYA kullanıcı seçimi
+  ↓ _companions.py kütüphanesinden CompanionAnchor bulunur
+  ↓ _TR_TO_EN mapping (kütüphaneden otomatik)
 İngilizce tür ("wild horse") → blueprint'e gider
   ↓
 Blueprint → side_character {name, type, appearance}
@@ -922,16 +1019,17 @@ page_builder.py → CAST LOCK prompt'a enjekte edilir
 1. `story_prompt_tr` < 400 kelime → geçersiz
 2. `theme_key` mevcut key ile çakışma → geçersiz
 3. `outfit_girl/boy` Türkçe → Flux anlayamaz
-4. `custom_inputs_schema` ile kullanıcıya companion SEÇTİRME → `type: "hidden"` kullan
-5. Yeni companion → `_COMPANION_MAP` sözlüğü güncellenmeli
-6. `scenario_bible` boş → companion tutarlılığı düşer
+4. Yeni companion → **önce `_companions.py` kütüphanesine** ekle, sonra senaryo dosyasına
+5. `scenario_bible` boş → companion tutarlılığı düşer
+6. SEÇİMLİ modda `story_prompt_tr`'de companion ADI yazma → `{animal_friend}` placeholder kullan
 
 ### Görsel Tutarlılık Yasakları
 1. Companion rengi/görünümü sayfa sayfa değişemez
-2. Companion kullanıcıya bırakılamaz — senaryo tasarımında SABİTLENİR
-3. Önemli objeler görünüş değiştiremez
-4. Kahraman kıyafeti tek sayfada bile değişemez
-5. Her sayfaya aynı landmark fotoğrafı çizdirme
+2. Companion `_companions.py` kütüphanesinde tanımlı olmalı — kütüphanede yoksa eklenmeli
+3. SEÇİMLİ senaryolarda her companion seçeneği **eşit detayda** ANCHOR tanıma sahip olmalı
+4. Önemli objeler görünüş değiştiremez
+5. Kahraman kıyafeti tek sayfada bile değişemez
+6. Her sayfaya aynı landmark fotoğrafı çizdirme
 
 ---
 
@@ -942,8 +1040,12 @@ page_builder.py → CAST LOCK prompt'a enjekte edilir
 ├── SKILL.md                    ← Bu dosya (Master giriş noktası)
 └── templates/
     ├── master_report.md        ← Tam rapor şablonu
-    ├── consistency_checklist.md ← 7 katmanlı tutarlılık kontrol listesi
-    └── companion_registry.md   ← Tüm bilinen companion'ların kayıt defteri
+    └── consistency_checklist.md ← 7 katmanlı tutarlılık kontrol listesi
+
+backend/app/scenarios/
+├── _companions.py              ← 🐾 Companion Kütüphanesi (21 companion)
+├── _base.py                    ← CompanionAnchor dataclass
+└── _registry.py                ← get_companion_library() API
 ```
 
 ---
@@ -952,6 +1054,9 @@ page_builder.py → CAST LOCK prompt'a enjekte edilir
 
 | Dosya | Ne İşe Yarar |
 |-------|-------------|
+| `app/scenarios/_companions.py` | 🐾 Companion Kütüphanesi — tüm companion tanımları |
+| `app/scenarios/_base.py` | CompanionAnchor, ObjectAnchor dataclass'ları |
+| `app/scenarios/_registry.py` | `get_companion_library()` + `get_all_companions()` |
 | `app/services/ai/_story_blueprint.py` | PASS-0 + `_resolve_companion_placeholder()` |
 | `app/services/ai/_story_writer.py` | V3 pipeline orchestration + CharacterBible build |
 | `app/tasks/generate_book.py` | Final kitap üretimi + `_extract_companion_from_pages()` |

@@ -153,7 +153,7 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             name_tr="Minik Beyaz Güvercin",
             name_en="small pure white dove with gentle dark eyes",
             species="dove",
-            appearance="small pure white dove with gentle dark eyes, soft feathers, and delicate wings",
+            appearance="small pure white dove with gentle dark eyes, soft pearly feathers, delicate outstretched wings, and a petite coral beak",
             short_name="Beyaz Güvercin",
         ),
     ],
@@ -266,6 +266,9 @@ Hikayeyi TAM OLARAK {page_count} sayfa yaz. Her sayfa 2-4 cümle, akıcı ve mac
             "Ottoman seal MUST have the same crescent-star carving once found (pages 7-22)",
             "Child's outfit MUST NOT change during time flickers",
         ],
+    
+        "companions": "see_scenario_companions_list",
+        "locations": "see_location_constraints",
     },
 
     # ── J: Custom Inputs — SABİT companion ──
